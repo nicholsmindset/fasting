@@ -1,0 +1,48 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Domain tests
+        run: ./gradlew :core:domain:test
+
+      - name: Android unit tests
+        run: ./gradlew :core:data:testDebugUnitTest :app:testDebugUnitTest
+
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Check Room schema is committed
+        run: git diff --exit-code -- core/data/schemas || (echo "Room schema changed: commit core/data/schemas" && exit 1)
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: |
+            **/build/reports/tests/
+            app/build/outputs/apk/debug/*.apk
+            core/data/schemas/
+          if-no-files-found: ignore
