@@ -5,16 +5,43 @@ long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
 
 ## Status
 
-Weeks 1–2 of the MVP build plan (foundations):
+All MVP features (F1–F10) are written. The business rules in `:core:domain` are unit-tested
+(58 tests). **The Android modules (`:core:data`, `:app`) have not been compiled yet**: the build
+environment could not reach Google's Maven repository, and GitHub Actions did not start a job.
+Expect a round of compile fixes on the first build with the Android SDK.
 
-| Area | State |
+| Feature | Where |
 | --- | --- |
-| Timer engine, protocols, streaks, reminder planning | Done, unit-tested (`:core:domain`) |
-| Safety screening gates, fast policy, red flags, refeeding tiers | Done, unit-tested (`:core:domain`) |
-| Room schema + SQLCipher encryption, repositories, settings | Written (`:core:data`), Robolectric tests |
-| Alarm scheduling with exact/windowed fallback, reschedule on boot/time/zone/permission | Written (`:app`) |
-| Minimal timer screen with extended-fast checklist and refeeding guidance | Written (`:app`) |
-| Onboarding, widgets, history UI, logging, Health Connect, export, Shift+ | Not started (weeks 3–10) |
+| F1 Onboarding + safety screening | `app/.../ui/onboarding`, `domain/safety/Screening.kt` |
+| F2 Timer, protocols, edits, schedules | `ui/timer`, `ui/fast`, `ui/settings/SchedulesScreen.kt`, `domain/timer`, `domain/schedule` |
+| F3 Reminders, ongoing notification, reliability check | `alarm/`, `notifications/`, `ui/reliability` |
+| F4 Widgets | `widget/` (Glance) |
+| F5 History, calendar, streaks | `ui/history`, `domain/history`, `domain/streak` |
+| F6 Logging + Health Connect | `ui/log`, `health/` |
+| F7 Extended-fast safety layer | `ui/safety`, timer checklist and refeeding dialogs, `domain/safety` |
+| F8 Export, backup, restore, plan settings | `export/`, `ui/settings`, `domain/backup`, `data/repo/BackupRepository.kt` |
+| F9 Evidence-graded body timeline | `domain/timeline/BodyTimeline.kt` (draft content) |
+| F10 Shift+ (RevenueCat), program, insights | `billing/`, `ui/plus`, `domain/program`, `domain/insights`, `domain/billing` |
+
+### Configuration
+
+- **RevenueCat:** set `revenuecat.apiKey` (public Android SDK key) in `~/.gradle/gradle.properties`
+  or pass `-Prevenuecat.apiKey=...`. Without it, billing is off and the app runs as the free tier.
+  The entitlement ID must be `shift_plus`; offering packages ANNUAL, MONTHLY and LIFETIME.
+- **Book codes:** create a Play Console promo/offer code giving 3 months free; the app's
+  "Redeem" button opens Play's redeem page.
+
+### Before launch (not code)
+
+- [ ] Clinician review of all safety copy (`strings*.xml`) and thresholds (`domain/safety`)
+- [ ] Legal review of claims, disclaimers and `docs/privacy-policy.md`
+- [ ] Publish the privacy policy at https://fastingshift.com/privacy
+- [ ] Play Console: Health apps declaration, Data safety (`docs/data-safety.md`), Health Connect
+      declarations (`docs/health-connect-justifications.md`), listing (`docs/store-listing.md`)
+- [ ] Rewrite body-timeline and program lesson copy in Robert's voice; map book chapters
+- [ ] Verify every helpline and emergency number
+- [ ] Device tests on Samsung, Xiaomi and Pixel (alarm timing, widgets, OEM battery settings)
+- [ ] Replace the placeholder launcher icon
 
 ## Modules
 
