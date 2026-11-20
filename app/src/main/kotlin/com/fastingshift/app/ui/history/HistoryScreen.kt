@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -103,9 +104,9 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: His
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             // Streaks count consistency, never length (SR-3). Neutral copy, no badges.
-            SectionCard(stringResource(R.string.history_streak_title)) {
-                Text(stringResource(R.string.history_streak, st.streak.current), style = MaterialTheme.typography.headlineSmall)
-                Text(stringResource(R.string.history_streak_longest, st.streak.longest), style = MaterialTheme.typography.bodySmall)
+            SectionCard(title = stringResource(R.string.history_streak_title)) {
+                Text(pluralStringResource(R.plurals.history_streak, st.streak.current, st.streak.current), style = MaterialTheme.typography.headlineSmall)
+                Text(pluralStringResource(R.plurals.history_streak_longest, st.streak.longest, st.streak.longest), style = MaterialTheme.typography.bodySmall)
                 st.freezeableDay?.let { day ->
                     Text(stringResource(R.string.history_streak_missed))
                     OutlinedButton(onClick = { vm.freeze(day) }) { Text(stringResource(R.string.history_use_freeze)) }
@@ -114,10 +115,10 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: His
         }
         item { Calendar(st, vm::shiftMonth) }
         item {
-            SectionCard(stringResource(R.string.history_weekly)) {
+            SectionCard(title = stringResource(R.string.history_weekly)) {
                 if (st.weeks.isEmpty()) Text(stringResource(R.string.history_empty))
                 st.weeks.forEach { w ->
-                    Text(stringResource(R.string.history_week_row, w.weekStart.toString(), w.fastingTime.hoursMinutes(), w.completed, w.fasts))
+                    Text(pluralStringResource(R.plurals.history_week_row, w.fasts, w.weekStart.toString(), w.fastingTime.hoursMinutes(), w.completed, w.fasts))
                 }
                 TextButton(onClick = onOpenInsights) { Text(stringResource(R.string.history_insights)) }
             }

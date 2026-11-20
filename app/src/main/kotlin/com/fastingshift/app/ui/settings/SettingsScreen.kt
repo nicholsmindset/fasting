@@ -125,7 +125,7 @@ fun SettingsRoute(
 
         SubscriptionCard(ent, vm, onOpenPaywall)
 
-        SectionCard(stringResource(R.string.settings_reminders)) {
+        SectionCard(title = stringResource(R.string.settings_reminders)) {
             Toggle(R.string.settings_end_alert, s.reminders.fastEndEnabled) { v -> vm.set { setFastEndReminder(v) } }
             Toggle(R.string.settings_start_alert, s.reminders.fastStartEnabled) { v -> vm.set { setFastStartReminder(v) } }
             Toggle(R.string.settings_ongoing, s.ongoingNotification) { v -> vm.set { setOngoingNotification(v) } }
@@ -149,7 +149,7 @@ fun SettingsRoute(
             TextButton(onClick = onOpenReliability) { Text(stringResource(R.string.settings_reliability)) }
         }
 
-        SectionCard(stringResource(R.string.settings_privacy)) {
+        SectionCard(title = stringResource(R.string.settings_privacy)) {
             Toggle(R.string.settings_hide_weight, s.hideWeight) { v -> vm.set { setHideWeight(v) } }
             if (vm.health.isAvailable()) {
                 Toggle(R.string.settings_health_connect, s.healthConnectSync) { on ->
@@ -166,7 +166,7 @@ fun SettingsRoute(
             Text(stringResource(R.string.settings_restore_note), style = MaterialTheme.typography.bodySmall)
         }
 
-        SectionCard(stringResource(R.string.settings_safety)) {
+        SectionCard(title = stringResource(R.string.settings_safety)) {
             TextButton(onClick = onRerunScreening) { Text(stringResource(R.string.settings_rerun_screening)) }
             HelplineList()
             Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall)
@@ -182,7 +182,7 @@ fun SettingsRoute(
 private fun SubscriptionCard(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: () -> Unit) {
     val context = LocalContext.current
     var code by remember { mutableStateOf("") }
-    SectionCard(stringResource(R.string.settings_plan)) {
+    SectionCard(title = stringResource(R.string.settings_plan)) {
         val planName = stringResource(
             when (ent.plan) {
                 PlanType.FREE -> R.string.plan_free

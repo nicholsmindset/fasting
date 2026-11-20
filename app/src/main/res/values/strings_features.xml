@@ -51,13 +51,10 @@
 
     <!-- History -->
     <string name="history_streak_title">Consistency</string>
-    <string name="history_streak">%1$d days in a row</string>
-    <string name="history_streak_longest">Longest run: %1$d days</string>
     <string name="history_streak_missed">Yesterday didn\'t go to plan. That\'s fine. You can use this week\'s streak freeze to keep your run.</string>
     <string name="history_use_freeze">Use streak freeze</string>
     <string name="history_weekly">Weekly totals</string>
     <string name="history_empty">Your fasts will appear here.</string>
-    <string name="history_week_row">Week of %1$s: %2$s fasting, %3$d of %4$d fasts to plan</string>
     <string name="history_insights">See insights</string>
     <string name="status_active">In progress</string>
     <string name="status_completed">Completed as planned</string>
@@ -233,12 +230,10 @@
     <string name="program_intro">21 days, one short lesson and a gentle fasting target each day. Targets stay at 18 hours or less.</string>
     <string name="program_start">Start the program</string>
     <string name="program_day">Day %1$d · %2$s</string>
-    <string name="program_target">Today\'s fasting target: %1$d hours</string>
     <string name="program_chapter">From the book: %1$s</string>
     <string name="program_complete">Mark today done</string>
     <string name="program_come_back">Today\'s lesson is done. The next one opens tomorrow.</string>
     <string name="program_finished">You\'ve finished the program.</string>
-    <string name="program_progress">%1$d of %2$d days done</string>
     <string name="program_stop">Stop the program</string>
     <string name="insights_title">Insights</string>
     <string name="insights_locked">Insights are part of Shift+.</string>
@@ -258,4 +253,26 @@
     <string name="widget_remaining">%1$s to go</string>
     <string name="widget_goal_reached">Goal reached</string>
     <string name="widget_next_milestone">Next: %1$dh</string>
+
+    <!-- Counts -->
+    <plurals name="history_streak">
+        <item quantity="one">%1$d day in a row</item>
+        <item quantity="other">%1$d days in a row</item>
+    </plurals>
+    <plurals name="history_streak_longest">
+        <item quantity="one">Longest run: %1$d day</item>
+        <item quantity="other">Longest run: %1$d days</item>
+    </plurals>
+    <plurals name="history_week_row">
+        <item quantity="one">Week of %1$s: %2$s fasting, %3$d of %4$d fast to plan</item>
+        <item quantity="other">Week of %1$s: %2$s fasting, %3$d of %4$d fasts to plan</item>
+    </plurals>
+    <plurals name="program_target">
+        <item quantity="one">Today\'s fasting target: %1$d hour</item>
+        <item quantity="other">Today\'s fasting target: %1$d hours</item>
+    </plurals>
+    <plurals name="program_progress">
+        <item quantity="one">%1$d of %2$d day done</item>
+        <item quantity="other">%1$d of %2$d days done</item>
+    </plurals>
 </resources>

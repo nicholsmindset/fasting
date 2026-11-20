@@ -26,6 +26,9 @@ class MainActivity : ComponentActivity() {
 
     private var deepLink by mutableStateOf<String?>(null)
 
+    /** null until settings load, so onboarding never flashes for returning users. */
+    private val onboardedFlow by lazy { settings.settings.map<_, Boolean?> { it.onboardingComplete } }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -33,9 +36,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { billing.refresh() }
         setContent {
             FastingShiftTheme {
-                // null until settings load, so onboarding never flashes for returning users.
-                val onboarded by settings.settings.map<_, Boolean?> { it.onboardingComplete }
-                    .collectAsStateWithLifecycle(initialValue = null)
+                val onboarded by onboardedFlow.collectAsStateWithLifecycle(initialValue = null)
                 onboarded?.let { AppNav(onboarded = it, deepLink = deepLink, onDeepLinkHandled = { deepLink = null }) }
             }
         }

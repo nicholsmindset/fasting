@@ -5,10 +5,17 @@ long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
 
 ## Status
 
-All MVP features (F1–F10) are written. The business rules in `:core:domain` are unit-tested
-(58 tests). **The Android modules (`:core:data`, `:app`) have not been compiled yet**: the build
-environment could not reach Google's Maven repository, and GitHub Actions did not start a job.
-Expect a round of compile fixes on the first build with the Android SDK.
+All MVP features (F1–F10) are written and the whole project builds: debug and release APKs,
+0 lint errors, 68 tests passing.
+
+- `:core:domain`: 58 JVM tests (timer, safety gates, streaks, reminders, insights, backup format…)
+- `:core:data`: 5 Robolectric tests, including the export → wipe → restore round trip (F8)
+- `:app`: alarm scheduler tests and an end-to-end UI test of the real app (onboarding with a
+  hard-block answer → education-only mode → updated answers in Settings → start a 16:8 fast →
+  end it in one tap)
+
+Not yet done: testing on real devices (alarm timing, widgets, OEM battery settings) — there is
+no emulator in the cloud build environment.
 
 | Feature | Where |
 | --- | --- |

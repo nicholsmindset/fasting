@@ -109,7 +109,7 @@ class LogViewModel @Inject constructor(
 fun LogRoute(vm: LogViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionCard(stringResource(R.string.log_water)) {
+        SectionCard(title = stringResource(R.string.log_water)) {
             Text(stringResource(R.string.log_water_today, st.waterTodayMl.toInt()))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(250, 500).forEach { ml -> OutlinedButton(onClick = { vm.addWater(ml.toDouble()) }) { Text("+$ml ml") } }
@@ -125,7 +125,7 @@ fun LogRoute(vm: LogViewModel = hiltViewModel()) {
 private fun ElectrolyteCard(st: LogState, vm: LogViewModel) {
     var which by remember { mutableStateOf(Electrolyte.SODIUM) }
     var amount by remember { mutableStateOf("") }
-    SectionCard(stringResource(R.string.log_electrolytes)) {
+    SectionCard(title = stringResource(R.string.log_electrolytes)) {
         Electrolyte.entries.forEach { e ->
             Text(stringResource(R.string.log_electrolyte_today, stringResource(electrolyteLabel(e)), (st.electrolytesToday[e] ?: 0.0).toInt()))
         }
@@ -148,7 +148,7 @@ private fun ElectrolyteCard(st: LogState, vm: LogViewModel) {
 private fun WeightCard(st: LogState, vm: LogViewModel) {
     var value by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf(WeightUnit.KG) }
-    SectionCard(stringResource(R.string.log_weight)) {
+    SectionCard(title = stringResource(R.string.log_weight)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = value, onValueChange = { value = it }, singleLine = true, label = { Text(unit.name.lowercase()) },

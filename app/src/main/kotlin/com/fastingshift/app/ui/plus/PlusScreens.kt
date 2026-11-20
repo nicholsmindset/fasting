@@ -1,6 +1,6 @@
 package com.fastingshift.app.ui.plus
 
-import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -79,7 +80,7 @@ class PaywallViewModel @Inject constructor(val billing: BillingManager) : ViewMo
  */
 @Composable
 fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
-    val activity = LocalContext.current as Activity
+    val activity = LocalActivity.current ?: return
     val scope = rememberCoroutineScope()
     var offers by remember { mutableStateOf<List<PlanOffer>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -166,15 +167,15 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
                 st.finished -> Text(stringResource(R.string.program_finished))
                 st.today == null -> Text(stringResource(R.string.program_come_back))
                 else -> st.today?.let { day ->
-                    SectionCard(stringResource(R.string.program_day, day.day, day.title)) {
+                    SectionCard(title = stringResource(R.string.program_day, day.day, day.title)) {
                         Text(day.lesson)
-                        Text(stringResource(R.string.program_target, day.targetHours))
+                        Text(pluralStringResource(R.plurals.program_target, day.targetHours, day.targetHours))
                         day.chapter?.let { Text(stringResource(R.string.program_chapter, it), style = MaterialTheme.typography.bodySmall) }
                         Button(onClick = { vm.complete(day.day) }) { Text(stringResource(R.string.program_complete)) }
                     }
                 }
             }
-            Text(stringResource(R.string.program_progress, st.done.size, vm.days.size))
+            Text(pluralStringResource(R.plurals.program_progress, vm.days.size, st.done.size, vm.days.size))
             TextButton(onClick = vm::stop) { Text(stringResource(R.string.program_stop)) }
         }
         TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
@@ -221,11 +222,11 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
             Text(stringResource(R.string.insights_locked))
             Button(onClick = onUpgrade) { Text(stringResource(R.string.plan_see_plus)) }
         } else {
-            SectionCard(stringResource(R.string.insights_consistency)) {
+            SectionCard(title = stringResource(R.string.insights_consistency)) {
                 Bars(st.consistency.map { it.ratio })
                 Text(stringResource(R.string.insights_consistency_note), style = MaterialTheme.typography.bodySmall)
             }
-            SectionCard(stringResource(R.string.insights_weekday)) {
+            SectionCard(title = stringResource(R.string.insights_weekday)) {
                 DayOfWeek.entries.forEach { d ->
                     val avg = st.byWeekday[d]
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -235,7 +236,7 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
                 }
             }
             if (!st.hideWeight) {
-                SectionCard(stringResource(R.string.insights_weight)) {
+                SectionCard(title = stringResource(R.string.insights_weight)) {
                     st.weight.forEach { w ->
                         Text(stringResource(R.string.insights_weight_row, w.weekStart.toString(), w.fastingHours.toInt(), w.averageWeightKg?.let { "%.1f kg".format(it) } ?: "—"))
                     }

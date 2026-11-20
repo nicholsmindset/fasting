@@ -34,12 +34,17 @@ import kotlinx.coroutines.SupervisorJob
 @Retention(AnnotationRetention.BINARY)
 annotation class ApplicationScope
 
+/** The encrypted database, in its own module so tests can replace it with an in-memory one. */
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    @Provides @Singleton
+    fun database(@ApplicationContext context: Context): FastingDatabase = FastingDatabase.createEncrypted(context)
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-    @Provides @Singleton
-    fun database(@ApplicationContext context: Context): FastingDatabase = FastingDatabase.createEncrypted(context)
-
     @Provides @Singleton
     fun fastRepository(db: FastingDatabase): FastRepository = RoomFastRepository(db.fastDao())
 

@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
@@ -33,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,8 +68,11 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
                 Step.GOAL -> {
                     Title(R.string.onb_goal_title)
                     Goal.entries.forEach { g ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = st.goal == g, onClick = { vm.setGoal(g) })
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().selectable(selected = st.goal == g, role = Role.RadioButton, onClick = { vm.setGoal(g) }),
+                        ) {
+                            RadioButton(selected = st.goal == g, onClick = null)
                             Text(stringResource(goalLabel(g)))
                         }
                     }
@@ -176,8 +182,11 @@ private fun Primary(res: Int, enabled: Boolean = true, onClick: () -> Unit) {
 
 @Composable
 private fun Check(checked: Boolean, label: Int, onChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked = checked, onCheckedChange = onChange)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Checkbox, onValueChange = onChange),
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
         Text(stringResource(label))
     }
 }

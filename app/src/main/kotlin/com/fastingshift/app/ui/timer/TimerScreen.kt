@@ -196,7 +196,7 @@ private fun CustomLengthRow(state: TimerUiState, onSelectCustom: (Int) -> Unit) 
 /** Evidence-graded body timeline (PRD F9). Every claim shows its label. */
 @Composable
 private fun BodyTimelineCard(elapsed: java.time.Duration?) {
-    SectionCard(stringResource(R.string.timeline_title)) {
+    SectionCard(title = stringResource(R.string.timeline_title)) {
         Text(stringResource(R.string.timeline_note), style = MaterialTheme.typography.bodySmall)
         val current = elapsed?.let(BodyTimeline::stageAt)
         BodyTimeline.stages.forEach { stage ->

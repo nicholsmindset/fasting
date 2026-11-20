@@ -66,7 +66,7 @@ fun SchedulesRoute(onBack: () -> Unit, vm: SchedulesViewModel = hiltViewModel())
         Text(stringResource(R.string.schedules_title), style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(R.string.schedules_body))
         list.forEach { s ->
-            SectionCard(Presets.byId(s.protocolId)?.name ?: s.protocolId) {
+            SectionCard(title = Presets.byId(s.protocolId)?.name ?: s.protocolId) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     DayOfWeek.entries.forEach { d ->
                         FilterChip(

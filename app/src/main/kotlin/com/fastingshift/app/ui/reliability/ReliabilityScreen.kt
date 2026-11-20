@@ -63,7 +63,7 @@ fun ReliabilityRoute(onBack: () -> Unit) {
             context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
         }
         OemHelp.forManufacturer(Build.MANUFACTURER)?.let { oem ->
-            SectionCard(stringResource(R.string.rel_oem_title, oem.label)) {
+            SectionCard(title = stringResource(R.string.rel_oem_title, oem.label)) {
                 Text(stringResource(oem.instructions))
                 OutlinedButton(onClick = { OemHelp.open(context, oem) }) { Text(stringResource(R.string.rel_open_settings)) }
             }
@@ -74,7 +74,7 @@ fun ReliabilityRoute(onBack: () -> Unit) {
 
 @Composable
 private fun Item(label: Int, ok: Boolean, fixLabel: Int, onFix: () -> Unit) {
-    SectionCard(stringResource(label)) {
+    SectionCard(title = stringResource(label)) {
         Text(stringResource(if (ok) R.string.rel_ok else R.string.rel_needs_attention), color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
         if (!ok) OutlinedButton(onClick = onFix) { Text(stringResource(fixLabel)) }
     }
