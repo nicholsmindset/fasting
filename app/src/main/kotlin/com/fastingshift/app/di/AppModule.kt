@@ -5,7 +5,12 @@ import android.content.Context
 import com.fastingshift.app.alarm.AlarmGateway
 import com.fastingshift.app.alarm.AndroidAlarmGateway
 import com.fastingshift.data.db.FastingDatabase
+import com.fastingshift.data.repo.BackupRepository
+import com.fastingshift.data.repo.LogRepository
+import com.fastingshift.data.repo.ProgramRepository
 import com.fastingshift.data.repo.RoomFastRepository
+import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.data.repo.RoomScreeningRepository
 import com.fastingshift.data.repo.RoomStreakFreezeRepository
 import com.fastingshift.data.settings.SettingsRepository
@@ -46,6 +51,21 @@ object AppModule {
 
     @Provides @Singleton
     fun settingsRepository(@ApplicationContext context: Context): SettingsRepository = SettingsRepository(context)
+
+    @Provides @Singleton
+    fun logRepository(db: FastingDatabase): LogRepository = LogRepository(db.logDao())
+
+    @Provides @Singleton
+    fun scheduleRepository(db: FastingDatabase): ScheduleRepository = ScheduleRepository(db.scheduleDao())
+
+    @Provides @Singleton
+    fun symptomCheckinRepository(db: FastingDatabase): SymptomCheckinRepository = SymptomCheckinRepository(db.symptomCheckinDao())
+
+    @Provides @Singleton
+    fun programRepository(db: FastingDatabase): ProgramRepository = ProgramRepository(db.programProgressDao())
+
+    @Provides @Singleton
+    fun backupRepository(db: FastingDatabase): BackupRepository = BackupRepository(db)
 
     /** UTC clock. Display code converts to the device's current zone at render time. */
     @Provides @Singleton

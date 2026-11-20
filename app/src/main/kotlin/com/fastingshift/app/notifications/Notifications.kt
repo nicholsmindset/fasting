@@ -23,10 +23,17 @@ object Notifications {
     const val CHANNEL_FAST_ALERTS = "fast_alerts"
     const val CHANNEL_CHECK_INS = "check_ins"
     const val CHANNEL_REMINDERS = "reminders"
+    const val CHANNEL_ONGOING = "ongoing_fast"
+    const val CHANNEL_ACCOUNT = "account"
+
+    /** Intent extra naming the screen to open (see AppNav routes). */
+    const val EXTRA_ROUTE = "route"
 
     private const val ID_FAST = 1001
     private const val ID_CHECK_IN = 1002
     private const val ID_START = 1003
+    private const val ID_ONGOING = 1004
+    private const val ID_BILLING = 1005
 
     fun createChannels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
@@ -38,6 +45,10 @@ object Notifications {
                     .apply { description = context.getString(R.string.channel_check_ins_desc) },
                 NotificationChannel(CHANNEL_REMINDERS, context.getString(R.string.channel_reminders), NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { description = context.getString(R.string.channel_reminders_desc) },
+                NotificationChannel(CHANNEL_ONGOING, context.getString(R.string.channel_ongoing), NotificationManager.IMPORTANCE_LOW)
+                    .apply { description = context.getString(R.string.channel_ongoing_desc); setShowBadge(false) },
+                NotificationChannel(CHANNEL_ACCOUNT, context.getString(R.string.channel_account), NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = context.getString(R.string.channel_account_desc) },
             ),
         )
     }
@@ -66,7 +77,8 @@ object Notifications {
             )
             ReminderKind.FAST_START -> return showStartReminder(context)
         }
-        val builder = base(context, channel, title, body)
+        val route = if (reminder.kind == ReminderKind.SYMPTOM_CHECK_IN) "checkin/${fast.id}" else null
+        val builder = base(context, channel, title, body, route)
         if (reminder.kind != ReminderKind.SYMPTOM_CHECK_IN) {
             builder.addAction(0, context.getString(R.string.action_end_fast), endFastIntent(context))
         }
@@ -80,6 +92,33 @@ object Notifications {
         )
     }
 
+    /** Optional ongoing notification with a live chronometer (PRD F3). */
+    fun showOngoing(context: Context, fast: Fast) {
+        val builder = NotificationCompat.Builder(context, CHANNEL_ONGOING)
+            .setSmallIcon(R.drawable.ic_stat_fast)
+            .setContentTitle(context.getString(R.string.notif_ongoing_title))
+            .setContentText(context.getString(R.string.notif_ongoing_body, fast.plannedDuration.toHoursLabel()))
+            .setUsesChronometer(true)
+            .setWhen(fast.startAt.toEpochMilli())
+            .setShowWhen(true)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setContentIntent(openAppIntent(context, null))
+            .addAction(0, context.getString(R.string.action_end_fast), endFastIntent(context))
+        notify(context, ID_ONGOING, builder)
+    }
+
+    fun cancelOngoing(context: Context) = NotificationManagerCompat.from(context).cancel(ID_ONGOING)
+
+    /** Paywall rule 3: plain reminders before a trial ends or an annual plan renews. */
+    fun showBillingReminder(context: Context, trial: Boolean, date: String) {
+        val title = context.getString(if (trial) R.string.notif_trial_title else R.string.notif_renewal_title)
+        val body = context.getString(if (trial) R.string.notif_trial_body else R.string.notif_renewal_body, date)
+        notify(context, ID_BILLING, base(context, CHANNEL_ACCOUNT, title, body, "settings"))
+    }
+
     fun cancelFastNotifications(context: Context) {
         NotificationManagerCompat.from(context).apply {
             cancel(ID_FAST)
@@ -89,13 +128,13 @@ object Notifications {
 
     private data class Content(val channel: String, val id: Int, val title: String, val body: String)
 
-    private fun base(context: Context, channel: String, title: String, body: String) =
+    private fun base(context: Context, channel: String, title: String, body: String, route: String? = null) =
         NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_stat_fast)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setContentIntent(openAppIntent(context))
+            .setContentIntent(openAppIntent(context, route))
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
 
@@ -106,9 +145,11 @@ object Notifications {
         NotificationManagerCompat.from(context).notify(id, builder.build())
     }
 
-    private fun openAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(
-        context, 0,
-        Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+    private fun openAppIntent(context: Context, route: String?): PendingIntent = PendingIntent.getActivity(
+        context, route?.hashCode() ?: 0,
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            .apply { if (route != null) putExtra(EXTRA_ROUTE, route) },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.fastingshift.domain.onboarding.Goal
 import com.fastingshift.domain.reminders.ReminderSettings
 import java.time.Duration
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,13 @@ data class AppSettings(
     /** Optional ongoing notification with a live chronometer during a fast. */
     val ongoingNotification: Boolean = false,
     val defaultProtocolId: String? = null,
+    val onboardingComplete: Boolean = false,
+    val goal: Goal? = null,
+    /** Eating window after duration fasts, used for the next-start reminder. */
+    val eatingWindowHours: Int = 8,
+    val healthConnectSync: Boolean = false,
+    /** Active guided program, if the user started one. */
+    val activeProgramId: String? = null,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -41,6 +49,11 @@ class SettingsRepository(context: Context) {
             hideWeight = p[HIDE_WEIGHT] ?: false,
             ongoingNotification = p[ONGOING] ?: false,
             defaultProtocolId = p[DEFAULT_PROTOCOL],
+            onboardingComplete = p[ONBOARDED] ?: false,
+            goal = p[GOAL]?.let { runCatching { Goal.valueOf(it) }.getOrNull() },
+            eatingWindowHours = p[EATING_WINDOW] ?: 8,
+            healthConnectSync = p[HEALTH_CONNECT] ?: false,
+            activeProgramId = p[ACTIVE_PROGRAM],
         )
     }
 
@@ -56,6 +69,12 @@ class SettingsRepository(context: Context) {
     suspend fun setOngoingNotification(enabled: Boolean) = store.edit { it[ONGOING] = enabled }
     suspend fun setDefaultProtocol(id: String) = store.edit { it[DEFAULT_PROTOCOL] = id }
 
+    suspend fun setOnboardingComplete(done: Boolean) = store.edit { it[ONBOARDED] = done }
+    suspend fun setGoal(goal: Goal) = store.edit { it[GOAL] = goal.name }
+    suspend fun setEatingWindowHours(hours: Int) = store.edit { it[EATING_WINDOW] = hours.coerceIn(1, 23) }
+    suspend fun setHealthConnectSync(enabled: Boolean) = store.edit { it[HEALTH_CONNECT] = enabled }
+    suspend fun setActiveProgram(id: String?) = store.edit { if (id == null) it.remove(ACTIVE_PROGRAM) else it[ACTIVE_PROGRAM] = id }
+
     private companion object {
         const val DEFAULT_FORGOT_HOURS = 4
         val FAST_END = booleanPreferencesKey("reminder_fast_end")
@@ -65,5 +84,10 @@ class SettingsRepository(context: Context) {
         val HIDE_WEIGHT = booleanPreferencesKey("hide_weight")
         val ONGOING = booleanPreferencesKey("ongoing_notification")
         val DEFAULT_PROTOCOL = stringPreferencesKey("default_protocol")
+        val ONBOARDED = booleanPreferencesKey("onboarding_complete")
+        val GOAL = stringPreferencesKey("goal")
+        val EATING_WINDOW = intPreferencesKey("eating_window_hours")
+        val HEALTH_CONNECT = booleanPreferencesKey("health_connect_sync")
+        val ACTIVE_PROGRAM = stringPreferencesKey("active_program")
     }
 }

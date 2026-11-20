@@ -44,14 +44,25 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
+import androidx.compose.foundation.layout.Row
+import com.fastingshift.app.ui.components.SectionCard
+import com.fastingshift.app.ui.components.formatDateTime
+import com.fastingshift.app.ui.safety.HelplineList
 import com.fastingshift.domain.safety.BlockReason
+import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.timeline.BodyTimeline
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.RefeedingTier
 import com.fastingshift.domain.safety.StartRequirement
 import com.fastingshift.domain.timer.toClockString
 
 @Composable
-fun TimerRoute(viewModel: TimerViewModel = hiltViewModel()) {
+fun TimerRoute(
+    onEditFast: (Long) -> Unit,
+    onOpenProgram: () -> Unit,
+    onOpenCheckIn: (Long) -> Unit,
+    viewModel: TimerViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
 
@@ -64,7 +75,11 @@ fun TimerRoute(viewModel: TimerViewModel = hiltViewModel()) {
         viewModel.start()
     }
 
-    TimerScreen(state = state, onSelect = viewModel::select, onStart = onStart, onEnd = viewModel::end)
+    TimerScreen(
+        state = state, onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = onStart, onEnd = viewModel::end,
+        onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
+        onOpenProgram = onOpenProgram,
+    )
 
     events.confirm?.let { reqs ->
         ChecklistDialog(reqs, onConfirm = viewModel::confirmAndStart, onDismiss = viewModel::dismissEvents)
@@ -88,8 +103,12 @@ fun TimerRoute(viewModel: TimerViewModel = hiltViewModel()) {
 fun TimerScreen(
     state: TimerUiState,
     onSelect: (com.fastingshift.domain.model.Protocol) -> Unit,
+    onSelectCustom: (Int) -> Unit,
     onStart: () -> Unit,
     onEnd: () -> Unit,
+    onEdit: () -> Unit,
+    onCheckIn: () -> Unit,
+    onOpenProgram: () -> Unit,
 ) {
     Surface(Modifier.fillMaxSize()) {
         Column(
@@ -118,12 +137,24 @@ fun TimerScreen(
                     }
                 }
                 Text(stringResource(R.string.timer_goal, "${active.plannedDuration.toHours()}h"))
+                Text(stringResource(R.string.timer_started_at, active.startAt.formatDateTime()), style = MaterialTheme.typography.bodySmall)
+                // Ending takes one tap (PRD F2: at most 2).
                 Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_end)) }
+                OutlinedButton(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_edit)) }
+                if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
+                    OutlinedButton(onClick = onCheckIn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_check_in)) }
+                }
+                BodyTimelineCard(timer.elapsed)
             } else {
                 Text(stringResource(R.string.timer_not_fasting), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 24.dp))
                 if (state.gate == GateResult.BLOCK) {
                     Text(stringResource(R.string.timer_education_only), textAlign = TextAlign.Center)
+                    HelplineList()
+                    BodyTimelineCard(null)
                     return@Column
+                }
+                state.programTargetHours?.let {
+                    OutlinedButton(onClick = onOpenProgram, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_program_target, it)) }
                 }
                 Text(stringResource(R.string.timer_pick_protocol), style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -136,14 +167,47 @@ fun TimerScreen(
                         )
                     }
                 }
+                CustomLengthRow(state, onSelectCustom)
                 if (state.options.any { !it.enabled }) {
                     val msg = if (state.gate == GateResult.SOFT) R.string.timer_locked_soft else R.string.timer_locked_screening
                     Text(stringResource(msg), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
                 }
-                val selectedEnabled = state.options.firstOrNull { it.protocol == state.selected }?.enabled ?: false
+                val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
                 Button(onClick = onStart, enabled = selectedEnabled, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.timer_start))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomLengthRow(state: TimerUiState, onSelectCustom: (Int) -> Unit) {
+    val max = state.maxHours ?: return
+    val hours = if (state.selected.isCustom) state.selected.fastHours else null
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.timer_custom))
+        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) - 1).coerceAtLeast(1)) }) { Text("−") }
+        Text(hours?.let { "${it}h" } ?: "—")
+        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) + 1).coerceAtMost(max)) }) { Text("+") }
+    }
+}
+
+/** Evidence-graded body timeline (PRD F9). Every claim shows its label. */
+@Composable
+private fun BodyTimelineCard(elapsed: java.time.Duration?) {
+    SectionCard(stringResource(R.string.timeline_title)) {
+        Text(stringResource(R.string.timeline_note), style = MaterialTheme.typography.bodySmall)
+        val current = elapsed?.let(BodyTimeline::stageAt)
+        BodyTimeline.stages.forEach { stage ->
+            val isCurrent = stage == current
+            Text(
+                "${stage.fromHours}h · ${stage.title}",
+                style = if (isCurrent) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+            stage.claims.forEach { c ->
+                Text("[${c.label.display}] ${c.text}", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

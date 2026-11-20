@@ -27,6 +27,12 @@ class AlarmReceiver : BroadcastReceiver() {
             try {
                 when (intent.action) {
                     ACTION_REMINDER -> onReminder(context, intent)
+                    ACTION_BILLING_REMINDER -> {
+                        val expires = java.time.Instant.ofEpochMilli(intent.getLongExtra(EXTRA_EXPIRES_AT, 0))
+                        val date = java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+                            .format(expires.atZone(java.time.ZoneId.systemDefault()))
+                        Notifications.showBillingReminder(context, intent.getBooleanExtra(EXTRA_TRIAL, false), date)
+                    }
                     ACTION_END_FAST -> {
                         service.endActive()
                         Notifications.cancelFastNotifications(context)
@@ -57,6 +63,9 @@ class AlarmReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_REMINDER = "com.fastingshift.app.action.REMINDER"
         const val ACTION_END_FAST = "com.fastingshift.app.action.END_FAST"
+        const val ACTION_BILLING_REMINDER = "com.fastingshift.app.action.BILLING_REMINDER"
+        const val EXTRA_TRIAL = "trial"
+        const val EXTRA_EXPIRES_AT = "expires_at"
         const val EXTRA_KIND = "kind"
         const val EXTRA_FAST_ID = "fast_id"
         const val EXTRA_INDEX = "index"

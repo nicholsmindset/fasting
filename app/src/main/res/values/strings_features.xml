@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    User-facing copy for the MVP features. Tone rules (SR-6): plain, neutral, never shaming,
+    no weight-loss promises, no disease claims. Safety copy is pending clinician review.
+-->
+<resources>
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="off">Off</string>
+    <string name="loading">Loading…</string>
+    <string name="privacy_policy_url" translatable="false">https://fastingshift.com/privacy</string>
+
+    <!-- Tabs -->
+    <string name="tab_timer">Timer</string>
+    <string name="tab_history">History</string>
+    <string name="tab_log">Log</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Channels and notifications -->
+    <string name="channel_ongoing">Fast in progress</string>
+    <string name="channel_ongoing_desc">Optional live timer while you fast</string>
+    <string name="channel_account">Plan and billing</string>
+    <string name="channel_account_desc">Reminders before a trial ends or a plan renews</string>
+    <string name="notif_ongoing_title">Fasting</string>
+    <string name="notif_ongoing_body">Goal: %1$s</string>
+    <string name="notif_trial_title">Your free trial ends soon</string>
+    <string name="notif_trial_body">Your Shift+ trial ends on %1$s. Cancel any time in Google Play if you do not want to continue.</string>
+    <string name="notif_renewal_title">Your plan renews soon</string>
+    <string name="notif_renewal_body">Your Shift+ annual plan renews on %1$s. You can cancel in Google Play before then.</string>
+
+    <!-- Timer additions -->
+    <string name="timer_started_at">Started %1$s</string>
+    <string name="timer_edit">Edit times</string>
+    <string name="timer_check_in">Check in now</string>
+    <string name="timer_custom">Custom length</string>
+    <string name="timer_program_target">Today\'s program target: %1$dh</string>
+    <string name="timeline_title">What may be happening</string>
+    <string name="timeline_note">Timings vary from person to person. Each line shows how strong the evidence is.</string>
+
+    <!-- Edit fast -->
+    <string name="edit_title">Edit fast</string>
+    <string name="edit_start">Started</string>
+    <string name="edit_goal">Goal (%1$s)</string>
+    <string name="edit_end">Ended</string>
+    <string name="edit_note">Note</string>
+    <string name="edit_delete">Delete this fast</string>
+    <string name="edit_error_invalid">Those times don\'t fit together. The end must be after the start, and an active fast can\'t start in the future.</string>
+    <string name="edit_error_blocked">That length isn\'t available with your current safety answers.</string>
+
+    <!-- History -->
+    <string name="history_streak_title">Consistency</string>
+    <string name="history_streak">%1$d days in a row</string>
+    <string name="history_streak_longest">Longest run: %1$d days</string>
+    <string name="history_streak_missed">Yesterday didn\'t go to plan. That\'s fine. You can use this week\'s streak freeze to keep your run.</string>
+    <string name="history_use_freeze">Use streak freeze</string>
+    <string name="history_weekly">Weekly totals</string>
+    <string name="history_empty">Your fasts will appear here.</string>
+    <string name="history_week_row">Week of %1$s: %2$s fasting, %3$d of %4$d fasts to plan</string>
+    <string name="history_insights">See insights</string>
+    <string name="status_active">In progress</string>
+    <string name="status_completed">Completed as planned</string>
+    <string name="status_ended">Ended</string>
+
+    <!-- Log -->
+    <string name="log_water">Water</string>
+    <string name="log_water_today">Today: %1$d ml</string>
+    <string name="log_electrolytes">Electrolytes</string>
+    <string name="log_electrolyte_today">%1$s today: %2$d mg</string>
+    <string name="log_weight">Weight</string>
+    <string name="log_add">Add</string>
+    <string name="el_sodium">Sodium</string>
+    <string name="el_potassium">Potassium</string>
+    <string name="el_magnesium">Magnesium</string>
+
+    <!-- Onboarding -->
+    <string name="onb_welcome_title">Welcome to Fasting Shift</string>
+    <string name="onb_welcome_body">A simple, honest fasting timer. No account, and your data stays on your phone.</string>
+    <string name="onb_get_started">Get started</string>
+    <string name="onb_next">Next</string>
+    <string name="onb_continue">Continue</string>
+    <string name="onb_not_now">Not now</string>
+    <string name="onb_goal_title">What brings you here?</string>
+    <string name="goal_consistency">Building a consistent habit</string>
+    <string name="goal_weight">Managing my weight</string>
+    <string name="goal_metabolic">Metabolic health</string>
+    <string name="goal_long">Longer fasts</string>
+    <string name="onb_screen_title">A few safety questions</string>
+    <string name="onb_screen_body">Fasting isn\'t right for everyone. Your answers decide which options we offer. This isn\'t a diagnosis.</string>
+    <string name="onb_age">Age</string>
+    <string name="onb_pregnant">I\'m pregnant or breastfeeding</string>
+    <string name="onb_ed">I have, or have had, an eating disorder</string>
+    <string name="onb_t1d">I have type 1 diabetes</string>
+    <string name="onb_meds_title">Do you take any of these?</string>
+    <string name="med_insulin">Insulin</string>
+    <string name="med_sulfonylurea">Sulfonylureas (e.g. gliclazide, glipizide)</string>
+    <string name="med_sglt2">SGLT2 inhibitors (e.g. empagliflozin, dapagliflozin)</string>
+    <string name="med_diuretic">Diuretics (water pills)</string>
+    <string name="med_bp">Blood-pressure medication</string>
+    <string name="med_glp1">GLP-1 medication (e.g. semaglutide, tirzepatide)</string>
+    <string name="onb_height">Height (cm)</string>
+    <string name="onb_weight">Weight (kg)</string>
+    <string name="onb_form_error">Please check your age, height and weight.</string>
+    <string name="onb_screen_privacy">Your answers are stored only on this phone, encrypted. You can change them any time in Settings.</string>
+    <string name="onb_ok_title">You\'re all set</string>
+    <string name="onb_ok_body">Every protocol is available to you. Fasts of 24 hours or more always come with a short safety checklist.</string>
+    <string name="onb_soft_title">Please check with your doctor</string>
+    <string name="onb_soft_body">Some medicines need adjusting when you fast. Please talk to your doctor before you start. Fasts over 24 hours will stay locked.</string>
+    <string name="onb_soft_ack">I\'ve discussed fasting with my doctor</string>
+    <string name="reason_glucose">Insulin or sulfonylureas can cause low blood sugar while fasting.</string>
+    <string name="reason_sglt2">SGLT2 inhibitors carry a risk of ketoacidosis while fasting.</string>
+    <string name="reason_bp">Diuretics and blood-pressure medicines can affect fluids and salts.</string>
+    <string name="reason_glp1">GLP-1 medicines already reduce appetite and intake.</string>
+    <string name="reason_other">Your answers suggest extra care.</string>
+    <string name="onb_block_title">Fasting protocols aren\'t offered for you right now</string>
+    <string name="onb_block_body">Based on your answers, fasting could carry risks for you, so we won\'t offer fasting plans. You can still read the guides. If anything changes, you can update your answers in Settings. If you\'d like to talk to someone, support is available.</string>
+    <string name="onb_protocol_title">Choose your usual fast</string>
+    <string name="onb_protocol_body">You can change this any time. 16:8 is a common place to start.</string>
+    <string name="onb_notif_title">Want a nudge when your fast ends?</string>
+    <string name="onb_notif_body">We only send reminders you choose: when a fast ends, milestones, and safety check-ins on long fasts.</string>
+    <string name="onb_notif_allow">Allow notifications</string>
+    <string name="onb_offer_title">Shift+ is optional</string>
+    <string name="onb_offer_body">The guided 21-day Fasting Shift program and weekly insights. 7 days free, then US$34.99 a year. Cancel any time in Google Play.</string>
+    <string name="onb_offer_free_note">The timer, widgets, every protocol, history, export and all safety features are free forever.</string>
+    <string name="onb_offer_trial">Start free trial</string>
+    <string name="onb_offer_free">Continue free</string>
+
+    <!-- Safety -->
+    <string name="checkin_title">How are you feeling?</string>
+    <string name="checkin_body">Tick anything you\'re feeling right now.</string>
+    <string name="checkin_feel_fine">I feel fine</string>
+    <string name="checkin_submit">Submit</string>
+    <string name="sym_fainting">Fainting or nearly fainting</string>
+    <string name="sym_chest_pain">Chest pain</string>
+    <string name="sym_palpitations">Racing or irregular heartbeat</string>
+    <string name="sym_confusion">Confusion</string>
+    <string name="sym_severe_weakness">Severe weakness</string>
+    <string name="sym_lightheaded">Light-headed when standing</string>
+    <string name="sym_headache">Headache</string>
+    <string name="sym_nausea">Nausea</string>
+    <string name="sym_cramps">Muscle cramps</string>
+    <string name="sym_fatigue">Tiredness</string>
+    <string name="sym_hunger">Hunger</string>
+    <string name="sym_irritability">Irritability</string>
+    <string name="stop_title">End your fast and seek medical care</string>
+    <string name="stop_body">The symptoms you described can be serious. Please stop fasting now, and call for help if they are severe or getting worse.</string>
+    <string name="stop_call">Call %1$s</string>
+    <string name="stop_end_fast">End my fast</string>
+    <string name="stop_after">Once you feel safe, sip water and eat something small and easy. Do not drive if you feel faint.</string>
+    <string name="helplines_title">Support</string>
+
+    <!-- Settings -->
+    <string name="settings_plan">Your plan</string>
+    <string name="plan_free">Free</string>
+    <string name="plan_monthly">Shift+ monthly</string>
+    <string name="plan_annual">Shift+ annual</string>
+    <string name="plan_lifetime">Shift+ lifetime</string>
+    <string name="plan_trial">free trial</string>
+    <string name="plan_renews">Renews on %1$s</string>
+    <string name="plan_ends">Ends on %1$s</string>
+    <string name="plan_see_plus">About Shift+</string>
+    <string name="plan_cancel">Manage or cancel in Google Play</string>
+    <string name="plan_restore">Restore purchases</string>
+    <string name="plan_book_code">Book code</string>
+    <string name="plan_redeem">Redeem</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_end_alert">When my fast reaches its goal</string>
+    <string name="settings_start_alert">When it\'s time to start my next fast</string>
+    <string name="settings_ongoing">Show a live timer notification</string>
+    <string name="settings_milestones">Milestone alerts</string>
+    <string name="settings_forgot">\"Forgot to end your fast?\" after</string>
+    <string name="settings_eating_window">Eating window after long fasts: %1$dh</string>
+    <string name="settings_schedules">Weekly schedules (5:2, alternate day)</string>
+    <string name="settings_reliability">Reliability check</string>
+    <string name="settings_privacy">Privacy and data</string>
+    <string name="settings_hide_weight">Hide weight everywhere</string>
+    <string name="settings_health_connect">Sync with Health Connect</string>
+    <string name="settings_hc_note">Writes your weight and water to Health Connect and reads weight from other apps. Turn off any time.</string>
+    <string name="settings_hc_on">Health Connect sync is on.</string>
+    <string name="settings_hc_denied">Health Connect permissions weren\'t granted, so sync stays off.</string>
+    <string name="settings_local_note">Your data is stored only on this phone, encrypted. It is never sent to analytics or ad services.</string>
+    <string name="settings_export">Export (CSV + JSON)</string>
+    <string name="settings_backup">Back up to a file</string>
+    <string name="settings_restore">Restore from a backup</string>
+    <string name="settings_restore_note">Restoring replaces everything currently in the app with the backup.</string>
+    <string name="settings_exported">Export saved.</string>
+    <string name="settings_backed_up">Backup saved.</string>
+    <string name="settings_restored">Backup restored.</string>
+    <string name="settings_restore_invalid">That file isn\'t a valid Fasting Shift backup. Nothing was changed.</string>
+    <string name="settings_file_error">Couldn\'t read or write that file. Nothing was changed.</string>
+    <string name="settings_purchases_restored">Purchases restored.</string>
+    <string name="settings_billing_error">Couldn\'t reach Google Play. Please try again.</string>
+    <string name="settings_safety">Safety</string>
+    <string name="settings_rerun_screening">Update my safety answers</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+
+    <!-- Schedules -->
+    <string name="schedules_title">Weekly schedules</string>
+    <string name="schedules_body">Pick your fasting days. Days off-schedule never break your streak.</string>
+    <string name="schedules_start_at">Starts at %1$s</string>
+    <string name="schedules_add_52">Add 5:2 schedule</string>
+    <string name="schedules_add_adf">Add alternate-day schedule</string>
+
+    <!-- Reliability -->
+    <string name="rel_title">Reliability check</string>
+    <string name="rel_body">Some phones stop apps in the background to save battery, which can delay alerts. These checks help your reminders arrive on time.</string>
+    <string name="rel_exact">On-time alarms</string>
+    <string name="rel_exact_fix">Allow exact alarms</string>
+    <string name="rel_notifications">Notifications</string>
+    <string name="rel_notifications_fix">Turn on notifications</string>
+    <string name="rel_battery">Battery optimisation</string>
+    <string name="rel_battery_fix">Open battery settings</string>
+    <string name="rel_ok">All good</string>
+    <string name="rel_needs_attention">Needs attention</string>
+    <string name="rel_oem_title">Extra step for %1$s phones</string>
+    <string name="rel_oem_samsung">Open Battery, then make sure Fasting Shift is not in \"Sleeping apps\" or \"Deep sleeping apps\".</string>
+    <string name="rel_oem_xiaomi">Turn on Autostart for Fasting Shift, and set Battery saver to \"No restrictions\".</string>
+    <string name="rel_oem_oppo">Allow Fasting Shift to auto-launch and run in the background.</string>
+    <string name="rel_oem_vivo">Allow Fasting Shift to run in the background (high background power use).</string>
+    <string name="rel_open_settings">Open settings</string>
+
+    <!-- Shift+ -->
+    <string name="paywall_title">Shift+</string>
+    <string name="paywall_point_program">The Fasting Shift guided program: 21 days, a short lesson and a fasting target each day.</string>
+    <string name="paywall_point_insights">Insights: weekly consistency, weight next to fasting hours, and your average fast by weekday.</string>
+    <string name="paywall_free_forever">Everything else stays free: timer, widgets, every protocol, history, export and all safety features.</string>
+    <string name="paywall_trial_note">7 days free</string>
+    <string name="paywall_terms">Annual includes a 7-day free trial. We remind you 3 days before it ends. Subscriptions renew until cancelled in Google Play. Lifetime is a one-time purchase.</string>
+    <string name="paywall_unavailable">Shift+ isn\'t available on this device right now.</string>
+    <string name="paywall_already">You have Shift+. Thank you.</string>
+    <string name="program_locked">The guided program is part of Shift+.</string>
+    <string name="program_intro">21 days, one short lesson and a gentle fasting target each day. Targets stay at 18 hours or less.</string>
+    <string name="program_start">Start the program</string>
+    <string name="program_day">Day %1$d · %2$s</string>
+    <string name="program_target">Today\'s fasting target: %1$d hours</string>
+    <string name="program_chapter">From the book: %1$s</string>
+    <string name="program_complete">Mark today done</string>
+    <string name="program_come_back">Today\'s lesson is done. The next one opens tomorrow.</string>
+    <string name="program_finished">You\'ve finished the program.</string>
+    <string name="program_progress">%1$d of %2$d days done</string>
+    <string name="program_stop">Stop the program</string>
+    <string name="insights_title">Insights</string>
+    <string name="insights_locked">Insights are part of Shift+.</string>
+    <string name="insights_consistency">Weekly consistency</string>
+    <string name="insights_consistency_note">Share of planned days completed, last 8 weeks.</string>
+    <string name="insights_weekday">Average fast by weekday</string>
+    <string name="insights_weight">Weight and fasting hours</string>
+    <string name="insights_weight_row">Week of %1$s: %2$dh fasting, %3$s</string>
+    <string name="insights_weight_note">This shows patterns, not cause and effect.</string>
+
+    <!-- Widgets -->
+    <string name="widget_ring_description">Fast progress ring</string>
+    <string name="widget_detail_description">Fast timer with start and stop</string>
+    <string name="widget_idle">Not fasting</string>
+    <string name="widget_idle_short">Ready</string>
+    <string name="widget_elapsed">%1$s fasted</string>
+    <string name="widget_remaining">%1$s to go</string>
+    <string name="widget_goal_reached">Goal reached</string>
+    <string name="widget_next_milestone">Next: %1$dh</string>
+</resources>

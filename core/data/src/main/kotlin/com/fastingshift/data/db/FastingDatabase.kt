@@ -30,6 +30,10 @@ abstract class FastingDatabase : RoomDatabase() {
     abstract fun streakFreezeDao(): StreakFreezeDao
     abstract fun logDao(): LogDao
     abstract fun symptomCheckinDao(): SymptomCheckinDao
+    abstract fun scheduleDao(): ScheduleDao
+    abstract fun protocolDao(): ProtocolDao
+    abstract fun programProgressDao(): ProgramProgressDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
         const val NAME = "fasting.db"
