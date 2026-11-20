@@ -90,7 +90,7 @@ class TimerViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val programTarget = settings.settings.flatMapLatest { s ->
-        val program = s.activeProgramId?.let(GuidedPrograms::byId) ?: return@flatMapLatest flowOf(null)
+        val program = s.activeProgramId?.let(GuidedPrograms::byId) ?: return@flatMapLatest flowOf<Int?>(null)
         combine(programs.observeCompleted(program.id), billing.entitlement) { done, ent ->
             if (!Feature.GUIDED_PROGRAM.isAvailable(ent)) null
             else ProgramProgress.currentDay(program, done, ZoneId.systemDefault(), LocalDate.now())?.targetHours

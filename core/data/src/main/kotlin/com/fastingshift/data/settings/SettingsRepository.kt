@@ -73,7 +73,13 @@ class SettingsRepository(context: Context) {
     suspend fun setGoal(goal: Goal) = store.edit { it[GOAL] = goal.name }
     suspend fun setEatingWindowHours(hours: Int) = store.edit { it[EATING_WINDOW] = hours.coerceIn(1, 23) }
     suspend fun setHealthConnectSync(enabled: Boolean) = store.edit { it[HEALTH_CONNECT] = enabled }
-    suspend fun setActiveProgram(id: String?) = store.edit { if (id == null) it.remove(ACTIVE_PROGRAM) else it[ACTIVE_PROGRAM] = id }
+    suspend fun setActiveProgram(id: String?) = store.edit {
+        if (id == null) {
+            it.remove(ACTIVE_PROGRAM)
+        } else {
+            it[ACTIVE_PROGRAM] = id
+        }
+    }
 
     private companion object {
         const val DEFAULT_FORGOT_HOURS = 4

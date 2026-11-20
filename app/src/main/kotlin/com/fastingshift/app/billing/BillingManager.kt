@@ -43,7 +43,9 @@ class BillingManager @Inject constructor(@ApplicationContext private val context
     fun configure() {
         if (!isConfigured) return
         Purchases.configure(PurchasesConfiguration.Builder(context, BuildConfig.REVENUECAT_API_KEY).build())
-        Purchases.sharedInstance.updatedCustomerInfoListener = com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener { publish(it) }
+        Purchases.sharedInstance.updatedCustomerInfoListener = object : com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener {
+            override fun onReceived(customerInfo: CustomerInfo) = publish(customerInfo)
+        }
     }
 
     suspend fun refresh() {
