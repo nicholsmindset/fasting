@@ -29,6 +29,15 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        // Installable test build: release optimisations, signed with the debug key, separate
+        // app id and name so it can sit next to the Play build. Never upload this to Play.
+        create("staging") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {
