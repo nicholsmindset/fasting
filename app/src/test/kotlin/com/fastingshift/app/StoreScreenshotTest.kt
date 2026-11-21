@@ -1,6 +1,9 @@
 package com.fastingshift.app
 
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -110,8 +113,11 @@ class StoreScreenshotTest {
         waitFor(s(R.string.timer_end))
         shoot("1-timer", mode)
         compose.onNodeWithText(s(R.string.tab_history)).performClick()
-        waitFor(compose.activity.resources.getQuantityString(R.plurals.history_streak, 8, 8))
+        val averagePrefix = compose.activity.getString(R.string.history_average, "", 0).substringBefore(" ")
+        compose.waitUntil(15_000) { compose.onAllNodesWithText(averagePrefix, substring = true).fetchSemanticsNodes().isNotEmpty() }
         shoot("2-history", mode)
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(compose.activity.getString(R.string.history_streak_title)))
+        shoot("2b-calendar", mode)
         compose.onNodeWithText(s(R.string.tab_log)).performClick()
         // Wait for the seeded data itself (today's water and the weight list), so the capture
         // can't race the database. Logs are seeded minutes ago so they're always "today".
