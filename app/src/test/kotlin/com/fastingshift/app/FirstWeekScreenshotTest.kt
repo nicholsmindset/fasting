@@ -16,7 +16,15 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.service.FastRepository
+import com.fastingshift.domain.service.ScreeningRecord
+import com.fastingshift.domain.service.ScreeningRepository
 import java.io.File
+import java.time.Duration
+import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -41,6 +49,8 @@ class FirstWeekScreenshotTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     @Inject lateinit var settings: SettingsRepository
+    @Inject lateinit var screening: ScreeningRepository
+    @Inject lateinit var fasts: FastRepository
 
     private val outDir = File("/tmp/fastingshift-firstweek")
 
@@ -109,6 +119,27 @@ class FirstWeekScreenshotTest {
         shoot("10-offer")
         click(s(R.string.onb_offer_free))
         waitFor(s(R.string.timer_start))
+        waitFor(s(R.string.first_fast_title))
         shoot("11-timer-first-fast")
+        click(s(R.string.first_fast_start_now))
+        waitFor(s(R.string.timer_end))
+        click(s(R.string.timer_end))
+        waitFor(s(R.string.summary_mood_title))
+        click(s(R.string.mood_4))
+        shoot("12-summary")
+    }
+
+    @Test fun coachingTip() {
+        runBlocking {
+            val now = Instant.now()
+            screening.save(ScreeningRecord(now, ScreeningAnswers(40, false, false, false, emptySet(), 175.0, 70.0), GateResult.OK, false))
+            settings.setOnboardingComplete(true)
+            settings.setCoaching(true)
+            val start = now.minus(Duration.ofHours(4))
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
+        }
+        waitFor(s(R.string.coach_card_label))
+        compose.onNodeWithText(s(R.string.coach_card_label)).performScrollTo()
+        shoot("13-coaching")
     }
 }
