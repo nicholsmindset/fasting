@@ -182,6 +182,12 @@ fun SettingsRoute(
                     if (on) hcLauncher.launch(vm.health.permissions) else vm.set { setHealthConnectSync(false) }
                 }
                 Text(stringResource(R.string.settings_hc_note), style = MaterialTheme.typography.bodySmall)
+            } else if (vm.health.needsProviderUpdate()) {
+                // Health Connect is installed but too old to use: offer the Play Store update.
+                OutlinedButton(
+                    onClick = { runCatching { context.startActivity(vm.health.providerUpdateIntent()) } },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.settings_hc_update)) }
             }
             Text(stringResource(R.string.settings_local_note), style = MaterialTheme.typography.bodySmall)
             OutlinedButton(onClick = { exportLauncher.launch("fasting-shift-export.zip") }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_export)) }

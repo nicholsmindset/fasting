@@ -89,7 +89,9 @@ class FastService(
     suspend fun undoEnd(ended: Fast): Boolean {
         if (ended.isActive || fasts.getActive() != null) return false
         val current = fasts.getById(ended.id) ?: return false
-        if (current.endedAt != ended.endedAt) return false
+        // Compare at storage precision (milliseconds): the stored copy of the fast just ended
+        // must still be that fast, not one edited since.
+        if (current.isActive || current.endedAt?.toEpochMilli() != ended.endedAt?.toEpochMilli()) return false
         fasts.update(current.copy(endedAt = null, status = FastStatus.ACTIVE))
         return true
     }

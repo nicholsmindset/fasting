@@ -95,6 +95,25 @@ class DataHardeningTest {
         assertEquals(listOf(12L, 18L), s.reminders.milestones.map { it.toHours() })
     }
 
+    @Test fun undoWorksThroughTheRealDatabase() = runTest {
+        // Room stores milliseconds; an end time with nanoseconds must still match on undo.
+        val repo = RoomFastRepository(db.fastDao())
+        val clock = object : java.time.Clock() {
+            var now: Instant = t0.plusNanos(123_456_789)
+            override fun getZone() = java.time.ZoneOffset.UTC
+            override fun withZone(zone: java.time.ZoneId?) = this
+            override fun instant() = now
+        }
+        val screening = RoomScreeningRepository(db.screeningDao())
+        screening.save(com.fastingshift.domain.service.ScreeningRecord(t0, com.fastingshift.domain.safety.ScreeningAnswers(40, false, false, false, emptySet(), 175.0, 75.0), GateResult.OK, false))
+        val service = com.fastingshift.domain.service.FastService(repo, screening, clock)
+        service.start(com.fastingshift.domain.protocol.Presets.W16_8)
+        clock.now = clock.now.plus(Duration.ofHours(2)).plusNanos(987_654)
+        val ended = service.endActive()!!.fast
+        assertTrue(service.undoEnd(ended))
+        assertNotNull(repo.getActive())
+    }
+
     @Test fun freezesAreLimitedInTheRepositoryToo() = runTest {
         val repo = RoomStreakFreezeRepository(db.streakFreezeDao())
         val today = LocalDate.of(2026, 11, 20)

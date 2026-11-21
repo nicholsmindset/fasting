@@ -233,10 +233,7 @@ class TimerViewModel @Inject constructor(
     fun undoEnd(fast: Fast) {
         _events.update { it.copy(ended = null) }
         viewModelScope.launch {
-            // The database keeps millisecond precision, so undo the stored copy, provided it is
-            // still the fast that was just ended (not edited since).
-            val stored = fasts.getById(fast.id)?.takeIf { it.endedAt?.toEpochMilli() == fast.endedAt?.toEpochMilli() }
-            if (stored == null || !service.undoEnd(stored)) _events.update { it.copy(message = R.string.timer_undo_failed) }
+            if (!service.undoEnd(fast)) _events.update { it.copy(message = R.string.timer_undo_failed) }
         }
     }
 

@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.telephony.TelephonyManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -46,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.platform.RegionResolver
 import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.domain.safety.EmergencyNumbers
@@ -54,7 +54,6 @@ import com.fastingshift.domain.safety.Symptom
 import com.fastingshift.domain.service.FastService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -78,19 +77,8 @@ class SafetyViewModel @Inject constructor(
     }
 }
 
-/**
- * The user's region for emergency numbers and helplines: the SIM's country first, then the
- * network's, then the device locale. Works offline. Swapped for the shared RegionResolver at merge.
- */
-private fun emergencyRegion(context: Context): String? {
-    val tm = context.getSystemService(TelephonyManager::class.java)
-    val candidates = listOf(
-        runCatching { tm?.simCountryIso }.getOrNull(),
-        runCatching { tm?.networkCountryIso }.getOrNull(),
-        Locale.getDefault().country,
-    )
-    return candidates.firstOrNull { !it.isNullOrBlank() }?.uppercase(Locale.ROOT)
-}
+/** The user's region for emergency numbers and helplines: SIM, then network, then locale. Works offline. */
+private fun emergencyRegion(context: Context): String? = RegionResolver.countryCode(context)
 
 /** Opens the dialler with [number]. Never crashes on devices without a phone app. */
 fun dial(context: Context, number: String) {
