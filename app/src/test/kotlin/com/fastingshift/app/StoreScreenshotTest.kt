@@ -82,19 +82,19 @@ class StoreScreenshotTest {
         settings.setTimerMode(TimerDisplayMode.ELAPSED)
         settings.setMilestoneHours(setOf(12, 16))
         screening.save(ScreeningRecord(now, ScreeningAnswers(42, false, false, false, emptySet(), 178.0, 82.0), GateResult.OK, false))
-        // Three weeks of mostly-kept 16:8 days, one shorter day, one longer weekend fast.
-        val today = LocalDate.now(zone)
-        for (back in 21 downTo 1) {
-            val day = today.minusDays(back.toLong())
-            if (back == 9) continue // a day off: streaks are about consistency, not perfection
-            val start = day.minusDays(1).atTime(LocalTime.of(20, 0)).atZone(zone).toInstant()
-            val planned = if (back == 6) 24L else 16L
-            val f = fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(planned)), protocolId = if (planned == 24L) "duration_24" else "window_16_8"))
-            val ended = if (back == 13) 13L else planned
-            fasts.update(f.end(start.plus(Duration.ofHours(ended)).plus(Duration.ofMinutes(12))))
-        }
         // An active fast, 13h 40m in.
         val activeStart = now.minus(Duration.ofHours(13)).minus(Duration.ofMinutes(40))
+        // Three weeks of mostly-kept 16:8 days (one a day, leading up to the active fast), one
+        // shorter day, one longer weekend fast. Relative to the active start so nothing overlaps.
+        for (back in 21 downTo 1) {
+            if (back == 9) continue // a day off: streaks are about consistency, not perfection
+            val long = back == 6
+            val start = activeStart.minus(Duration.ofDays(back.toLong())).minus(Duration.ofHours(if (long) 4 else 0))
+            val planned = if (long) 24L else 16L
+            val f = fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(planned)), protocolId = if (long) "duration_24" else "window_16_8"))
+            val ended = Duration.ofHours(if (back == 13) 13L else planned).plus(Duration.ofMinutes(if (long) 0 else 12))
+            fasts.update(f.end(start.plus(ended)))
+        }
         fasts.insert(Fast(startAt = activeStart, targetEndAt = activeStart.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
         listOf(83.4, 83.0, 82.7, 82.5, 82.1).forEachIndexed { i, kg ->
             logs.addWeight(WeightLog(at = now.minus(Duration.ofDays((5 - i) * 4L)), value = kg, unit = WeightUnit.KG))

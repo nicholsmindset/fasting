@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Daily-use screens (Timer, Today card, Log, History recap, Shift+ screens). Same tone rules
+    as strings_features.xml (SR-6): plain, neutral, no praise for longer fasts.
+-->
+<resources>
+    <!-- Timer -->
+    <string name="daily_header_fasting">Fasting</string>
+    <string name="daily_header_ready">Ready when you are</string>
+    <string name="daily_started">Started</string>
+    <string name="daily_goal">Goal</string>
+    <string name="daily_yesterday_at">Yesterday, %1$s</string>
+    <string name="daily_protocol_fast">%1$dh fast</string>
+    <string name="daily_protocol_eat">%1$dh eating</string>
+    <plurals name="daily_streak_pill">
+        <item quantity="one">%1$d-day streak</item>
+        <item quantity="other">%1$d-day streak</item>
+    </plurals>
+
+    <!-- Today card -->
+    <string name="daily_today_title">Today</string>
+    <string name="daily_next_fast">Next fast</string>
+    <string name="daily_fasting_now">Fasting now</string>
+    <string name="daily_next_none">Not planned</string>
+    <string name="daily_water">Water</string>
+    <string name="daily_water_of">%1$s / %2$s</string>
+    <string name="daily_water_a11y">Water today: %1$d of %2$d ml</string>
+    <string name="daily_add_water">Add 250 ml of water</string>
+    <string name="daily_streak">Streak</string>
+    <plurals name="daily_streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+</resources>
