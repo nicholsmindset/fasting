@@ -13,21 +13,27 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.fastingshift.app.alarm.AlarmReceiver
 import com.fastingshift.app.di.AppEntryPoint
+import com.fastingshift.data.db.DatabaseKeyProvider
+import com.fastingshift.data.db.FastingDatabase
 import dagger.hilt.android.EntryPointAccessors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Keeps widgets fresh (PRD F4: never more than 1 minute stale while the screen is on).
  *
- * - Immediately on any start/end/edit (called from the app's DB collector and widget actions).
- * - Every minute while a fast is active, using a non-wakeup RTC alarm: it fires while the
- *   device is awake and waits while asleep, so it costs nothing with the screen off.
- * - A 15-minute WorkManager job as a safety net.
+ * - Elapsed time is a RemoteViews Chronometer, ticked by the launcher itself.
+ * - Immediately on any start/end/edit (called from the coordinator and widget actions).
+ * - Every minute while a fast is active, for the ring and remaining time, using a non-wakeup
+ *   exact RTC alarm: it fires while the device is awake and waits while asleep. Only when exact
+ *   alarms are allowed; a windowed alarm would be stretched to 10 minutes on Android 12+.
+ * - A 15-minute WorkManager job as a safety net, enqueued only while a widget is placed.
  */
 object WidgetUpdater {
     private const val REQUEST_TICK = 9001
@@ -50,21 +56,35 @@ object WidgetUpdater {
             context, REQUEST_TICK, Intent(context, WidgetTickReceiver::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val ep = EntryPointAccessors.fromApplication(context, AppEntryPoint::class.java)
-        if (ep.fastRepository().getActive() == null || !hasWidgets(context)) {
+        val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
+        if (!exact || !hasWidgets(context) || !hasActiveFast(context)) {
             am.cancel(pi)
             return
         }
-        val next = System.currentTimeMillis() + 60_000
-        val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
-        if (exact) am.setExact(AlarmManager.RTC, next, pi) else am.setWindow(AlarmManager.RTC, next, 30_000, pi)
+        try {
+            am.setExact(AlarmManager.RTC, System.currentTimeMillis() + 60_000, pi)
+        } catch (_: SecurityException) {
+            // Exact-alarm permission revoked between the check and the call.
+            am.cancel(pi)
+        }
     }
 
+    private suspend fun hasActiveFast(context: Context): Boolean {
+        if (FastingDatabase.keyStatus(context) == DatabaseKeyProvider.Status.LOST) return false
+        return EntryPointAccessors.fromApplication(context, AppEntryPoint::class.java).fastRepository().getActive() != null
+    }
+
+    /** Called when the first widget of either kind is placed. */
     fun schedulePeriodic(context: Context) {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             WORK_NAME, ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<WidgetRefreshWorker>(15, TimeUnit.MINUTES).build(),
         )
+    }
+
+    /** Called when the last widget of both kinds is removed. */
+    fun cancelPeriodic(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
     }
 }
 
@@ -73,7 +93,7 @@ class WidgetTickReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
-                WidgetUpdater.updateAll(context)
+                withTimeoutOrNull(AlarmReceiver.RECEIVER_TIMEOUT_MS) { WidgetUpdater.updateAll(context) }
             } finally {
                 pending.finish()
             }

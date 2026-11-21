@@ -63,7 +63,6 @@ class ReminderCoordinator @Inject constructor(
                 .distinctUntilChanged()
                 .collect { (e, reminded) -> billingReminders.apply(e, reminded, clock.instant()) }
         }
-        WidgetUpdater.schedulePeriodic(context)
     }
 
     suspend fun reschedule() = mutex.withLock {
