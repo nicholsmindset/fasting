@@ -5,17 +5,22 @@ long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
 
 ## Status
 
-All MVP features (F1–F10) are written and the whole project builds: debug and release APKs,
-0 lint errors, 68 tests passing.
+All MVP features (F1–F10) are built, audited twice and fixed. The whole project builds (debug,
+staging, release AAB) with 0 lint errors and 131 tests passing:
 
-- `:core:domain`: 58 JVM tests (timer, safety gates, streaks, reminders, insights, backup format…)
-- `:core:data`: 5 Robolectric tests, including the export → wipe → restore round trip (F8)
-- `:app`: alarm scheduler tests and an end-to-end UI test of the real app (onboarding with a
-  hard-block answer → education-only mode → updated answers in Settings → start a 16:8 fast →
-  end it in one tap)
+- `:core:domain`: 80 JVM tests (timer, safety gates and edit rules, streaks, reminders, insights,
+  backup format and hardening, history stats)
+- `:core:data`: 15 Robolectric tests (single-active-fast index, restore safety, settings in
+  backups, export → wipe → restore round trip, undo through Room)
+- `:app`: 36 tests incl. end-to-end UI flows (onboarding and gates, tappable timer modes,
+  education-only), view-model tests (undo, refeeding), widget/billing decision logic
 
-Not yet done: testing on real devices (alarm timing, widgets, OEM battery settings) — there is
-no emulator in the cloud build environment.
+Highlights beyond the PRD: tappable timer (fasted / time left / break-fast time), eating-window
+countdown, quick-add on the Timer, undo after ending, add a past fast, "started earlier",
+refeeding screen, History hours ring + fast bars, database-key recovery screen.
+
+Not yet done: testing on real devices (alarm timing, widgets, OEM battery settings) — the cloud
+build environment has no emulator.
 
 | Feature | Where |
 | --- | --- |
