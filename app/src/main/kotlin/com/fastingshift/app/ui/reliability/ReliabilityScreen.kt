@@ -2,6 +2,7 @@ package com.fastingshift.app.ui.reliability
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -30,10 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.fastingshift.app.R
+import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.app.ui.components.SectionCard
 
 /**
@@ -58,6 +61,20 @@ fun ReliabilityRoute(onBack: () -> Unit) {
         Item(R.string.rel_notifications, checks.notifications, R.string.rel_notifications_fix) {
             context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
         }
+        // Safety alerts and check-ins can be switched off one channel at a time.
+        if (checks.notifications) {
+            for ((channel, name) in SAFETY_CHANNELS) {
+                if (channel in checks.blockedChannels) {
+                    Item(stringResource(R.string.rel_channel_title, stringResource(name)), false, R.string.rel_channel_fix) {
+                        context.startActivity(
+                            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                .putExtra(Settings.EXTRA_CHANNEL_ID, channel),
+                        )
+                    }
+                }
+            }
+        }
         Item(R.string.rel_battery, checks.unrestrictedBattery, R.string.rel_battery_fix) {
             // Opens the system list; the app never requests the exemption directly (Play policy).
             context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
@@ -72,24 +89,45 @@ fun ReliabilityRoute(onBack: () -> Unit) {
     }
 }
 
+private val SAFETY_CHANNELS = listOf(
+    Notifications.CHANNEL_FAST_ALERTS to R.string.channel_fast_alerts,
+    Notifications.CHANNEL_CHECK_INS to R.string.channel_check_ins,
+)
+
 @Composable
-private fun Item(label: Int, ok: Boolean, fixLabel: Int, onFix: () -> Unit) {
-    SectionCard(title = stringResource(label)) {
+private fun Item(label: Int, ok: Boolean, fixLabel: Int, onFix: () -> Unit) = Item(stringResource(label), ok, fixLabel, onFix)
+
+@Composable
+private fun Item(label: String, ok: Boolean, fixLabel: Int, onFix: () -> Unit) {
+    SectionCard(title = label) {
         Text(stringResource(if (ok) R.string.rel_ok else R.string.rel_needs_attention), color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
         if (!ok) OutlinedButton(onClick = onFix) { Text(stringResource(fixLabel)) }
     }
 }
 
-private data class Checks(val exactAlarms: Boolean, val notifications: Boolean, val unrestrictedBattery: Boolean) {
+private data class Checks(
+    val exactAlarms: Boolean,
+    /** Permission granted and notifications not switched off for the whole app. */
+    val notifications: Boolean,
+    val unrestrictedBattery: Boolean,
+    /** Channels the user set to "off" (importance NONE). */
+    val blockedChannels: Set<String>,
+) {
     companion object {
         fun read(context: Context): Checks {
             val am = context.getSystemService(AlarmManager::class.java)
             val pm = context.getSystemService(PowerManager::class.java)
+            val nm = context.getSystemService(NotificationManager::class.java)
             return Checks(
                 exactAlarms = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms(),
-                notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
+                notifications = (
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                    ) && NotificationManagerCompat.from(context).areNotificationsEnabled(),
                 unrestrictedBattery = pm.isIgnoringBatteryOptimizations(context.packageName),
+                blockedChannels = SAFETY_CHANNELS.map { it.first }
+                    .filter { nm.getNotificationChannel(it)?.importance == NotificationManager.IMPORTANCE_NONE }
+                    .toSet(),
             )
         }
     }
