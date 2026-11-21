@@ -6,6 +6,17 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+/** Reads a Gradle property, falling back to an environment variable (for CI). */
+fun setting(property: String, env: String): String? =
+    (project.findProperty(property) as String?)?.takeIf { it.isNotBlank() } ?: System.getenv(env)?.takeIf { it.isNotBlank() }
+
+// Play upload key. Never committed: set these in ~/.gradle/gradle.properties or as CI secrets.
+val uploadStoreFile = setting("fastingshift.upload.storeFile", "FS_UPLOAD_STORE_FILE")
+val uploadStorePassword = setting("fastingshift.upload.storePassword", "FS_UPLOAD_STORE_PASSWORD")
+val uploadKeyAlias = setting("fastingshift.upload.keyAlias", "FS_UPLOAD_KEY_ALIAS")
+val uploadKeyPassword = setting("fastingshift.upload.keyPassword", "FS_UPLOAD_KEY_PASSWORD")
+val hasUploadKey = listOf(uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword).all { it != null }
+
 android {
     namespace = "com.fastingshift.app"
     compileSdk = 36
@@ -14,8 +25,9 @@ android {
         applicationId = "com.fastingshift.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // Bump for each Play upload: -Pfastingshift.versionCode=2 or FS_VERSION_CODE.
+        versionCode = setting("fastingshift.versionCode", "FS_VERSION_CODE")?.toInt() ?: 1
+        versionName = setting("fastingshift.versionName", "FS_VERSION_NAME") ?: "0.1.0"
 
         // RevenueCat public SDK key. Set `revenuecat.apiKey` in ~/.gradle/gradle.properties or
         // with -P. When empty, billing is disabled and every Shift+ entry point says so.
@@ -23,8 +35,21 @@ android {
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
     }
 
+    signingConfigs {
+        if (hasUploadKey) {
+            create("upload") {
+                storeFile = file(uploadStoreFile!!)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Signed with the upload key when it is configured; otherwise the build is unsigned.
+            if (hasUploadKey) signingConfig = signingConfigs.getByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
