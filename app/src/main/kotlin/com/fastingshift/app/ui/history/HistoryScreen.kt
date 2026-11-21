@@ -21,6 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -131,12 +134,14 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: His
 private fun Calendar(st: HistoryState, onShift: (Long) -> Unit) {
     SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { onShift(-1) }) { Text("‹") }
+            val prev = stringResource(R.string.a11y_prev_month)
+            val next = stringResource(R.string.a11y_next_month)
+            TextButton(onClick = { onShift(-1) }) { Text("‹", Modifier.semantics { contentDescription = prev }) }
             Text(
                 "${st.month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${st.month.year}",
                 style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { onShift(1) }) { Text("›") }
+            TextButton(onClick = { onShift(1) }) { Text("›", Modifier.semantics { contentDescription = next }) }
         }
         val first = st.month.atDay(1)
         val lead = first.dayOfWeek.value - 1 // Monday first
@@ -152,10 +157,22 @@ private fun Calendar(st: HistoryState, onShift: (Long) -> Unit) {
 
 @Composable
 private fun DayCell(day: LocalDate?, fasts: List<Fast>, modifier: Modifier) {
-    Box(modifier.aspectRatio(1f).padding(2.dp), contentAlignment = Alignment.Center) {
-        if (day == null) return@Box
-        val completed = fasts.any { it.status == FastStatus.COMPLETED }
-        val any = fasts.isNotEmpty()
+    if (day == null) {
+        Box(modifier.aspectRatio(1f))
+        return
+    }
+    val completed = fasts.any { it.status == FastStatus.COMPLETED }
+    val any = fasts.isNotEmpty()
+    val dayLabel = day.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG))
+    val description = stringResource(
+        when {
+            completed -> R.string.a11y_day_completed
+            any -> R.string.a11y_day_fasted
+            else -> R.string.a11y_day_none
+        },
+        dayLabel,
+    )
+    Box(modifier.aspectRatio(1f).padding(2.dp).clearAndSetSemantics { contentDescription = description }, contentAlignment = Alignment.Center) {
         val bg = when {
             completed -> MaterialTheme.colorScheme.primary
             any -> MaterialTheme.colorScheme.secondaryContainer

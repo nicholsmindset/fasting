@@ -28,6 +28,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -227,7 +229,9 @@ private fun Toggle(label: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
 private fun Stepper(label: Int, value: Int, onChange: (Int) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(label, value), Modifier.weight(1f))
-        OutlinedButton(onClick = { onChange(value - 1) }) { Text("−") }
-        OutlinedButton(onClick = { onChange(value + 1) }) { Text("+") }
+        val decrease = stringResource(R.string.a11y_decrease)
+        val increase = stringResource(R.string.a11y_increase)
+        OutlinedButton(onClick = { onChange(value - 1) }) { Text("−", Modifier.semantics { contentDescription = decrease }) }
+        OutlinedButton(onClick = { onChange(value + 1) }) { Text("+", Modifier.semantics { contentDescription = increase }) }
     }
 }

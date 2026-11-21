@@ -37,6 +37,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.fastingshift.app.ui.components.hoursMinutes
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -120,7 +126,19 @@ fun TimerScreen(
             val active = state.active
             if (active != null && timer != null) {
                 ExactAlarmBanner()
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(top = 24.dp)) {
+                val ringDescription = stringResource(
+                    R.string.a11y_timer,
+                    timer.elapsed.hoursMinutes(),
+                    active.plannedDuration.hoursMinutes(),
+                    (timer.progress * 100).toInt(),
+                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(top = 24.dp).clearAndSetSemantics {
+                        contentDescription = ringDescription
+                        progressBarRangeInfo = ProgressBarRangeInfo(timer.progress, 0f..1f)
+                    },
+                ) {
                     CircularProgressIndicator(
                         progress = { timer.progress },
                         modifier = Modifier.size(260.dp),
@@ -185,11 +203,13 @@ fun TimerScreen(
 private fun CustomLengthRow(state: TimerUiState, onSelectCustom: (Int) -> Unit) {
     val max = state.maxHours ?: return
     val hours = if (state.selected.isCustom) state.selected.fastHours else null
+    val decrease = stringResource(R.string.a11y_decrease)
+    val increase = stringResource(R.string.a11y_increase)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.timer_custom))
-        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) - 1).coerceAtLeast(1)) }) { Text("−") }
+        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) - 1).coerceAtLeast(1)) }) { Text("−", Modifier.semantics { contentDescription = decrease }) }
         Text(hours?.let { "${it}h" } ?: "—")
-        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) + 1).coerceAtMost(max)) }) { Text("+") }
+        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) + 1).coerceAtMost(max)) }) { Text("+", Modifier.semantics { contentDescription = increase }) }
     }
 }
 

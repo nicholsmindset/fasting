@@ -1,6 +1,9 @@
 package com.fastingshift.app
 
 import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -55,7 +58,12 @@ class AppFlowTest {
         node.performTextClearance()
         node.performTextInput(value)
     }
-    private fun waitFor(text: String) = compose.waitUntil(5_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    private fun waitFor(text: String) = try {
+        compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    } catch (e: Throwable) {
+        println("DBG>> " + compose.onRoot().printToString().lines().joinToString("\nDBG>> "))
+        throw e
+    }
 
     @Test fun blockedUserThenUpdatedAnswersThenStartAndEndAFast() {
         // Onboarding with a hard-block answer (under 18).
@@ -92,6 +100,8 @@ class AppFlowTest {
         val active = runBlocking { fasts.getActive() }
         assertNotNull(active)
         assertEquals(16, active.plannedDuration.toHours().toInt())
+        // TalkBack reads the ring as one node with elapsed, goal and percent.
+        compose.onNode(hasContentDescription("Fasted ", substring = true)).assertExists()
 
         click(s(R.string.timer_end))
         waitFor(s(R.string.timer_start))

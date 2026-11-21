@@ -254,6 +254,16 @@
     <string name="widget_goal_reached">Goal reached</string>
     <string name="widget_next_milestone">Next: %1$dh</string>
 
+    <!-- Accessibility (TalkBack) -->
+    <string name="a11y_timer">Fasted %1$s of %2$s, %3$d percent</string>
+    <string name="a11y_decrease">Decrease</string>
+    <string name="a11y_increase">Increase</string>
+    <string name="a11y_prev_month">Previous month</string>
+    <string name="a11y_next_month">Next month</string>
+    <string name="a11y_day_completed">%1$s, completed as planned</string>
+    <string name="a11y_day_fasted">%1$s, fasted</string>
+    <string name="a11y_day_none">%1$s</string>
+
     <!-- Counts -->
     <plurals name="history_streak">
         <item quantity="one">%1$d day in a row</item>
