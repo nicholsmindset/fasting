@@ -84,7 +84,7 @@ fun TimerRoute(
     TimerScreen(
         state = state, onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = onStart, onEnd = viewModel::end,
         onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
-        onOpenProgram = onOpenProgram,
+        onOpenProgram = onOpenProgram, onToggleMode = viewModel::cycleMode,
     )
 
     events.confirm?.let { reqs ->
@@ -115,6 +115,7 @@ fun TimerScreen(
     onEdit: () -> Unit,
     onCheckIn: () -> Unit,
     onOpenProgram: () -> Unit,
+    onToggleMode: () -> Unit = {},
 ) {
     Surface(Modifier.fillMaxSize()) {
         Column(
@@ -126,34 +127,7 @@ fun TimerScreen(
             val active = state.active
             if (active != null && timer != null) {
                 ExactAlarmBanner()
-                val ringDescription = stringResource(
-                    R.string.a11y_timer,
-                    timer.elapsed.hoursMinutes(),
-                    active.plannedDuration.hoursMinutes(),
-                    (timer.progress * 100).toInt(),
-                )
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.padding(top = 24.dp).clearAndSetSemantics {
-                        contentDescription = ringDescription
-                        progressBarRangeInfo = ProgressBarRangeInfo(timer.progress, 0f..1f)
-                    },
-                ) {
-                    CircularProgressIndicator(
-                        progress = { timer.progress },
-                        modifier = Modifier.size(260.dp),
-                        strokeWidth = 14.dp,
-                    )
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.timer_elapsed), style = MaterialTheme.typography.labelLarge)
-                        Text(timer.elapsed.toClockString(), style = MaterialTheme.typography.displaySmall)
-                        Text(
-                            if (timer.isTargetReached) stringResource(R.string.timer_goal_reached, timer.pastTarget.toClockString())
-                            else stringResource(R.string.timer_remaining, timer.remaining.toClockString()),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                }
+                TimerRing(active, timer, state.mode, state.now, onToggle = onToggleMode, modifier = Modifier.padding(top = 16.dp))
                 Text(stringResource(R.string.timer_goal, "${active.plannedDuration.toHours()}h"))
                 Text(stringResource(R.string.timer_started_at, active.startAt.formatDateTime()), style = MaterialTheme.typography.bodySmall)
                 // Ending takes one tap (PRD F2: at most 2).

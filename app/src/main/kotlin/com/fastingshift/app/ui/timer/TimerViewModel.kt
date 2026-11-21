@@ -27,6 +27,7 @@ import com.fastingshift.domain.service.ScreeningRepository
 import com.fastingshift.domain.service.StartResult
 import com.fastingshift.domain.timer.FastTimer
 import com.fastingshift.domain.timer.TimerState
+import com.fastingshift.domain.timer.TimerDisplayMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Duration
@@ -55,6 +56,9 @@ data class TimerUiState(
     val maxHours: Int? = null,
     /** Today's guided-program target, if a program is active and the user has Shift+. */
     val programTargetHours: Int? = null,
+    /** What the big ring shows; tapping it cycles. */
+    val mode: TimerDisplayMode = TimerDisplayMode.ELAPSED,
+    val now: Instant = Instant.EPOCH,
 )
 
 /** One-off dialogs and messages. */
@@ -69,7 +73,7 @@ data class TimerEvents(
 class TimerViewModel @Inject constructor(
     fasts: FastRepository,
     screening: ScreeningRepository,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
     programs: ProgramRepository,
     billing: BillingManager,
     private val service: FastService,
@@ -113,11 +117,19 @@ class TimerViewModel @Inject constructor(
             gate = gate,
             clinicianAcknowledged = ack,
             milestones = milestones,
+            mode = appSettings.timerMode,
+            now = now,
         )
     }
 
     val state: StateFlow<TimerUiState> = combine(base, programTarget) { s, target -> s.copy(programTargetHours = target) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerUiState())
+
+    /** Tapping the ring cycles the view; the choice is remembered across launches. */
+    fun cycleMode() {
+        val next = state.value.mode.next()
+        viewModelScope.launch { settings.setTimerMode(next) }
+    }
 
     fun select(protocol: Protocol) = selected.update { protocol }
 
