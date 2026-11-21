@@ -24,7 +24,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Step { WELCOME, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, OFFER }
+enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, OFFER }
+
+/** "Step n of N" for the progress bar; null on Welcome (no bar). A re-run only has its own steps. */
+fun stepProgress(step: Step, rerun: Boolean): Pair<Int, Int>? {
+    val steps = if (rerun) listOf(Step.SCREENING, Step.RESULT, Step.PROTOCOL) else Step.entries.drop(1)
+    val i = steps.indexOf(step)
+    return if (i < 0) null else (i + 1) to steps.size
+}
+
+/**
+ * The protocol suggested for a goal. Longer-fast goals still start on 16:8: people build up to
+ * longer fasts after a few weeks, never on day one.
+ */
+fun recommendedProtocol(goal: Goal?): Protocol = when (goal) {
+    Goal.CONSISTENCY -> Presets.W14_10
+    Goal.WEIGHT, Goal.METABOLIC_HEALTH, Goal.LONG_FASTS, null -> Presets.W16_8
+}
 
 /** Raw form input; validated into [ScreeningAnswers] on submit. */
 data class ScreeningForm(
@@ -78,6 +94,7 @@ class OnboardingViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         step = Step.SCREENING, rerun = true, goal = s.goal,
+                        selected = s.defaultProtocolId?.let(Presets::byId) ?: recommendedProtocol(s.goal),
                         form = prev?.let { a ->
                             ScreeningForm(a.ageYears.toString(), a.pregnantOrBreastfeeding, a.eatingDisorderHistory, a.type1Diabetes, a.medications, a.heightCm.toString(), a.weightKg.toString())
                         } ?: ScreeningForm(),
@@ -138,7 +155,11 @@ class OnboardingViewModel @Inject constructor(
     fun next() = _state.update { it.copy(step = Step.entries[it.step.ordinal + 1]) }
     fun back() = _state.update { if (it.step.ordinal > 0 && !(it.rerun && it.step == Step.SCREENING)) it.copy(step = Step.entries[it.step.ordinal - 1]) else it }
 
-    fun setGoal(goal: Goal) = _state.update { it.copy(goal = goal) }
+    /** Choosing a goal also pre-selects its suggested protocol for the protocol step. */
+    fun setGoal(goal: Goal) = _state.update { it.copy(goal = goal, selected = recommendedProtocol(goal)) }
+
+    /** Skips the rest of the intro pages. */
+    fun skipIntro() = _state.update { if (it.step == Step.INTRO) it.copy(step = Step.GOAL) else it }
     fun updateForm(f: (ScreeningForm) -> ScreeningForm) = _state.update { it.copy(form = f(it.form), formError = false) }
     fun setClinicianAck(ack: Boolean) = _state.update { it.copy(clinicianAck = ack) }
     fun select(p: Protocol) = _state.update { it.copy(selected = p) }
@@ -190,6 +211,8 @@ class OnboardingViewModel @Inject constructor(
     fun finish(onFinished: () -> Unit) {
         viewModelScope.launch {
             settings.setOnboardingComplete(true)
+            // Coaching runs in the first two weeks after this moment.
+            settings.setOnboardedAt(clock.millis())
             onFinished()
         }
     }
