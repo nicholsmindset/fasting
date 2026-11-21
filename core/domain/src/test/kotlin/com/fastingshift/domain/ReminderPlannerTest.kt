@@ -17,28 +17,35 @@ class ReminderPlannerTest {
 
     @Test fun `16h fast plans end, milestones and forgot nudge`() {
         val plan = ReminderPlanner.planForActiveFast(fast(16), ReminderSettings(milestones = listOf(hours(12), hours(20))), start)
-        assertEquals(listOf(ReminderKind.MILESTONE, ReminderKind.FAST_END, ReminderKind.FORGOT_TO_END), plan.map { it.kind })
-        assertEquals(start.plus(hours(16)), plan[1].triggerAt)
-        assertEquals(start.plus(hours(20)), plan[2].triggerAt)
-        assertTrue(plan.none { it.kind == ReminderKind.SYMPTOM_CHECK_IN })
+        val nonCheckIns = plan.filter { it.kind != ReminderKind.SYMPTOM_CHECK_IN }
+        assertEquals(listOf(ReminderKind.MILESTONE, ReminderKind.FAST_END, ReminderKind.FORGOT_TO_END), nonCheckIns.map { it.kind })
+        assertEquals(start.plus(hours(16)), nonCheckIns[1].triggerAt)
+        assertEquals(start.plus(hours(20)), nonCheckIns[2].triggerAt)
+        // A 16h fast only gets safety check-ins if it is still running at 24h.
+        val checkIns = plan.filter { it.kind == ReminderKind.SYMPTOM_CHECK_IN }
+        assertTrue(checkIns.all { java.time.Duration.between(start, it.triggerAt) >= hours(24) })
     }
 
     @Test fun `extended fast always gets 8-hourly check-ins`() {
         val plan = ReminderPlanner.planForActiveFast(fast(36), ReminderSettings(fastEndEnabled = false, forgotToEndAfter = null), start)
         val checkIns = plan.filter { it.kind == ReminderKind.SYMPTOM_CHECK_IN }
-        assertEquals(listOf(8L, 16L, 24L, 32L), checkIns.map { java.time.Duration.between(start, it.triggerAt).toHours() })
+        // Every 8h from the start, and the next few beyond the planned end in case it keeps going.
+        assertEquals(listOf(8L, 16L, 24L, 32L, 40L, 48L, 56L), checkIns.map { java.time.Duration.between(start, it.triggerAt).toHours() })
         assertEquals(checkIns.size, checkIns.map { it.requestCode }.toSet().size)
     }
 
-    @Test fun `check-ins continue into the forgot-to-end window`() {
-        val plan = ReminderPlanner.planForActiveFast(fast(24), ReminderSettings(forgotToEndAfter = hours(4)), start)
-        val last = plan.filter { it.kind == ReminderKind.SYMPTOM_CHECK_IN }.maxOf { it.triggerAt }
-        assertEquals(start.plus(hours(24)), last)
+    @Test fun `check-ins roll on while an overrunning fast continues`() {
+        // 16h fast still running at 60h: check-ins keep coming every 8h ahead of now.
+        val now = start.plus(hours(60))
+        val plan = ReminderPlanner.planForActiveFast(fast(16), ReminderSettings(), now)
+        val next = plan.filter { it.kind == ReminderKind.SYMPTOM_CHECK_IN }.map { java.time.Duration.between(start, it.triggerAt).toHours() }
+        assertEquals(listOf(64L, 72L, 80L), next)
     }
 
     @Test fun `only future reminders after reschedule`() {
         val plan = ReminderPlanner.planForActiveFast(fast(16), ReminderSettings(), start.plus(hours(17)))
-        assertEquals(listOf(ReminderKind.FORGOT_TO_END), plan.map { it.kind })
+        assertEquals(listOf(ReminderKind.FORGOT_TO_END), plan.filter { it.kind != ReminderKind.SYMPTOM_CHECK_IN }.map { it.kind })
+        assertTrue(plan.all { it.triggerAt.isAfter(start.plus(hours(17))) })
     }
 
     @Test fun `ended fast plans nothing`() {

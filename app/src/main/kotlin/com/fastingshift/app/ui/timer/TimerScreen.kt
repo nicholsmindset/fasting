@@ -292,7 +292,7 @@ private fun InfoDialog(text: String, onDismiss: () -> Unit, title: String? = nul
 private fun blockedMessage(reason: BlockReason): Int = when (reason) {
     BlockReason.EDUCATION_ONLY -> R.string.timer_education_only
     BlockReason.NEEDS_CLINICIAN_ACKNOWLEDGEMENT -> R.string.timer_needs_clinician
-    BlockReason.EXCEEDS_GATED_LIMIT, BlockReason.OUT_OF_RANGE -> R.string.timer_locked_screening
+    BlockReason.EXCEEDS_GATED_LIMIT, BlockReason.OUT_OF_RANGE, BlockReason.NEEDS_SCREENING -> R.string.timer_locked_screening
 }
 
 private fun refeedingText(tier: RefeedingTier): Int = when (tier) {

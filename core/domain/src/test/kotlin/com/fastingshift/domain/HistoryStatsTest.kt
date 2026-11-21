@@ -31,8 +31,8 @@ class HistoryStatsTest {
         assertEquals(0, s.completed)
         assertEquals(hours(10), s.average)
         assertEquals(5, s.plannedDays) // Mon..Fri so far
-        assertEquals(1, s.completedDays) // Monday (Sunday-night fast ended Monday, as planned)
-        assertEquals(0.2f, s.consistency)
+        assertEquals(0, s.completedDays) // the Sunday-night fast counts for Sunday, last week
+        assertEquals(0f, s.consistency)
     }
 
     @Test fun `active fast counts up to now and month total clips at month start`() {

@@ -70,7 +70,7 @@ object AppModule {
     fun programRepository(db: FastingDatabase): ProgramRepository = ProgramRepository(db.programProgressDao())
 
     @Provides @Singleton
-    fun backupRepository(db: FastingDatabase): BackupRepository = BackupRepository(db)
+    fun backupRepository(db: FastingDatabase, settings: SettingsRepository): BackupRepository = BackupRepository(db, settings)
 
     /** UTC clock. Display code converts to the device's current zone at render time. */
     @Provides @Singleton

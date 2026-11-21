@@ -32,12 +32,18 @@ import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.Medication
 import com.fastingshift.domain.safety.Symptom
+import com.fastingshift.domain.safety.SymptomCheck
+import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.safety.ScreeningEvaluator
+import com.fastingshift.domain.service.ScreeningRecord
+import com.fastingshift.domain.model.Fast
+import com.fastingshift.data.settings.SettingsRepository
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 
 /** Builds a full [Backup] from the database and restores one (PRD F8). */
-class BackupRepository(private val db: FastingDatabase) {
+class BackupRepository(private val db: FastingDatabase, private val settings: SettingsRepository? = null) {
 
     suspend fun export(now: Instant): Backup {
         val b = db.backupDao()
@@ -60,6 +66,7 @@ class BackupRepository(private val db: FastingDatabase) {
             },
             programProgress = db.programProgressDao().getAll().map { ProgramProgressRecord(it.programId, it.day, it.completedAt.ms) },
             streakFreezes = db.streakFreezeDao().getAll().map { it.day.toString() }.sorted(),
+            settings = settings?.toRecord(),
         )
     }
 
@@ -71,6 +78,8 @@ class BackupRepository(private val db: FastingDatabase) {
         val mapped = try {
             Mapped(backup)
         } catch (e: IllegalArgumentException) {
+            throw BackupFormatException("The backup contains values this version cannot read.", e)
+        } catch (e: IllegalStateException) {
             throw BackupFormatException("The backup contains values this version cannot read.", e)
         } catch (e: java.time.DateTimeException) {
             throw BackupFormatException("The backup contains an invalid date.", e)
@@ -90,24 +99,51 @@ class BackupRepository(private val db: FastingDatabase) {
             b.insertProgress(mapped.progress)
             b.insertFreezes(mapped.freezes)
         }
+        backup.settings?.let { settings?.restore(it) }
     }
 
+    /**
+     * Every row is rebuilt through the domain model first, so anything the app could not read
+     * back (an ACTIVE fast with an end time, an impossible age, a bad schedule time) aborts the
+     * restore here instead of crashing the app later. Safety results are recomputed, never
+     * trusted from the file: the screening gate (SR-1/SR-2) and check-in red flags (SR-4).
+     */
     private class Mapped(b: Backup) {
-        val fasts = b.fasts.map { FastEntity(it.id, it.startAt.inst, it.targetEndAt.inst, it.endedAt?.inst, it.protocolId, FastStatus.valueOf(it.status), it.note) }
-        val protocols = b.protocols.map { ProtocolEntity(it.id, it.name, ProtocolType.valueOf(it.type), it.fastHours, it.eatHours, it.isCustom) }
-        val schedules = b.schedules.map { ScheduleEntity(it.id, it.protocolId, it.days.map(DayOfWeek::valueOf).toSet(), it.startMinute, it.enabled) }
-        val weights = b.weights.map { WeightLogEntity(it.id, it.at.inst, it.value, WeightUnit.valueOf(it.unit), RecordSource.valueOf(it.source)) }
-        val water = b.water.map { WaterLogEntity(it.id, it.at.inst, it.value, VolumeUnit.valueOf(it.unit), RecordSource.valueOf(it.source)) }
-        val electrolytes = b.electrolytes.map { ElectrolyteLogEntity(it.id, it.at.inst, Electrolyte.valueOf(it.electrolyte), it.milligrams, RecordSource.valueOf(it.source)) }
-        val checkins = b.symptomCheckins.map { SymptomCheckinEntity(it.id, it.fastId, it.at.inst, it.answers.map(Symptom::valueOf).toSet(), it.redFlag) }
-        val screenings = b.screenings.map {
-            ScreeningEntity(
-                0, it.answeredAt.inst, it.ageYears, it.pregnantOrBreastfeeding, it.eatingDisorderHistory, it.type1Diabetes,
-                it.medications.map(Medication::valueOf).toSet(), it.heightCm, it.weightKg, GateResult.valueOf(it.gateResult), it.clinicianAcknowledged,
-            )
+        val fasts = b.fasts.map {
+            Fast(it.id, it.startAt.inst, it.targetEndAt.inst, it.endedAt?.inst, it.protocolId, FastStatus.valueOf(it.status), it.note).toEntity()
         }
-        val progress = b.programProgress.map { ProgramProgressEntity(it.programId, it.day, it.completedAt.inst) }
+        val protocols = b.protocols.map { ProtocolEntity(it.id, it.name, ProtocolType.valueOf(it.type), it.fastHours, it.eatHours, it.isCustom) }
+        val schedules = b.schedules.map {
+            require(it.startMinute in 0 until 24 * 60) { "bad schedule time" }
+            ScheduleEntity(it.id, it.protocolId, it.days.map(DayOfWeek::valueOf).toSet(), it.startMinute, it.enabled)
+        }
+        val weights = b.weights.map { WeightLogEntity(it.id, it.at.inst, positive(it.value), WeightUnit.valueOf(it.unit), RecordSource.valueOf(it.source)) }
+        val water = b.water.map { WaterLogEntity(it.id, it.at.inst, positive(it.value), VolumeUnit.valueOf(it.unit), RecordSource.valueOf(it.source)) }
+        val electrolytes = b.electrolytes.map { ElectrolyteLogEntity(it.id, it.at.inst, Electrolyte.valueOf(it.electrolyte), positive(it.milligrams), RecordSource.valueOf(it.source)) }
+        val checkins = b.symptomCheckins.map {
+            val answers = it.answers.map(Symptom::valueOf).toSet()
+            SymptomCheckinEntity(it.id, it.fastId, it.at.inst, answers, SymptomCheck.hasRedFlag(answers))
+        }
+        val screenings = b.screenings.map {
+            val answers = ScreeningAnswers(
+                it.ageYears, it.pregnantOrBreastfeeding, it.eatingDisorderHistory, it.type1Diabetes,
+                it.medications.map(Medication::valueOf).toSet(), it.heightCm, it.weightKg,
+            )
+            val gate = ScreeningEvaluator.evaluate(answers).result
+            // A clinician acknowledgement only carries over if the gate it was given for still applies.
+            val ack = it.clinicianAcknowledged && gate == GateResult.SOFT && GateResult.valueOf(it.gateResult) == GateResult.SOFT
+            ScreeningRecord(it.answeredAt.inst, answers, gate, ack).toEntity()
+        }
+        val progress = b.programProgress.map {
+            require(it.day in 1..366) { "bad program day" }
+            ProgramProgressEntity(it.programId, it.day, it.completedAt.inst)
+        }
         val freezes = b.streakFreezes.map { StreakFreezeEntity(LocalDate.parse(it)) }
+
+        private fun positive(v: Double): Double {
+            require(v.isFinite() && v > 0) { "values must be positive" }
+            return v
+        }
     }
 }
 

@@ -4,7 +4,6 @@ import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastStatus
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.IsoFields
 
 data class StreakResult(val current: Int, val longest: Int)
 
@@ -12,13 +11,15 @@ data class StreakResult(val current: Int, val longest: Int)
  * Consistency streaks (PRD F5, SR-3, SR-6).
  *
  * A streak counts days on which the user completed their planned fast. It never looks at
- * fast length, so a 16h day and a 72h day count the same. A day is attributed to the local
- * date on which the fast ended.
+ * fast length, so a 16h day and a 72h day count the same. A fast counts for the local date
+ * on which it **started**, which is the day it was planned for: a Monday 5:2 fast that ends
+ * on Tuesday counts for Monday, and a 48h fast counts once.
  *
  * - Days that are not planned fasting days (e.g. non-fast days in 5:2) neither add to nor
  *   break a streak.
- * - A frozen day bridges a gap without adding to the count. One freeze per ISO week.
- * - Today not being done yet never breaks the current streak.
+ * - A frozen day bridges a gap without adding to the count. One freeze in any 7 days, and
+ *   only for a recently missed day, so old gaps can't be backfilled.
+ * - Today not being done yet, or a fast still in progress, never breaks the current streak.
  */
 object StreakCalculator {
     const val FREEZES_PER_WEEK = 1
@@ -33,7 +34,8 @@ object StreakCalculator {
         val completedDays = completedDays(fasts, zone)
         if (completedDays.isEmpty()) return StreakResult(0, 0)
 
-        fun bridges(day: LocalDate) = day in frozenDays || !isPlannedDay(day)
+        val inProgress = fasts.filter { it.isActive }.map { it.startAt.atZone(zone).toLocalDate() }.toSet()
+        fun bridges(day: LocalDate) = day in frozenDays || !isPlannedDay(day) || day in inProgress
 
         // Current streak: walk back from today. An unfinished today is skipped, not a break.
         var current = 0
@@ -68,16 +70,20 @@ object StreakCalculator {
     fun completedDays(fasts: List<Fast>, zone: ZoneId): Set<LocalDate> =
         fasts.asSequence()
             .filter { it.status == FastStatus.COMPLETED }
-            .mapNotNull { it.endedAt?.atZone(zone)?.toLocalDate() }
+            .map { it.startAt.atZone(zone).toLocalDate() }
             .toSet()
 
-    /** Whether a freeze can be applied to [day] given freezes already used. */
-    fun canFreeze(day: LocalDate, frozenDays: Set<LocalDate>): Boolean {
-        if (day in frozenDays) return false
-        val usedThisWeek = frozenDays.count { it.isoWeek() == day.isoWeek() }
-        return usedThisWeek < FREEZES_PER_WEEK
-    }
+    /** How far back a missed day can still be frozen. */
+    const val FREEZE_WINDOW_DAYS = 2L
 
-    private fun LocalDate.isoWeek(): Pair<Int, Int> =
-        get(IsoFields.WEEK_BASED_YEAR) to get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+    /**
+     * Whether a freeze can be applied to [day]: it must be one of the last [FREEZE_WINDOW_DAYS]
+     * days (not today), not already frozen, and no other freeze used in the last 7 days.
+     */
+    fun canFreeze(day: LocalDate, frozenDays: Set<LocalDate>, today: LocalDate): Boolean {
+        if (day in frozenDays) return false
+        if (!day.isBefore(today) || day.isBefore(today.minusDays(FREEZE_WINDOW_DAYS))) return false
+        val recent = frozenDays.count { !it.isBefore(today.minusDays(6)) }
+        return recent < FREEZES_PER_WEEK
+    }
 }

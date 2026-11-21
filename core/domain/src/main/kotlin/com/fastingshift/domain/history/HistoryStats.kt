@@ -76,7 +76,8 @@ object HistoryStats {
         val total = clippedTotal(fasts, zone, range, now)
         val started = fasts.filter { it.startAt.atZone(zone).toLocalDate() in range }
         val ended = started.mapNotNull { it.actualDuration }
-        val completedDays = StreakCalculator.completedDays(fasts, zone).filter { it in range && !it.isAfter(today) }
+        // Only planned days count, so consistency can never exceed 100%.
+        val completedDays = StreakCalculator.completedDays(fasts, zone).filter { it in range && !it.isAfter(today) && isPlannedDay(it) }
         val plannedDays = range.days.filter { !it.isAfter(today) && isPlannedDay(it) }.count()
         return PeriodSummary(
             range = range,
@@ -150,7 +151,7 @@ object HistoryStats {
         return best
     }
 
-    private fun clippedTotal(fasts: List<Fast>, zone: ZoneId, range: DateRange, now: Instant): Duration {
+    fun clippedTotal(fasts: List<Fast>, zone: ZoneId, range: DateRange, now: Instant): Duration {
         val from = range.start.atStartOfDay(zone).toInstant()
         val to = range.endExclusive.atStartOfDay(zone).toInstant()
         return fasts.fold(Duration.ZERO) { acc, f ->

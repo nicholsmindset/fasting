@@ -130,6 +130,7 @@ class TimerViewModel @Inject constructor(
                 is StartResult.Started, is StartResult.AlreadyActive -> _events.update { TimerEvents() }
                 is StartResult.NeedsConfirmation -> _events.update { it.copy(confirm = result.requirements) }
                 is StartResult.Blocked -> _events.update { it.copy(blocked = result.decision.reason) }
+                StartResult.InvalidStartTime -> _events.update { TimerEvents() }
             }
         }
     }
@@ -143,9 +144,8 @@ class TimerViewModel @Inject constructor(
 
     fun end() {
         viewModelScope.launch {
-            val ended = service.endActive() ?: return@launch
-            val tier = ended.actualDuration?.let(FastPolicy::refeedingTier)
-            _events.update { it.copy(ended = ended, refeeding = tier) }
+            val result = service.endActive() ?: return@launch
+            _events.update { it.copy(ended = result.fast, refeeding = result.refeeding) }
         }
     }
 

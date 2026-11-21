@@ -27,6 +27,7 @@ class FakeFastRepository : FastRepository {
         state.value = state.value + (saved.id to saved)
         return saved
     }
+    override suspend fun insertIfNoActive(fast: Fast): Fast? = if (getActive() != null) null else insert(fast)
     override suspend fun update(fast: Fast) { state.value = state.value + (fast.id to fast) }
     override suspend fun delete(id: Long) { state.value = state.value - id }
 }

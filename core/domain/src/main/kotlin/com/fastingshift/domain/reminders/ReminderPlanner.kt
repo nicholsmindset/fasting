@@ -45,6 +45,8 @@ data class ReminderSettings(
  * change, permission change) call the same code.
  */
 object ReminderPlanner {
+    /** How many future check-ins to keep scheduled beyond the planned end or now. */
+    private const val CHECK_IN_LOOKAHEAD = 3L
 
     /** Reminders still in the future for an active fast. Returns nothing for an ended fast. */
     fun planForActiveFast(fast: Fast, settings: ReminderSettings, now: Instant): List<Reminder> {
@@ -68,18 +70,20 @@ object ReminderPlanner {
             planned += Reminder(ReminderKind.FORGOT_TO_END, fast.targetEndAt.plus(it), fast.id)
         }
 
-        // Safety check-ins are not a setting: they always run for fasts of 24h or more, and
-        // keep running past the planned end until the fast is ended.
-        if (FastPolicy.requiresCheckIns(fast.plannedDuration)) {
-            val interval = FastPolicy.CHECK_IN_INTERVAL
-            val horizon = fast.targetEndAt.plus(settings.forgotToEndAfter ?: Duration.ZERO)
-            var i = 1
-            var at = fast.startAt.plus(interval)
-            while (!at.isAfter(horizon) && i < Reminder.MAX_PER_KIND) {
-                planned += Reminder(ReminderKind.SYMPTOM_CHECK_IN, at, fast.id, i - 1)
-                i++
-                at = fast.startAt.plus(interval.multipliedBy(i.toLong()))
-            }
+        // Safety check-ins are not a setting. They run every 8h during any fast of 24h or more:
+        // from the start for planned extended fasts, and from the 24h mark for shorter fasts
+        // that keep going. They continue past the planned end for as long as the fast runs;
+        // the plan always holds the next few, and is rebuilt each time one fires.
+        val interval = FastPolicy.CHECK_IN_INTERVAL
+        val firstAt = if (FastPolicy.requiresCheckIns(fast.plannedDuration)) interval else FastPolicy.EXTENDED_THRESHOLD
+        val horizon = maxOf(fast.targetEndAt.plus(settings.forgotToEndAfter ?: Duration.ZERO), now)
+            .plus(interval.multipliedBy(CHECK_IN_LOOKAHEAD))
+        var k = firstAt.dividedBy(interval)
+        while (k < Reminder.MAX_PER_KIND) {
+            val at = fast.startAt.plus(interval.multipliedBy(k))
+            if (at.isAfter(horizon)) break
+            planned += Reminder(ReminderKind.SYMPTOM_CHECK_IN, at, fast.id, (k - 1).toInt())
+            k++
         }
 
         return planned.filter { it.triggerAt.isAfter(now) }.sortedBy { it.triggerAt }

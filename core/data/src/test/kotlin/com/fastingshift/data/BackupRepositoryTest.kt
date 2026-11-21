@@ -45,7 +45,7 @@ class BackupRepositoryTest {
     private val t0 = Instant.parse("2026-11-20T12:00:00Z")
 
     private fun newDb() = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), FastingDatabase::class.java)
-        .allowMainThreadQueries().build()
+        .addCallback(FastingDatabase.Constraints).allowMainThreadQueries().build()
 
     @Test fun exportRestoreRoundTripLosesNothing() = runTest {
         val db = newDb()
@@ -63,7 +63,7 @@ class BackupRepositoryTest {
         )
         ScheduleRepository(db.scheduleDao()).save(Schedule(protocolId = "weekly_5_2", days = setOf(DayOfWeek.MONDAY), startTime = LocalTime.of(20, 30)))
         ProgramRepository(db.programProgressDao()).completeDay("fasting_shift_21", 1, t0)
-        RoomStreakFreezeRepository(db.streakFreezeDao()).addFrozenDay(LocalDate.of(2026, 11, 19))
+        RoomStreakFreezeRepository(db.streakFreezeDao()).addFrozenDay(LocalDate.of(2026, 11, 19), LocalDate.of(2026, 11, 20))
 
         val exported = BackupRepository(db).export(t0)
         val text = BackupCodec.encode(exported)

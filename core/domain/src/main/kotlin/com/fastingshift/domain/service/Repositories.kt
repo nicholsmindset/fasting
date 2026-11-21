@@ -17,6 +17,13 @@ interface FastRepository {
 
     /** Inserts a new fast and returns it with its id. */
     suspend fun insert(fast: Fast): Fast
+
+    /**
+     * Inserts [fast] (which must be active) only if no other fast is active, atomically, so two
+     * simultaneous starts (app and widget) can never create two active fasts. Returns null if
+     * another fast is already active.
+     */
+    suspend fun insertIfNoActive(fast: Fast): Fast?
     suspend fun update(fast: Fast)
     suspend fun delete(id: Long)
 }
@@ -37,5 +44,6 @@ interface ScreeningRepository {
 interface StreakFreezeRepository {
     fun observeFrozenDays(): Flow<Set<LocalDate>>
     suspend fun getFrozenDays(): Set<LocalDate>
-    suspend fun addFrozenDay(day: LocalDate)
+    /** Applies a freeze if [StreakCalculator.canFreeze] allows it. Returns whether it was applied. */
+    suspend fun addFrozenDay(day: LocalDate, today: LocalDate): Boolean
 }

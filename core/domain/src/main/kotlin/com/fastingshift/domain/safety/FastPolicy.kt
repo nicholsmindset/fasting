@@ -26,6 +26,9 @@ enum class BlockReason {
 
     /** Over the absolute 120h limit or under 1h. */
     OUT_OF_RANGE,
+
+    /** No safety screening on record yet: SR-1 must be checked before any fast. */
+    NEEDS_SCREENING,
 }
 
 sealed interface StartDecision {
@@ -61,8 +64,7 @@ object FastPolicy {
      * Decides whether a fast of [planned] length may start.
      *
      * @param gate the latest screening result, or null if the user has not been screened yet.
-     *   Unscreened users are treated like the soft gate's limit (fasts up to 24h) so that an
-     *   extended fast is never possible without screening.
+     *   Unscreened users cannot start any fast: the hard-block questions (SR-1) come first.
      * @param clinicianAcknowledged whether a soft-gated user has recorded the clinician
      *   acknowledgement.
      */
@@ -74,7 +76,7 @@ object FastPolicy {
                 if (!clinicianAcknowledged) return StartDecision.Blocked(BlockReason.NEEDS_CLINICIAN_ACKNOWLEDGEMENT)
                 if (planned > GATED_MAX) return StartDecision.Blocked(BlockReason.EXCEEDS_GATED_LIMIT)
             }
-            null -> if (planned > GATED_MAX) return StartDecision.Blocked(BlockReason.EXCEEDS_GATED_LIMIT)
+            null -> return StartDecision.Blocked(BlockReason.NEEDS_SCREENING)
             GateResult.OK -> Unit
         }
         return StartDecision.Allowed(requirementsFor(planned))
@@ -83,7 +85,7 @@ object FastPolicy {
     fun maxAllowed(gate: GateResult?, clinicianAcknowledged: Boolean): Duration? = when (gate) {
         GateResult.BLOCK -> null
         GateResult.SOFT -> if (clinicianAcknowledged) GATED_MAX else null
-        null -> GATED_MAX
+        null -> null
         GateResult.OK -> MAX_FAST
     }
 

@@ -1,0 +1,105 @@
+package com.fastingshift.data
+
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.data.db.FastEntity
+import com.fastingshift.data.db.FastingDatabase
+import com.fastingshift.data.repo.BackupRepository
+import com.fastingshift.data.repo.RoomFastRepository
+import com.fastingshift.data.repo.RoomScreeningRepository
+import com.fastingshift.data.repo.RoomStreakFreezeRepository
+import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.backup.Backup
+import com.fastingshift.domain.backup.BackupFormatException
+import com.fastingshift.domain.backup.FastRecord
+import com.fastingshift.domain.backup.ScreeningRecordDto
+import com.fastingshift.domain.backup.SettingsRecord
+import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.FastStatus
+import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.timer.TimerDisplayMode
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
+class DataHardeningTest {
+    private lateinit var db: FastingDatabase
+    private val t0 = Instant.parse("2026-11-20T12:00:00Z")
+    private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+
+    @Before fun setUp() {
+        db = Room.inMemoryDatabaseBuilder(context, FastingDatabase::class.java).addCallback(FastingDatabase.Constraints).allowMainThreadQueries().build()
+    }
+
+    @After fun tearDown() = db.close()
+
+    private fun active(start: Instant) = Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8")
+
+    @Test fun onlyOneActiveFastCanExist() = runTest {
+        val repo = RoomFastRepository(db.fastDao())
+        assertNotNull(repo.insertIfNoActive(active(t0)))
+        assertNull(repo.insertIfNoActive(active(t0.plusSeconds(5))))
+        // Even a raw insert that skips the check is refused by the database itself.
+        assertFailsWith<android.database.sqlite.SQLiteConstraintException> {
+            db.fastDao().insert(FastEntity(0, t0, t0.plusSeconds(3600), null, "p", FastStatus.ACTIVE, null))
+        }
+        assertEquals(1, repo.getAll().count { it.isActive })
+    }
+
+    @Test fun restoreRecomputesTheSafetyGate() = runTest {
+        // A hand-edited backup claiming "OK" for a 16-year-old must still be hard-blocked.
+        val tampered = ScreeningRecordDto(t0.toEpochMilli(), 16, false, false, false, emptyList(), 175.0, 70.0, "OK", true)
+        BackupRepository(db).restore(Backup(exportedAt = 1, screenings = listOf(tampered)))
+        val latest = RoomScreeningRepository(db.screeningDao()).getLatest()!!
+        assertEquals(GateResult.BLOCK, latest.gateResult)
+        assertFalse(latest.clinicianAcknowledged)
+    }
+
+    @Test fun corruptRowsAbortRestoreAndKeepExistingData() = runTest {
+        val repo = RoomFastRepository(db.fastDao())
+        repo.insert(active(t0))
+        // ACTIVE status with an end time: the app could never read this back.
+        val bad = FastRecord(9, t0.toEpochMilli(), t0.toEpochMilli() + 3_600_000, t0.toEpochMilli() + 1_000, "p", "ACTIVE")
+        assertFailsWith<BackupFormatException> { BackupRepository(db).restore(Backup(exportedAt = 1, fasts = listOf(bad))) }
+        assertEquals(1, repo.getAll().size)
+    }
+
+    @Test fun settingsTravelWithTheBackup() = runTest {
+        val settings = SettingsRepository(context)
+        settings.setHideWeight(true)
+        settings.setTimerMode(TimerDisplayMode.BREAK_AT)
+        settings.setMilestoneHours(setOf(12, 18))
+        val backup = BackupRepository(db, settings).export(t0)
+        assertEquals(SettingsRecord::class, backup.settings!!::class)
+        settings.setHideWeight(false)
+        settings.setTimerMode(TimerDisplayMode.ELAPSED)
+        BackupRepository(db, settings).restore(backup)
+        val s = settings.current()
+        assertTrue(s.hideWeight)
+        assertEquals(TimerDisplayMode.BREAK_AT, s.timerMode)
+        assertEquals(listOf(12L, 18L), s.reminders.milestones.map { it.toHours() })
+    }
+
+    @Test fun freezesAreLimitedInTheRepositoryToo() = runTest {
+        val repo = RoomStreakFreezeRepository(db.streakFreezeDao())
+        val today = LocalDate.of(2026, 11, 20)
+        assertFalse(repo.addFrozenDay(today.minusDays(30), today))
+        assertTrue(repo.addFrozenDay(today.minusDays(1), today))
+        assertFalse(repo.addFrozenDay(today.minusDays(2), today))
+    }
+}

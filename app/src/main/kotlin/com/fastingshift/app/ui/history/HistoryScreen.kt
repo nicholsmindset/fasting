@@ -121,7 +121,7 @@ class HistoryViewModel @Inject constructor(
         val completed = StreakCalculator.completedDays(all, zone)
         val yesterday = today.minusDays(1)
         val freezeable = yesterday.takeIf {
-            it !in completed && planned(it) && completed.any { d -> d.isBefore(it) } && StreakCalculator.canFreeze(it, frozen)
+            it !in completed && planned(it) && completed.any { d -> d.isBefore(it) } && StreakCalculator.canFreeze(it, frozen, today)
         }
         val firstRow = History.weekStart(m.atDay(1))
         val rows = generateSequence(firstRow) { it.plusWeeks(1) }
@@ -144,7 +144,7 @@ class HistoryViewModel @Inject constructor(
 
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
     fun setPeriod(p: Period) = period.update { p }
-    fun freeze(day: LocalDate) = viewModelScope.launch { freezes.addFrozenDay(day) }
+    fun freeze(day: LocalDate) = viewModelScope.launch { freezes.addFrozenDay(day, java.time.LocalDate.now()) }
 }
 
 @Composable

@@ -29,13 +29,12 @@ object Insights {
         weeks: Int = 8,
         isPlannedDay: (LocalDate) -> Boolean = { true },
     ): List<WeeklyConsistency> {
-        val completed = fasts.filter { it.status == FastStatus.COMPLETED }
-            .mapNotNull { it.endedAt?.atZone(zone)?.toLocalDate() }.toSet()
+        val completed = com.fastingshift.domain.streak.StreakCalculator.completedDays(fasts, zone)
         val thisWeek = History.weekStart(today)
         return (weeks - 1 downTo 0).map { back ->
             val start = thisWeek.minusWeeks(back.toLong())
             val days = (0L until 7L).map { start.plusDays(it) }.filter { !it.isAfter(today) }
-            WeeklyConsistency(start, days.count { it in completed }, days.count(isPlannedDay))
+            WeeklyConsistency(start, days.count { it in completed && isPlannedDay(it) }, days.count(isPlannedDay))
         }
     }
 

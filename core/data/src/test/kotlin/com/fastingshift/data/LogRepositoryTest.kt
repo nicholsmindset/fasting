@@ -24,7 +24,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class LogRepositoryTest {
     @Test fun logsAreObservable() = runTest {
-        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), FastingDatabase::class.java).allowMainThreadQueries().build()
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), FastingDatabase::class.java).addCallback(FastingDatabase.Constraints).allowMainThreadQueries().build()
         val repo = LogRepository(db.logDao())
         val now = Instant.parse("2026-11-20T12:00:00Z")
         repo.addWeight(WeightLog(at = now, value = 80.0, unit = WeightUnit.KG))

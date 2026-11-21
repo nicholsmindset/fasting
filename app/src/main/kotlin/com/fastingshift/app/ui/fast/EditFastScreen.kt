@@ -90,7 +90,7 @@ class EditFastViewModel @Inject constructor(
                     fasts.getById(f.id)?.let { fasts.update(it.copy(note = s.note.ifBlank { null })) }
                     onDone()
                 }
-                is EditResult.Blocked -> _state.update { it.copy(error = R.string.edit_error_blocked) }
+                is EditResult.Blocked, is EditResult.NeedsConfirmation -> _state.update { it.copy(error = R.string.edit_error_blocked) }
                 EditResult.Invalid -> _state.update { it.copy(error = R.string.edit_error_invalid) }
                 EditResult.NotFound -> onDone()
             }

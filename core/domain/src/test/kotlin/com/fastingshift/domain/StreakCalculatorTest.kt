@@ -15,11 +15,11 @@ class StreakCalculatorTest {
     private val zone = ZoneId.of("Asia/Singapore")
     private val today = LocalDate.of(2026, 11, 20) // a Friday
 
-    /** A 16h fast ending at 12:00 local on [day]; completed unless [early]. */
+    /** A fast starting 06:00 local on [day] (the day it counts for); completed unless [early]. */
     private fun fastEnding(day: LocalDate, early: Boolean = false, hoursLong: Long = 16): Fast {
-        val end = day.atTime(LocalTime.NOON).atZone(zone).toInstant()
-        val start = end.minus(hours(hoursLong))
-        return Fast(startAt = start, targetEndAt = start.plus(hours(hoursLong)), protocolId = "p").end(if (early) end.minus(hours(1)) else end)
+        val start = day.atTime(LocalTime.of(6, 0)).atZone(zone).toInstant()
+        val end = start.plus(hours(hoursLong))
+        return Fast(startAt = start, targetEndAt = end, protocolId = "p").end(if (early) end.minus(hours(1)) else end)
     }
 
     private fun days(vararg offsets: Long) = offsets.map { fastEnding(today.minusDays(it)) }
@@ -66,11 +66,38 @@ class StreakCalculatorTest {
         assertEquals(2, r.current)
     }
 
-    @Test fun `day is the local date the fast ended`() {
-        // Ends 01:00 SGT on 20 Nov = 17:00Z on 19 Nov. In Singapore it belongs to 20 Nov.
-        val end = today.atTime(1, 0).atZone(zone).toInstant()
-        val f = Fast(startAt = end.minus(hours(16)), targetEndAt = end, protocolId = "p").end(end)
-        assertEquals(setOf(today), StreakCalculator.completedDays(listOf(f), zone))
+    @Test fun `a fast counts for the day it started`() {
+        // Starts 20:00 SGT on 19 Nov, ends 12:00 on 20 Nov: it was the 19th's planned fast.
+        val start = today.minusDays(1).atTime(20, 0).atZone(zone).toInstant()
+        val f = Fast(startAt = start, targetEndAt = start.plus(hours(16)), protocolId = "p").end(start.plus(hours(16)))
+        assertEquals(setOf(today.minusDays(1)), StreakCalculator.completedDays(listOf(f), zone))
+    }
+
+    @Test fun `5-2 fast ending the next day keeps the streak`() {
+        val planned = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)
+        fun overnight(day: LocalDate): Fast {
+            val s0 = day.atTime(20, 0).atZone(zone).toInstant()
+            return Fast(startAt = s0, targetEndAt = s0.plus(hours(24)), protocolId = "p").end(s0.plus(hours(24)))
+        }
+        val mon = today.with(DayOfWeek.MONDAY)
+        val thu = today.with(DayOfWeek.THURSDAY)
+        val r = StreakCalculator.calculate(listOf(overnight(mon), overnight(thu)), zone, today) { it.dayOfWeek in planned }
+        assertEquals(2, r.current)
+    }
+
+    @Test fun `a 48h fast counts once and does not break the streak`() {
+        val fasts = listOf(fastEnding(today.minusDays(3)), fastEnding(today.minusDays(2), hoursLong = 48))
+        // Yesterday was covered by the 48h fast; today is not done yet.
+        val r = StreakCalculator.calculate(fasts, zone, today, isPlannedDay = { it != today.minusDays(1) })
+        assertEquals(2, r.current)
+    }
+
+    @Test fun `a fast still running does not break the streak`() {
+        val running = today.minusDays(1).atTime(20, 0).atZone(zone).toInstant().let {
+            Fast(startAt = it, targetEndAt = it.plus(hours(16)), protocolId = "p")
+        }
+        val r = StreakCalculator.calculate(days(2, 3) + running, zone, today)
+        assertEquals(2, r.current)
     }
 
     @Test fun `editing a fast updates the streak`() {
@@ -80,11 +107,13 @@ class StreakCalculatorTest {
         assertEquals(1, StreakCalculator.calculate(listOf(edited), zone, today).current)
     }
 
-    @Test fun `one freeze per ISO week`() {
-        val mon = LocalDate.of(2026, 11, 16)
-        assertTrue(StreakCalculator.canFreeze(mon, emptySet()))
-        assertFalse(StreakCalculator.canFreeze(mon.plusDays(2), setOf(mon)))
-        assertTrue(StreakCalculator.canFreeze(mon.plusDays(7), setOf(mon)))
-        assertFalse(StreakCalculator.canFreeze(mon, setOf(mon)))
+    @Test fun `freezes only cover a recent missed day, one in any 7 days`() {
+        assertTrue(StreakCalculator.canFreeze(today.minusDays(1), emptySet(), today))
+        assertTrue(StreakCalculator.canFreeze(today.minusDays(2), emptySet(), today))
+        assertFalse(StreakCalculator.canFreeze(today, emptySet(), today))
+        assertFalse(StreakCalculator.canFreeze(today.minusDays(20), emptySet(), today), "old gaps can't be backfilled")
+        assertFalse(StreakCalculator.canFreeze(today.minusDays(1), setOf(today.minusDays(5)), today))
+        assertTrue(StreakCalculator.canFreeze(today.minusDays(1), setOf(today.minusDays(8)), today))
+        assertFalse(StreakCalculator.canFreeze(today.minusDays(1), setOf(today.minusDays(1)), today))
     }
 }

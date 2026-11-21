@@ -18,12 +18,49 @@ import javax.crypto.spec.GCMParameterSpec
  * Auto Backup is disabled for the app (the Keystore key cannot be backed up, so a restored
  * database would be unreadable). User backups go through export/restore (PRD F8).
  */
-internal class DatabaseKeyProvider(private val context: Context) {
+class DatabaseKeyProvider internal constructor(private val context: Context) {
 
+    enum class Status {
+        /** First launch: no database and no key yet. */
+        NEW,
+
+        /** Key and database present and the key unwraps. */
+        OK,
+
+        /** A database exists but its key is gone or unusable; data can't be decrypted. */
+        LOST,
+    }
+
+    /** Checks the key without opening the database. */
+    fun status(dbName: String): Status {
+        val dbExists = context.getDatabasePath(dbName).exists()
+        val stored = prefs().getString(KEY_WRAPPED, null)
+        if (stored == null) return if (dbExists) Status.LOST else Status.NEW
+        if (!hasKeystoreKey()) return Status.LOST
+        return try {
+            unwrap(Base64.decode(stored, Base64.NO_WRAP))
+            if (dbExists) Status.OK else Status.NEW
+        } catch (e: Exception) {
+            Status.LOST
+        }
+    }
+
+    /**
+     * Returns the passphrase, creating one on first launch. Never silently replaces a lost
+     * key, which would make the existing database unreadable: throws [DatabaseKeyException].
+     */
     fun getOrCreatePassphrase(): ByteArray {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = prefs()
         val stored = prefs.getString(KEY_WRAPPED, null)
-        if (stored != null) return unwrap(Base64.decode(stored, Base64.NO_WRAP))
+        if (stored != null) {
+            if (!hasKeystoreKey()) throw DatabaseKeyException("Keystore key is missing")
+            return try {
+                unwrap(Base64.decode(stored, Base64.NO_WRAP))
+            } catch (e: Exception) {
+                throw DatabaseKeyException("Database key can't be unwrapped", e)
+            }
+        }
+        if (context.getDatabasePath(FastingDatabase.NAME).exists()) throw DatabaseKeyException("Database exists without a key")
 
         val passphrase = ByteArray(32).also { SecureRandom().nextBytes(it) }
         val wrapped = wrap(passphrase)
@@ -32,6 +69,17 @@ internal class DatabaseKeyProvider(private val context: Context) {
         }
         return passphrase
     }
+
+    /** Removes the stored key and the Keystore entry (used with deleting the database). */
+    fun reset() {
+        prefs().edit().remove(KEY_WRAPPED).commit()
+        runCatching { KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }.deleteEntry(ALIAS) }
+    }
+
+    private fun prefs() = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun hasKeystoreKey(): Boolean =
+        runCatching { KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }.containsAlias(ALIAS) }.getOrDefault(false)
 
     private fun wrap(plain: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -64,6 +112,7 @@ internal class DatabaseKeyProvider(private val context: Context) {
     }
 
     private companion object {
+
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
         const val ALIAS = "fasting_shift_db_key"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -71,3 +120,6 @@ internal class DatabaseKeyProvider(private val context: Context) {
         const val KEY_WRAPPED = "wrapped_passphrase"
     }
 }
+
+/** The database key is lost (e.g. Keystore cleared); the app must offer recovery, not crash. */
+class DatabaseKeyException(message: String, cause: Throwable? = null) : Exception(message, cause)

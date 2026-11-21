@@ -20,22 +20,28 @@ object History {
             .mapValues { (_, v) -> v.sortedBy(Fast::startAt) }
 
     /**
-     * Fasting time per week (weeks start Monday). Active fasts count up to [now].
-     * Ordered newest week first.
+     * Fasting time per week (weeks start Monday), with fasts clipped at week edges so totals
+     * match the History summary. Fasts and completions are counted in the week they started.
+     * Active fasts count up to [now]. Ordered newest week first.
      */
-    fun weeklyTotals(fasts: List<Fast>, zone: ZoneId, now: Instant): List<WeekTotal> =
-        fasts.groupBy { weekStart(it.startAt.atZone(zone).toLocalDate()) }
-            .map { (week, list) ->
-                WeekTotal(
-                    weekStart = week,
-                    fastingTime = list.fold(Duration.ZERO) { acc, f -> acc + Duration.between(f.startAt, f.endedAt ?: now).coerceNonNegative() },
-                    fasts = list.size,
-                    completed = list.count { it.status == com.fastingshift.domain.model.FastStatus.COMPLETED },
-                )
-            }
-            .sortedByDescending { it.weekStart }
+    fun weeklyTotals(fasts: List<Fast>, zone: ZoneId, now: Instant): List<WeekTotal> {
+        val weeks = fasts.flatMap { f ->
+            val first = weekStart(f.startAt.atZone(zone).toLocalDate())
+            val last = weekStart((f.endedAt ?: now).atZone(zone).toLocalDate())
+            generateSequence(first) { it.plusWeeks(1) }.takeWhile { !it.isAfter(last) }.toList()
+        }.toSet()
+        return weeks.map { week ->
+            val range = DateRange(week, week.plusWeeks(1))
+            val started = fasts.filter { weekStart(it.startAt.atZone(zone).toLocalDate()) == week }
+            WeekTotal(
+                weekStart = week,
+                fastingTime = HistoryStats.clippedTotal(fasts, zone, range, now),
+                fasts = started.size,
+                completed = started.count { it.status == com.fastingshift.domain.model.FastStatus.COMPLETED },
+            )
+        }.sortedByDescending { it.weekStart }
+    }
 
     fun weekStart(day: LocalDate): LocalDate = day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
-    private fun Duration.coerceNonNegative() = if (isNegative) Duration.ZERO else this
 }

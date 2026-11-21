@@ -38,7 +38,7 @@ class RoomRepositoryTest {
 
     @Before fun setUp() {
         db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), FastingDatabase::class.java)
-            .allowMainThreadQueries()
+            .addCallback(FastingDatabase.Constraints).allowMainThreadQueries()
             .build()
     }
 
@@ -80,8 +80,8 @@ class RoomRepositoryTest {
     @Test fun streakFreezesAreUnique() = runTest {
         val repo = RoomStreakFreezeRepository(db.streakFreezeDao())
         val day = LocalDate.of(2026, 11, 19)
-        repo.addFrozenDay(day)
-        repo.addFrozenDay(day)
+        repo.addFrozenDay(day, day.plusDays(1))
+        repo.addFrozenDay(day, day.plusDays(1))
         assertEquals(setOf(day), repo.getFrozenDays())
     }
 }

@@ -17,5 +17,5 @@ import javax.inject.Singleton
 object TestDatabaseModule {
     @Provides @Singleton
     fun database(@ApplicationContext context: Context): FastingDatabase =
-        Room.inMemoryDatabaseBuilder(context, FastingDatabase::class.java).allowMainThreadQueries().build()
+        Room.inMemoryDatabaseBuilder(context, FastingDatabase::class.java).addCallback(FastingDatabase.Constraints).allowMainThreadQueries().build()
 }

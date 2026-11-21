@@ -23,12 +23,31 @@ data class Backup(
     val screenings: List<ScreeningRecordDto> = emptyList(),
     @SerialName("program_progress") val programProgress: List<ProgramProgressRecord> = emptyList(),
     @SerialName("streak_freezes") val streakFreezes: List<String> = emptyList(),
+    /** App preferences (v2+). Absent in v1 backups, which restore with current settings kept. */
+    val settings: SettingsRecord? = null,
 ) {
     companion object {
         const val FORMAT = "fasting-shift-backup"
-        const val VERSION = 1
+        const val VERSION = 2
     }
 }
+
+/** User preferences carried in a backup so a restore on a new phone feels the same (F8). */
+@Serializable data class SettingsRecord(
+    @SerialName("onboarding_complete") val onboardingComplete: Boolean = false,
+    val goal: String? = null,
+    @SerialName("default_protocol") val defaultProtocolId: String? = null,
+    @SerialName("hide_weight") val hideWeight: Boolean = false,
+    @SerialName("ongoing_notification") val ongoingNotification: Boolean = false,
+    @SerialName("fast_end_alert") val fastEndAlert: Boolean = true,
+    @SerialName("fast_start_alert") val fastStartAlert: Boolean = true,
+    @SerialName("milestone_hours") val milestoneHours: List<Int> = emptyList(),
+    @SerialName("forgot_to_end_hours") val forgotToEndHours: Int = 4,
+    @SerialName("eating_window_hours") val eatingWindowHours: Int = 8,
+    @SerialName("active_program") val activeProgramId: String? = null,
+    @SerialName("weight_unit") val weightUnit: String = "KG",
+    @SerialName("timer_mode") val timerMode: String? = null,
+)
 
 @Serializable data class FastRecord(
     val id: Long, @SerialName("start_at") val startAt: Long, @SerialName("target_end_at") val targetEndAt: Long,
@@ -71,6 +90,10 @@ data class Backup(
 class BackupFormatException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 object BackupCodec {
+    private fun <T> unique(what: String, ids: List<T>) {
+        if (ids.size != ids.toSet().size) throw BackupFormatException("Backup has duplicate $what entries.")
+    }
+
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun encode(backup: Backup): String = json.encodeToString(Backup.serializer(), backup)
@@ -83,12 +106,25 @@ object BackupCodec {
             throw BackupFormatException("This file is not a Fasting Shift backup.", e)
         }
         if (backup.format != Backup.FORMAT) throw BackupFormatException("This file is not a Fasting Shift backup.")
+        if (backup.version < 1) throw BackupFormatException("This file is not a Fasting Shift backup.")
         if (backup.version > Backup.VERSION) throw BackupFormatException("This backup is from a newer version of the app. Please update first.")
         backup.fasts.forEach {
             if (it.targetEndAt <= it.startAt) throw BackupFormatException("Fast ${it.id} has an invalid time range.")
             if (it.endedAt != null && it.endedAt < it.startAt) throw BackupFormatException("Fast ${it.id} ends before it starts.")
         }
         if (backup.fasts.count { it.endedAt == null } > 1) throw BackupFormatException("Backup has more than one active fast.")
+        unique("fast", backup.fasts.map { it.id })
+        unique("weight", backup.weights.map { it.id })
+        unique("water", backup.water.map { it.id })
+        unique("electrolyte", backup.electrolytes.map { it.id })
+        unique("check-in", backup.symptomCheckins.map { it.id })
+        unique("schedule", backup.schedules.map { it.id })
+        unique("protocol", backup.protocols.map { it.id })
+        unique("streak freeze", backup.streakFreezes)
+        unique("program day", backup.programProgress.map { it.programId to it.day })
+        backup.schedules.forEach {
+            if (it.startMinute !in 0 until 24 * 60) throw BackupFormatException("Schedule ${it.id} has an invalid start time.")
+        }
         val fastIds = backup.fasts.map { it.id }.toSet()
         backup.symptomCheckins.forEach {
             if (it.fastId !in fastIds) throw BackupFormatException("Check-in ${it.id} refers to a missing fast.")
@@ -110,6 +146,14 @@ object CsvExport {
             listOf("id", "at", "electrolyte", "milligrams", "source"),
             b.electrolytes.map { listOf(it.id, iso(it.at), it.electrolyte, it.milligrams, it.source) },
         ),
+        "protocols.csv" to table(
+            listOf("id", "name", "type", "fast_hours", "eat_hours", "is_custom"),
+            b.protocols.map { listOf(it.id, it.name, it.type, it.fastHours, it.eatHours, it.isCustom) },
+        ),
+        "schedules.csv" to table(
+            listOf("id", "protocol_id", "days", "start_minute", "enabled"),
+            b.schedules.map { listOf(it.id, it.protocolId, it.days.joinToString(";"), it.startMinute, it.enabled) },
+        ),
         "symptom_checkins.csv" to table(
             listOf("id", "fast_id", "at", "answers", "red_flag"),
             b.symptomCheckins.map { listOf(it.id, it.fastId, iso(it.at), it.answers.joinToString(";"), it.redFlag) },
@@ -121,8 +165,11 @@ object CsvExport {
         rows.forEach { row -> appendLine(row.joinToString(",") { escape(it?.toString() ?: "") }) }
     }
 
-    fun escape(value: String): String =
-        if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
+    fun escape(value: String): String {
+        // Spreadsheets run cells that start with these as formulas; prefix them so a note can't.
+        val safe = if (value.isNotEmpty() && value[0] in "=+-@\t\r" && value.toDoubleOrNull() == null) "'$value" else value
+        return if (safe.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + safe.replace("\"", "\"\"") + "\"" else safe
+    }
 
     private fun iso(millis: Long) = java.time.Instant.ofEpochMilli(millis).toString()
 }

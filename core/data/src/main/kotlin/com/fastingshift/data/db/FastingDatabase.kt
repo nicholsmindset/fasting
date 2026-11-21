@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
@@ -47,7 +48,30 @@ abstract class FastingDatabase : RoomDatabase() {
             val passphrase = DatabaseKeyProvider(context).getOrCreatePassphrase()
             return Room.databaseBuilder(context, FastingDatabase::class.java, NAME)
                 .openHelperFactory(SupportOpenHelperFactory(passphrase))
+                .addCallback(Constraints)
                 .build()
+        }
+
+        /** Whether the encrypted database can be opened, without opening it (SR-9 recovery). */
+        fun keyStatus(context: Context): DatabaseKeyProvider.Status = DatabaseKeyProvider(context).status(NAME)
+
+        /** Deletes the database and its key: the user's last resort after the key is lost. */
+        fun resetEncrypted(context: Context) {
+            context.deleteDatabase(NAME)
+            DatabaseKeyProvider(context).reset()
+        }
+    }
+
+    /**
+     * Rules Room annotations can't express. At most one active fast, enforced by the database
+     * itself (a partial unique index), so no race between the app, widget and notification
+     * actions can ever create two. Applied on create and on every open (idempotent).
+     */
+    object Constraints : Callback() {
+        override fun onCreate(db: SupportSQLiteDatabase) = apply(db)
+        override fun onOpen(db: SupportSQLiteDatabase) = apply(db)
+        private fun apply(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_fast_single_active ON fast(status) WHERE ended_at IS NULL")
         }
     }
 }

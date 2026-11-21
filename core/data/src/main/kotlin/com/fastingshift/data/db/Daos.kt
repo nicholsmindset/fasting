@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -26,6 +27,10 @@ interface FastDao {
 
     @Insert
     suspend fun insert(fast: FastEntity): Long
+
+    /** Check-and-insert in one transaction; returns the new id, or null if a fast is active. */
+    @Transaction
+    suspend fun insertIfNoActive(fast: FastEntity): Long? = if (getActive() != null) null else insert(fast)
 
     @Update
     suspend fun update(fast: FastEntity)
