@@ -143,9 +143,11 @@ fun LogRoute(vm: LogViewModel = hiltViewModel()) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(250, 500).forEach { ml -> OutlinedButton(onClick = { vm.addWater(ml.toDouble()) }) { Text(stringResource(R.string.log_add_water, ml)) } }
             }
-            st.waterEntries.forEach { w ->
-                val ml = if (w.unit == VolumeUnit.ML) w.value else w.value * 29.5735
-                EntryRow("${w.at.formatTime()} · ${stringResource(R.string.unit_ml_value, ml.toInt())}") { vm.deleteWater(w.id) }
+            Column {
+                st.waterEntries.forEach { w ->
+                    val ml = if (w.unit == VolumeUnit.ML) w.value else w.value * 29.5735
+                    EntryRow("${w.at.formatTime()} · ${stringResource(R.string.unit_ml_value, ml.toInt())}") { vm.deleteWater(w.id) }
+                }
             }
         }
         ElectrolyteCard(st, vm)
@@ -183,9 +185,11 @@ private fun ElectrolyteCard(st: LogState, vm: LogViewModel) {
                 Text(stringResource(R.string.log_add))
             }
         }
-        st.electrolyteEntries.forEach { e ->
-            EntryRow("${e.at.formatTime()} · ${stringResource(electrolyteLabel(e.electrolyte))} ${stringResource(R.string.unit_mg_value, e.milligrams.toInt())}") {
-                vm.deleteElectrolyte(e.id)
+        Column {
+            st.electrolyteEntries.forEach { e ->
+                EntryRow("${e.at.formatTime()} · ${stringResource(electrolyteLabel(e.electrolyte))} ${stringResource(R.string.unit_mg_value, e.milligrams.toInt())}") {
+                    vm.deleteElectrolyte(e.id)
+                }
             }
         }
     }
@@ -207,8 +211,10 @@ private fun WeightCard(st: LogState, vm: LogViewModel) {
         Button(onClick = {
             value.replace(',', '.').toDoubleOrNull()?.takeIf { it in 20.0..900.0 }?.let { vm.addWeight(it, unit); value = "" }
         }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.log_add)) }
-        st.weights.forEach { w ->
-            EntryRow("${w.at.formatDate()}: ${weightText(convertWeight(w.value, w.unit, unit), unit)}") { vm.deleteWeight(w.id) }
+        Column {
+            st.weights.forEach { w ->
+                EntryRow("${w.at.formatDate()}: ${weightText(convertWeight(w.value, w.unit, unit), unit)}") { vm.deleteWeight(w.id) }
+            }
         }
     }
 }
