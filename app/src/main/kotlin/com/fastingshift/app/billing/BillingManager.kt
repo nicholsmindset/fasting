@@ -8,10 +8,17 @@ import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.Package
 import com.revenuecat.purchases.PackageType
 import com.revenuecat.purchases.PeriodType
+import com.revenuecat.purchases.ProductType
 import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import com.revenuecat.purchases.awaitCustomerInfo
+import com.revenuecat.purchases.awaitGetProducts
+import com.revenuecat.purchases.models.StoreProduct
+import com.fastingshift.app.di.ApplicationScope
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import com.revenuecat.purchases.awaitOfferings
 import com.revenuecat.purchases.awaitPurchase
 import com.revenuecat.purchases.awaitRestore
@@ -31,7 +38,10 @@ data class PlanOffer(val plan: PlanType, val price: String, val hasTrial: Boolea
  * the app behaves as free with every free feature intact.
  */
 @Singleton
-class BillingManager @Inject constructor(@ApplicationContext private val context: Context) {
+class BillingManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    @ApplicationScope private val scope: CoroutineScope,
+) {
     private val _entitlement = MutableStateFlow(Entitlement.FREE)
     val entitlement: StateFlow<Entitlement> = _entitlement
 
@@ -64,6 +74,7 @@ class BillingManager @Inject constructor(@ApplicationContext private val context
     suspend fun offers(): List<PlanOffer> {
         if (!isConfigured) return emptyList()
         val current = runCatching { Purchases.sharedInstance.awaitOfferings().current }.getOrNull() ?: return emptyList()
+        rememberPeriods(current.availablePackages.map { it.product })
         return current.availablePackages.mapNotNull { pkg ->
             val plan = when (pkg.packageType) {
                 PackageType.ANNUAL -> PlanType.ANNUAL
@@ -94,24 +105,43 @@ class BillingManager @Inject constructor(@ApplicationContext private val context
         e.message
     }
 
+    /** Subscription period (ISO 8601) by store product id, from offerings and product lookups. */
+    private val periods = ConcurrentHashMap<String, String>()
+    private val lookedUp = ConcurrentHashMap.newKeySet<String>()
+
+    private fun rememberPeriods(products: List<StoreProduct>) {
+        products.forEach { p -> p.period?.iso8601?.let { periods[p.id] = it } }
+    }
+
+    /** The plan comes from the product's period; fetch it once, then publish again. */
+    private fun lookUpPeriod(productId: String, info: CustomerInfo) {
+        if (!lookedUp.add(productId)) return
+        scope.launch {
+            runCatching { Purchases.sharedInstance.awaitGetProducts(listOf(productId), ProductType.SUBS) }
+                .onSuccess {
+                    rememberPeriods(it)
+                    publish(info)
+                }
+        }
+    }
+
     private fun publish(info: CustomerInfo) {
         _managementUrl.value = info.managementURL
         val e = info.entitlements[ENTITLEMENT_ID]
         _entitlement.value = if (e == null || !e.isActive) {
             Entitlement.FREE
         } else {
-            val plan = when {
-                e.expirationDate == null -> PlanType.LIFETIME
-                e.productIdentifier.contains("annual", ignoreCase = true) -> PlanType.ANNUAL
-                else -> PlanType.MONTHLY
-            }
+            val key = PlanMapper.productKey(e.productIdentifier, e.productPlanIdentifier)
+            val period = periods[key]
+            if (period == null && e.expirationDate != null) lookUpPeriod(e.productIdentifier, info)
+            val plan = PlanMapper.plan(e.expirationDate?.toInstant(), period, e.productIdentifier, e.productPlanIdentifier)
             Entitlement(
                 plan = plan,
                 active = true,
                 inTrial = e.periodType == PeriodType.TRIAL,
                 expiresAt = e.expirationDate?.toInstant(),
                 willRenew = e.willRenew,
-                fromBookCode = e.periodType == PeriodType.PREPAID || e.productIdentifier.contains("book", ignoreCase = true),
+                fromBookCode = PlanMapper.isBookCode(e.productIdentifier, e.productPlanIdentifier),
             )
         }
         _loadedEntitlement.value = _entitlement.value
