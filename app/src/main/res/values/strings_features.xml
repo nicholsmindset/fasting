@@ -8,7 +8,77 @@
     <string name="back">Back</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>
+    <string name="unit_kg">kg</string>
+    <string name="unit_lb">lb</string>
+    <string name="unit_mg">mg</string>
+    <string name="unit_ml">ml</string>
+    <string name="unit_kg_value">%1$.1f kg</string>
+    <string name="unit_lb_value">%1$.1f lb</string>
+    <string name="unit_mg_value">%1$d mg</string>
+    <string name="unit_ml_value">%1$d ml</string>
+    <string name="log_add_water">+%1$d ml</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+
+    <!-- Timer: eating window, quick add, start earlier, undo -->
+    <string name="eating_title">Eating window</string>
+    <string name="eating_next_in">Next fast in %1$s</string>
+    <string name="eating_next_at">Next fast at %1$s</string>
+    <string name="eating_a11y">Eating window. Next fast in %1$s, at %2$s</string>
+    <string name="quick_add_title">Quick add</string>
+    <string name="quick_water">+250 ml water</string>
+    <string name="quick_weight">Weight</string>
+    <string name="quick_electrolytes">Electrolytes</string>
+    <string name="quick_water_added">Added 250 ml of water</string>
+    <string name="quick_weight_added">Weight saved</string>
+    <string name="quick_electrolyte_added">Electrolytes saved</string>
+    <string name="quick_amount_mg">Amount (mg)</string>
+    <string name="timer_ended_snack">Fast ended after %1$s</string>
+    <string name="timer_undo_failed">That fast can\'t be reopened any more.</string>
+    <string name="timer_start_earlier">Started earlier?</string>
+    <string name="timer_start_earlier_title">When did you start?</string>
+    <string name="timer_starting_at">Starting from %1$s</string>
+    <string name="timer_start_now">Start now instead</string>
+    <string name="timer_invalid_start">That start time isn\'t possible. Pick a time in the past, within the last 5 days.</string>
+    <string name="timer_custom_hours">Hours</string>
+    <string name="timer_custom_range">1 to %1$d hours</string>
+    <string name="timer_needs_screening">Finish the safety questions to start fasting.</string>
+    <string name="timer_finish_screening">Finish the safety questions</string>
+    <string name="timer_confirm_doctor">Confirm the doctor check</string>
+    <string name="checklist_over72_ack">I understand fasts over 72 hours carry more risk</string>
+
+    <!-- Refeeding screen (SR-5). Pending clinician review. -->
+    <string name="refeed_intro">After a long fast your body needs time to get used to food again. Go slowly and keep the first meals small.</string>
+    <string name="refeed_tier_standard">After 48 to 72 hours</string>
+    <string name="refeed_tier_extended">After 72 to 96 hours</string>
+    <string name="refeed_tier_prolonged">After 96 hours or more</string>
+    <string name="refeed_tip_water">Keep sipping water, and include some salt or electrolytes.</string>
+    <string name="refeed_tip_avoid">Avoid large, sugary or very rich meals at first.</string>
+    <string name="refeed_tip_signs">Get medical help if you feel weak, confused, short of breath, have a racing heartbeat or notice swelling.</string>
+    <string name="refeed_done">Got it</string>
+    <string name="refeed_undo">I didn\'t mean to end my fast</string>
+    <string name="refeed_your_fast">Your fast: %1$s</string>
+
+    <!-- Add past fast -->
+    <string name="add_past_title">Add a past fast</string>
+    <string name="add_past_button">+ Add past fast</string>
+    <string name="add_past_body">Forgot to start the timer? Add a fast you\'ve already done.</string>
+    <string name="add_past_protocol">Fast type</string>
+    <string name="add_past_error">That fast can\'t be added. It must be 1 to 120 hours long, end in the past, be within the last year and not overlap another fast.</string>
+    <string name="history_all_fasts">All fasts</string>
+
+    <!-- Settings: safety status -->
+    <string name="settings_screening_status">Your safety answers</string>
+    <string name="screening_ok">OK: every protocol is available.</string>
+    <string name="screening_soft_ack">Doctor check confirmed: fasts up to 24 hours.</string>
+    <string name="screening_soft">Doctor check needed: fasting is locked until you confirm you\'ve talked to your doctor.</string>
+    <string name="screening_block">Fasting is not offered with your current answers.</string>
+    <string name="screening_none">Not screened yet. Answer the safety questions to start fasting.</string>
+    <string name="settings_refeeding">Breaking a long fast</string>
+    <string name="stop_number_label">Emergency number</string>
+    <string name="dial_unavailable">This device can\'t place calls. Please dial %1$s from a phone.</string>
     <string name="undo">Undo</string>
+    <string name="navigate_up">Navigate up</string>
     <string name="off">Off</string>
     <string name="loading">Loading…</string>
     <string name="privacy_policy_url" translatable="false">https://fastingshift.com/privacy</string>
@@ -124,14 +194,14 @@
     <string name="reason_glp1">GLP-1 medicines already reduce appetite and intake.</string>
     <string name="reason_other">Your answers suggest extra care.</string>
     <string name="onb_block_title">Fasting protocols aren\'t offered for you right now</string>
-    <string name="onb_block_body">Based on your answers, fasting could carry risks for you, so we won\'t offer fasting plans. You can still read the guides. If anything changes, you can update your answers in Settings. If you\'d like to talk to someone, support is available.</string>
+    <string name="onb_block_body">Based on your answers, fasting could carry risks for you, so we won\'t offer fasting plans. If you\'d like to talk to someone, the support lines below can help, and you can still read how the body responds to fasting. If anything changes, you can update your answers in Settings.</string>
     <string name="onb_protocol_title">Choose your usual fast</string>
     <string name="onb_protocol_body">You can change this any time. 16:8 is a common place to start.</string>
     <string name="onb_notif_title">Want a nudge when your fast ends?</string>
     <string name="onb_notif_body">We only send reminders you choose: when a fast ends, milestones, and safety check-ins on long fasts.</string>
     <string name="onb_notif_allow">Allow notifications</string>
     <string name="onb_offer_title">Shift+ is optional</string>
-    <string name="onb_offer_body">The guided 21-day Fasting Shift program and weekly insights. 7 days free, then US$34.99 a year. Cancel any time in Google Play.</string>
+    <string name="onb_offer_body">The guided 21-day Fasting Shift program and weekly insights. 7 days free on the annual plan. Prices are shown in Google Play before you pay. Cancel any time in Google Play.</string>
     <string name="onb_offer_free_note">The timer, widgets, every protocol, history, export and all safety features are free forever.</string>
     <string name="onb_offer_trial">Start free trial</string>
     <string name="onb_offer_free">Continue free</string>

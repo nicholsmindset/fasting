@@ -4,35 +4,31 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.text.format.DateFormat
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.LoadingBox
+import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
+import com.fastingshift.app.ui.safety.ChecklistDialog
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.safety.StartRequirement
 import com.fastingshift.domain.service.EditResult
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
@@ -54,6 +50,9 @@ data class EditFastState(
     val end: Instant? = null,
     val note: String = "",
     val error: Int? = null,
+    /** Lengthening an active fast: the checklist to confirm before saving (SR-3). */
+    val confirm: Set<StartRequirement>? = null,
+    val missing: Boolean = false,
 )
 
 @HiltViewModel
@@ -67,8 +66,8 @@ class EditFastViewModel @Inject constructor(
     fun load(id: Long) {
         if (_state.value.original?.id == id) return
         viewModelScope.launch {
-            val f = fasts.getById(id) ?: return@launch
-            _state.value = EditFastState(f, f.startAt, f.targetEndAt, f.endedAt, f.note.orEmpty())
+            val f = fasts.getById(id)
+            _state.value = if (f == null) EditFastState(missing = true) else EditFastState(f, f.startAt, f.targetEndAt, f.endedAt, f.note.orEmpty())
         }
     }
 
@@ -80,21 +79,30 @@ class EditFastViewModel @Inject constructor(
     fun setTargetEnd(i: Instant) = _state.update { it.copy(targetEnd = i, error = null) }
     fun setEnd(i: Instant) = _state.update { it.copy(end = i, error = null) }
     fun setNote(n: String) = _state.update { it.copy(note = n.take(500)) }
+    fun dismissConfirm() = _state.update { it.copy(confirm = null) }
 
-    fun save(onDone: () -> Unit) {
+    fun save(onDone: () -> Unit, confirmed: Set<StartRequirement> = emptySet()) {
         val s = _state.value
         val f = s.original ?: return
         viewModelScope.launch {
-            when (service.editTimes(f.id, s.start!!, s.targetEnd!!, s.end)) {
+            when (val result = service.editTimes(f.id, s.start!!, s.targetEnd!!, s.end, confirmed)) {
                 is EditResult.Updated -> {
                     fasts.getById(f.id)?.let { fasts.update(it.copy(note = s.note.ifBlank { null })) }
                     onDone()
                 }
-                is EditResult.Blocked, is EditResult.NeedsConfirmation -> _state.update { it.copy(error = R.string.edit_error_blocked) }
+                is EditResult.NeedsConfirmation -> _state.update { it.copy(confirm = result.requirements) }
+                is EditResult.Blocked -> _state.update { it.copy(error = R.string.edit_error_blocked) }
                 EditResult.Invalid -> _state.update { it.copy(error = R.string.edit_error_invalid) }
                 EditResult.NotFound -> onDone()
             }
         }
+    }
+
+    /** Retries the save with the checklist the user just confirmed. */
+    fun confirmAndSave(onDone: () -> Unit) {
+        val shown = _state.value.confirm ?: return
+        _state.update { it.copy(confirm = null) }
+        save(onDone, shown)
     }
 
     fun delete(onDone: () -> Unit) {
@@ -108,36 +116,43 @@ class EditFastViewModel @Inject constructor(
 
 @Composable
 fun EditFastRoute(fastId: Long, onDone: () -> Unit, vm: EditFastViewModel = hiltViewModel()) {
-    vm.load(fastId)
+    LaunchedEffect(fastId) { vm.load(fastId) }
     val st by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val f = st.original ?: return
-    Surface(Modifier.fillMaxSize()) {
-        Column(Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.edit_title), style = MaterialTheme.typography.headlineSmall)
-            st.start?.let { s ->
-                Text(stringResource(R.string.edit_start))
-                OutlinedButton(onClick = { pickDateTime(context, s, vm::setStart) }, modifier = Modifier.fillMaxWidth()) { Text(s.formatDateTime()) }
-            }
-            st.targetEnd?.let { t ->
-                Text(stringResource(R.string.edit_goal, Duration.between(st.start, t).hoursMinutes()))
-                OutlinedButton(onClick = { pickDateTime(context, t, vm::setTargetEnd) }, modifier = Modifier.fillMaxWidth()) { Text(t.formatDateTime()) }
-            }
-            st.end?.let { e ->
-                Text(stringResource(R.string.edit_end))
-                OutlinedButton(onClick = { pickDateTime(context, e, vm::setEnd) }, modifier = Modifier.fillMaxWidth()) { Text(e.formatDateTime()) }
-            }
-            OutlinedTextField(value = st.note, onValueChange = vm::setNote, label = { Text(stringResource(R.string.edit_note)) }, modifier = Modifier.fillMaxWidth())
-            st.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-            Button(onClick = { vm.save(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
-            if (!f.isActive) {
-                TextButton(onClick = { vm.delete(onDone) }) { Text(stringResource(R.string.edit_delete)) }
-            }
+    if (st.missing) {
+        LaunchedEffect(Unit) { onDone() }
+        return
+    }
+    SecondaryScaffold(title = stringResource(R.string.edit_title), onBack = onDone) {
+        val f = st.original
+        if (f == null) {
+            LoadingBox()
+            return@SecondaryScaffold
+        }
+        st.start?.let { s ->
+            Text(stringResource(R.string.edit_start))
+            OutlinedButton(onClick = { pickDateTime(context, s, vm::setStart) }, modifier = Modifier.fillMaxWidth()) { Text(s.formatDateTime()) }
+        }
+        st.targetEnd?.let { t ->
+            Text(stringResource(R.string.edit_goal, Duration.between(st.start, t).hoursMinutes()))
+            OutlinedButton(onClick = { pickDateTime(context, t, vm::setTargetEnd) }, modifier = Modifier.fillMaxWidth()) { Text(t.formatDateTime()) }
+        }
+        st.end?.let { e ->
+            Text(stringResource(R.string.edit_end))
+            OutlinedButton(onClick = { pickDateTime(context, e, vm::setEnd) }, modifier = Modifier.fillMaxWidth()) { Text(e.formatDateTime()) }
+        }
+        OutlinedTextField(value = st.note, onValueChange = vm::setNote, label = { Text(stringResource(R.string.edit_note)) }, modifier = Modifier.fillMaxWidth())
+        st.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+        Button(onClick = { vm.save(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
+        if (!f.isActive) {
+            TextButton(onClick = { vm.delete(onDone) }) { Text(stringResource(R.string.edit_delete)) }
         }
     }
+    st.confirm?.let { reqs -> ChecklistDialog(reqs, onConfirm = { vm.confirmAndSave(onDone) }, onDismiss = vm::dismissConfirm) }
 }
 
-private fun pickDateTime(context: Context, initial: Instant, onPicked: (Instant) -> Unit) {
+/** Date then time, in the device's zone. */
+fun pickDateTime(context: Context, initial: Instant, onPicked: (Instant) -> Unit) {
     val zone = ZoneId.systemDefault()
     val z = initial.atZone(zone)
     DatePickerDialog(context, { _, y, m, d ->

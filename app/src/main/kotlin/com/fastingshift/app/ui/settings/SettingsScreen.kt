@@ -24,6 +24,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.service.ScreeningRepository
+import kotlinx.coroutines.flow.map
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -65,9 +73,15 @@ class SettingsViewModel @Inject constructor(
     val billing: BillingManager,
     val health: HealthConnectManager,
     private val export: ExportManager,
+    screening: ScreeningRepository,
     private val clock: Clock,
 ) : ViewModel() {
     val state: StateFlow<AppSettings> = settings.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppSettings())
+
+    /** The latest screening result for the Safety section; null inside means "not screened". */
+    val screeningStatus: StateFlow<ScreeningStatus?> = screening.observeLatest()
+        .map { r -> ScreeningStatus(r?.gateResult, r?.clinicianAcknowledged ?: false) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val message = MutableStateFlow<Int?>(null)
 
     fun set(block: suspend SettingsRepository.() -> Unit) = viewModelScope.launch { settings.block() }
@@ -110,9 +124,12 @@ fun SettingsRoute(
     onOpenReliability: () -> Unit,
     onOpenSchedules: () -> Unit,
     onOpenPaywall: () -> Unit,
+    onOpenRefeeding: () -> Unit,
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val screeningStatus by vm.screeningStatus.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
     val ent by vm.billing.entitlement.collectAsStateWithLifecycle()
     val msg by vm.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -122,8 +139,15 @@ fun SettingsRoute(
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::restore) }
     val hcLauncher = rememberLauncherForActivityResult(vm.health.permissionContract()) { vm.onHealthPermissions(it) }
 
+    msg?.let { m ->
+        LaunchedEffect(m) {
+            snackbar.showSnackbar(context.getString(m))
+            vm.message.value = null
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        msg?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.primary) }
 
         SubscriptionCard(ent, vm, onOpenPaywall)
 
@@ -169,7 +193,12 @@ fun SettingsRoute(
         }
 
         SectionCard(title = stringResource(R.string.settings_safety)) {
-            TextButton(onClick = onRerunScreening) { Text(stringResource(R.string.settings_rerun_screening)) }
+            screeningStatus?.let { st ->
+                Text(stringResource(R.string.settings_screening_status), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(st.label()))
+            }
+            OutlinedButton(onClick = onRerunScreening, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_rerun_screening)) }
+            TextButton(onClick = onOpenRefeeding) { Text(stringResource(R.string.settings_refeeding)) }
             HelplineList()
             Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = {
@@ -177,13 +206,24 @@ fun SettingsRoute(
             }) { Text(stringResource(R.string.settings_privacy_policy)) }
         }
     }
+    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+data class ScreeningStatus(val gate: GateResult?, val clinicianAcknowledged: Boolean) {
+    fun label(): Int = when (gate) {
+        GateResult.OK -> R.string.screening_ok
+        GateResult.SOFT -> if (clinicianAcknowledged) R.string.screening_soft_ack else R.string.screening_soft
+        GateResult.BLOCK -> R.string.screening_block
+        null -> R.string.screening_none
+    }
 }
 
 /** Paywall rule 4: plan, renewal date and one-tap cancel are always visible. */
 @Composable
 private fun SubscriptionCard(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: () -> Unit) {
     val context = LocalContext.current
-    var code by remember { mutableStateOf("") }
+    var code by rememberSaveable { mutableStateOf("") }
     SectionCard(title = stringResource(R.string.settings_plan)) {
         val planName = stringResource(
             when (ent.plan) {

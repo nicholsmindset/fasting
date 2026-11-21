@@ -93,6 +93,10 @@ class AppFlowTest {
         waitFor(s(R.string.onb_protocol_title))
         click(s(R.string.onb_next))
 
+        // Finishing a re-run returns to Settings, which now shows the new result.
+        waitFor(s(R.string.screening_ok))
+        click(s(R.string.tab_timer))
+
         // Start a 16:8 fast, then end it with one tap.
         waitFor(s(R.string.timer_start))
         click(s(R.string.timer_start))

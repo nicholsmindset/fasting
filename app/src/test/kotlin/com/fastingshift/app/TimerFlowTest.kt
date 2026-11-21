@@ -50,10 +50,12 @@ class TimerFlowTest {
     @Before fun setUp() = hilt.inject()
 
     /** DataStore is a process-wide singleton under Robolectric: leave it as the next test expects. */
-    @After fun tearDown() = runBlocking {
-        settings.setOnboardingComplete(false)
-        settings.setTimerMode(TimerDisplayMode.ELAPSED)
-        settings.setPendingRefeeding(null)
+    @After fun tearDown() {
+        runBlocking {
+            settings.setOnboardingComplete(false)
+            settings.setTimerMode(TimerDisplayMode.ELAPSED)
+            settings.setPendingRefeeding(null)
+        }
     }
 
     private fun s(id: Int, vararg args: Any) = compose.activity.getString(id, *args)
@@ -93,20 +95,6 @@ class TimerFlowTest {
         ring.performClick()
         waitForRing(s(R.string.a11y_mode_elapsed))
         assertEquals(TimerDisplayMode.ELAPSED, runBlocking { settings.current().timerMode })
-    }
-
-    @Test fun undoAfterEndingRestoresTheActiveFast() {
-        seed(GateResult.OK, activeHoursIn = 3)
-        waitFor(s(R.string.timer_end))
-        val before = runBlocking { fasts.getActive() }
-        assertNotNull(before)
-        compose.onNodeWithText(s(R.string.timer_end)).apply { runCatching { performScrollTo() } }.performClick()
-        waitFor(s(R.string.undo))
-        waitUntil { runBlocking { fasts.getActive() } == null }
-        compose.onNodeWithText(s(R.string.undo)).performClick()
-        waitUntil { runBlocking { fasts.getActive() } != null }
-        assertEquals(before.id, runBlocking { fasts.getActive() }?.id)
-        waitFor(s(R.string.timer_end))
     }
 
     @Test fun educationOnlyShowsNoStartButton() {

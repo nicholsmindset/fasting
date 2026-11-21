@@ -1,7 +1,11 @@
 package com.fastingshift.app.ui.safety
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.telephony.TelephonyManager
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,8 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -26,9 +31,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -38,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.domain.safety.EmergencyNumbers
 import com.fastingshift.domain.safety.Helplines
@@ -69,14 +78,44 @@ class SafetyViewModel @Inject constructor(
     }
 }
 
+/**
+ * The user's region for emergency numbers and helplines: the SIM's country first, then the
+ * network's, then the device locale. Works offline. Swapped for the shared RegionResolver at merge.
+ */
+private fun emergencyRegion(context: Context): String? {
+    val tm = context.getSystemService(TelephonyManager::class.java)
+    val candidates = listOf(
+        runCatching { tm?.simCountryIso }.getOrNull(),
+        runCatching { tm?.networkCountryIso }.getOrNull(),
+        Locale.getDefault().country,
+    )
+    return candidates.firstOrNull { !it.isNullOrBlank() }?.uppercase(Locale.ROOT)
+}
+
+/** Opens the dialler with [number]. Never crashes on devices without a phone app. */
+fun dial(context: Context, number: String) {
+    val digits = number.filter { it.isDigit() || it == '+' }
+    try {
+        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$digits")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(context, context.getString(R.string.dial_unavailable, number), Toast.LENGTH_LONG).show()
+    } catch (e: SecurityException) {
+        Toast.makeText(context, context.getString(R.string.dial_unavailable, number), Toast.LENGTH_LONG).show()
+    }
+}
+
+private val symptomSetSaver = listSaver<Set<Symptom>, String>(
+    save = { set -> set.map { it.name } },
+    restore = { names -> names.mapNotNull { n -> Symptom.entries.firstOrNull { it.name == n } }.toSet() },
+)
+
 /** 8-hourly symptom check-in during fasts of 24h or more (PRD F7). */
 @Composable
 fun CheckInRoute(fastId: Long, onRedFlag: () -> Unit, onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
-    var selected by remember { mutableStateOf(emptySet<Symptom>()) }
-    Surface(Modifier.fillMaxSize()) {
-        Column(Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.checkin_title), style = MaterialTheme.typography.headlineSmall)
-            Text(stringResource(R.string.checkin_body))
+    var selected by rememberSaveable(stateSaver = symptomSetSaver) { mutableStateOf(emptySet<Symptom>()) }
+    SecondaryScaffold(title = stringResource(R.string.checkin_title), onBack = onDone) {
+        Text(stringResource(R.string.checkin_body))
+        Column {
             Symptom.entries.forEach { s ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -86,24 +125,25 @@ fun CheckInRoute(fastId: Long, onRedFlag: () -> Unit, onDone: () -> Unit, vm: Sa
                     ),
                 ) {
                     Checkbox(checked = s in selected, onCheckedChange = null)
-                    Text(stringResource(symptomLabel(s)))
+                    Text(stringResource(symptomLabel(s)), Modifier.padding(vertical = 12.dp))
                 }
             }
-            Button(onClick = { vm.submit(fastId, selected, onRedFlag, onDone) }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(if (selected.isEmpty()) R.string.checkin_feel_fine else R.string.checkin_submit))
-            }
+        }
+        Button(onClick = { vm.submit(fastId, selected, onRedFlag, onDone) }, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (selected.isEmpty()) R.string.checkin_feel_fine else R.string.checkin_submit))
         }
     }
 }
 
 /**
  * Full-screen "End your fast and seek medical care" (SR-4). Works offline: no network calls,
- * the emergency number is resolved from the device region.
+ * the emergency number comes from the SIM or network country, and is always shown in large
+ * text so it can be dialled by hand if the dialler can't open.
  */
 @Composable
 fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
     val context = LocalContext.current
-    val number = EmergencyNumbers.forRegion(Locale.getDefault().country)
+    val number = remember { EmergencyNumbers.forRegion(emergencyRegion(context)) }
     BackHandler { vm.endFast(onDone) }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.errorContainer) {
         Column(
@@ -112,8 +152,12 @@ fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
         ) {
             Text(stringResource(R.string.stop_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(stringResource(R.string.stop_body))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.stop_number_label), style = MaterialTheme.typography.labelLarge)
+                Text(number, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+            }
             Button(
-                onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))) },
+                onClick = { dial(context, number) },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.stop_call, number)) }
@@ -123,15 +167,23 @@ fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
     }
 }
 
-/** Support lines, Singapore first (SR-6). Tapping opens the dialler. */
+/** Support lines for the user's region, Singapore by default (SR-6). Tapping opens the dialler. */
 @Composable
 fun HelplineList() {
     val context = LocalContext.current
-    Column(Modifier.background(MaterialTheme.colorScheme.surfaceVariant).padding(12.dp).fillMaxWidth()) {
+    val lines = remember { Helplines.forRegion(emergencyRegion(context)) }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Text(stringResource(R.string.helplines_title), style = MaterialTheme.typography.titleSmall)
-        Helplines.forRegion(Locale.getDefault().country).forEach { h ->
-            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + h.phone.filter { it.isDigit() || it == '+' }))) }) {
-                Text("${h.name}: ${h.phone} (${h.note})")
+        lines.forEach { h ->
+            TextButton(onClick = { dial(context, h.phone) }, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth()) {
+                    Text(h.name, style = MaterialTheme.typography.bodyMedium)
+                    Text(h.phone, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(h.note, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
     }
