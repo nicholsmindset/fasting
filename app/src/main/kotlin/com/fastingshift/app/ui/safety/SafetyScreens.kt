@@ -62,6 +62,7 @@ class SafetyViewModel @Inject constructor(
     private val checkins: SymptomCheckinRepository,
     private val service: FastService,
     private val clock: Clock,
+    private val settings: com.fastingshift.data.settings.SettingsRepository,
 ) : ViewModel() {
     fun submit(fastId: Long, answers: Set<Symptom>, onRedFlag: () -> Unit, onDone: () -> Unit) {
         viewModelScope.launch {
@@ -71,7 +72,10 @@ class SafetyViewModel @Inject constructor(
 
     fun endFast(then: () -> Unit) {
         viewModelScope.launch {
-            service.endActive()
+            val result = service.endActive()
+            // A long fast stopped for a red flag still needs refeeding guidance (SR-5); the
+            // Timer shows it as soon as the user is back.
+            if (result?.refeeding != null) settings.setPendingRefeeding(result.fast.id)
             then()
         }
     }

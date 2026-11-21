@@ -37,6 +37,9 @@ import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.safety.ScreeningEvaluator
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.safety.StartDecision
+import java.time.Duration
 import com.fastingshift.data.settings.SettingsRepository
 import java.time.DayOfWeek
 import java.time.Instant
@@ -95,11 +98,13 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             b.insertWater(mapped.water)
             b.insertElectrolytes(mapped.electrolytes)
             b.insertCheckins(mapped.checkins)
-            b.insertScreenings(mapped.screenings)
+            b.insertScreenings(mapped.screeningEntities)
             b.insertProgress(mapped.progress)
             b.insertFreezes(mapped.freezes)
         }
         backup.settings?.let { settings?.restore(it) }
+        // Fast ids may now point at different fasts: never show a stale refeeding prompt.
+        settings?.setPendingRefeeding(null)
     }
 
     /**
@@ -109,10 +114,38 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
      * trusted from the file: the screening gate (SR-1/SR-2) and check-in red flags (SR-4).
      */
     private class Mapped(b: Backup) {
-        val fasts = b.fasts.map {
-            Fast(it.id, it.startAt.inst, it.targetEndAt.inst, it.endedAt?.inst, it.protocolId, FastStatus.valueOf(it.status), it.note).toEntity()
+        val screenings = b.screenings.map {
+            val answers = ScreeningAnswers(
+                it.ageYears, it.pregnantOrBreastfeeding, it.eatingDisorderHistory, it.type1Diabetes,
+                it.medications.map(Medication::valueOf).toSet(), it.heightCm, it.weightKg,
+            )
+            val gate = ScreeningEvaluator.evaluate(answers).result
+            // A clinician acknowledgement only carries over if the gate it was given for still applies.
+            val ack = it.clinicianAcknowledged && gate == GateResult.SOFT && GateResult.valueOf(it.gateResult) == GateResult.SOFT
+            ScreeningRecord(it.answeredAt.inst, answers, gate, ack)
         }
-        val protocols = b.protocols.map { ProtocolEntity(it.id, it.name, ProtocolType.valueOf(it.type), it.fastHours, it.eatHours, it.isCustom) }
+
+        /**
+         * An active fast comes back only if it is still allowed: not older than the longest
+         * fast at export time, and permitted by the restored screening. Otherwise it is ended
+         * (at its goal, or at the export time if earlier) so a restore can't resume an unsafe fast.
+         */
+        val fasts = b.fasts.map {
+            val f = Fast(it.id, it.startAt.inst, it.targetEndAt.inst, it.endedAt?.inst, it.protocolId, FastStatus.valueOf(it.status), it.note)
+            if (!f.isActive) return@map f.toEntity()
+            val latest = screenings.maxByOrNull { s -> s.answeredAt }
+            val decision = FastPolicy.evaluateStart(latest?.gateResult, latest?.clinicianAcknowledged ?: false, f.plannedDuration)
+            val exportedAt = b.exportedAt.inst
+            val tooOld = Duration.between(f.startAt, exportedAt) > FastPolicy.MAX_FAST
+            if (decision is StartDecision.Allowed && !tooOld) return@map f.toEntity()
+            val endAt = maxOf(f.startAt.plus(Duration.ofMinutes(1)), minOf(f.targetEndAt, exportedAt))
+            f.end(endAt).toEntity()
+        }
+
+        val protocols = b.protocols.map {
+            require(it.fastHours in 1..120) { "bad protocol length" }
+            ProtocolEntity(it.id, it.name, ProtocolType.valueOf(it.type), it.fastHours, it.eatHours, it.isCustom)
+        }
         val schedules = b.schedules.map {
             require(it.startMinute in 0 until 24 * 60) { "bad schedule time" }
             ScheduleEntity(it.id, it.protocolId, it.days.map(DayOfWeek::valueOf).toSet(), it.startMinute, it.enabled)
@@ -124,16 +157,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             val answers = it.answers.map(Symptom::valueOf).toSet()
             SymptomCheckinEntity(it.id, it.fastId, it.at.inst, answers, SymptomCheck.hasRedFlag(answers))
         }
-        val screenings = b.screenings.map {
-            val answers = ScreeningAnswers(
-                it.ageYears, it.pregnantOrBreastfeeding, it.eatingDisorderHistory, it.type1Diabetes,
-                it.medications.map(Medication::valueOf).toSet(), it.heightCm, it.weightKg,
-            )
-            val gate = ScreeningEvaluator.evaluate(answers).result
-            // A clinician acknowledgement only carries over if the gate it was given for still applies.
-            val ack = it.clinicianAcknowledged && gate == GateResult.SOFT && GateResult.valueOf(it.gateResult) == GateResult.SOFT
-            ScreeningRecord(it.answeredAt.inst, answers, gate, ack).toEntity()
-        }
+        val screeningEntities = screenings.map { it.toEntity() }
         val progress = b.programProgress.map {
             require(it.day in 1..366) { "bad program day" }
             ProgramProgressEntity(it.programId, it.day, it.completedAt.inst)

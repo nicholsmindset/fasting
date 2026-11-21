@@ -39,12 +39,21 @@ import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class SchedulesViewModel @Inject constructor(private val repo: ScheduleRepository) : ViewModel() {
+class SchedulesViewModel @Inject constructor(
+    private val repo: ScheduleRepository,
+    screening: com.fastingshift.domain.service.ScreeningRepository,
+) : ViewModel() {
     val schedules = repo.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Schedules only make sense for people who may start a fast (SR-1/SR-2). */
+    val canSchedule = screening.observeLatest()
+        .map { r -> r != null && com.fastingshift.domain.safety.FastPolicy.maxAllowed(r.gateResult, r.clinicianAcknowledged) != null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     fun add(protocolId: String, days: Set<DayOfWeek>) = viewModelScope.launch {
         repo.save(Schedule(protocolId = protocolId, days = days, startTime = LocalTime.of(20, 0)))
@@ -83,7 +92,12 @@ fun SchedulesRoute(onBack: () -> Unit, vm: SchedulesViewModel = hiltViewModel())
                 TextButton(onClick = { vm.delete(s.id) }) { Text(stringResource(R.string.delete)) }
             }
         }
-        Button(onClick = { vm.add(Presets.FIVE_TWO.id, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)) }) { Text(stringResource(R.string.schedules_add_52)) }
-        Button(onClick = { vm.add(Presets.ADF.id, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)) }) { Text(stringResource(R.string.schedules_add_adf)) }
+        val canSchedule by vm.canSchedule.collectAsStateWithLifecycle()
+        if (canSchedule) {
+            Button(onClick = { vm.add(Presets.FIVE_TWO.id, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)) }) { Text(stringResource(R.string.schedules_add_52)) }
+            Button(onClick = { vm.add(Presets.ADF.id, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)) }) { Text(stringResource(R.string.schedules_add_adf)) }
+        } else {
+            Text(stringResource(R.string.schedules_locked))
+        }
     }
 }

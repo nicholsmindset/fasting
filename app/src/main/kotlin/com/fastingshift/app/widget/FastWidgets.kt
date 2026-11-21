@@ -25,6 +25,7 @@ import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.action.Action
 import androidx.glance.action.ActionParameters
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.AndroidRemoteViews
@@ -222,7 +223,8 @@ private fun ActionButton(context: Context, mode: WidgetStartMode) {
         return
     }
     val action: Action = when (mode) {
-        WidgetStartMode.END, WidgetStartMode.START_IN_BACKGROUND -> actionRunCallback<StartStopAction>()
+        WidgetStartMode.END -> actionRunCallback<StartStopAction>(actionParametersOf(StartStopAction.INTENT to StartStopAction.END))
+        WidgetStartMode.START_IN_BACKGROUND -> actionRunCallback<StartStopAction>(actionParametersOf(StartStopAction.INTENT to StartStopAction.START))
         // Activity launch straight from the click: background starts are blocked on Android 14+.
         else -> actionStartActivity<MainActivity>()
     }
@@ -269,7 +271,15 @@ class StartStopAction : ActionCallback {
         if (FastingDatabase.keyStatus(context) == DatabaseKeyProvider.Status.LOST) return
         val ep = entryPoint(context)
         val settings = ep.settingsRepository()
-        if (ep.fastRepository().getActive() != null) {
+        val active = ep.fastRepository().getActive() != null
+        // Do only what the tapped button said. A stale "Start" must never end a running fast,
+        // and a stale "End" must never start one; just redraw with the right button.
+        val intent = parameters[INTENT]
+        if ((intent == START && active) || (intent == END && !active)) {
+            ep.reminderCoordinator().reschedule()
+            return
+        }
+        if (active) {
             val result = ep.fastService().endActive()
             // The Timer screen shows refeeding guidance for long fasts ended elsewhere (SR-5).
             if (result?.refeeding != null) settings.setPendingRefeeding(result.fast.id)
@@ -281,6 +291,12 @@ class StartStopAction : ActionCallback {
         }
         // Clears or arms alarms, the ongoing notification and refreshes every widget.
         ep.reminderCoordinator().reschedule()
+    }
+
+    companion object {
+        val INTENT = ActionParameters.Key<String>("intent")
+        const val START = "start"
+        const val END = "end"
     }
 }
 

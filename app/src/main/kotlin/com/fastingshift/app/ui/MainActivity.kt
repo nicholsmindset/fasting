@@ -94,6 +94,8 @@ class MainActivity : ComponentActivity() {
         resetting = true
         lifecycleScope.launch {
             withContext(Dispatchers.IO) { FastingDatabase.resetEncrypted(applicationContext) }
+            // The safety screening was in the lost database: ask the questions again (SR-1).
+            settings.setOnboardingComplete(false)
             startActivity(
                 Intent(applicationContext, MainActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),

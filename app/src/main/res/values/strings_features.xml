@@ -364,4 +364,5 @@
         <item quantity="one">%1$d of %2$d day done</item>
         <item quantity="other">%1$d of %2$d days done</item>
     </plurals>
+    <string name="schedules_locked">Schedules become available once your safety answers allow fasting.</string>
 </resources>

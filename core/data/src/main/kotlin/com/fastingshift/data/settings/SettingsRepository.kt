@@ -130,7 +130,8 @@ class SettingsRepository(context: Context) {
         it[ONBOARDED] = r.onboardingComplete
         r.goal?.takeIf { g -> Goal.entries.any { e -> e.name == g } }?.let { g -> it[GOAL] = g } ?: it.remove(GOAL)
         r.defaultProtocolId?.let { d -> it[DEFAULT_PROTOCOL] = d } ?: it.remove(DEFAULT_PROTOCOL)
-        it[HIDE_WEIGHT] = r.hideWeight
+        // Restoring an older backup must never reveal weight someone has chosen to hide (SR-6).
+        it[HIDE_WEIGHT] = (it[HIDE_WEIGHT] ?: false) || r.hideWeight
         it[ONGOING] = r.ongoingNotification
         it[FAST_END] = r.fastEndAlert
         it[FAST_START] = r.fastStartAlert

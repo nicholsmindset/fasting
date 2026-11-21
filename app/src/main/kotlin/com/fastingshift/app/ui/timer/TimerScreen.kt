@@ -124,6 +124,8 @@ fun TimerRoute(
     }
 
     // Ending is one tap; Undo stays on screen for 10 seconds in case it was a mis-tap.
+    // Leaving the Timer drops a pending Undo, so it can't reappear later.
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { viewModel.consumeEnded() } }
     events.ended?.let { ended ->
         val message = stringResource(R.string.timer_ended_snack, ended.actualDuration?.toClockString().orEmpty())
         val undo = stringResource(R.string.undo)

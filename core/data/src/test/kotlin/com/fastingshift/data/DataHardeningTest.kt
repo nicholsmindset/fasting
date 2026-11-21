@@ -79,6 +79,34 @@ class DataHardeningTest {
         assertEquals(1, repo.getAll().size)
     }
 
+    @Test fun restoreEndsAnActiveFastTheScreeningWouldNotAllow() = runTest {
+        val blocked = ScreeningRecordDto(t0.toEpochMilli(), 16, false, false, false, emptyList(), 175.0, 70.0, "BLOCK", false)
+        val active = FastRecord(1, t0.toEpochMilli(), t0.plusSeconds(16 * 3600).toEpochMilli(), null, "window_16_8", "ACTIVE")
+        BackupRepository(db).restore(Backup(exportedAt = t0.plusSeconds(3600).toEpochMilli(), fasts = listOf(active), screenings = listOf(blocked)))
+        val repo = RoomFastRepository(db.fastDao())
+        assertNull(repo.getActive())
+        assertEquals(t0.plusSeconds(3600), repo.getAll().single().endedAt)
+    }
+
+    @Test fun restoreEndsAnActiveFastOlderThanTheLongestAllowed() = runTest {
+        val ok = ScreeningRecordDto(t0.toEpochMilli(), 40, false, false, false, emptyList(), 175.0, 75.0, "OK", false)
+        val active = FastRecord(1, t0.toEpochMilli(), t0.plusSeconds(16 * 3600).toEpochMilli(), null, "window_16_8", "ACTIVE")
+        BackupRepository(db).restore(Backup(exportedAt = t0.plusSeconds(7 * 24 * 3600).toEpochMilli(), fasts = listOf(active), screenings = listOf(ok)))
+        val restored = RoomFastRepository(db.fastDao()).getAll().single()
+        assertFalse(restored.isActive)
+        assertEquals(t0.plusSeconds(16 * 3600), restored.endedAt)
+    }
+
+    @Test fun restoreKeepsWeightHiddenAndClearsPendingRefeeding() = runTest {
+        val settings = SettingsRepository(context)
+        settings.setHideWeight(true)
+        settings.setPendingRefeeding(42)
+        BackupRepository(db, settings).restore(Backup(exportedAt = 1, settings = SettingsRecord(hideWeight = false)))
+        assertTrue(settings.current().hideWeight)
+        assertNull(settings.current().pendingRefeedingFastId)
+        settings.setHideWeight(false)
+    }
+
     @Test fun settingsTravelWithTheBackup() = runTest {
         val settings = SettingsRepository(context)
         settings.setHideWeight(true)

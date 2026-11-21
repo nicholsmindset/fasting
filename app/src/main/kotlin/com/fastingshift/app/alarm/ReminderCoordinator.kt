@@ -106,8 +106,8 @@ class ReminderCoordinator @Inject constructor(
     }
 
     private suspend fun mayStartFasts(): Boolean {
-        val gate = screening.getLatest()?.gateResult
-        return gate != null && gate != GateResult.BLOCK
+        val record = screening.getLatest() ?: return false
+        return com.fastingshift.domain.safety.FastPolicy.maxAllowed(record.gateResult, record.clinicianAcknowledged) != null
     }
 
     /** Fetches customer info (cached when offline) and re-arms the billing reminder. */

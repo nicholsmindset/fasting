@@ -60,6 +60,8 @@ class FastService(
             return StartResult.InvalidStartTime
         }
         fasts.getActive()?.let { return StartResult.AlreadyActive(it) }
+        // "I started earlier" can't reach back into a fast that's already recorded.
+        if (overlapsAny(startAt, now, excludeId = null)) return StartResult.InvalidStartTime
         val planned = Duration.ofHours(protocol.fastHours.toLong())
         when (val decision = evaluate(planned)) {
             is StartDecision.Blocked -> return StartResult.Blocked(decision)
@@ -69,7 +71,8 @@ class FastService(
             }
         }
         val fast = Fast(startAt = startAt, targetEndAt = startAt.plus(planned), protocolId = protocol.id)
-        val saved = fasts.insertIfNoActive(fast) ?: return StartResult.AlreadyActive(fasts.getActive()!!)
+        val saved = fasts.insertIfNoActive(fast)
+            ?: return fasts.getActive()?.let { StartResult.AlreadyActive(it) } ?: StartResult.InvalidStartTime
         return StartResult.Started(saved)
     }
 
@@ -85,9 +88,18 @@ class FastService(
         return EndResult(ended, ended.actualDuration?.let(FastPolicy::refeedingTier))
     }
 
-    /** Undo for an accidental end: re-opens [ended] if nothing else has started since. */
+    /**
+     * Undo for an accidental end: re-opens [ended] only shortly after it ended ([UNDO_WINDOW]),
+     * if nothing else has started or been recorded since, and never beyond the longest allowed
+     * fast. It is a quick "oops", not a way to resume a fast hours or days later.
+     */
     suspend fun undoEnd(ended: Fast): Boolean {
         if (ended.isActive || fasts.getActive() != null) return false
+        val now = clock.instant()
+        val endedAt = ended.endedAt ?: return false
+        if (Duration.between(endedAt, now) > UNDO_WINDOW) return false
+        if (Duration.between(ended.startAt, now) > FastPolicy.MAX_FAST) return false
+        if (overlapsAny(endedAt, now, excludeId = ended.id)) return false
         val current = fasts.getById(ended.id) ?: return false
         // Compare at storage precision (milliseconds): the stored copy of the fast just ended
         // must still be that fast, not one edited since.
@@ -105,7 +117,7 @@ class FastService(
         val length = Duration.between(startAt, endedAt)
         if (endedAt.isAfter(now.plus(CLOCK_SLACK)) || startAt.isBefore(now.minus(Duration.ofDays(366)))) return EditResult.Invalid
         if (length < FastPolicy.MIN_FAST || length > FastPolicy.MAX_FAST) return EditResult.Invalid
-        if (fasts.getAll().any { it.startAt.isBefore(endedAt) && (it.endedAt ?: now).isAfter(startAt) }) return EditResult.Invalid
+        if (overlapsAny(startAt, endedAt, excludeId = null)) return EditResult.Invalid
         val planned = Duration.ofHours(protocol.fastHours.toLong())
         val fast = Fast(startAt = startAt, targetEndAt = startAt.plus(planned), protocolId = protocol.id).end(endedAt)
         return EditResult.Updated(fasts.insert(fast))
@@ -129,7 +141,9 @@ class FastService(
         if (existing.isActive && endedAt != null) return EditResult.Invalid
         if (!existing.isActive && endedAt == null) return EditResult.Invalid // re-opening uses undoEnd
         if (startAt.isAfter(now.plus(CLOCK_SLACK))) return EditResult.Invalid
+        if (existing.isActive && startAt.isBefore(now.minus(FastPolicy.MAX_FAST))) return EditResult.Invalid
         if (endedAt != null && (endedAt.isBefore(startAt) || endedAt.isAfter(now.plus(CLOCK_SLACK)))) return EditResult.Invalid
+        if (overlapsAny(startAt, endedAt ?: now, excludeId = id)) return EditResult.Invalid
 
         val newPlanned = Duration.between(startAt, targetEndAt)
         if (existing.isActive) {
@@ -152,13 +166,22 @@ class FastService(
         return EditResult.Updated(updated)
     }
 
+    /** Whether [from, to) overlaps any recorded fast other than [excludeId]. Touching ends is fine. */
+    private suspend fun overlapsAny(from: Instant, to: Instant, excludeId: Long?): Boolean {
+        val now = clock.instant()
+        return fasts.getAll().any { it.id != excludeId && it.startAt.isBefore(to) && (it.endedAt ?: now).isAfter(from) }
+    }
+
     private suspend fun evaluate(planned: Duration): StartDecision {
         val record = screening.getLatest()
         return FastPolicy.evaluateStart(record?.gateResult, record?.clinicianAcknowledged ?: false, planned)
     }
 
-    private companion object {
+    companion object {
         /** Tolerates small clock differences between a picker and "now". */
         val CLOCK_SLACK: Duration = Duration.ofMinutes(2)
+
+        /** How long after ending a fast "Undo" is still offered. */
+        val UNDO_WINDOW: Duration = Duration.ofMinutes(15)
     }
 }

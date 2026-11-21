@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 class RefeedingViewModel @Inject constructor(
     private val fasts: FastRepository,
     private val service: FastService,
+    private val clock: java.time.Clock,
 ) : ViewModel() {
     private val _fast = MutableStateFlow<Fast?>(null)
     val fast: StateFlow<Fast?> = _fast
@@ -40,6 +41,10 @@ class RefeedingViewModel @Inject constructor(
         if (id <= 0 || _fast.value?.id == id) return
         viewModelScope.launch { _fast.value = fasts.getById(id)?.takeIf { !it.isActive } }
     }
+
+    /** Undo is a quick "oops" right after ending, never a way to resume a fast later. */
+    fun canUndo(f: Fast): Boolean =
+        f.endedAt?.let { java.time.Duration.between(it, clock.instant()) <= FastService.UNDO_WINDOW } ?: false
 
     /** Re-opens an accidentally ended long fast, if nothing has started since. */
     fun undo(onDone: () -> Unit) {
@@ -66,7 +71,7 @@ fun RefeedingRoute(tier: RefeedingTier?, fastId: Long, onDone: () -> Unit, vm: R
         listOf(R.string.refeed_tip_water, R.string.refeed_tip_avoid, R.string.refeed_tip_signs).forEach { Text("• " + stringResource(it)) }
         Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall)
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.refeed_done)) }
-        if (fast != null) {
+        if (fast?.let(vm::canUndo) == true) {
             TextButton(onClick = { vm.undo(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.refeed_undo)) }
         }
     }

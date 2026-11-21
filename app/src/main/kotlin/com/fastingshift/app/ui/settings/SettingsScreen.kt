@@ -208,7 +208,8 @@ fun SettingsRoute(
             HelplineList()
             Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.privacy_policy_url))))
+                // No browser installed must not crash Settings.
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.privacy_policy_url)))) }
             }) { Text(stringResource(R.string.settings_privacy_policy)) }
         }
     }

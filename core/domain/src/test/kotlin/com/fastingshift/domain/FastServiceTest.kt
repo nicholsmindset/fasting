@@ -90,6 +90,31 @@ class FastServiceTest {
         assertFalse(service.undoEnd(ended), "can't undo twice")
     }
 
+    @Test fun `undo only shortly after ending and never beyond the longest fast`() = runTest {
+        screened()
+        assertIs<StartResult.Started>(service.start(Presets.W16_8))
+        clock.advance(hours(5))
+        val ended = service.endActive()!!.fast
+        clock.advance(java.time.Duration.ofMinutes(16))
+        assertFalse(service.undoEnd(ended), "undo window passed")
+    }
+
+    @Test fun `earlier starts and edits can't overlap recorded fasts`() = runTest {
+        screened()
+        val past = t0.minus(hours(20))
+        assertIs<EditResult.Updated>(service.addPastFast(Presets.W16_8, past, past.plus(hours(16))))
+        // Started "earlier" into the recorded fast.
+        assertIs<StartResult.InvalidStartTime>(service.start(Presets.W16_8, startAt = t0.minus(hours(6))))
+        val f = assertIs<StartResult.Started>(service.start(Presets.W16_8, startAt = t0.minus(hours(3)))).fast
+        assertIs<EditResult.Invalid>(service.editTimes(f.id, t0.minus(hours(10)), t0.plus(hours(6)), null), "edit into the past fast")
+    }
+
+    @Test fun `active fast start can't be moved beyond the longest fast`() = runTest {
+        screened()
+        val f = assertIs<StartResult.Started>(service.start(Presets.W16_8)).fast
+        assertIs<EditResult.Invalid>(service.editTimes(f.id, t0.minus(hours(130)), t0.minus(hours(114)), null))
+    }
+
     @Test fun `editing can't lengthen past the gate`() = runTest {
         screened(GateResult.SOFT, ack = true)
         val f = assertIs<StartResult.Started>(service.start(Presets.W16_8)).fast

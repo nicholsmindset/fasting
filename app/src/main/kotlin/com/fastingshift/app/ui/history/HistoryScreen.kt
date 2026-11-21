@@ -124,8 +124,10 @@ class HistoryViewModel @Inject constructor(
         val planned: (LocalDate) -> Boolean = { ScheduleCalculator.isPlannedDay(sch, it) }
         val completed = StreakCalculator.completedDays(all, zone)
         val yesterday = today.minusDays(1)
+        // A day whose fast is still running isn't missed yet, so it's never offered for a freeze.
+        val running = all.filter { it.isActive }.map { it.startAt.atZone(zone).toLocalDate() }.toSet()
         val freezeable = yesterday.takeIf {
-            it !in completed && planned(it) && completed.any { d -> d.isBefore(it) } && StreakCalculator.canFreeze(it, frozen, today)
+            it !in completed && it !in running && planned(it) && completed.any { d -> d.isBefore(it) } && StreakCalculator.canFreeze(it, frozen, today)
         }
         val firstRow = History.weekStart(m.atDay(1))
         val rows = generateSequence(firstRow) { it.plusWeeks(1) }
@@ -148,7 +150,9 @@ class HistoryViewModel @Inject constructor(
 
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
     fun setPeriod(p: Period) = period.update { p }
-    fun freeze(day: LocalDate) = viewModelScope.launch { freezes.addFrozenDay(day, java.time.LocalDate.now()) }
+    fun freeze(day: LocalDate) = viewModelScope.launch {
+        freezes.addFrozenDay(day, clock.instant().atZone(ZoneId.systemDefault()).toLocalDate())
+    }
 }
 
 @Composable
