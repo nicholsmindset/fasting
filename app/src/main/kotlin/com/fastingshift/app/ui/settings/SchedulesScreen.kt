@@ -3,18 +3,11 @@ package com.fastingshift.app.ui.settings
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,7 +24,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.SectionCard
+import androidx.compose.runtime.remember
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.protocol.Presets
@@ -62,8 +59,8 @@ class SchedulesViewModel @Inject constructor(private val repo: ScheduleRepositor
 fun SchedulesRoute(onBack: () -> Unit, vm: SchedulesViewModel = hiltViewModel()) {
     val list by vm.schedules.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.schedules_title), style = MaterialTheme.typography.headlineSmall)
+    val timeFormat = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+    SecondaryScaffold(title = stringResource(R.string.schedules_title), onBack = onBack) {
         Text(stringResource(R.string.schedules_body))
         list.forEach { s ->
             SectionCard(title = Presets.byId(s.protocolId)?.name ?: s.protocolId) {
@@ -80,7 +77,7 @@ fun SchedulesRoute(onBack: () -> Unit, vm: SchedulesViewModel = hiltViewModel())
                     OutlinedButton(onClick = {
                         TimePickerDialog(context, { _, h, m -> vm.save(s.copy(startTime = LocalTime.of(h, m))) },
                             s.startTime.hour, s.startTime.minute, DateFormat.is24HourFormat(context)).show()
-                    }) { Text(stringResource(R.string.schedules_start_at, s.startTime.toString())) }
+                    }) { Text(stringResource(R.string.schedules_start_at, timeFormat.format(s.startTime))) }
                     Switch(checked = s.enabled, onCheckedChange = { vm.save(s.copy(enabled = it)) })
                 }
                 TextButton(onClick = { vm.delete(s.id) }) { Text(stringResource(R.string.delete)) }
@@ -88,6 +85,5 @@ fun SchedulesRoute(onBack: () -> Unit, vm: SchedulesViewModel = hiltViewModel())
         }
         Button(onClick = { vm.add(Presets.FIVE_TWO.id, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)) }) { Text(stringResource(R.string.schedules_add_52)) }
         Button(onClick = { vm.add(Presets.ADF.id, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)) }) { Text(stringResource(R.string.schedules_add_adf)) }
-        TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
     }
 }

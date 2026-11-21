@@ -40,7 +40,12 @@ import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.billing.PlanOffer
+import com.fastingshift.app.ui.components.LoadingBox
+import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.SectionCard
+import com.fastingshift.app.ui.components.convertWeight
+import com.fastingshift.app.ui.components.weightText
+import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.repo.ProgramRepository
 import com.fastingshift.data.repo.ScheduleRepository
@@ -87,8 +92,7 @@ fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
     val ent by vm.billing.entitlement.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { offers = vm.billing.offers() }
 
-    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.paywall_title), style = MaterialTheme.typography.headlineSmall)
+    SecondaryScaffold(title = stringResource(R.string.paywall_title), onBack = onClose) {
         listOf(R.string.paywall_point_program, R.string.paywall_point_insights).forEach { Text("• " + stringResource(it)) }
         Text(stringResource(R.string.paywall_free_forever), style = MaterialTheme.typography.bodySmall)
         when {
@@ -135,7 +139,7 @@ class ProgramViewModel @Inject constructor(
             today = ProgramProgress.currentDay(program, done, ZoneId.systemDefault(), LocalDate.now()),
             finished = ProgramProgress.isFinished(program, done),
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProgramState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val days = program.days
     fun start() = viewModelScope.launch { settings.setActiveProgram(program.id) }
@@ -153,10 +157,12 @@ data class ProgramState(
 
 @Composable
 fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel = hiltViewModel()) {
-    val st by vm.state.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(GuidedPrograms.fastingShift21.name, style = MaterialTheme.typography.headlineSmall)
-        if (!st.available) {
+    val loaded by vm.state.collectAsStateWithLifecycle()
+    SecondaryScaffold(title = GuidedPrograms.fastingShift21.name, onBack = onBack) {
+        val st = loaded
+        if (st == null) {
+            LoadingBox()
+        } else if (!st.available) {
             Text(stringResource(R.string.program_locked))
             Button(onClick = onUpgrade) { Text(stringResource(R.string.plan_see_plus)) }
         } else if (!st.started) {
@@ -178,7 +184,6 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
             Text(pluralStringResource(R.plurals.program_progress, vm.days.size, st.done.size, vm.days.size))
             TextButton(onClick = vm::stop) { Text(stringResource(R.string.program_stop)) }
         }
-        TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
     }
 }
 
@@ -190,6 +195,7 @@ data class InsightsState(
     val byWeekday: Map<DayOfWeek, Duration> = emptyMap(),
     val weight: List<WeightVsFasting> = emptyList(),
     val hideWeight: Boolean = false,
+    val weightUnit: WeightUnit = WeightUnit.KG,
 )
 
 @HiltViewModel
@@ -209,16 +215,19 @@ class InsightsViewModel @Inject constructor(
             byWeekday = Insights.averageByWeekday(f, zone),
             weight = Insights.weightVsFasting(f, w, zone, clock.instant()).takeLast(8),
             hideWeight = s.hideWeight,
+            weightUnit = s.weightUnit,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InsightsState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 }
 
 @Composable
 fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewModel = hiltViewModel()) {
-    val st by vm.state.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.insights_title), style = MaterialTheme.typography.headlineSmall)
-        if (!st.available) {
+    val loaded by vm.state.collectAsStateWithLifecycle()
+    SecondaryScaffold(title = stringResource(R.string.insights_title), onBack = onBack) {
+        val st = loaded
+        if (st == null) {
+            LoadingBox()
+        } else if (!st.available) {
             Text(stringResource(R.string.insights_locked))
             Button(onClick = onUpgrade) { Text(stringResource(R.string.plan_see_plus)) }
         } else {
@@ -238,13 +247,12 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
             if (!st.hideWeight) {
                 SectionCard(title = stringResource(R.string.insights_weight)) {
                     st.weight.forEach { w ->
-                        Text(stringResource(R.string.insights_weight_row, w.weekStart.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)), w.fastingHours.toInt(), w.averageWeightKg?.let { "%.1f kg".format(it) } ?: "—"))
+                        Text(stringResource(R.string.insights_weight_row, w.weekStart.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)), w.fastingHours.toInt(), w.averageWeightKg?.let { kg -> weightText(convertWeight(kg, WeightUnit.KG, st.weightUnit), st.weightUnit) } ?: "—"))
                     }
                     Text(stringResource(R.string.insights_weight_note), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
-        TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
     }
 }
 
