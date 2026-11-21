@@ -3,7 +3,13 @@ package com.fastingshift.app.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.fastingshift.app.billing.BillingReminderDecision
 import com.fastingshift.app.di.ApplicationScope
+import com.fastingshift.data.settings.SettingsRepository
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.service.FastRepository
@@ -19,6 +25,7 @@ class AlarmReceiver : BroadcastReceiver() {
     @Inject lateinit var fasts: FastRepository
     @Inject lateinit var service: FastService
     @Inject lateinit var coordinator: ReminderCoordinator
+    @Inject lateinit var settings: SettingsRepository
     @Inject @ApplicationScope lateinit var scope: CoroutineScope
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -27,12 +34,7 @@ class AlarmReceiver : BroadcastReceiver() {
             try {
                 when (intent.action) {
                     ACTION_REMINDER -> onReminder(context, intent)
-                    ACTION_BILLING_REMINDER -> {
-                        val expires = java.time.Instant.ofEpochMilli(intent.getLongExtra(EXTRA_EXPIRES_AT, 0))
-                        val date = java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
-                            .format(expires.atZone(java.time.ZoneId.systemDefault()))
-                        Notifications.showBillingReminder(context, intent.getBooleanExtra(EXTRA_TRIAL, false), date)
-                    }
+                    ACTION_BILLING_REMINDER -> onBillingReminder(context, intent)
                     ACTION_END_FAST -> {
                         service.endActive()
                         Notifications.cancelFastNotifications(context)
@@ -42,6 +44,16 @@ class AlarmReceiver : BroadcastReceiver() {
                 pending.finish()
             }
         }
+    }
+
+    /** Shown once per expiry date; the stored date stops every later re-arm for it. */
+    private suspend fun onBillingReminder(context: Context, intent: Intent) {
+        val expiresMillis = intent.getLongExtra(EXTRA_EXPIRES_AT, 0)
+        if (!BillingReminderDecision.shouldNotify(expiresMillis, settings.current().billingRemindedFor)) return
+        val date = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .format(Instant.ofEpochMilli(expiresMillis).atZone(ZoneId.systemDefault()))
+        Notifications.showBillingReminder(context, intent.getBooleanExtra(EXTRA_TRIAL, false), date)
+        settings.setBillingRemindedFor(expiresMillis)
     }
 
     private suspend fun onReminder(context: Context, intent: Intent) {

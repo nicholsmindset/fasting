@@ -22,6 +22,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -57,7 +58,10 @@ class ReminderCoordinator @Inject constructor(
                 .collect { reschedule() }
         }
         scope.launch {
-            billing.entitlement.collect { billingReminders.apply(it, clock.instant()) }
+            // Only real customer info: the FREE placeholder at process start must not re-arm.
+            combine(billing.loadedEntitlement, settings.settings.map { it.billingRemindedFor }) { e, reminded -> e to reminded }
+                .distinctUntilChanged()
+                .collect { (e, reminded) -> billingReminders.apply(e, reminded, clock.instant()) }
         }
         WidgetUpdater.schedulePeriodic(context)
     }
@@ -87,6 +91,15 @@ class ReminderCoordinator @Inject constructor(
         else Notifications.cancelOngoing(context)
         if (active == null) Notifications.cancelFastNotifications(context)
 
+        // Alarms don't survive a reboot: restore the billing reminder too (no-op until loaded).
+        billingReminders.apply(billing.loadedEntitlement.value, appSettings.billingRemindedFor, now)
+
         WidgetUpdater.updateAll(context)
+    }
+
+    /** Fetches customer info (cached when offline) and re-arms the billing reminder. */
+    suspend fun rearmBilling() {
+        billing.refresh()
+        billingReminders.apply(billing.loadedEntitlement.value, settings.current().billingRemindedFor, clock.instant())
     }
 }

@@ -35,6 +35,14 @@ class BillingManager @Inject constructor(@ApplicationContext private val context
     private val _entitlement = MutableStateFlow(Entitlement.FREE)
     val entitlement: StateFlow<Entitlement> = _entitlement
 
+    /**
+     * The entitlement from real RevenueCat customer info, or null until the first info arrives.
+     * [entitlement] starts at FREE before anything is known; work that must not act on that
+     * placeholder (billing reminders) reads this instead.
+     */
+    private val _loadedEntitlement = MutableStateFlow<Entitlement?>(null)
+    val loadedEntitlement: StateFlow<Entitlement?> = _loadedEntitlement
+
     private val _managementUrl = MutableStateFlow<Uri?>(null)
     val managementUrl: StateFlow<Uri?> = _managementUrl
 
@@ -106,6 +114,7 @@ class BillingManager @Inject constructor(@ApplicationContext private val context
                 fromBookCode = e.periodType == PeriodType.PREPAID || e.productIdentifier.contains("book", ignoreCase = true),
             )
         }
+        _loadedEntitlement.value = _entitlement.value
     }
 
     companion object {
