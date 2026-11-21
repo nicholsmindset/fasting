@@ -61,6 +61,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.firstweek.CoachingTipCard
+import com.fastingshift.app.ui.firstweek.FastSummarySheet
+import com.fastingshift.app.ui.firstweek.FirstFastCard
+import com.fastingshift.app.ui.ramadan.RamadanCard
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.formatDateTime
@@ -127,14 +131,8 @@ fun TimerRoute(
     // Leaving the Timer drops a pending Undo, so it can't reappear later.
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { viewModel.consumeEnded() } }
     events.ended?.let { ended ->
-        val message = stringResource(R.string.timer_ended_snack, ended.actualDuration?.toClockString().orEmpty())
-        val undo = stringResource(R.string.undo)
-        LaunchedEffect(ended) {
-            val timeout = launch { delay(10_000); snackbar.currentSnackbarData?.dismiss() }
-            val result = snackbar.showSnackbar(message, actionLabel = undo, duration = SnackbarDuration.Indefinite)
-            timeout.cancel()
-            if (result == SnackbarResult.ActionPerformed) viewModel.undoEnd(ended) else viewModel.consumeEnded()
-        }
+        // A calm summary with "how do you feel?"; Undo lives inside it during the undo window.
+        FastSummarySheet(ended, onUndo = { viewModel.undoEnd(ended) }, onDismiss = viewModel::consumeEnded)
     }
     events.message?.let { msg ->
         LaunchedEffect(msg) {
@@ -187,6 +185,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
         ) {
             val timer = state.timer
             val active = state.active
+            RamadanCard()
             if (active != null && timer != null) {
                 ExactAlarmBanner()
                 TimerRing(active, timer, state.mode, state.now, onToggle = actions.onToggleMode, modifier = Modifier.padding(top = 8.dp))
@@ -198,6 +197,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
                 if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
                     OutlinedButton(onClick = actions.onCheckIn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_check_in)) }
                 }
+                CoachingTipCard(active)
                 QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
                 BodyTimelineCard(timer.elapsed)
             } else {
@@ -236,6 +236,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
             return
         }
     }
+    FirstFastCard(onStartNow = actions.onStart)
     state.programTargetHours?.let {
         OutlinedButton(onClick = actions.onOpenProgram, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_program_target, it)) }
     }
