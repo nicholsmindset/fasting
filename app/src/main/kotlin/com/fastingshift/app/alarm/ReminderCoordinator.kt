@@ -13,10 +13,13 @@ import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.reminders.ReminderPlanner
 import com.fastingshift.domain.schedule.ScheduleCalculator
+import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.service.FastRepository
+import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
 import java.time.ZoneId
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -39,6 +42,7 @@ class ReminderCoordinator @Inject constructor(
     private val fasts: FastRepository,
     private val settings: SettingsRepository,
     private val schedules: ScheduleRepository,
+    private val screening: ScreeningRepository,
     private val billing: BillingManager,
     private val billingReminders: BillingReminderScheduler,
     gateway: AlarmGateway,
@@ -47,13 +51,15 @@ class ReminderCoordinator @Inject constructor(
 ) {
     private val scheduler = AlarmScheduler(gateway)
     private val mutex = Mutex()
-    private var started = false
+    private val started = AtomicBoolean(false)
 
+    /** Starts following the database. Call off the main thread: it opens the database. */
     fun start() {
-        if (started) return
-        started = true
+        if (!started.compareAndSet(false, true)) return
         scope.launch {
-            combine(fasts.observeActive(), settings.settings, schedules.observeAll()) { active, s, sch -> Triple(active, s, sch) }
+            combine(fasts.observeActive(), settings.settings, schedules.observeAll(), screening.observeLatest()) { active, s, sch, scr ->
+                listOf(active, s, sch, scr?.gateResult)
+            }
                 .distinctUntilChanged()
                 .collect { reschedule() }
         }
@@ -72,6 +78,9 @@ class ReminderCoordinator @Inject constructor(
         val active = fasts.getActive()
         val plan: List<Reminder> = if (active != null) {
             ReminderPlanner.planForActiveFast(active, reminderSettings, now)
+        } else if (!mayStartFasts()) {
+            // Unscreened or education-only users are never nudged to start a fast (SR-1).
+            emptyList()
         } else {
             val last = fasts.getAll().firstOrNull { !it.isActive }
             val afterWindow = last?.let {
@@ -94,6 +103,11 @@ class ReminderCoordinator @Inject constructor(
         billingReminders.apply(billing.loadedEntitlement.value, appSettings.billingRemindedFor, now)
 
         WidgetUpdater.updateAll(context)
+    }
+
+    private suspend fun mayStartFasts(): Boolean {
+        val gate = screening.getLatest()?.gateResult
+        return gate != null && gate != GateResult.BLOCK
     }
 
     /** Fetches customer info (cached when offline) and re-arms the billing reminder. */
