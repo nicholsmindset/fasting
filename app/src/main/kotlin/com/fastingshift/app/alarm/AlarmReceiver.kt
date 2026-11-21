@@ -5,26 +5,31 @@ import android.content.Context
 import android.content.Intent
 import com.fastingshift.app.billing.BillingReminderDecision
 import com.fastingshift.app.di.ApplicationScope
+import com.fastingshift.app.notifications.Notifications
+import com.fastingshift.data.db.DatabaseKeyProvider
+import com.fastingshift.data.db.FastingDatabase
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.reminders.ReminderKind
+import com.fastingshift.domain.service.FastRepository
+import com.fastingshift.domain.service.FastService
+import dagger.Lazy
+import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import com.fastingshift.app.notifications.Notifications
-import com.fastingshift.domain.reminders.ReminderKind
-import com.fastingshift.domain.service.FastRepository
-import com.fastingshift.domain.service.FastService
-import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** Receives fired alarms and the "End fast" notification action. */
 @AndroidEntryPoint
 class AlarmReceiver : BroadcastReceiver() {
-    @Inject lateinit var fasts: FastRepository
-    @Inject lateinit var service: FastService
-    @Inject lateinit var coordinator: ReminderCoordinator
+    // Lazy: injection runs on the main thread, and these open the encrypted database.
+    @Inject lateinit var fasts: Lazy<FastRepository>
+    @Inject lateinit var service: Lazy<FastService>
+    @Inject lateinit var coordinator: Lazy<ReminderCoordinator>
     @Inject lateinit var settings: SettingsRepository
     @Inject @ApplicationScope lateinit var scope: CoroutineScope
 
@@ -32,12 +37,17 @@ class AlarmReceiver : BroadcastReceiver() {
         val pending = goAsync()
         scope.launch {
             try {
-                when (intent.action) {
-                    ACTION_REMINDER -> onReminder(context, intent)
-                    ACTION_BILLING_REMINDER -> onBillingReminder(context, intent)
-                    ACTION_END_FAST -> {
-                        service.endActive()
-                        Notifications.cancelFastNotifications(context)
+                // goAsync gives about 10 seconds; never let a slow database or Keystore hang it.
+                withTimeoutOrNull(RECEIVER_TIMEOUT_MS) {
+                    if (intent.action == ACTION_BILLING_REMINDER) {
+                        onBillingReminder(context, intent)
+                        return@withTimeoutOrNull
+                    }
+                    // The database can't be read after its key was lost; MainActivity explains.
+                    if (FastingDatabase.keyStatus(context) == DatabaseKeyProvider.Status.LOST) return@withTimeoutOrNull
+                    when (intent.action) {
+                        ACTION_REMINDER -> onReminder(context, intent)
+                        ACTION_END_FAST -> onEndFast(context)
                     }
                 }
             } finally {
@@ -56,20 +66,30 @@ class AlarmReceiver : BroadcastReceiver() {
         settings.setBillingRemindedFor(expiresMillis)
     }
 
+    /**
+     * Ends the fast from the notification. Rescheduling clears its alarms and the ongoing
+     * notification and refreshes widgets; long fasts leave refeeding guidance for the Timer.
+     */
+    private suspend fun onEndFast(context: Context) {
+        val result = service.get().endActive()
+        if (result?.refeeding != null) settings.setPendingRefeeding(result.fast.id)
+        Notifications.cancelFastNotifications(context)
+        coordinator.get().reschedule()
+    }
+
     private suspend fun onReminder(context: Context, intent: Intent) {
-        val reminder = AndroidAlarmGateway.parse(intent) ?: return
-        val active = fasts.getActive()
-        when (reminder.kind) {
-            ReminderKind.FAST_START -> if (active == null) Notifications.showStartReminder(context)
-            else -> {
-                // Ignore stale alarms for a fast that has ended or been replaced.
-                if (active == null || active.id != reminder.fastId) {
-                    coordinator.reschedule()
-                    return
-                }
-                Notifications.showForReminder(context, reminder, active)
+        val reminder = AndroidAlarmGateway.parse(intent)
+        if (reminder != null) {
+            val active = fasts.get().getActive()
+            when (reminder.kind) {
+                ReminderKind.FAST_START -> if (active == null) Notifications.showStartReminder(context)
+                // Stale alarms for a fast that has ended or been replaced are ignored.
+                else -> if (active != null && active.id == reminder.fastId) Notifications.showForReminder(context, reminder, active)
             }
         }
+        // Always re-plan after a reminder fires: it arms the next scheduled start and rolls
+        // the 8-hourly safety check-ins forward (the planner keeps a rolling horizon).
+        coordinator.get().reschedule()
     }
 
     companion object {
@@ -82,5 +102,8 @@ class AlarmReceiver : BroadcastReceiver() {
         const val EXTRA_FAST_ID = "fast_id"
         const val EXTRA_INDEX = "index"
         const val EXTRA_TRIGGER_AT = "trigger_at"
+
+        /** Receiver work limit, under the ~10 s goAsync allows. */
+        const val RECEIVER_TIMEOUT_MS = 8_000L
     }
 }
