@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ramadan mode, the Settings redesign and the app language picker. -->
+<resources>
+    <!-- Ramadan card on the Timer -->
+    <string name="ramadan_mode_city">Ramadan mode · %1$s</string>
+    <string name="ramadan_mode_title">Ramadan mode</string>
+    <string name="ramadan_iftar_in">Iftar in %1$s</string>
+    <string name="ramadan_iftar_at">Iftar at %1$s</string>
+    <string name="ramadan_suhoor_ends">Suhoor ends %1$s</string>
+    <string name="ramadan_in">in %1$s</string>
+    <string name="ramadan_hours_minutes">%1$dh %2$02dm</string>
+    <string name="ramadan_minutes">%1$d min</string>
+    <string name="ramadan_fajr_at">Fajr %1$s</string>
+    <string name="ramadan_maghrib_at">Maghrib %1$s</string>
+    <string name="ramadan_times_method">Times: %1$s method</string>
+    <string name="ramadan_choose_city_body">Choose your city to see today\'s suhoor and iftar times.</string>
+    <string name="ramadan_choose_city">Choose city</string>
+    <string name="a11y_ramadan_progress">Fasting day %1$d%% complete</string>
+
+    <!-- Ramadan settings -->
+    <string name="ramadan_group">Ramadan</string>
+    <string name="ramadan_city">City</string>
+    <string name="ramadan_city_none">Not set</string>
+    <string name="ramadan_method">Calculation method</string>
+    <string name="ramadan_today_suhoor">Suhoor ends today</string>
+    <string name="ramadan_today_iftar">Iftar today</string>
+    <string name="ramadan_footer">Fajr ends suhoor and Maghrib is iftar. Times are calculated, so check your local mosque or the official timetable. If you take medicines for diabetes, talk to your doctor before fasting.</string>
+    <string name="ramadan_footer_off">A daily fast from Fajr to Maghrib for your city, with suhoor and iftar reminders. Free.</string>
+    <string name="ramadan_search">Search cities or countries</string>
+    <string name="ramadan_no_cities">No cities match \"%1$s\".</string>
+    <string name="ramadan_method_muis">Majlis Ugama Islam Singapura</string>
+    <string name="ramadan_method_jakim">Jabatan Kemajuan Islam Malaysia</string>
+    <string name="ramadan_method_kemenag">Kementerian Agama, Indonesia</string>
+    <string name="ramadan_method_mwl">Muslim World League</string>
+    <string name="ramadan_method_footer">Each city starts with its country\'s usual method.</string>
+    <string name="ramadan_method_recommended">Usual for %1$s</string>
+    <string name="a11y_selected">Selected</string>
+
+    <!-- Settings redesign -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_plan_row">Plan</string>
+    <string name="settings_reminders_footer">If reminders arrive late, run the reliability check under Fasting.</string>
+    <string name="settings_after_hours">After %1$dh</string>
+    <string name="settings_hours_value">%1$dh</string>
+    <string name="settings_milestones_footer">Get a notification when your fast reaches these lengths.</string>
+    <string name="settings_forgot_title">\"Forgot to end your fast?\"</string>
+    <string name="settings_forgot_footer">A gentle nudge if a fast runs this long past its goal.</string>
+    <string name="settings_near_goal">One hour before my goal</string>
+    <string name="settings_window_closing">When my eating window is closing</string>
+    <string name="settings_hydration">Water nudges on long fasts</string>
+    <string name="settings_coaching">First-week tips</string>
+    <string name="settings_weekly_recap">Weekly recap</string>
+    <string name="settings_water">Water</string>
+    <string name="settings_water_goal">Daily goal</string>
+    <string name="settings_water_auto">Automatic (%1$s)</string>
+    <string name="settings_liters">%1$s L</string>
+    <string name="settings_water_use_auto">Use automatic</string>
+    <string name="settings_water_footer">Automatic uses 35 ml per kg of your latest weight, between 1.5 and 4 L. A general guide, not medical advice.</string>
+    <string name="settings_fasting">Fasting</string>
+    <string name="settings_eating_window_title">Eating window after long fasts</string>
+    <string name="settings_schedules_title">Weekly schedules</string>
+    <string name="settings_schedules_subtitle">5:2 and alternate-day</string>
+    <string name="settings_data_footer">Restoring replaces everything currently in the app with the backup. Your data is stored only on this phone, encrypted, and never sent to analytics or ad services.</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_footer">Opens your phone\'s settings to choose Fasting Shift\'s language.</string>
+    <string name="settings_language_note">Change the app\'s language in your phone\'s settings.</string>
+    <string name="settings_helplines">Helplines</string>
+    <string name="settings_done">Done</string>
+    <string name="settings_cancel">Cancel</string>
+
+    <!-- Schedules and reliability -->
+    <string name="schedules_enabled">On</string>
+    <string name="schedules_days">Days</string>
+    <string name="schedules_start_time">Start time</string>
+    <string name="schedules_new">New schedule</string>
+    <string name="rel_fix_footer">Tap an item that needs attention to fix it.</string>
+</resources>
