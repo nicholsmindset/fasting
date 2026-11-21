@@ -1,5 +1,7 @@
 package com.fastingshift.app
 
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -35,7 +37,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assume.assumeTrue
+import com.fastingshift.domain.timer.TimerDisplayMode
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -75,6 +79,7 @@ class StoreScreenshotTest {
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
         settings.setOnboardingComplete(true)
+        settings.setTimerMode(TimerDisplayMode.ELAPSED)
         settings.setMilestoneHours(setOf(12, 16))
         screening.save(ScreeningRecord(now, ScreeningAnswers(42, false, false, false, emptySet(), 178.0, 82.0), GateResult.OK, false))
         // Three weeks of mostly-kept 16:8 days, one shorter day, one longer weekend fast.
@@ -104,6 +109,17 @@ class StoreScreenshotTest {
     private fun waitFor(text: String) =
         compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
 
+    private fun waitForDescription(part: String) =
+        compose.waitUntil(15_000) { compose.onAllNodes(hasContentDescription(part, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+
+    @After fun tearDown() {
+        if (outDir == null) return
+        runBlocking {
+            settings.setOnboardingComplete(false)
+            settings.setTimerMode(TimerDisplayMode.ELAPSED)
+        }
+    }
+
     private fun shoot(name: String, mode: String) {
         compose.waitForIdle()
         captureScreenRoboImage(File(outDir, "$name-$mode.png").path)
@@ -112,6 +128,16 @@ class StoreScreenshotTest {
     private fun captureAll(mode: String) {
         waitFor(s(R.string.timer_end))
         shoot("1-timer", mode)
+        // Tapping the ring flips it to time left, then to when the fast can be broken.
+        val ring = compose.onNode(hasContentDescription(s(R.string.a11y_mode_elapsed), substring = true))
+        ring.performClick()
+        waitForDescription(compose.activity.getString(R.string.a11y_mode_remaining, "").trimEnd(' ', ':'))
+        shoot("1b-timer-left", mode)
+        compose.onNode(hasClickAction() and hasContentDescription("Fasted ", substring = true)).performClick()
+        waitForDescription(compose.activity.getString(R.string.a11y_mode_break_at, "").trimEnd(' ', ':'))
+        shoot("1c-timer-break-at", mode)
+        compose.onNode(hasClickAction() and hasContentDescription("Fasted ", substring = true)).performClick()
+        waitForDescription(s(R.string.a11y_mode_elapsed))
         compose.onNodeWithText(s(R.string.tab_history)).performClick()
         val averagePrefix = compose.activity.getString(R.string.history_average, "", 0).substringBefore(" ")
         compose.waitUntil(15_000) { compose.onAllNodesWithText(averagePrefix, substring = true).fetchSemanticsNodes().isNotEmpty() }

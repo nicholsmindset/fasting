@@ -1,16 +1,35 @@
 package com.fastingshift.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.fastingshift.app.R
+import com.fastingshift.domain.model.WeightUnit
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -27,12 +46,68 @@ fun SectionCard(modifier: Modifier = Modifier, title: String? = null, content: @
     }
 }
 
+/**
+ * Secondary screens: a top app bar with an up arrow (no bottom "Back" buttons), an optional
+ * snackbar host, and content padded below the bar.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SecondaryScaffold(
+    title: String,
+    onBack: () -> Unit,
+    snackbarHostState: SnackbarHostState? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(title) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.navigate_up))
+                    }
+                },
+            )
+        },
+        snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } },
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+    }
+}
+
+/** Centered spinner for the moment before a screen's data has loaded. */
+@Composable
+fun LoadingBox(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+}
+
 /** "16h 20m" — for summaries; the live timer uses H:MM:SS. */
 fun Duration.hoursMinutes(): String {
     val h = toHours()
     val m = toMinutes() % 60
     return if (m == 0L) "${h}h" else "${h}h ${m}m"
 }
+
+const val LB_PER_KG = 2.2046226
+
+/** Converts a weight to [unit] for display. */
+fun convertWeight(value: Double, from: WeightUnit, to: WeightUnit): Double = when {
+    from == to -> value
+    to == WeightUnit.LB -> value * LB_PER_KG
+    else -> value / LB_PER_KG
+}
+
+/** "82.1 kg" / "181.0 lb" from string resources. */
+@Composable
+fun weightText(value: Double, unit: WeightUnit): String =
+    stringResource(if (unit == WeightUnit.KG) R.string.unit_kg_value else R.string.unit_lb_value, value)
+
+@Composable
+fun weightUnitLabel(unit: WeightUnit): String = stringResource(if (unit == WeightUnit.KG) R.string.unit_kg else R.string.unit_lb)
 
 private val dateTime = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
 private val date = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)

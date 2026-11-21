@@ -13,64 +13,87 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.fastingshift.app.ui.components.hoursMinutes
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
-import androidx.compose.foundation.layout.Row
+import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.formatDateTime
+import com.fastingshift.app.ui.components.formatTime
+import com.fastingshift.app.ui.components.hoursMinutes
+import com.fastingshift.app.ui.safety.ChecklistDialog
 import com.fastingshift.app.ui.safety.HelplineList
+import com.fastingshift.domain.model.Electrolyte
+import com.fastingshift.domain.model.Protocol
+import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.safety.BlockReason
 import com.fastingshift.domain.safety.FastPolicy
-import com.fastingshift.domain.timeline.BodyTimeline
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.RefeedingTier
-import com.fastingshift.domain.safety.StartRequirement
+import com.fastingshift.domain.timeline.BodyTimeline
 import com.fastingshift.domain.timer.toClockString
+import java.time.Duration
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun TimerRoute(
     onEditFast: (Long) -> Unit,
     onOpenProgram: () -> Unit,
     onOpenCheckIn: (Long) -> Unit,
+    onOpenRefeeding: (RefeedingTier, Long) -> Unit,
+    onOpenScreening: () -> Unit,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val loaded by viewModel.state.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     // Notification permission is requested in context: when the user starts a fast.
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -81,44 +104,82 @@ fun TimerRoute(
         viewModel.start()
     }
 
-    TimerScreen(
-        state = state, onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = onStart, onEnd = viewModel::end,
-        onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
-        onOpenProgram = onOpenProgram,
-    )
+    Box(Modifier.fillMaxSize()) {
+        val state = loaded
+        if (state == null) {
+            LoadingBox(Modifier.padding(top = 120.dp))
+        } else {
+            TimerScreen(
+                state = state,
+                actions = TimerActions(
+                    onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = onStart, onEnd = viewModel::end,
+                    onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
+                    onOpenProgram = onOpenProgram, onToggleMode = viewModel::cycleMode, onOpenScreening = onOpenScreening,
+                    onStartAt = viewModel::setStartAt, onWater = { viewModel.addWater() },
+                    onWeight = { v, u -> viewModel.addWeight(v, u) }, onElectrolyte = { e, mg -> viewModel.addElectrolyte(e, mg) },
+                ),
+            )
+        }
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
 
+    // Ending is one tap; Undo stays on screen for 10 seconds in case it was a mis-tap.
+    events.ended?.let { ended ->
+        val message = stringResource(R.string.timer_ended_snack, ended.actualDuration?.toClockString().orEmpty())
+        val undo = stringResource(R.string.undo)
+        LaunchedEffect(ended) {
+            val timeout = launch { delay(10_000); snackbar.currentSnackbarData?.dismiss() }
+            val result = snackbar.showSnackbar(message, actionLabel = undo, duration = SnackbarDuration.Indefinite)
+            timeout.cancel()
+            if (result == SnackbarResult.ActionPerformed) viewModel.undoEnd(ended) else viewModel.consumeEnded()
+        }
+    }
+    events.message?.let { msg ->
+        LaunchedEffect(msg) {
+            snackbar.showSnackbar(context.getString(msg))
+            viewModel.consumeMessage()
+        }
+    }
+    events.refeeding?.let { nav ->
+        LaunchedEffect(nav) {
+            viewModel.consumeRefeeding()
+            onOpenRefeeding(nav.tier, nav.fastId)
+        }
+    }
     events.confirm?.let { reqs ->
-        ChecklistDialog(reqs, onConfirm = viewModel::confirmAndStart, onDismiss = viewModel::dismissEvents)
+        ChecklistDialog(reqs, onConfirm = viewModel::confirmAndStart, onDismiss = viewModel::dismissDialogs)
     }
     events.blocked?.let { reason ->
-        InfoDialog(text = stringResource(blockedMessage(reason)), onDismiss = viewModel::dismissEvents)
+        InfoDialog(text = stringResource(blockedMessage(reason)), onDismiss = viewModel::dismissDialogs)
     }
-    events.ended?.let { ended ->
-        val duration = ended.actualDuration?.toClockString() ?: ""
-        val tier = events.refeeding
-        InfoDialog(
-            title = if (tier != null) stringResource(R.string.refeed_title) else null,
-            text = stringResource(R.string.timer_ended, duration) + (tier?.let { "\n\n" + stringResource(refeedingText(it)) } ?: ""),
-            onDismiss = viewModel::dismissEvents,
-        )
+    if (events.invalidStart) {
+        InfoDialog(text = stringResource(R.string.timer_invalid_start), onDismiss = viewModel::dismissDialogs)
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** Everything the Timer screen can ask for. */
+class TimerActions(
+    val onSelect: (Protocol) -> Unit = {},
+    val onSelectCustom: (Int) -> Unit = {},
+    val onStart: () -> Unit = {},
+    val onEnd: () -> Unit = {},
+    val onEdit: () -> Unit = {},
+    val onCheckIn: () -> Unit = {},
+    val onOpenProgram: () -> Unit = {},
+    val onToggleMode: () -> Unit = {},
+    val onOpenScreening: () -> Unit = {},
+    val onStartAt: (java.time.Instant?) -> Unit = {},
+    val onWater: () -> Unit = {},
+    val onWeight: (Double, WeightUnit) -> Unit = { _, _ -> },
+    val onElectrolyte: (Electrolyte, Double) -> Unit = { _, _ -> },
+)
+
 @Composable
-fun TimerScreen(
-    state: TimerUiState,
-    onSelect: (com.fastingshift.domain.model.Protocol) -> Unit,
-    onSelectCustom: (Int) -> Unit,
-    onStart: () -> Unit,
-    onEnd: () -> Unit,
-    onEdit: () -> Unit,
-    onCheckIn: () -> Unit,
-    onOpenProgram: () -> Unit,
-) {
+fun TimerScreen(state: TimerUiState, actions: TimerActions) {
     Surface(Modifier.fillMaxSize()) {
         Column(
-            Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp),
+            // The app scaffold already pads for the status bar; no second inset here.
+            Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -126,96 +187,158 @@ fun TimerScreen(
             val active = state.active
             if (active != null && timer != null) {
                 ExactAlarmBanner()
-                val ringDescription = stringResource(
-                    R.string.a11y_timer,
-                    timer.elapsed.hoursMinutes(),
-                    active.plannedDuration.hoursMinutes(),
-                    (timer.progress * 100).toInt(),
-                )
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.padding(top = 24.dp).clearAndSetSemantics {
-                        contentDescription = ringDescription
-                        progressBarRangeInfo = ProgressBarRangeInfo(timer.progress, 0f..1f)
-                    },
-                ) {
-                    CircularProgressIndicator(
-                        progress = { timer.progress },
-                        modifier = Modifier.size(260.dp),
-                        strokeWidth = 14.dp,
-                    )
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.timer_elapsed), style = MaterialTheme.typography.labelLarge)
-                        Text(timer.elapsed.toClockString(), style = MaterialTheme.typography.displaySmall)
-                        Text(
-                            if (timer.isTargetReached) stringResource(R.string.timer_goal_reached, timer.pastTarget.toClockString())
-                            else stringResource(R.string.timer_remaining, timer.remaining.toClockString()),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                }
-                Text(stringResource(R.string.timer_goal, "${active.plannedDuration.toHours()}h"))
+                TimerRing(active, timer, state.mode, state.now, onToggle = actions.onToggleMode, modifier = Modifier.padding(top = 8.dp))
+                Text(stringResource(R.string.timer_goal, active.plannedDuration.hoursMinutes()), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.timer_started_at, active.startAt.formatDateTime()), style = MaterialTheme.typography.bodySmall)
                 // Ending takes one tap (PRD F2: at most 2).
-                Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_end)) }
-                OutlinedButton(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_edit)) }
+                Button(onClick = actions.onEnd, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_end)) }
+                OutlinedButton(onClick = actions.onEdit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_edit)) }
                 if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
-                    OutlinedButton(onClick = onCheckIn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_check_in)) }
+                    OutlinedButton(onClick = actions.onCheckIn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_check_in)) }
                 }
+                QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
                 BodyTimelineCard(timer.elapsed)
             } else {
-                Text(stringResource(R.string.timer_not_fasting), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 24.dp))
-                if (state.gate == GateResult.BLOCK) {
-                    Text(stringResource(R.string.timer_education_only), textAlign = TextAlign.Center)
-                    HelplineList()
-                    BodyTimelineCard(null)
-                    return@Column
-                }
-                state.programTargetHours?.let {
-                    OutlinedButton(onClick = onOpenProgram, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_program_target, it)) }
-                }
-                Text(stringResource(R.string.timer_pick_protocol), style = MaterialTheme.typography.titleMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    state.options.forEach { option ->
-                        FilterChip(
-                            selected = option.protocol == state.selected,
-                            onClick = { onSelect(option.protocol) },
-                            enabled = option.enabled,
-                            label = { Text(option.protocol.name) },
-                        )
-                    }
-                }
-                CustomLengthRow(state, onSelectCustom)
-                if (state.options.any { !it.enabled }) {
-                    val msg = if (state.gate == GateResult.SOFT) R.string.timer_locked_soft else R.string.timer_locked_screening
-                    Text(stringResource(msg), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-                }
-                val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
-                Button(onClick = onStart, enabled = selectedEnabled, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.timer_start))
-                }
+                NotFasting(state, actions)
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NotFasting(state: TimerUiState, actions: TimerActions) {
+    val window = state.eatingWindow
+    if (window != null) {
+        EatingWindowRing(window, state.now)
+    } else {
+        Text(stringResource(R.string.timer_not_fasting), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 24.dp))
+    }
+    when {
+        state.gate == GateResult.BLOCK -> {
+            // Education-only: no protocols, no start button; support and the body timeline.
+            Text(stringResource(R.string.timer_education_only), textAlign = TextAlign.Center)
+            HelplineList()
+            BodyTimelineCard(null)
+            return
+        }
+        state.gate == null -> {
+            Text(stringResource(R.string.timer_needs_screening), textAlign = TextAlign.Center)
+            Button(onClick = actions.onOpenScreening, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_finish_screening)) }
+            return
+        }
+        state.gate == GateResult.SOFT && !state.clinicianAcknowledged -> {
+            Text(stringResource(R.string.timer_locked_doctor), textAlign = TextAlign.Center)
+            Button(onClick = actions.onOpenScreening, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_confirm_doctor)) }
+            HelplineList()
+            return
+        }
+    }
+    state.programTargetHours?.let {
+        OutlinedButton(onClick = actions.onOpenProgram, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.timer_program_target, it)) }
+    }
+    Text(stringResource(R.string.timer_pick_protocol), style = MaterialTheme.typography.titleMedium)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
+        state.options.forEach { option ->
+            FilterChip(
+                selected = option.protocol == state.selected,
+                onClick = { actions.onSelect(option.protocol) },
+                enabled = option.enabled,
+                label = { Text(option.protocol.name) },
+            )
+        }
+    }
+    CustomLengthRow(state, actions.onSelectCustom)
+    if (state.options.any { !it.enabled }) {
+        Text(stringResource(R.string.timer_locked_soft), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+    }
+    StartTimeRow(state, actions.onStartAt)
+    val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
+    Button(onClick = actions.onStart, enabled = selectedEnabled, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.timer_start))
+    }
+    HorizontalDivider()
+    QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
+}
+
+@Composable
+private fun StartTimeRow(state: TimerUiState, onStartAt: (java.time.Instant?) -> Unit) {
+    var picking by rememberSaveable { mutableStateOf(false) }
+    val at = state.startAt
+    if (at == null) {
+        TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_start_earlier)) }
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_starting_at, at.formatDateTime())) }
+            TextButton(onClick = { onStartAt(null) }) { Text(stringResource(R.string.timer_start_now)) }
+        }
+    }
+    if (picking) {
+        StartEarlierDialog(at, onDismiss = { picking = false }) { onStartAt(it); picking = false }
+    }
+}
+
+/** While the eating window is open: how long until the next fast, and at what time. */
+@Composable
+private fun EatingWindowRing(window: EatingWindow, now: java.time.Instant) {
+    val total = Duration.between(window.startedAt, window.endsAt).toMillis().coerceAtLeast(1)
+    val left = Duration.between(now, window.endsAt).coerceAtLeast(Duration.ZERO)
+    val progress = (Duration.between(window.startedAt, now).toMillis().toFloat() / total).coerceIn(0f, 1f)
+    val description = stringResource(R.string.eating_a11y, left.hoursMinutes(), window.endsAt.formatTime())
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.padding(top = 8.dp).clearAndSetSemantics { contentDescription = description },
+    ) {
+        CircularProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.size(220.dp),
+            strokeWidth = 12.dp,
+            color = MaterialTheme.colorScheme.tertiary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 32.dp)) {
+            Text(stringResource(R.string.eating_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.eating_next_in, left.hoursMinutes()), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+            Text(stringResource(R.string.eating_next_at, window.endsAt.formatTime()), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+/** Custom length: type the hours, or nudge them with − and +. */
 @Composable
 private fun CustomLengthRow(state: TimerUiState, onSelectCustom: (Int) -> Unit) {
     val max = state.maxHours ?: return
     val hours = if (state.selected.isCustom) state.selected.fastHours else null
+    var text by rememberSaveable(hours) { mutableStateOf(hours?.toString().orEmpty()) }
     val decrease = stringResource(R.string.a11y_decrease)
     val increase = stringResource(R.string.a11y_increase)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.timer_custom))
-        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) - 1).coerceAtLeast(1)) }) { Text("−", Modifier.semantics { contentDescription = decrease }) }
-        Text(hours?.let { "${it}h" } ?: "—")
-        OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) + 1).coerceAtMost(max)) }) { Text("+", Modifier.semantics { contentDescription = increase }) }
+    val typed = text.toIntOrNull()
+    val error = text.isNotEmpty() && (typed == null || typed !in 1..max)
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.timer_custom))
+            OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) - 1).coerceIn(1, max)) }) { Text("−", Modifier.semantics { contentDescription = decrease }) }
+            OutlinedTextField(
+                value = text,
+                onValueChange = { v ->
+                    text = v.filter(Char::isDigit).take(3)
+                    text.toIntOrNull()?.takeIf { it in 1..max }?.let(onSelectCustom)
+                },
+                singleLine = true,
+                isError = error,
+                label = { Text(stringResource(R.string.timer_custom_hours)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.width(96.dp),
+            )
+            OutlinedButton(onClick = { onSelectCustom(((hours ?: 16) + 1).coerceIn(1, max)) }) { Text("+", Modifier.semantics { contentDescription = increase }) }
+        }
+        if (error) Text(stringResource(R.string.timer_custom_range, max), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
 }
 
 /** Evidence-graded body timeline (PRD F9). Every claim shows its label. */
 @Composable
-private fun BodyTimelineCard(elapsed: java.time.Duration?) {
+private fun BodyTimelineCard(elapsed: Duration?) {
     SectionCard(title = stringResource(R.string.timeline_title)) {
         Text(stringResource(R.string.timeline_note), style = MaterialTheme.typography.bodySmall)
         val current = elapsed?.let(BodyTimeline::stageAt)
@@ -245,38 +368,12 @@ private fun ExactAlarmBanner() {
             Text(stringResource(R.string.exact_alarm_banner))
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = {
-                context.startActivity(
-                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")),
-                )
+                runCatching {
+                    context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
+                }
             }) { Text(stringResource(R.string.exact_alarm_allow)) }
         }
     }
-}
-
-@Composable
-private fun ChecklistDialog(requirements: Set<StartRequirement>, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.checklist_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                if (StartRequirement.EXTENDED_FAST_CHECKLIST in requirements) {
-                    listOf(
-                        R.string.checklist_hydration, R.string.checklist_electrolytes, R.string.checklist_medications,
-                        R.string.checklist_contact, R.string.checklist_redflags,
-                    ).forEach { Text("• " + stringResource(it)) }
-                }
-                if (StartRequirement.OVER_72H_ACKNOWLEDGEMENT in requirements) {
-                    Text(stringResource(R.string.checklist_over72), style = MaterialTheme.typography.bodyMedium)
-                }
-                if (StartRequirement.MEDICAL_DISCLAIMER in requirements) {
-                    Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.checklist_confirm)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
 }
 
 @Composable
@@ -291,12 +388,7 @@ private fun InfoDialog(text: String, onDismiss: () -> Unit, title: String? = nul
 
 private fun blockedMessage(reason: BlockReason): Int = when (reason) {
     BlockReason.EDUCATION_ONLY -> R.string.timer_education_only
-    BlockReason.NEEDS_CLINICIAN_ACKNOWLEDGEMENT -> R.string.timer_needs_clinician
-    BlockReason.EXCEEDS_GATED_LIMIT, BlockReason.OUT_OF_RANGE, BlockReason.NEEDS_SCREENING -> R.string.timer_locked_screening
-}
-
-private fun refeedingText(tier: RefeedingTier): Int = when (tier) {
-    RefeedingTier.STANDARD -> R.string.refeed_standard
-    RefeedingTier.EXTENDED -> R.string.refeed_extended
-    RefeedingTier.PROLONGED -> R.string.refeed_prolonged
+    BlockReason.NEEDS_CLINICIAN_ACKNOWLEDGEMENT -> R.string.timer_locked_doctor
+    BlockReason.NEEDS_SCREENING -> R.string.timer_needs_screening
+    BlockReason.EXCEEDS_GATED_LIMIT, BlockReason.OUT_OF_RANGE -> R.string.timer_locked_soft
 }

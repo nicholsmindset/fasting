@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,6 +51,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
@@ -113,7 +116,8 @@ class HistoryViewModel @Inject constructor(
     private val period = MutableStateFlow(Period.WEEK)
     private val view = combine(month, period) { m, p -> m to p }
 
-    val state: StateFlow<HistoryState> = combine(fasts.observeAll(), freezes.observeFrozenDays(), schedules.observeAll(), view) { all, frozen, sch, (m, p) ->
+    /** Null until loaded, so an empty history never flashes before the fasts arrive. */
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), schedules.observeAll(), view) { all, frozen, sch, (m, p) ->
         val zone = ZoneId.systemDefault()
         val now = clock.instant()
         val today = now.atZone(zone).toLocalDate()
@@ -140,7 +144,7 @@ class HistoryViewModel @Inject constructor(
             streak = StreakCalculator.calculate(all, zone, today, frozen, planned),
             freezeableDay = freezeable,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
     fun setPeriod(p: Period) = period.update { p }
@@ -148,9 +152,18 @@ class HistoryViewModel @Inject constructor(
 }
 
 @Composable
-fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
-    val st by vm.state.collectAsStateWithLifecycle()
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
+    val loaded by vm.state.collectAsStateWithLifecycle()
+    val st = loaded
+    if (st == null) {
+        LoadingBox(Modifier.padding(top = 120.dp))
+        return
+    }
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
+    ) {
         item { st.summary?.let { SummaryCard(st.period, it, vm::setPeriod) } }
         item { RecentFastsCard(st.recent, onEditFast) }
         item { CalendarCard(st, vm::shiftMonth, onEditFast) }
@@ -166,6 +179,17 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: His
                 TextButton(onClick = onOpenInsights) { Text(stringResource(R.string.history_insights)) }
             }
         }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text(
+                    stringResource(R.string.history_all_fasts),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                TextButton(onClick = onAddPastFast) { Text(stringResource(R.string.add_past_button)) }
+            }
+        }
+        if (st.fasts.isEmpty()) item { Text(stringResource(R.string.history_empty)) }
         items(st.fasts, key = { it.id }) { f -> FastRow(f) { onEditFast(f.id) } }
     }
 }
@@ -409,7 +433,11 @@ private fun FastRow(f: Fast, onClick: () -> Unit) {
         val length = Duration.between(f.startAt, f.endedAt ?: java.time.Instant.now())
         Text("${Presets.byId(f.protocolId)?.name ?: f.protocolId} · ${length.hoursMinutes()}", style = MaterialTheme.typography.titleSmall)
         Text(f.startAt.formatDateTime(), style = MaterialTheme.typography.bodySmall)
-        Text(stringResource(statusLabel(f.status)), style = MaterialTheme.typography.bodySmall)
+        Text(
+            stringResource(statusLabel(f.status)),
+            style = if (f.isActive) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodySmall,
+            color = if (f.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         f.note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }

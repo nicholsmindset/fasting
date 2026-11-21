@@ -51,7 +51,8 @@ import com.fastingshift.domain.safety.Medication
 fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: OnboardingViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
     val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.next() }
-    BackHandler(enabled = st.step != Step.WELCOME) { vm.back() }
+    // On the first step of a re-run, system back leaves onboarding and returns to Settings.
+    BackHandler(enabled = st.step != Step.WELCOME && !(st.rerun && st.step == Step.SCREENING)) { vm.back() }
 
     Surface(Modifier.fillMaxSize()) {
         Column(
