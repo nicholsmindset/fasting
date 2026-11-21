@@ -3,4 +3,14 @@
 <resources>
     <!-- Widgets -->
     <string name="widget_open_app">Open app</string>
+
+    <!-- Database key recovery (SR-9) -->
+    <string name="recovery_title">Your saved data can\'t be unlocked</string>
+    <string name="recovery_body">Fasting Shift encrypts your data with a key kept in this phone\'s secure hardware. That key was reset, which can happen after a security change such as removing or changing the screen lock, or restoring the phone. Without the key, the data saved on this phone can\'t be read by anyone, including us.</string>
+    <string name="recovery_fresh_body">Start fresh deletes the unreadable data so you can keep using the app.</string>
+    <string name="recovery_backup_note">If you exported a backup file, you can restore it afterwards in Settings.</string>
+    <string name="recovery_start_fresh">Start fresh</string>
+    <string name="recovery_cancel">Cancel</string>
+    <string name="recovery_confirm_title">Delete unreadable data?</string>
+    <string name="recovery_confirm_body">The data on this phone can\'t be recovered without its key. The app will restart empty.</string>
 </resources>
