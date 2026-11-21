@@ -21,6 +21,9 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
+    // Exported Room schemas, so migration tests can open each historical version.
+    sourceSets.getByName("test").assets.srcDir("$projectDir/schemas")
 }
 
 kotlin {
@@ -48,6 +51,7 @@ dependencies {
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.kotlinx.coroutines.test)

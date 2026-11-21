@@ -11,6 +11,28 @@ enum class ReminderKind {
     MILESTONE,
     FORGOT_TO_END,
     SYMPTOM_CHECK_IN,
+
+    // Appended (never reorder: request codes derive from the ordinal).
+    /** One hour before the goal (opt-in). */
+    NEAR_GOAL,
+
+    /** Drink-water nudges every few hours during fasts of 24h or more. */
+    HYDRATION,
+
+    /** "Your eating window closes in 30 minutes" (opt-in). */
+    EATING_WINDOW_CLOSING,
+
+    /** First-week coaching tips (index = tip ordinal). */
+    COACHING,
+
+    /** Sunday evening weekly recap. */
+    WEEKLY_RECAP,
+
+    /** Ramadan: suhoor ends soon (before Fajr). */
+    SUHOOR,
+
+    /** Ramadan: time for iftar (Maghrib). */
+    IFTAR,
 }
 
 /**
@@ -37,6 +59,12 @@ data class ReminderSettings(
     /** "Forgot to end your fast?" nudge, measured past the planned end. Null disables it. */
     val forgotToEndAfter: Duration? = Duration.ofHours(4),
     val fastStartEnabled: Boolean = true,
+    /** "1 hour to your goal". */
+    val nearGoalEnabled: Boolean = false,
+    /** "Eating window closes in 30 minutes". */
+    val windowClosingEnabled: Boolean = false,
+    /** Water nudges every [HYDRATION_INTERVAL] during fasts of 24h or more. */
+    val hydrationEnabled: Boolean = true,
 )
 
 /**
@@ -47,6 +75,9 @@ data class ReminderSettings(
 object ReminderPlanner {
     /** How many future check-ins to keep scheduled beyond the planned end or now. */
     private const val CHECK_IN_LOOKAHEAD = 3L
+    val NEAR_GOAL_BEFORE: Duration = Duration.ofHours(1)
+    val HYDRATION_INTERVAL: Duration = Duration.ofHours(3)
+    val WINDOW_CLOSING_BEFORE: Duration = Duration.ofMinutes(30)
 
     /** Reminders still in the future for an active fast. Returns nothing for an ended fast. */
     fun planForActiveFast(fast: Fast, settings: ReminderSettings, now: Instant): List<Reminder> {
@@ -65,6 +96,21 @@ object ReminderPlanner {
             .forEachIndexed { i, offset ->
                 planned += Reminder(ReminderKind.MILESTONE, fast.startAt.plus(offset), fast.id, i)
             }
+
+        if (settings.nearGoalEnabled && fast.plannedDuration > NEAR_GOAL_BEFORE.multipliedBy(2)) {
+            planned += Reminder(ReminderKind.NEAR_GOAL, fast.targetEndAt.minus(NEAR_GOAL_BEFORE), fast.id)
+        }
+
+        // Hydration matters most on long fasts (F7 checklist): gentle nudges up to the goal.
+        if (settings.hydrationEnabled && FastPolicy.requiresCheckIns(fast.plannedDuration)) {
+            var k = 1L
+            while (k < Reminder.MAX_PER_KIND) {
+                val at = fast.startAt.plus(HYDRATION_INTERVAL.multipliedBy(k))
+                if (!at.isBefore(fast.targetEndAt)) break
+                planned += Reminder(ReminderKind.HYDRATION, at, fast.id, (k - 1).toInt())
+                k++
+            }
+        }
 
         settings.forgotToEndAfter?.let {
             planned += Reminder(ReminderKind.FORGOT_TO_END, fast.targetEndAt.plus(it), fast.id)
@@ -92,6 +138,14 @@ object ReminderPlanner {
     /**
      * After a window-protocol fast ends, the next fast is due when the eating window closes.
      */
+    /** "Your eating window closes in 30 minutes", if enabled and still ahead. */
+    fun planWindowClosing(lastFast: Fast, eatHours: Int?, settings: ReminderSettings, now: Instant): Reminder? {
+        if (!settings.windowClosingEnabled) return null
+        val start = planNextStart(lastFast, eatHours, settings.copy(fastStartEnabled = true), now) ?: return null
+        val at = start.triggerAt.minus(WINDOW_CLOSING_BEFORE)
+        return if (at.isAfter(now)) Reminder(ReminderKind.EATING_WINDOW_CLOSING, at, lastFast.id) else null
+    }
+
     fun planNextStart(lastFast: Fast, eatHours: Int?, settings: ReminderSettings, now: Instant): Reminder? {
         val ended = lastFast.endedAt ?: return null
         if (!settings.fastStartEnabled || eatHours == null || eatHours <= 0) return null

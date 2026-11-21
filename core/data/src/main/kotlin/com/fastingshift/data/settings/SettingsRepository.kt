@@ -13,6 +13,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.fastingshift.domain.backup.SettingsRecord
 import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.onboarding.Goal
+import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.reminders.ReminderSettings
 import com.fastingshift.domain.timer.TimerDisplayMode
 import java.time.Duration
@@ -41,6 +42,18 @@ data class AppSettings(
     val weightUnit: WeightUnit = WeightUnit.KG,
     /** Expiry date already reminded about, so a billing reminder fires once per period. */
     val billingRemindedFor: Long? = null,
+    /** Daily water goal in ml; null = automatic from weight ([WaterGoal.defaultMl]). */
+    val waterGoalMl: Int? = null,
+    /** First-week coaching tips (in-app and notifications). */
+    val coachingEnabled: Boolean = true,
+    /** Sunday evening weekly recap notification. */
+    val weeklyRecapEnabled: Boolean = true,
+    /** When onboarding finished; coaching runs in the first two weeks after it. */
+    val onboardedAt: Long? = null,
+    /** Ramadan mode (PRD Phase 1): daily fast from Fajr to Maghrib for the chosen city. */
+    val ramadanEnabled: Boolean = false,
+    val ramadanCityId: String? = null,
+    val ramadanMethod: PrayerMethod? = null,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -56,6 +69,9 @@ class SettingsRepository(context: Context) {
                 milestones = (p[MILESTONES] ?: emptySet()).mapNotNull { it.toLongOrNull() }.sorted().map(Duration::ofHours),
                 forgotToEndAfter = (p[FORGOT_HOURS] ?: DEFAULT_FORGOT_HOURS).takeIf { it > 0 }?.let { Duration.ofHours(it.toLong()) },
                 fastStartEnabled = p[FAST_START] ?: true,
+                nearGoalEnabled = p[NEAR_GOAL] ?: false,
+                windowClosingEnabled = p[WINDOW_CLOSING] ?: false,
+                hydrationEnabled = p[HYDRATION] ?: true,
             ),
             hideWeight = p[HIDE_WEIGHT] ?: false,
             ongoingNotification = p[ONGOING] ?: false,
@@ -69,6 +85,13 @@ class SettingsRepository(context: Context) {
             pendingRefeedingFastId = p[PENDING_REFEED],
             weightUnit = p[WEIGHT_UNIT]?.let { runCatching { WeightUnit.valueOf(it) }.getOrNull() } ?: WeightUnit.KG,
             billingRemindedFor = p[BILLING_REMINDED],
+            waterGoalMl = p[WATER_GOAL],
+            coachingEnabled = p[COACHING] ?: true,
+            weeklyRecapEnabled = p[WEEKLY_RECAP] ?: true,
+            onboardedAt = p[ONBOARDED_AT],
+            ramadanEnabled = p[RAMADAN] ?: false,
+            ramadanCityId = p[RAMADAN_CITY],
+            ramadanMethod = p[RAMADAN_METHOD]?.let { runCatching { PrayerMethod.valueOf(it) }.getOrNull() },
         )
     }
 
@@ -105,6 +128,23 @@ class SettingsRepository(context: Context) {
             it[PENDING_REFEED] = fastId
         }
     }
+    suspend fun setNearGoalReminder(enabled: Boolean) = store.edit { it[NEAR_GOAL] = enabled }
+    suspend fun setWindowClosingReminder(enabled: Boolean) = store.edit { it[WINDOW_CLOSING] = enabled }
+    suspend fun setHydrationNudges(enabled: Boolean) = store.edit { it[HYDRATION] = enabled }
+
+    /** null resets to the automatic goal. */
+    suspend fun setWaterGoalMl(ml: Int?) = store.edit {
+        if (ml == null) it.remove(WATER_GOAL) else it[WATER_GOAL] = ml.coerceIn(500, 6_000)
+    }
+    suspend fun setCoaching(enabled: Boolean) = store.edit { it[COACHING] = enabled }
+    suspend fun setWeeklyRecap(enabled: Boolean) = store.edit { it[WEEKLY_RECAP] = enabled }
+    suspend fun setOnboardedAt(millis: Long) = store.edit { it[ONBOARDED_AT] = millis }
+    suspend fun setRamadan(enabled: Boolean) = store.edit { it[RAMADAN] = enabled }
+    suspend fun setRamadanCity(cityId: String, method: PrayerMethod) = store.edit {
+        it[RAMADAN_CITY] = cityId
+        it[RAMADAN_METHOD] = method.name
+    }
+
     suspend fun setBillingRemindedFor(expiresAtMillis: Long) = store.edit { it[BILLING_REMINDED] = expiresAtMillis }
 
     /** Preferences for a backup (F8). Device-specific items (Health Connect, billing) are left out. */
@@ -123,6 +163,15 @@ class SettingsRepository(context: Context) {
             activeProgramId = s.activeProgramId,
             weightUnit = s.weightUnit.name,
             timerMode = s.timerMode.name,
+            waterGoalMl = s.waterGoalMl,
+            nearGoalAlert = s.reminders.nearGoalEnabled,
+            windowClosingAlert = s.reminders.windowClosingEnabled,
+            hydrationNudges = s.reminders.hydrationEnabled,
+            coaching = s.coachingEnabled,
+            weeklyRecap = s.weeklyRecapEnabled,
+            ramadanEnabled = s.ramadanEnabled,
+            ramadanCityId = s.ramadanCityId,
+            ramadanMethod = s.ramadanMethod?.name,
         )
     }
 
@@ -140,6 +189,15 @@ class SettingsRepository(context: Context) {
         it[EATING_WINDOW] = r.eatingWindowHours.coerceIn(1, 23)
         r.activeProgramId?.let { a -> it[ACTIVE_PROGRAM] = a } ?: it.remove(ACTIVE_PROGRAM)
         if (WeightUnit.entries.any { e -> e.name == r.weightUnit }) it[WEIGHT_UNIT] = r.weightUnit
+        r.waterGoalMl?.let { w -> it[WATER_GOAL] = w.coerceIn(500, 6_000) }
+        it[NEAR_GOAL] = r.nearGoalAlert
+        it[WINDOW_CLOSING] = r.windowClosingAlert
+        it[HYDRATION] = r.hydrationNudges
+        it[COACHING] = r.coaching
+        it[WEEKLY_RECAP] = r.weeklyRecap
+        it[RAMADAN] = r.ramadanEnabled
+        r.ramadanCityId?.let { c -> it[RAMADAN_CITY] = c }
+        r.ramadanMethod?.takeIf { m -> PrayerMethod.entries.any { e -> e.name == m } }?.let { m -> it[RAMADAN_METHOD] = m }
         r.timerMode?.takeIf { m -> TimerDisplayMode.entries.any { e -> e.name == m } }?.let { m -> it[TIMER_MODE] = m }
     }
 
@@ -149,6 +207,16 @@ class SettingsRepository(context: Context) {
         val PENDING_REFEED = longPreferencesKey("pending_refeeding_fast")
         val WEIGHT_UNIT = stringPreferencesKey("weight_unit")
         val BILLING_REMINDED = longPreferencesKey("billing_reminded_for")
+        val WATER_GOAL = intPreferencesKey("water_goal_ml")
+        val NEAR_GOAL = booleanPreferencesKey("reminder_near_goal")
+        val WINDOW_CLOSING = booleanPreferencesKey("reminder_window_closing")
+        val HYDRATION = booleanPreferencesKey("reminder_hydration")
+        val COACHING = booleanPreferencesKey("coaching")
+        val WEEKLY_RECAP = booleanPreferencesKey("weekly_recap")
+        val ONBOARDED_AT = longPreferencesKey("onboarded_at")
+        val RAMADAN = booleanPreferencesKey("ramadan_enabled")
+        val RAMADAN_CITY = stringPreferencesKey("ramadan_city")
+        val RAMADAN_METHOD = stringPreferencesKey("ramadan_method")
         val FAST_END = booleanPreferencesKey("reminder_fast_end")
         val FAST_START = booleanPreferencesKey("reminder_fast_start")
         val MILESTONES = stringSetPreferencesKey("reminder_milestone_hours")

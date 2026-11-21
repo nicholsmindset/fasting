@@ -17,6 +17,7 @@ import com.fastingshift.app.ui.MainActivity
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
+import com.fastingshift.domain.coaching.CoachingTip
 import java.time.Duration
 
 object Notifications {
@@ -34,6 +35,10 @@ object Notifications {
     private const val ID_START = 1003
     private const val ID_ONGOING = 1004
     private const val ID_BILLING = 1005
+    private const val ID_HYDRATION = 1007
+    private const val ID_COACHING = 1008
+    private const val ID_RECAP = 1009
+    private const val ID_RAMADAN = 1010
 
     fun createChannels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
@@ -75,15 +80,77 @@ object Notifications {
                 context.getString(R.string.notif_check_in_title),
                 context.getString(R.string.notif_check_in_body),
             )
-            ReminderKind.FAST_START -> return showStartReminder(context)
+            ReminderKind.NEAR_GOAL -> Content(
+                CHANNEL_FAST_ALERTS, ID_FAST,
+                context.getString(R.string.notif_near_goal_title),
+                context.getString(R.string.notif_near_goal_body, formatTime(fast.targetEndAt)),
+            )
+            ReminderKind.HYDRATION -> Content(
+                CHANNEL_REMINDERS, ID_HYDRATION,
+                context.getString(R.string.notif_hydration_title),
+                context.getString(R.string.notif_hydration_body),
+            )
+            ReminderKind.COACHING -> {
+                val tip = CoachingTip.entries.getOrNull(reminder.index) ?: return
+                Content(CHANNEL_REMINDERS, ID_COACHING, context.getString(coachingTitle(tip)), context.getString(coachingBody(tip)))
+            }
+            ReminderKind.FAST_START, ReminderKind.EATING_WINDOW_CLOSING, ReminderKind.WEEKLY_RECAP,
+            ReminderKind.SUHOOR, ReminderKind.IFTAR -> return showGeneral(context, reminder)
         }
         val route = if (reminder.kind == ReminderKind.SYMPTOM_CHECK_IN) "checkin/${fast.id}" else null
         val builder = base(context, channel, title, body, route)
-        if (reminder.kind != ReminderKind.SYMPTOM_CHECK_IN) {
+        if (reminder.kind in setOf(ReminderKind.FAST_END, ReminderKind.MILESTONE, ReminderKind.FORGOT_TO_END, ReminderKind.NEAR_GOAL)) {
             builder.addAction(0, context.getString(R.string.action_end_fast), endFastIntent(context))
         }
         notify(context, id, builder)
     }
+
+    /** Reminders that don't belong to a running fast: next start, window closing, recap, Ramadan. */
+    fun showGeneral(context: Context, reminder: Reminder) {
+        val (channel, id, title, body) = when (reminder.kind) {
+            ReminderKind.FAST_START -> return showStartReminder(context)
+            ReminderKind.EATING_WINDOW_CLOSING -> Content(
+                CHANNEL_REMINDERS, ID_START,
+                context.getString(R.string.notif_window_closing_title),
+                context.getString(R.string.notif_window_closing_body),
+            )
+            ReminderKind.WEEKLY_RECAP -> Content(
+                CHANNEL_REMINDERS, ID_RECAP,
+                context.getString(R.string.notif_recap_title),
+                context.getString(R.string.notif_recap_body),
+            )
+            ReminderKind.SUHOOR -> Content(
+                CHANNEL_REMINDERS, ID_RAMADAN,
+                context.getString(R.string.notif_suhoor_title),
+                context.getString(R.string.notif_suhoor_body, formatTime(reminder.triggerAt.plus(com.fastingshift.domain.ramadan.RamadanPlanner.SUHOOR_REMINDER_BEFORE))),
+            )
+            ReminderKind.IFTAR -> Content(
+                CHANNEL_REMINDERS, ID_RAMADAN,
+                context.getString(R.string.notif_iftar_title),
+                context.getString(R.string.notif_iftar_body),
+            )
+            else -> return
+        }
+        val route = if (reminder.kind == ReminderKind.WEEKLY_RECAP) "history" else null
+        notify(context, id, base(context, channel, title, body, route))
+    }
+
+    fun coachingTitle(tip: CoachingTip): Int = when (tip) {
+        CoachingTip.HUNGER_WAVES -> R.string.coach_hunger_title
+        CoachingTip.HYDRATE -> R.string.coach_hydrate_title
+        CoachingTip.ELECTROLYTES -> R.string.coach_electrolytes_title
+        CoachingTip.BREAK_GENTLY -> R.string.coach_break_title
+    }
+
+    fun coachingBody(tip: CoachingTip): Int = when (tip) {
+        CoachingTip.HUNGER_WAVES -> R.string.coach_hunger_body
+        CoachingTip.HYDRATE -> R.string.coach_hydrate_body
+        CoachingTip.ELECTROLYTES -> R.string.coach_electrolytes_body
+        CoachingTip.BREAK_GENTLY -> R.string.coach_break_body
+    }
+
+    private fun formatTime(i: java.time.Instant): String =
+        java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(i.atZone(java.time.ZoneId.systemDefault()))
 
     fun showStartReminder(context: Context) {
         notify(

@@ -27,6 +27,8 @@ data class FastEntity(
     @ColumnInfo(name = "protocol_id") val protocolId: String,
     val status: FastStatus,
     val note: String?,
+    /** Optional reflection 1..5 recorded when the fast ended (schema v2). */
+    @ColumnInfo(defaultValue = "NULL") val mood: Int? = null,
 )
 
 /** Custom protocols. Built-in presets live in code (Presets) and are not stored. */

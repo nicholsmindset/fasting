@@ -108,6 +108,14 @@ class FastService(
         return true
     }
 
+    /** Saves the end-of-fast reflection (how it felt, optional note) on an ended fast. */
+    suspend fun saveReflection(id: Long, mood: Int?, note: String?): Boolean {
+        val f = fasts.getById(id) ?: return false
+        if (f.isActive || (mood != null && mood !in Fast.MOOD_RANGE)) return false
+        fasts.update(f.copy(mood = mood, note = note?.trim()?.take(500)?.ifBlank { null }))
+        return true
+    }
+
     /**
      * Records a fast that already happened (forgot to start the timer). Past fasts are a
      * record, not a plan, so only sanity limits apply: within the last year, 1–120h long.

@@ -27,6 +27,8 @@ data class Fast(
     val protocolId: String,
     val status: FastStatus = FastStatus.ACTIVE,
     val note: String? = null,
+    /** How the user felt when it ended, 1 (rough) to 5 (great); optional reflection. */
+    val mood: Int? = null,
 ) {
     init {
         require(targetEndAt.isAfter(startAt)) { "targetEndAt must be after startAt" }
@@ -36,6 +38,7 @@ data class Fast(
         } else {
             require(status == FastStatus.ACTIVE) { "a fast without endedAt must be ACTIVE" }
         }
+        require(mood == null || mood in MOOD_RANGE) { "mood must be 1..5" }
     }
 
     val isActive: Boolean get() = endedAt == null
@@ -66,6 +69,8 @@ data class Fast(
     }
 
     companion object {
+        val MOOD_RANGE = 1..5
+
         fun statusFor(endedAt: Instant, targetEndAt: Instant): FastStatus =
             if (endedAt.isBefore(targetEndAt)) FastStatus.ENDED_EARLY else FastStatus.COMPLETED
     }

@@ -53,7 +53,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
         return Backup(
             exportedAt = now.toEpochMilli(),
             fasts = db.fastDao().getAll().map {
-                FastRecord(it.id, it.startAt.ms, it.targetEndAt.ms, it.endedAt?.ms, it.protocolId, it.status.name, it.note)
+                FastRecord(it.id, it.startAt.ms, it.targetEndAt.ms, it.endedAt?.ms, it.protocolId, it.status.name, it.note, it.mood)
             },
             protocols = db.protocolDao().getAll().map { ProtocolRecord(it.id, it.name, it.type.name, it.fastHours, it.eatHours, it.isCustom) },
             schedules = db.scheduleDao().getAll().map { ScheduleRecord(it.id, it.protocolId, it.days.map { d -> d.name }.sorted(), it.startMinute, it.enabled) },
@@ -131,7 +131,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
          * (at its goal, or at the export time if earlier) so a restore can't resume an unsafe fast.
          */
         val fasts = b.fasts.map {
-            val f = Fast(it.id, it.startAt.inst, it.targetEndAt.inst, it.endedAt?.inst, it.protocolId, FastStatus.valueOf(it.status), it.note)
+            val f = Fast(it.id, it.startAt.inst, it.targetEndAt.inst, it.endedAt?.inst, it.protocolId, FastStatus.valueOf(it.status), it.note, it.mood)
             if (!f.isActive) return@map f.toEntity()
             val latest = screenings.maxByOrNull { s -> s.answeredAt }
             val decision = FastPolicy.evaluateStart(latest?.gateResult, latest?.clinicianAcknowledged ?: false, f.plannedDuration)

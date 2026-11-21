@@ -6,9 +6,9 @@ import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.service.ScreeningRecord
 
-internal fun FastEntity.toDomain() = Fast(id, startAt, targetEndAt, endedAt, protocolId, status, note)
+internal fun FastEntity.toDomain() = Fast(id, startAt, targetEndAt, endedAt, protocolId, status, note, mood)
 
-internal fun Fast.toEntity() = FastEntity(id, startAt, targetEndAt, endedAt, protocolId, status, note)
+internal fun Fast.toEntity() = FastEntity(id, startAt, targetEndAt, endedAt, protocolId, status, note, mood)
 
 internal fun ScreeningEntity.toDomain() = ScreeningRecord(
     answeredAt = answeredAt,

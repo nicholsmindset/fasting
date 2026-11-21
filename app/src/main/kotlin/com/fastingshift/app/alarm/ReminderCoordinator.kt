@@ -12,6 +12,11 @@ import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.reminders.ReminderPlanner
+import com.fastingshift.domain.coaching.CoachingPlanner
+import com.fastingshift.domain.history.WeeklyRecaps
+import com.fastingshift.domain.ramadan.Cities
+import com.fastingshift.domain.ramadan.RamadanPlanner
+import java.time.Instant
 import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.service.FastRepository
@@ -76,24 +81,36 @@ class ReminderCoordinator @Inject constructor(
         val appSettings = settings.current()
         val reminderSettings = appSettings.reminders
         val active = fasts.getActive()
+        val mayStart = mayStartFasts()
+        val all = fasts.getAll()
         val plan: List<Reminder> = if (active != null) {
-            ReminderPlanner.planForActiveFast(active, reminderSettings, now)
-        } else if (!mayStartFasts()) {
+            val coaching = if (appSettings.coachingEnabled &&
+                CoachingPlanner.isCoaching(all.count { it.startAt.isBefore(active.startAt) }, appSettings.onboardedAt?.let(Instant::ofEpochMilli), now)
+            ) CoachingPlanner.reminders(active, now) else emptyList()
+            ReminderPlanner.planForActiveFast(active, reminderSettings, now) + coaching
+        } else if (!mayStart) {
             // Unscreened or education-only users are never nudged to start a fast (SR-1).
             emptyList()
         } else {
-            val last = fasts.getAll().firstOrNull { !it.isActive }
-            val afterWindow = last?.let {
-                val eat = Presets.byId(it.protocolId)?.eatHours ?: appSettings.eatingWindowHours
-                ReminderPlanner.planNextStart(it, eat, reminderSettings, now)
-            }
+            val last = all.firstOrNull { !it.isActive }
+            val eat = last?.let { Presets.byId(it.protocolId)?.eatHours ?: appSettings.eatingWindowHours }
+            val afterWindow = last?.let { ReminderPlanner.planNextStart(it, eat, reminderSettings, now) }
+            val closing = last?.let { ReminderPlanner.planWindowClosing(it, eat, reminderSettings, now) }
             val scheduled = if (reminderSettings.fastStartEnabled) {
                 ScheduleCalculator.nextStart(schedules.getAll(), ZoneId.systemDefault(), now)
                     ?.let { (_, at) -> Reminder(ReminderKind.FAST_START, at, fastId = 0) }
             } else null
-            listOfNotNull(listOfNotNull(afterWindow, scheduled).minByOrNull { it.triggerAt })
+            listOfNotNull(listOfNotNull(afterWindow, scheduled).minByOrNull { it.triggerAt }, closing)
         }
-        scheduler.apply(plan)
+        // Ramadan mode: suhoor and iftar reminders for the chosen city (only for people who may fast).
+        val city = Cities.byId(appSettings.ramadanCityId)
+        val ramadan = if (appSettings.ramadanEnabled && city != null && mayStart) {
+            RamadanPlanner.reminders(city, appSettings.ramadanMethod ?: Cities.defaultMethod(city), now)
+        } else emptyList()
+        val recap = if (appSettings.weeklyRecapEnabled) {
+            listOf(Reminder(ReminderKind.WEEKLY_RECAP, WeeklyRecaps.nextRecapAt(now, ZoneId.systemDefault()), fastId = 0))
+        } else emptyList()
+        scheduler.apply(plan + ramadan + recap)
 
         if (active != null && appSettings.ongoingNotification) Notifications.showOngoing(context, active)
         else Notifications.cancelOngoing(context)

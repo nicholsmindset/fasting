@@ -18,4 +18,28 @@
     <string name="recovery_confirm_title">Delete unreadable data?</string>
     <string name="recovery_confirm_body">The data on this phone can\'t be recovered without its key. The app will restart empty.</string>
     <string name="settings_hc_update">Update Health Connect to sync</string>
+
+    <!-- Smart reminders -->
+    <string name="notif_near_goal_title">One hour to your goal</string>
+    <string name="notif_near_goal_body">You reach your goal at %1$s.</string>
+    <string name="notif_hydration_title">Time for some water</string>
+    <string name="notif_hydration_body">Sip water through a long fast. Add electrolytes if you need them.</string>
+    <string name="notif_window_closing_title">Eating window closes in 30 minutes</string>
+    <string name="notif_window_closing_body">A good time for your last meal or snack before your next fast.</string>
+    <string name="notif_recap_title">Your week in fasting</string>
+    <string name="notif_recap_body">Take a look at how your week went.</string>
+    <string name="notif_suhoor_title">Suhoor ends in 30 minutes</string>
+    <string name="notif_suhoor_body">Fajr is at %1$s.</string>
+    <string name="notif_iftar_title">It\'s time for iftar</string>
+    <string name="notif_iftar_body">Break your fast gently, with water and something light first.</string>
+
+    <!-- First-week coaching (in-app tip card and notifications). Pending clinician review. -->
+    <string name="coach_hunger_title">Hunger comes in waves</string>
+    <string name="coach_hunger_body">It usually passes in 15 to 20 minutes. A glass of water or a short walk can help.</string>
+    <string name="coach_hydrate_title">Keep drinking water</string>
+    <string name="coach_hydrate_body">Water, plain tea and black coffee are fine while fasting.</string>
+    <string name="coach_electrolytes_title">Feeling flat or headachy?</string>
+    <string name="coach_electrolytes_body">Water with a pinch of salt often helps. If you feel faint or unwell, end your fast. That\'s always fine.</string>
+    <string name="coach_break_title">Almost there</string>
+    <string name="coach_break_body">Plan a calm first meal: something with protein and vegetables, eaten slowly.</string>
 </resources>

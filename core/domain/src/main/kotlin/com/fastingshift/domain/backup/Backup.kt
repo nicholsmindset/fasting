@@ -28,7 +28,7 @@ data class Backup(
 ) {
     companion object {
         const val FORMAT = "fasting-shift-backup"
-        const val VERSION = 2
+        const val VERSION = 3
     }
 }
 
@@ -47,12 +47,23 @@ data class Backup(
     @SerialName("active_program") val activeProgramId: String? = null,
     @SerialName("weight_unit") val weightUnit: String = "KG",
     @SerialName("timer_mode") val timerMode: String? = null,
+    @SerialName("water_goal_ml") val waterGoalMl: Int? = null,
+    @SerialName("near_goal_alert") val nearGoalAlert: Boolean = false,
+    @SerialName("window_closing_alert") val windowClosingAlert: Boolean = false,
+    @SerialName("hydration_nudges") val hydrationNudges: Boolean = true,
+    val coaching: Boolean = true,
+    @SerialName("weekly_recap") val weeklyRecap: Boolean = true,
+    @SerialName("ramadan_enabled") val ramadanEnabled: Boolean = false,
+    @SerialName("ramadan_city") val ramadanCityId: String? = null,
+    @SerialName("ramadan_method") val ramadanMethod: String? = null,
 )
 
 @Serializable data class FastRecord(
     val id: Long, @SerialName("start_at") val startAt: Long, @SerialName("target_end_at") val targetEndAt: Long,
     @SerialName("ended_at") val endedAt: Long? = null, @SerialName("protocol_id") val protocolId: String,
     val status: String, val note: String? = null,
+    /** v3+: optional end-of-fast reflection 1..5. */
+    val mood: Int? = null,
 )
 
 @Serializable data class ProtocolRecord(
@@ -137,8 +148,8 @@ object BackupCodec {
 object CsvExport {
     fun files(b: Backup): Map<String, String> = mapOf(
         "fasts.csv" to table(
-            listOf("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status", "note"),
-            b.fasts.map { listOf(it.id, iso(it.startAt), iso(it.targetEndAt), it.endedAt?.let(::iso), it.protocolId, it.status, it.note) },
+            listOf("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status", "note", "mood"),
+            b.fasts.map { listOf(it.id, iso(it.startAt), iso(it.targetEndAt), it.endedAt?.let(::iso), it.protocolId, it.status, it.note, it.mood) },
         ),
         "weight.csv" to table(listOf("id", "at", "value", "unit", "source"), b.weights.map { listOf(it.id, iso(it.at), it.value, it.unit, it.source) }),
         "water.csv" to table(listOf("id", "at", "value", "unit", "source"), b.water.map { listOf(it.id, iso(it.at), it.value, it.unit, it.source) }),

@@ -35,7 +35,7 @@ class BackupHardeningTest {
         assertNull(BackupCodec.decode(v1).settings)
         val v2 = Backup(exportedAt = 1, settings = SettingsRecord(hideWeight = true, milestoneHours = listOf(12, 16)))
         assertEquals(v2, BackupCodec.decode(BackupCodec.encode(v2)))
-        assertEquals(2, Backup.VERSION)
+        assertEquals(3, Backup.VERSION)
     }
 
     @Test fun `csv neutralises formulas but keeps numbers`() {
