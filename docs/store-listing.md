@@ -33,4 +33,6 @@ The 21-day guided program from the book The Fasting Shift, plus weekly insights.
 
 Fasting Shift is not medical advice and does not diagnose or treat any condition. Talk to your doctor before fasting, especially if you take medication.
 
-**Screenshots to capture (Pixel + Samsung, light and dark):** timer mid-fast with body timeline; widgets on home screen; history calendar with streak; extended-fast checklist; settings showing plan, renewal date and cancel link.
+**Screenshots:** generated from the real app at 1233×2466 (within Play's 2:1 limit) in `docs/screenshots/`, light and dark:
+`1-timer`, `2-history`, `3-log`, `4-settings`. Regenerate after UI changes with
+`./gradlew :app:testDebugUnitTest -Pscreenshots`. Still to capture on a real phone: widgets on a home screen.

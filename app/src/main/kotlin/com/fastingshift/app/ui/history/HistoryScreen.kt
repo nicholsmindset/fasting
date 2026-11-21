@@ -121,7 +121,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: His
             SectionCard(title = stringResource(R.string.history_weekly)) {
                 if (st.weeks.isEmpty()) Text(stringResource(R.string.history_empty))
                 st.weeks.forEach { w ->
-                    Text(pluralStringResource(R.plurals.history_week_row, w.fasts, w.weekStart.toString(), w.fastingTime.hoursMinutes(), w.completed, w.fasts))
+                    Text(pluralStringResource(R.plurals.history_week_row, w.fasts, w.weekStart.format(weekFormat), w.fastingTime.hoursMinutes(), w.completed, w.fasts))
                 }
                 TextButton(onClick = onOpenInsights) { Text(stringResource(R.string.history_insights)) }
             }
@@ -129,6 +129,8 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, vm: His
         items(st.fasts, key = { it.id }) { f -> FastRow(f) { onEditFast(f.id) } }
     }
 }
+
+private val weekFormat = java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
 
 @Composable
 private fun Calendar(st: HistoryState, onShift: (Long) -> Unit) {

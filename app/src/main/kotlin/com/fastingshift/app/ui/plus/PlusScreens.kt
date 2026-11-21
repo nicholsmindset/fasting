@@ -238,7 +238,7 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
             if (!st.hideWeight) {
                 SectionCard(title = stringResource(R.string.insights_weight)) {
                     st.weight.forEach { w ->
-                        Text(stringResource(R.string.insights_weight_row, w.weekStart.toString(), w.fastingHours.toInt(), w.averageWeightKg?.let { "%.1f kg".format(it) } ?: "—"))
+                        Text(stringResource(R.string.insights_weight_row, w.weekStart.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)), w.fastingHours.toInt(), w.averageWeightKg?.let { "%.1f kg".format(it) } ?: "—"))
                     }
                     Text(stringResource(R.string.insights_weight_note), style = MaterialTheme.typography.bodySmall)
                 }

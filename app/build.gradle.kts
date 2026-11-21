@@ -77,6 +77,13 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Store screenshots are only (re)recorded on request: ./gradlew :app:testDebugUnitTest -Pscreenshots
+            if (project.hasProperty("screenshots")) {
+                test.systemProperty("roborazzi.test.record", "true")
+                test.systemProperty("fastingshift.screenshotDir", rootProject.file("docs/screenshots").absolutePath)
+            }
+        }
     }
 }
 
@@ -117,6 +124,8 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
     kspTest(libs.hilt.compiler)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)

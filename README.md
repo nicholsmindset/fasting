@@ -38,6 +38,26 @@ no emulator in the cloud build environment.
 - **Book codes:** create a Play Console promo/offer code giving 3 months free; the app's
   "Redeem" button opens Play's redeem page.
 
+### Uploading to Play internal testing
+
+1. Create an upload key once (keep it and its passwords safe, outside the repo):
+   `keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`
+2. Put the details in `~/.gradle/gradle.properties` (or `FS_UPLOAD_*` env vars on CI):
+   ```
+   fastingshift.upload.storeFile=/path/to/upload.jks
+   fastingshift.upload.storePassword=...
+   fastingshift.upload.keyAlias=upload
+   fastingshift.upload.keyPassword=...
+   revenuecat.apiKey=goog_...
+   ```
+3. Build: `./gradlew :app:bundleRelease -Pfastingshift.versionCode=2` (bump the code for every upload).
+4. In Play Console: create the app, enrol in Play App Signing, upload
+   `app/build/outputs/bundle/release/app-release.aab` to **Internal testing**, add testers, and
+   share the opt-in link.
+
+For a quick sideload without Play, `./gradlew :app:assembleStaging` builds an installable APK
+(`com.fastingshift.app.staging`, debug-signed, never upload it).
+
 ### Before launch (not code)
 
 - [ ] Clinician review of all safety copy (`strings*.xml`) and thresholds (`domain/safety`)
