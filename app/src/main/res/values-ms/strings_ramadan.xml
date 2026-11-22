@@ -62,7 +62,7 @@
     <string name="settings_eating_window_subtitle">Selepas puasa panjang</string>
     <string name="settings_schedules_title">Jadual mingguan</string>
     <string name="settings_schedules_subtitle">5:2 dan selang hari</string>
-    <string name="settings_data_footer">Pemulihan menggantikan semua yang ada dalam apl dengan sandaran. Data anda disimpan dalam telefon ini sahaja, disulitkan, dan tidak pernah dihantar kepada perkhidmatan analitik atau iklan.</string>
+    <string name="settings_data_footer">Memulihkan sandaran akan menggantikan rekod semasa anda. Sandaran penuh dan eksport ZIP mengandungi rekod sensitif dalam fail yang boleh dibaca. Pilih lokasi simpanan yang anda percayai.</string>
     <string name="settings_language">Bahasa</string>
     <string name="settings_app_language">Bahasa apl</string>
     <string name="settings_language_system">Lalai sistem</string>

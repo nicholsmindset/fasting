@@ -172,7 +172,7 @@
     <string name="onb_height">身高（cm）</string>
     <string name="onb_weight">体重（kg）</string>
     <string name="onb_form_error">请检查你的年龄、身高和体重。</string>
-    <string name="onb_screen_privacy">你的回答仅加密保存在这部手机上。你可以随时在“设置”中更改。</string>
+    <string name="onb_screen_privacy">你的答案加密保存在应用数据库中，也会包含在你选择保存的完整备份和 ZIP 导出文件中。你可以在设置中更改答案。</string>
     <string name="onb_ok_title">一切就绪</string>
     <string name="onb_ok_body">所有方案均可使用。24 小时或更长的断食都会附带一份简短的安全检查清单。</string>
     <string name="onb_soft_title">请先咨询医生</string>
@@ -345,4 +345,14 @@
     <string name="restore_confirm_title">替换此手机上的数据？</string>
     <string name="restore_confirm_body">恢复此备份将替换您的禁食历史、日志、筛查答案和计划。如需保留当前数据，请先备份。</string>
     <string name="restore_confirm_action">替换并恢复</string>
+    <string name="history_ring_no_planned">%1$s %2$s。没有已记录的计划日。</string>
+    <string name="history_no_planned_days">这段时间没有已记录的计划日。</string>
+    <string name="history_tracking_since">计划记录始于 %1$s。</string>
+    <string name="history_next_week">%1$s 开始的一周</string>
+    <string name="history_next_week_hint">你可以继续原计划，从今天起调整常规安排，或在下周休息。</string>
+    <string name="history_keep_selected">下周将继续使用常规安排。</string>
+    <string name="history_break_selected">下周没有计划禁食日。常规禁食开始提醒和进食时段提醒将于再下一周恢复。</string>
+    <string name="history_keep_plan">保持原计划</string>
+    <string name="history_edit_schedule">调整常规安排</string>
+    <string name="history_take_break">下周休息</string>
 </resources>

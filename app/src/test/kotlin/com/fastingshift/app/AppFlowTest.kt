@@ -15,6 +15,8 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.program.GuidedPrograms
 import com.fastingshift.domain.service.FastRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -43,6 +45,7 @@ class AppFlowTest {
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     @Inject lateinit var fasts: FastRepository
+    @Inject lateinit var settings: SettingsRepository
 
     @Before fun setUp() = hilt.inject()
 
@@ -63,6 +66,30 @@ class AppFlowTest {
     } catch (e: Throwable) {
         println("DBG>> " + compose.onRoot().printToString().lines().joinToString("\nDBG>> "))
         throw e
+    }
+
+    @Test fun freeReaderCanOpenReflectionEvenWithAnOldEnrollment() {
+        runBlocking {
+            settings.setActiveProgram(GuidedPrograms.FASTING_SHIFT_21)
+            settings.setOnboardingComplete(true)
+        }
+        try {
+            waitFor(s(R.string.tab_settings))
+            click(s(R.string.tab_settings))
+            waitFor(s(R.string.plan_see_plus))
+            click(s(R.string.plan_see_plus))
+            waitFor(s(R.string.program_read_sample))
+            click(s(R.string.program_read_sample))
+            waitFor(s(R.string.program_sample_prompt))
+            compose.onNodeWithText(s(R.string.program_sample_title)).assertExists()
+            compose.onNodeWithText(s(R.string.program_start)).assertDoesNotExist()
+            compose.onNodeWithText(s(R.string.plan_see_plus)).assertDoesNotExist()
+        } finally {
+            runBlocking {
+                settings.setActiveProgram(null)
+                settings.setOnboardingComplete(false)
+            }
+        }
     }
 
     @Test fun blockedUserThenUpdatedAnswersThenStartAndEndAFast() {

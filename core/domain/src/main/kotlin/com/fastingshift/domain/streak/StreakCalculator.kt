@@ -31,7 +31,7 @@ object StreakCalculator {
         frozenDays: Set<LocalDate> = emptySet(),
         isPlannedDay: (LocalDate) -> Boolean = { true },
     ): StreakResult {
-        val completedDays = completedDays(fasts, zone)
+        val completedDays = completedDays(fasts, zone).filterTo(mutableSetOf(), isPlannedDay)
         if (completedDays.isEmpty()) return StreakResult(0, 0)
 
         val inProgress = fasts.filter { it.isActive }.map { it.startAt.atZone(zone).toLocalDate() }.toSet()

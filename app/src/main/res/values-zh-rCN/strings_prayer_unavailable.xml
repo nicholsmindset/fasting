@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ramadan_local_timetable">所选方法无法计算这一天的全部斋戒时间。请查看当地清真寺的时间表。</string>
+    <string name="ramadan_time_unavailable">请查看当地时间表</string>
+</resources>

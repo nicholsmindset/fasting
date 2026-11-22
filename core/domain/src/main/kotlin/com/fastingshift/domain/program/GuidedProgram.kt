@@ -8,37 +8,29 @@ data class ProgramDay(
     val day: Int,
     val title: String,
     val lesson: String,
-    /** Suggested fasting target for the day, in hours. */
-    val targetHours: Int,
-    /** Book chapter reference; null until the chapter mapping is decided (PRD open question). */
+    val targetHours: Int? = null,
     val chapter: String? = null,
 )
 
-data class Program(val id: String, val name: String, val days: List<ProgramDay>)
+data class Program(
+    val id: String,
+    val days: List<ProgramDay>,
+    val expectedDays: Int,
+    val approvedForRelease: Boolean = false,
+) {
+    val isPublished: Boolean get() = approvedForRelease && expectedDays > 0 &&
+        days.size == expectedDays && days.withIndex().all { (index, item) ->
+            item.day == index + 1 && item.title.isNotBlank() && item.lesson.isNotBlank()
+        }
+}
 
-/** Shift+ guided program (PRD F10). */
 object GuidedPrograms {
     const val FASTING_SHIFT_21 = "fasting_shift_21"
 
-    /**
-     * The 21-day plan. Gradual ramp, capped at 18h so the program never pushes beyond what the
-     * safety gates allow for every user. LESSON TEXT IS PLACEHOLDER pending the chapter mapping.
-     */
-    val fastingShift21 = Program(
-        id = FASTING_SHIFT_21,
-        name = "The Fasting Shift: 21 days",
-        days = (1..21).map { d ->
-            val target = when (d) {
-                in 1..3 -> 12
-                in 4..7 -> 14
-                in 8..14 -> 16
-                else -> if (d % 7 == 0) 18 else 16
-            }
-            ProgramDay(day = d, title = "Day $d", lesson = "Lesson $d — to be written from The Fasting Shift.", targetHours = target)
-        },
-    )
+    // Retain the ID for existing progress and backups until the complete program is released.
+    val fastingShift21 = Program(id = FASTING_SHIFT_21, days = emptyList(), expectedDays = 21)
 
-    val all = listOf(fastingShift21)
+    val all = listOf(fastingShift21).filter { it.isPublished }
     fun byId(id: String) = all.firstOrNull { it.id == id }
 }
 
@@ -49,10 +41,11 @@ object ProgramProgress {
      * after the previous one was completed, so the plan cannot be rushed.
      */
     fun currentDay(program: Program, completed: Map<Int, Instant>, zone: ZoneId, today: LocalDate): ProgramDay? {
+        if (!program.isPublished) return null
         val next = program.days.firstOrNull { it.day !in completed } ?: return null
         val prev = completed[next.day - 1] ?: return next
         return if (prev.atZone(zone).toLocalDate().isBefore(today)) next else null
     }
 
-    fun isFinished(program: Program, completed: Map<Int, Instant>): Boolean = program.days.all { it.day in completed }
+    fun isFinished(program: Program, completed: Map<Int, Instant>): Boolean = program.isPublished && program.days.all { it.day in completed }
 }

@@ -50,6 +50,7 @@ class FirstWeekTest {
     @Inject lateinit var service: FastService
     @Inject lateinit var logs: LogRepository
     @Inject lateinit var schedules: ScheduleRepository
+    @Inject lateinit var settings: com.fastingshift.data.settings.SettingsRepository
     @Inject lateinit var planner: FirstFastPlanner
     @Inject lateinit var clock: Clock
 
@@ -147,6 +148,7 @@ class FirstWeekTest {
     }
 
     @Test fun startTonightIsAOneOffScheduleRemovedOnceAFastStarts() = runBlocking {
+        settings.setOnboardingComplete(true)
         planner.cancel()
         val plan = planner.planTonight(Presets.W16_8)
         val schedule = schedules.getAll().single { it.id == plan.scheduleId }
@@ -154,6 +156,9 @@ class FirstWeekTest {
         assertEquals(1, schedule.days.size)
         assertEquals(plan.date.dayOfWeek, schedule.days.single())
         assertTrue(schedule.days.single() in DayOfWeek.entries)
+        val today = LocalDate.now(clock.withZone(ZoneId.systemDefault()))
+        val history = settings.current().planHistory
+        assertTrue((0L..6L).all { history.isPlanned(today.plusDays(it)) })
         // Nothing started yet: the plan stays.
         planner.cleanUp()
         assertEquals(plan, planner.planned())

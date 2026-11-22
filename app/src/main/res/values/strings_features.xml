@@ -173,7 +173,7 @@
     <string name="onb_height">Height (cm)</string>
     <string name="onb_weight">Weight (kg)</string>
     <string name="onb_form_error">Please check your age, height and weight.</string>
-    <string name="onb_screen_privacy">Your answers are stored only on this phone, encrypted. You can change them any time in Settings.</string>
+    <string name="onb_screen_privacy">Your answers are encrypted in the app database and included in full backups and ZIP exports you choose to save. You can change your answers in Settings.</string>
     <string name="onb_ok_title">You\'re all set</string>
     <string name="onb_ok_body">Every protocol is available to you. Fasts of 24 hours or more always come with a short safety checklist.</string>
     <string name="onb_soft_title">Please check with your doctor</string>
@@ -351,4 +351,14 @@
     <string name="restore_confirm_title">Replace data on this phone?</string>
     <string name="restore_confirm_body">Restoring this backup replaces your fasting history, logs, screening answers and schedules. Back up your current data first if you want to keep it.</string>
     <string name="restore_confirm_action">Replace and restore</string>
+    <string name="history_ring_no_planned">%1$s %2$s. No planned days recorded.</string>
+    <string name="history_no_planned_days">No planned days recorded for this period.</string>
+    <string name="history_tracking_since">Plan tracking began on %1$s.</string>
+    <string name="history_next_week">Week of %1$s</string>
+    <string name="history_next_week_hint">You can keep your usual plan, edit your regular schedule starting today, or take next week off.</string>
+    <string name="history_keep_selected">Your regular schedule will continue next week.</string>
+    <string name="history_break_selected">Next week has no planned days. Regular fast-start and eating-window reminders resume the following week.</string>
+    <string name="history_keep_plan">Keep my plan</string>
+    <string name="history_edit_schedule">Edit regular schedule</string>
+    <string name="history_take_break">Take next week off</string>
 </resources>

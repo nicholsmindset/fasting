@@ -12,8 +12,8 @@
     <string name="onb_intro_timer_body">Start and end with a single tap. Your fast is saved the moment it starts, so it survives restarts, flat batteries and time-zone changes.</string>
     <string name="onb_intro_safety_title">Safety built in</string>
     <string name="onb_intro_safety_body">A few honest questions decide which fasts we offer. Longer fasts come with a checklist, check-ins and gentle guidance for breaking them.</string>
-    <string name="onb_intro_privacy_title">Your data stays on your phone</string>
-    <string name="onb_intro_privacy_body">No account and no tracking. Everything is encrypted on this device, and you can export or delete it any time.</string>
+    <string name="onb_intro_privacy_title">Your fasting records</string>
+    <string name="onb_intro_privacy_body">No account is required. Your fasting and health records are encrypted on this device. You choose whether to use Health Connect or save a copy to a file.</string>
     <string name="onb_intro_page">Page %1$d of %2$d</string>
 
     <!-- Goal / protocol -->

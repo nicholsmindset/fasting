@@ -1,6 +1,5 @@
 package com.fastingshift.app.ui.firstweek
 
-import android.content.Context
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.domain.coaching.CoachingPlanner
 import com.fastingshift.domain.coaching.CoachingTip
@@ -11,7 +10,6 @@ import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -67,41 +65,25 @@ data class PlannedFirstFast(val scheduleId: Long, val date: LocalDate)
  * or counts as a planned day in History.
  */
 class FirstFastPlanner @Inject constructor(
-    @ApplicationContext context: Context,
     private val schedules: ScheduleRepository,
     private val fasts: FastRepository,
     private val clock: Clock,
 ) {
-    private val prefs = context.getSharedPreferences("first_week", Context.MODE_PRIVATE)
-
-    fun planned(): PlannedFirstFast? {
-        val id = prefs.getLong(KEY_ID, -1L).takeIf { it > 0 } ?: return null
-        val date = prefs.getString(KEY_DATE, null)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
-        return PlannedFirstFast(id, date)
-    }
+    fun planned(): PlannedFirstFast? = schedules.firstEvening()?.let { (id, day) -> PlannedFirstFast(id, day) }
 
     suspend fun planTonight(protocol: Protocol, zone: ZoneId = ZoneId.systemDefault()): PlannedFirstFast {
-        cancel()
         val at = FirstWeekRules.nextEvening(clock.instant(), zone)
-        val id = schedules.save(Schedule(protocolId = protocol.id, days = setOf(at.dayOfWeek), startTime = FirstWeekRules.EVENING_START))
-        prefs.edit().putLong(KEY_ID, id).putString(KEY_DATE, at.toLocalDate().toString()).apply()
+        val schedule = Schedule(protocolId = protocol.id, days = setOf(at.dayOfWeek), startTime = FirstWeekRules.EVENING_START)
+        val id = schedules.saveFirstEvening(schedule, at.toLocalDate())
         return PlannedFirstFast(id, at.toLocalDate())
     }
 
-    suspend fun cancel() {
-        planned()?.let { schedules.delete(it.scheduleId) }
-        prefs.edit().remove(KEY_ID).remove(KEY_DATE).apply()
-    }
+    suspend fun cancel() = schedules.cancelFirstEvening()
 
     /** Removes the one-off schedule once a fast exists or its evening is over. */
     suspend fun cleanUp(zone: ZoneId = ZoneId.systemDefault()) {
         val plan = planned() ?: return
         val today = clock.instant().atZone(zone).toLocalDate()
         if (fasts.getAll().isNotEmpty() || plan.date.isBefore(today)) cancel()
-    }
-
-    private companion object {
-        const val KEY_ID = "planned_schedule_id"
-        const val KEY_DATE = "planned_date"
     }
 }

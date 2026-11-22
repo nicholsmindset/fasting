@@ -12,8 +12,8 @@
     <string name="onb_intro_timer_body">Mula dan tamat dengan satu ketikan. Puasa anda disimpan sebaik sahaja ia bermula, jadi ia kekal walaupun telefon dimulakan semula, bateri habis atau zon waktu berubah.</string>
     <string name="onb_intro_safety_title">Keselamatan terbina dalam</string>
     <string name="onb_intro_safety_body">Beberapa soalan jujur menentukan puasa yang kami tawarkan. Puasa yang lebih panjang disertakan dengan senarai semak, semakan berkala dan panduan lembut untuk menamatkannya.</string>
-    <string name="onb_intro_privacy_title">Data anda kekal dalam telefon anda</string>
-    <string name="onb_intro_privacy_body">Tiada akaun dan tiada penjejakan. Semuanya disulitkan pada peranti ini, dan anda boleh mengeksport atau memadamnya bila-bila masa.</string>
+    <string name="onb_intro_privacy_title">Rekod puasa anda</string>
+    <string name="onb_intro_privacy_body">Anda tidak memerlukan akaun. Rekod puasa dan kesihatan anda disulitkan pada peranti ini. Anda boleh memilih untuk menggunakan Health Connect atau menyimpan salinan dalam fail.</string>
     <string name="onb_intro_page">Halaman %1$d daripada %2$d</string>
 
     <!-- Goal / protocol -->

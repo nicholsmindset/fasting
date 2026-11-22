@@ -62,7 +62,7 @@
     <string name="settings_eating_window_subtitle">After long fasts</string>
     <string name="settings_schedules_title">Weekly schedules</string>
     <string name="settings_schedules_subtitle">5:2 and alternate-day</string>
-    <string name="settings_data_footer">Restoring replaces everything currently in the app with the backup. Your data is stored only on this phone, encrypted, and never sent to analytics or ad services.</string>
+    <string name="settings_data_footer">Restoring a backup replaces your current records. Full backups and ZIP exports contain sensitive records in readable files. Choose a storage location you trust.</string>
     <string name="settings_language">Language</string>
     <string name="settings_app_language">App language</string>
     <string name="settings_language_system">System default</string>

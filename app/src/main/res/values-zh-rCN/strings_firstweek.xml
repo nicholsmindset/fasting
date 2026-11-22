@@ -12,8 +12,8 @@
     <string name="onb_intro_timer_body">轻点一下即可开始或结束。断食一开始就会保存，即使重启、手机没电或切换时区也不会丢失。</string>
     <string name="onb_intro_safety_title">安全设计，内置其中</string>
     <string name="onb_intro_safety_body">几个坦诚的问题，决定我们为你提供哪些断食方案。较长的断食会附带检查清单、状况问候，以及温和的恢复进食指引。</string>
-    <string name="onb_intro_privacy_title">数据只保存在你的手机上</string>
-    <string name="onb_intro_privacy_body">无需账号，没有追踪。所有数据都在本设备上加密保存，你可以随时导出或删除。</string>
+    <string name="onb_intro_privacy_title">你的禁食记录</string>
+    <string name="onb_intro_privacy_body">无需注册账号。你的禁食和健康记录加密保存在本设备上。你可以选择是否使用 Health Connect 或将记录另存为文件。</string>
     <string name="onb_intro_page">第 %1$d 页，共 %2$d 页</string>
 
     <!-- Goal / protocol -->

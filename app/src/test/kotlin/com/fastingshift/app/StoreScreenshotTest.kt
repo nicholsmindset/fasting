@@ -82,6 +82,7 @@ class StoreScreenshotTest {
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
         settings.setOnboardingComplete(true)
+        settings.recordSchedule(now.atZone(zone).toLocalDate().minusWeeks(3), com.fastingshift.domain.schedule.PlanHistory.EVERY_DAY)
         settings.setTimerMode(TimerDisplayMode.ELAPSED)
         settings.setMilestoneHours(setOf(12, 16))
         screening.save(ScreeningRecord(now, ScreeningAnswers(42, false, false, false, emptySet(), 178.0, 82.0), GateResult.OK, false))

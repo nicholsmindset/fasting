@@ -34,6 +34,8 @@ import com.fastingshift.domain.model.MetricUnit
 import com.fastingshift.domain.model.QadaDebt
 import com.fastingshift.domain.backup.ChallengeRecord
 import com.fastingshift.domain.backup.MetricRecord
+import com.fastingshift.data.db.QadaRepaymentEntity
+import com.fastingshift.domain.backup.QadaRepaymentRecord
 import com.fastingshift.domain.backup.QadaDebtRecord
 import com.fastingshift.domain.model.ProtocolType
 import com.fastingshift.domain.model.RecordSource
@@ -60,13 +62,15 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
 
     suspend fun export(now: Instant): Backup {
         val b = db.backupDao()
+        val ledger = db.qadaDao().ledgerSnapshot()
+        val firstEveningId = settings?.firstEvening()?.first
         return Backup(
             exportedAt = now.toEpochMilli(),
             fasts = db.fastDao().getAll().map {
                 FastRecord(it.id, it.startAt.ms, it.targetEndAt.ms, it.endedAt?.ms, it.protocolId, it.status.name, it.note, it.mood, it.kind.name)
             },
             protocols = db.protocolDao().getAll().map { ProtocolRecord(it.id, it.name, it.type.name, it.fastHours, it.eatHours, it.isCustom) },
-            schedules = db.scheduleDao().getAll().map { ScheduleRecord(it.id, it.protocolId, it.days.map { d -> d.name }.sorted(), it.startMinute, it.enabled) },
+            schedules = db.scheduleDao().getAll().filterNot { it.id == firstEveningId }.map { ScheduleRecord(it.id, it.protocolId, it.days.map { d -> d.name }.sorted(), it.startMinute, it.enabled) },
             weights = b.weights().map { WeightRecord(it.id, it.at.ms, it.value, it.unit.name, it.source.name) },
             water = b.water().map { WaterRecord(it.id, it.at.ms, it.value, it.unit.name, it.source.name) },
             electrolytes = b.electrolytes().map { ElectrolyteRecord(it.id, it.at.ms, it.electrolyte.name, it.value, it.source.name) },
@@ -80,7 +84,9 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             programProgress = db.programProgressDao().getAll().map { ProgramProgressRecord(it.programId, it.day, it.completedAt.ms) },
             streakFreezes = db.streakFreezeDao().getAll().map { it.day.toString() }.sorted(),
             settings = settings?.toRecord(),
-            qadaDebts = b.qada().map { QadaDebtRecord(it.hijriYear, it.daysOwed) },
+            qadaDebts = ledger.map { QadaDebtRecord(it.debt.hijriYear, it.debt.daysOwed) },
+            qadaRepayments = ledger.flatMap { it.repayments }.sortedBy { it.observedOn }
+                .map { QadaRepaymentRecord(it.observedOn.toString(), it.hijriYear) },
             metrics = b.metrics().map { MetricRecord(it.id, it.at.ms, it.type.name, it.value, it.unit.name, it.source.name, it.note) },
             challenges = b.challenges().map {
                 ChallengeRecord(it.id, it.type.name, it.protocolId, it.startDate.toString(), it.lengthDays, it.name, it.joinedAt.ms, it.leftAt?.ms)
@@ -106,7 +112,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             val b = db.backupDao()
             b.clearCheckins(); b.clearFasts(); b.clearProtocols(); b.clearSchedules(); b.clearWeights()
             b.clearWater(); b.clearElectrolytes(); b.clearScreenings(); b.clearProgress(); b.clearFreezes()
-            b.clearMetrics(); b.clearQada(); b.clearChallenges()
+            b.clearMetrics(); b.clearRepayments(); b.clearQada(); b.clearChallenges()
             b.insertFasts(mapped.fasts)
             b.insertProtocols(mapped.protocols)
             b.insertSchedules(mapped.schedules)
@@ -119,9 +125,12 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             b.insertFreezes(mapped.freezes)
             b.insertMetrics(mapped.metrics)
             b.insertQada(mapped.qada)
+            b.insertRepayments(mapped.repayments)
             b.insertChallenges(mapped.challenges)
         }
+        settings?.clearFirstEvening()
         backup.settings?.let { settings?.restore(it) }
+        if (backup.settings == null) settings?.clearPlanHistory()
         // Fast ids may now point at different fasts: never show a stale refeeding prompt.
         settings?.setPendingRefeeding(null)
     }
@@ -187,6 +196,16 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             MetricLog(it.id, it.at.inst, MetricType.valueOf(it.type), it.value, MetricUnit.valueOf(it.unit), RecordSource.valueOf(it.source), it.note).toEntity()
         }
         val qada = b.qadaDebts.filter { it.daysOwed > 0 }.map { QadaDebt(it.hijriYear, it.daysOwed).toEntity() }
+        val repayments = b.qadaRepayments.map { QadaRepaymentEntity(LocalDate.parse(it.observedOn), it.hijriYear) }
+        init {
+            val debtsByYear = qada.associateBy { it.hijriYear }
+            require(debtsByYear.size == qada.size)
+            require(repayments.distinctBy { it.observedOn }.size == repayments.size)
+            repayments.groupingBy { it.hijriYear }.eachCount().forEach { (year, count) ->
+                require(count <= (debtsByYear[year]?.daysOwed ?: 0)) { "Qada repayments exceed the recorded days for the year." }
+            }
+        }
+
         val challenges = b.challenges.map {
             Challenge(it.id, ChallengeType.valueOf(it.type), it.protocolId, LocalDate.parse(it.startDate), it.lengthDays, it.name, it.joinedAt.inst, it.leftAt?.inst).toEntity()
         }

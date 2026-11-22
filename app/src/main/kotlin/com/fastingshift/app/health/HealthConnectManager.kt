@@ -15,6 +15,7 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Mass
 import androidx.health.connect.client.units.Volume
 import com.fastingshift.data.repo.LogRepository
+import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.insights.Insights
 import com.fastingshift.domain.model.RecordSource
 import com.fastingshift.domain.model.VolumeUnit
@@ -57,7 +58,13 @@ object WeightImport {
 class HealthConnectManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val logs: LogRepository,
+    private val settings: SettingsRepository,
 ) {
+    private val retries by lazy {
+        HealthWriteRetries(context.getSharedPreferences("health_connect_retries", Context.MODE_PRIVATE))
+    }
+    val pendingWriteCount get() = retries.pendingCount
+
     val permissions: Set<String> = setOf(
         HealthPermission.getWritePermission(WeightRecord::class),
         HealthPermission.getReadPermission(WeightRecord::class),
@@ -89,8 +96,12 @@ class HealthConnectManager @Inject constructor(
         client()?.permissionController?.getGrantedPermissions()?.containsAll(permissions) == true
     }
 
-    suspend fun writeWeight(log: WeightLog): Result<Unit> = guardedResult {
-        val c = client() ?: return@guardedResult
+    suspend fun writeWeight(log: WeightLog): Result<Unit> = retries.write(RetryKey.forWeight(log)) {
+        if (settings.current().healthConnectSync) insertWeight(log) else Result.success(Unit)
+    }
+
+    private suspend fun insertWeight(log: WeightLog): Result<Unit> = guardedResult {
+        val c = checkNotNull(client()) { "Health Connect is unavailable" }
         c.insertRecords(
             listOf(
                 WeightRecord(
@@ -103,8 +114,12 @@ class HealthConnectManager @Inject constructor(
         )
     }
 
-    suspend fun writeWater(log: WaterLog): Result<Unit> = guardedResult {
-        val c = client() ?: return@guardedResult
+    suspend fun writeWater(log: WaterLog): Result<Unit> = retries.write(RetryKey.forWater(log)) {
+        if (settings.current().healthConnectSync) insertWater(log) else Result.success(Unit)
+    }
+
+    private suspend fun insertWater(log: WaterLog): Result<Unit> = guardedResult {
+        val c = checkNotNull(client()) { "Health Connect is unavailable" }
         val ml = if (log.unit == VolumeUnit.ML) log.value else log.value * 29.5735
         val offset = ZoneId.systemDefault().rules.getOffset(log.at)
         c.insertRecords(
@@ -120,6 +135,18 @@ class HealthConnectManager @Inject constructor(
             ),
         )
     }
+
+    suspend fun retryPendingWrites() = retries.retry(enabled = { settings.current().healthConnectSync }) { key ->
+        val weight = logs.getWeight(key.rowId)
+        if (weight != null && RetryKey.forWeight(weight) == key) return@retry insertWeight(weight)
+        val water = logs.getWater(key.rowId)
+        if (water != null && RetryKey.forWater(water) == key) return@retry insertWater(water)
+        // Deleted, or a different row now occupies the ID after restoring a backup.
+        Result.success(Unit)
+    }
+
+    suspend fun forgetWeight(log: WeightLog) = retries.forget(RetryKey.forWeight(log))
+    suspend fun forgetWater(log: WaterLog) = retries.forget(RetryKey.forWater(log))
 
     /**
      * Imports weights recorded by other apps since [since], skipping ones this app wrote and

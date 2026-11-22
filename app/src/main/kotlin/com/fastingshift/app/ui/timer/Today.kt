@@ -37,6 +37,8 @@ import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.domain.hydration.WaterGoal
 import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.schedule.ScheduleCalculator
+import com.fastingshift.domain.history.History
+import java.time.LocalDate
 import java.time.Instant
 import java.time.ZoneId
 
@@ -65,10 +67,18 @@ object Today {
      * Fasting now; else when the open eating window closes; else the next scheduled start;
      * else nothing planned.
      */
-    fun nextFast(fasting: Boolean, eatingWindow: EatingWindow?, schedules: List<Schedule>, zone: ZoneId, now: Instant): NextFast = when {
+    fun nextFast(
+        fasting: Boolean,
+        eatingWindow: EatingWindow?,
+        schedules: List<Schedule>,
+        zone: ZoneId,
+        now: Instant,
+        breakWeeks: Set<LocalDate> = emptySet(),
+    ): NextFast = when {
         fasting -> NextFast.FastingNow
-        eatingWindow != null && eatingWindow.endsAt.isAfter(now) -> NextFast.At(eatingWindow.endsAt)
-        else -> ScheduleCalculator.nextStart(schedules, zone, now)?.let { NextFast.At(it.second) } ?: NextFast.None
+        eatingWindow != null && eatingWindow.endsAt.isAfter(now) &&
+            History.weekStart(eatingWindow.endsAt.atZone(zone).toLocalDate()) !in breakWeeks -> NextFast.At(eatingWindow.endsAt)
+        else -> ScheduleCalculator.nextStart(schedules, zone, now, breakWeeks)?.let { NextFast.At(it.second) } ?: NextFast.None
     }
 }
 

@@ -134,7 +134,7 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
                     ) {
                         CenteredHero(Icons.Filled.Notifications, R.string.onb_notif_title, R.string.onb_notif_body)
                     }
-                    Step.OFFER -> Offer(onTrial = { vm.finish { onFinished(); onShowPaywall() } }, onFree = { vm.finish(onFinished) })
+                    Step.OFFER -> Offer(onSeePlans = { vm.finish { onFinished(); onShowPaywall() } }, onFree = { vm.finish(onFinished) })
                 }
             }
         }
@@ -448,15 +448,15 @@ fun protocolDescription(p: Protocol): String = when {
 }
 
 @Composable
-private fun Offer(onTrial: () -> Unit, onFree: () -> Unit) {
-    // Paywall rule 1: "Continue free" is exactly as visible as "Start trial": same style, same size.
+private fun Offer(onSeePlans: () -> Unit, onFree: () -> Unit) {
+    // Paywall rule 1: "Continue free" is exactly as visible as "See plans": same style, same size.
     StepPage(
         actions = {
-            SecondaryButton(stringResource(R.string.onb_offer_trial), onClick = onTrial)
+            SecondaryButton(stringResource(R.string.program_see_plans), onClick = onSeePlans)
             SecondaryButton(stringResource(R.string.onb_offer_free), onClick = onFree)
         },
     ) {
-        CenteredHero(Icons.Filled.Star, R.string.onb_offer_title, R.string.onb_offer_body)
+        CenteredHero(Icons.Filled.Star, R.string.onb_offer_title, R.string.program_offer_insights)
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
