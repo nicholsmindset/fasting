@@ -30,6 +30,12 @@ enum class PrayerMethod(val fajrAngle: Double, val ishaAngle: Double, val ihtiya
     MWL(18.0, 17.0, 0),
 }
 
+/** Source for the two fasting boundaries, Fajr and Maghrib. */
+enum class FastingTimeSource {
+    CALCULATED,
+    MUIS_TIMETABLE,
+}
+
 data class PrayerDay(
     val date: LocalDate,
     /** End of suhoor / start of the fast. */
@@ -39,6 +45,7 @@ data class PrayerDay(
     /** Iftar / end of the fast. */
     val maghrib: Instant,
     val isha: Instant,
+    val fastingTimeSource: FastingTimeSource = FastingTimeSource.CALCULATED,
 )
 
 /**

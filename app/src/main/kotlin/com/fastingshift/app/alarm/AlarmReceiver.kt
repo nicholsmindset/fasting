@@ -81,13 +81,13 @@ class AlarmReceiver : BroadcastReceiver() {
         val reminder = AndroidAlarmGateway.parse(intent)
         if (reminder != null) {
             val active = fasts.get().getActive()
-            when (reminder.kind) {
-                ReminderKind.FAST_START, ReminderKind.EATING_WINDOW_CLOSING -> if (active == null) Notifications.showGeneral(context, reminder)
-                // Not tied to a fast: Ramadan times and the weekly recap (only once there is history).
-                ReminderKind.SUHOOR, ReminderKind.IFTAR, ReminderKind.SUNNAH_FAST -> Notifications.showGeneral(context, reminder)
-                ReminderKind.WEEKLY_RECAP -> if (fasts.get().getAll().isNotEmpty()) Notifications.showGeneral(context, reminder)
-                // Stale alarms for a fast that has ended or been replaced are ignored.
-                else -> if (active != null && active.id == reminder.fastId) Notifications.showForReminder(context, reminder, active)
+            if (coordinator.get().isCurrent(reminder, active)) {
+                when (reminder.kind) {
+                    ReminderKind.FAST_START, ReminderKind.EATING_WINDOW_CLOSING, ReminderKind.SUHOOR,
+                    ReminderKind.IFTAR, ReminderKind.SUNNAH_FAST, ReminderKind.WEEKLY_RECAP ->
+                        Notifications.showGeneral(context, reminder)
+                    else -> if (active != null) Notifications.showForReminder(context, reminder, active)
+                }
             }
         }
         // Always re-plan after a reminder fires: it arms the next scheduled start and rolls

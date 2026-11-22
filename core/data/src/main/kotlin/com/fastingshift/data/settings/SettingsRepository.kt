@@ -17,7 +17,13 @@ import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.ramadan.SunnahType
 import com.fastingshift.domain.reminders.ReminderSettings
 import com.fastingshift.domain.timer.TimerDisplayMode
+import com.fastingshift.domain.history.History
+import com.fastingshift.domain.schedule.PlanHistory
+import com.fastingshift.domain.schedule.WeekChoice
 import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -60,6 +66,7 @@ data class AppSettings(
     /** Evening-before reminders for the Sunnah fasts in [sunnahTypes]. */
     val sunnahReminders: Boolean = false,
     val sunnahTypes: Set<SunnahType> = emptySet(),
+    val planHistory: PlanHistory = PlanHistory(),
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -95,6 +102,7 @@ class SettingsRepository(context: Context) {
             coachingEnabled = p[COACHING] ?: true,
             weeklyRecapEnabled = p[WEEKLY_RECAP] ?: true,
             onboardedAt = p[ONBOARDED_AT],
+            planHistory = p.planHistory(),
             ramadanEnabled = p[RAMADAN] ?: false,
             ramadanCityId = p[RAMADAN_CITY],
             ramadanMethod = p[RAMADAN_METHOD]?.let { runCatching { PrayerMethod.valueOf(it) }.getOrNull() },
@@ -147,7 +155,44 @@ class SettingsRepository(context: Context) {
     }
     suspend fun setCoaching(enabled: Boolean) = store.edit { it[COACHING] = enabled }
     suspend fun setWeeklyRecap(enabled: Boolean) = store.edit { it[WEEKLY_RECAP] = enabled }
-    suspend fun setOnboardedAt(millis: Long) = store.edit { it[ONBOARDED_AT] = millis }
+    suspend fun setOnboardedAt(millis: Long) = store.edit { p ->
+        p[ONBOARDED_AT] = millis
+        // New installs have the default daily plan until they first edit their schedules.
+        if (p[PLAN_REVISIONS].isNullOrEmpty()) {
+            val day = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+            p[PLAN_REVISIONS] = setOf("${day}=${PlanHistory.EVERY_DAY}")
+        }
+    }
+
+    suspend fun recordSchedule(day: LocalDate, mask: Int) = store.edit { p ->
+        if (p[ONBOARDED] == true) {
+            val current = p.planHistory()
+            val updated = current.record(day, mask)
+            if (updated !== current) p[PLAN_REVISIONS] = updated.revisions.entries.map { "${it.key}=${it.value}" }.toSet()
+        }
+    }
+
+    /** The recap acts on the upcoming Monday. Stale screens cannot rewrite past decisions. */
+    suspend fun setNextWeekChoice(week: LocalDate, choice: WeekChoice, today: LocalDate) = store.edit { p ->
+        if (week == History.weekStart(today).plusWeeks(1)) {
+            val choices = p.planHistory().choices + (week to choice)
+            p[WEEK_CHOICES] = choices.entries.map { "${it.key}=${it.value.name}" }.toSet()
+        }
+    }
+
+    suspend fun clearPlanHistory() = store.edit {
+        it.remove(PLAN_REVISIONS)
+        it.remove(WEEK_CHOICES)
+        Unit
+    }
+
+    private fun Preferences.planHistory(): PlanHistory {
+        val revisions = this[PLAN_REVISIONS].orEmpty().mapNotNull { entry ->
+            entry.substringAfter('=').toIntOrNull()?.let { entry.substringBefore('=') to it }
+        }.toMap()
+        val choices = this[WEEK_CHOICES].orEmpty().associate { it.substringBefore('=') to it.substringAfter('=') }
+        return PlanHistory.fromRecords(revisions, choices)
+    }
     suspend fun setRamadan(enabled: Boolean) = store.edit { it[RAMADAN] = enabled }
     suspend fun setRamadanCity(cityId: String, method: PrayerMethod) = store.edit {
         it[RAMADAN_CITY] = cityId
@@ -164,6 +209,8 @@ class SettingsRepository(context: Context) {
     suspend fun toRecord(): SettingsRecord = current().let { s ->
         SettingsRecord(
             onboardingComplete = s.onboardingComplete,
+            planRevisions = s.planHistory.revisions.mapKeys { it.key.toString() },
+            weekChoices = s.planHistory.choices.entries.associate { it.key.toString() to it.value.name },
             goal = s.goal?.name,
             defaultProtocolId = s.defaultProtocolId,
             hideWeight = s.hideWeight,
@@ -193,6 +240,9 @@ class SettingsRepository(context: Context) {
 
     suspend fun restore(r: SettingsRecord) = store.edit {
         it[ONBOARDED] = r.onboardingComplete
+        val history = PlanHistory.fromRecords(r.planRevisions, r.weekChoices)
+        it[PLAN_REVISIONS] = history.revisions.entries.map { entry -> "${entry.key}=${entry.value}" }.toSet()
+        it[WEEK_CHOICES] = history.choices.entries.map { entry -> "${entry.key}=${entry.value.name}" }.toSet()
         r.goal?.takeIf { g -> Goal.entries.any { e -> e.name == g } }?.let { g -> it[GOAL] = g } ?: it.remove(GOAL)
         r.defaultProtocolId?.let { d -> it[DEFAULT_PROTOCOL] = d } ?: it.remove(DEFAULT_PROTOCOL)
         // Restoring an older backup must never reveal weight someone has chosen to hide (SR-6).
@@ -231,6 +281,8 @@ class SettingsRepository(context: Context) {
         val WINDOW_CLOSING = booleanPreferencesKey("reminder_window_closing")
         val HYDRATION = booleanPreferencesKey("reminder_hydration")
         val COACHING = booleanPreferencesKey("coaching")
+        val PLAN_REVISIONS = stringSetPreferencesKey("plan_revisions")
+        val WEEK_CHOICES = stringSetPreferencesKey("week_choices")
         val WEEKLY_RECAP = booleanPreferencesKey("weekly_recap")
         val ONBOARDED_AT = longPreferencesKey("onboarded_at")
         val RAMADAN = booleanPreferencesKey("ramadan_enabled")

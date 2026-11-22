@@ -341,4 +341,14 @@
     <string name="restore_confirm_title">Ganti data di ponsel ini?</string>
     <string name="restore_confirm_body">Memulihkan cadangan ini akan mengganti riwayat puasa, catatan, jawaban skrining, dan jadwal Anda. Cadangkan data saat ini terlebih dahulu jika ingin menyimpannya.</string>
     <string name="restore_confirm_action">Ganti dan pulihkan</string>
+    <string name="history_ring_no_planned">%1$s %2$s. Tidak ada hari terencana yang tercatat.</string>
+    <string name="history_no_planned_days">Tidak ada hari terencana yang tercatat untuk periode ini.</string>
+    <string name="history_tracking_since">Pencatatan rencana dimulai pada %1$s.</string>
+    <string name="history_next_week">Pekan mulai %1$s</string>
+    <string name="history_next_week_hint">Anda dapat melanjutkan rencana biasa, mengubah jadwal rutin mulai hari ini, atau beristirahat pekan depan.</string>
+    <string name="history_keep_selected">Jadwal rutin Anda akan berlanjut pekan depan.</string>
+    <string name="history_break_selected">Pekan depan tidak ada hari puasa terencana. Pengingat rutin untuk mulai puasa dan jendela makan akan dilanjutkan pada pekan berikutnya.</string>
+    <string name="history_keep_plan">Lanjutkan rencana saya</string>
+    <string name="history_edit_schedule">Ubah jadwal rutin</string>
+    <string name="history_take_break">Istirahat pekan depan</string>
 </resources>

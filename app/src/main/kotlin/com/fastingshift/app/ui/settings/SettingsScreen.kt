@@ -57,6 +57,7 @@ import com.fastingshift.domain.billing.PlanType
 import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.ramadan.Cities
 import com.fastingshift.domain.ramadan.City
+import com.fastingshift.domain.ramadan.FastingTimeSource
 import com.fastingshift.domain.ramadan.PrayerDay
 import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.ramadan.RamadanPlanner
@@ -300,6 +301,8 @@ fun SettingsRoute(
                     )
                 }
                 GroupDivider()
+                HistoryTransferRows()
+                GroupDivider()
                 ActionRow(stringResource(R.string.settings_export)) { exportLauncher.launch("fasting-shift-export.zip") }
                 GroupDivider()
                 ActionRow(stringResource(R.string.settings_backup)) { backupLauncher.launch("fasting-shift-backup.json") }
@@ -385,7 +388,12 @@ private fun ActionRow(title: String, onClick: () -> Unit) =
 private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Boolean) -> Unit, onCity: () -> Unit, onMethod: () -> Unit) {
     InsetGroup(
         header = stringResource(R.string.ramadan_group),
-        footer = stringResource(if (s.ramadanEnabled) R.string.ramadan_footer else R.string.ramadan_footer_off),
+        footer = when {
+            !s.ramadanEnabled -> stringResource(R.string.ramadan_footer_off)
+            preview != null && preview.today.fastingTimeSource == FastingTimeSource.MUIS_TIMETABLE ->
+                stringResource(R.string.ramadan_footer_muis_timetable, preview.today.date.year)
+            else -> stringResource(R.string.ramadan_footer)
+        },
     ) {
         SwitchGroupRow(stringResource(R.string.ramadan_mode_title), s.ramadanEnabled, onToggle)
         if (s.ramadanEnabled) {
@@ -426,10 +434,8 @@ private fun PlanGroup(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: ()
             value = planName + if (ent.inTrial) " · " + stringResource(R.string.plan_trial) else "",
             subtitle = ent.expiresAt?.let { stringResource(if (ent.willRenew) R.string.plan_renews else R.string.plan_ends, it.formatDate()) },
         )
-        if (ent.plan == PlanType.FREE) {
-            GroupDivider()
-            GroupRow(stringResource(R.string.plan_see_plus), showChevron = true, onClick = onOpenPaywall)
-        }
+        GroupDivider()
+        GroupRow(stringResource(R.string.plan_see_plus), showChevron = true, onClick = onOpenPaywall)
         if (ent.plan == PlanType.MONTHLY || ent.plan == PlanType.ANNUAL) {
             GroupDivider()
             GroupRow(stringResource(R.string.plan_cancel), showChevron = true, onClick = {

@@ -9,17 +9,22 @@ import java.time.ZoneId
 object ScheduleCalculator {
 
     /** The next scheduled fast start strictly after [now], across all enabled schedules. */
-    fun nextStart(schedules: List<Schedule>, zone: ZoneId, now: Instant): Pair<Schedule, Instant>? {
+    fun nextStart(
+        schedules: List<Schedule>,
+        zone: ZoneId,
+        now: Instant,
+        breakWeeks: Set<LocalDate> = emptySet(),
+    ): Pair<Schedule, Instant>? {
         val today = now.atZone(zone).toLocalDate()
         return schedules.asSequence()
             .filter { it.enabled && it.days.isNotEmpty() }
             .mapNotNull { s ->
-                (0L..7L).asSequence()
-                    .map { today.plusDays(it) }
-                    .filter { it.dayOfWeek in s.days }
-                    .map { it.atTime(s.startTime).atZone(zone).toInstant() }
-                    .firstOrNull { it.isAfter(now) }
-                    ?.let { s to it }
+                s.days.minOf { weekday ->
+                    var day = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(weekday))
+                    if (!day.atTime(s.startTime).atZone(zone).toInstant().isAfter(now)) day = day.plusWeeks(1)
+                    while (com.fastingshift.domain.history.History.weekStart(day) in breakWeeks) day = day.plusWeeks(1)
+                    day.atTime(s.startTime).atZone(zone).toInstant()
+                }.let { s to it }
             }
             .minByOrNull { it.second }
     }

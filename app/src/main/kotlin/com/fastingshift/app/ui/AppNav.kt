@@ -163,6 +163,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 HistoryRoute(
                     onEditFast = { nav.navigate(Routes.editFast(it)) },
                     onOpenInsights = { nav.navigate(Routes.INSIGHTS) },
+                    onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
                     onAddPastFast = { nav.navigate(Routes.ADD_PAST_FAST) },
                 )
             }
@@ -178,7 +179,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
             composable(Routes.SCHEDULES) { SchedulesRoute(onBack = back) }
-            composable(Routes.PAYWALL) { PaywallRoute(onClose = back) }
+            composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
             composable(Routes.INSIGHTS) { InsightsRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
             composable(Routes.STOP) { StopFastRoute(onDone = { nav.popBackStack(Routes.TIMER, inclusive = false) }) }

@@ -1,0 +1,38 @@
+<resources>
+    <string name="history_transfer_import">Impor riwayat puasa</string>
+    <string name="history_transfer_hint">Pilih CSV riwayat dengan kolom start_at, target_end_at dan ended_at dalam format ISO 8601 dengan offset UTC.</string>
+    <string name="history_transfer_export">Ekspor riwayat puasa</string>
+    <string name="history_transfer_privacy">CSV puasa yang telah berakhir, beserta waktu, target, dan jenis puasa. Catatan pribadi dan data kesehatan tetap di perangkat ini.</string>
+    <string name="history_transfer_exported">CSV riwayat telah diekspor.</string>
+    <string name="history_transfer_too_large">Batas ukuran file adalah 4 MiB. Bagi file CSV menjadi beberapa bagian dengan baris judul yang sama.</string>
+    <string name="history_transfer_format">Pilih CSV riwayat Fasting Shift atau fasts.csv dari arsip ekspor yang telah diekstrak. Maksimal 20.000 entri per file.</string>
+    <string name="history_transfer_error">File gagal dibaca atau ditulis. Periksa kembali lokasi yang dipilih.</string>
+    <string name="history_transfer_preview">Tinjau impor riwayat</string>
+    <string name="history_transfer_done">Impor riwayat selesai</string>
+    <string name="history_transfer_add">Tambahkan puasa</string>
+    <string name="history_transfer_range">%1$s – %2$s</string>
+    <plurals name="history_transfer_ready">
+        <item quantity="other">%d puasa siap ditambahkan</item>
+    </plurals>
+    <plurals name="history_transfer_added">
+        <item quantity="other">%d puasa ditambahkan</item>
+    </plurals>
+    <plurals name="history_transfer_duplicates">
+        <item quantity="other">%d duplikat dilewati</item>
+    </plurals>
+    <plurals name="history_transfer_overlaps">
+        <item quantity="other">%d puasa yang waktunya bertumpang tindih dilewati</item>
+    </plurals>
+    <plurals name="history_transfer_no_goal">
+        <item quantity="other">%d baris dilewati karena target asli tidak tersedia</item>
+    </plurals>
+    <plurals name="history_transfer_legacy">
+        <item quantity="other">%d baris Zero versi lama dilewati karena target asli dan zona waktu tidak tersedia</item>
+    </plurals>
+    <plurals name="history_transfer_unfinished">
+        <item quantity="other">%d puasa yang belum selesai dilewati</item>
+    </plurals>
+    <plurals name="history_transfer_invalid">
+        <item quantity="other">%d baris tidak valid dilewati. Periksa waktu, offset UTC, dan jenis puasa.</item>
+    </plurals>
+</resources>

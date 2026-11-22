@@ -1,0 +1,46 @@
+<resources>
+    <string name="history_transfer_import">Import fasting history</string>
+    <string name="history_transfer_hint">Choose a history CSV with start_at, target_end_at and ended_at in ISO 8601 format with a UTC offset.</string>
+    <string name="history_transfer_export">Export fasting history</string>
+    <string name="history_transfer_privacy">CSV of finished fasts with times, goals and fast types. Notes and health logs stay on this device.</string>
+    <string name="history_transfer_exported">History CSV exported.</string>
+    <string name="history_transfer_too_large">This file exceeds the 4 MiB limit. Split it into smaller CSV files with the same header.</string>
+    <string name="history_transfer_format">Choose a Fasting Shift history CSV or fasts.csv from an extracted export. Files may contain up to 20,000 records.</string>
+    <string name="history_transfer_error">The file could not be read or written. Check that the selected location is available.</string>
+    <string name="history_transfer_preview">Review history import</string>
+    <string name="history_transfer_done">History import complete</string>
+    <string name="history_transfer_add">Add fasts</string>
+    <string name="history_transfer_range">%1$s – %2$s</string>
+    <plurals name="history_transfer_ready">
+        <item quantity="one">%d fast ready to add</item>
+        <item quantity="other">%d fasts ready to add</item>
+    </plurals>
+    <plurals name="history_transfer_added">
+        <item quantity="one">%d fast added</item>
+        <item quantity="other">%d fasts added</item>
+    </plurals>
+    <plurals name="history_transfer_duplicates">
+        <item quantity="one">%d duplicate skipped</item>
+        <item quantity="other">%d duplicates skipped</item>
+    </plurals>
+    <plurals name="history_transfer_overlaps">
+        <item quantity="one">%d overlapping fast skipped</item>
+        <item quantity="other">%d overlapping fasts skipped</item>
+    </plurals>
+    <plurals name="history_transfer_no_goal">
+        <item quantity="one">%d row skipped because its original target is missing</item>
+        <item quantity="other">%d rows skipped because their original targets are missing</item>
+    </plurals>
+    <plurals name="history_transfer_legacy">
+        <item quantity="one">%d legacy Zero row skipped because the original target and time zone are missing</item>
+        <item quantity="other">%d legacy Zero rows skipped because original targets and time zones are missing</item>
+    </plurals>
+    <plurals name="history_transfer_unfinished">
+        <item quantity="one">%d unfinished fast skipped</item>
+        <item quantity="other">%d unfinished fasts skipped</item>
+    </plurals>
+    <plurals name="history_transfer_invalid">
+        <item quantity="one">%d invalid row skipped. Check times, UTC offsets and fast type.</item>
+        <item quantity="other">%d invalid rows skipped. Check times, UTC offsets and fast type.</item>
+    </plurals>
+</resources>

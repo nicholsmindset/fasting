@@ -48,11 +48,21 @@ object Cities {
 
 /** Where the user is in the Ramadan day. */
 sealed interface RamadanPhase {
+    val fastingTimeSource: FastingTimeSource
+
     /** Between Fajr and Maghrib: fasting until [iftar]. */
-    data class Fasting(val suhoorEnded: Instant, val iftar: Instant) : RamadanPhase
+    data class Fasting(
+        val suhoorEnded: Instant,
+        val iftar: Instant,
+        override val fastingTimeSource: FastingTimeSource = FastingTimeSource.CALCULATED,
+    ) : RamadanPhase
 
     /** After Maghrib or before Fajr: eating allowed until [suhoorEnds]. */
-    data class Eating(val suhoorEnds: Instant, val nextIftar: Instant) : RamadanPhase
+    data class Eating(
+        val suhoorEnds: Instant,
+        val nextIftar: Instant,
+        override val fastingTimeSource: FastingTimeSource = FastingTimeSource.CALCULATED,
+    ) : RamadanPhase
 }
 
 /**
@@ -62,16 +72,24 @@ sealed interface RamadanPhase {
 object RamadanPlanner {
     val SUHOOR_REMINDER_BEFORE: Duration = Duration.ofMinutes(30)
 
-    fun day(city: City, method: PrayerMethod, date: LocalDate): PrayerDay =
-        PrayerTimes.compute(date, city.latitude, city.longitude, method)
+    fun day(city: City, method: PrayerMethod, date: LocalDate): PrayerDay {
+        val calculated = PrayerTimes.compute(date, city.latitude, city.longitude, method)
+        if (city.id != "sg_singapore" || method != PrayerMethod.MUIS) return calculated
+        val published = SingaporeTimetable[date] ?: return calculated
+        return calculated.copy(
+            fajr = date.atTime(published.subuh).atZone(city.zone).toInstant(),
+            maghrib = date.atTime(published.maghrib).atZone(city.zone).toInstant(),
+            fastingTimeSource = FastingTimeSource.MUIS_TIMETABLE,
+        )
+    }
 
     fun phase(city: City, method: PrayerMethod, now: Instant): RamadanPhase {
         val today = now.atZone(city.zone).toLocalDate()
         val t = day(city, method, today)
         return when {
-            now.isBefore(t.fajr) -> RamadanPhase.Eating(t.fajr, t.maghrib)
-            now.isBefore(t.maghrib) -> RamadanPhase.Fasting(t.fajr, t.maghrib)
-            else -> day(city, method, today.plusDays(1)).let { n -> RamadanPhase.Eating(n.fajr, n.maghrib) }
+            now.isBefore(t.fajr) -> RamadanPhase.Eating(t.fajr, t.maghrib, t.fastingTimeSource)
+            now.isBefore(t.maghrib) -> RamadanPhase.Fasting(t.fajr, t.maghrib, t.fastingTimeSource)
+            else -> day(city, method, today.plusDays(1)).let { n -> RamadanPhase.Eating(n.fajr, n.maghrib, n.fastingTimeSource) }
         }
     }
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="health_sync_pending">
+        <item quantity="one">%d entry is saved on this device and waiting to sync with Health Connect.</item>
+        <item quantity="other">%d entries are saved on this device and waiting to sync with Health Connect.</item>
+    </plurals>
+    <string name="health_sync_retry">Retry sync</string>
+    <string name="health_sync_retrying">Retrying sync…</string>
+    <string name="health_sync_check_access">Check that Health Connect is available and that Fasting Shift has permission to write entries.</string>
+</resources>

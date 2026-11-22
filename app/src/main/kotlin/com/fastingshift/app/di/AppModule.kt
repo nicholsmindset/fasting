@@ -61,7 +61,8 @@ object AppModule {
     fun logRepository(db: FastingDatabase): LogRepository = LogRepository(db.logDao())
 
     @Provides @Singleton
-    fun scheduleRepository(db: FastingDatabase): ScheduleRepository = ScheduleRepository(db.scheduleDao())
+    fun scheduleRepository(db: FastingDatabase, settings: SettingsRepository, clock: Clock): ScheduleRepository =
+        ScheduleRepository(db.scheduleDao(), settings, clock)
 
     @Provides @Singleton
     fun symptomCheckinRepository(db: FastingDatabase): SymptomCheckinRepository = SymptomCheckinRepository(db.symptomCheckinDao())

@@ -1,0 +1,38 @@
+<resources>
+    <string name="history_transfer_import">Import sejarah puasa</string>
+    <string name="history_transfer_hint">Pilih CSV sejarah dengan lajur start_at, target_end_at dan ended_at dalam format ISO 8601 berserta ofset UTC.</string>
+    <string name="history_transfer_export">Eksport sejarah puasa</string>
+    <string name="history_transfer_privacy">CSV puasa yang telah tamat dengan masa, sasaran dan jenis puasa. Nota dan rekod kesihatan kekal pada peranti ini.</string>
+    <string name="history_transfer_exported">CSV sejarah telah dieksport.</string>
+    <string name="history_transfer_too_large">Had saiz fail ialah 4 MiB. Bahagikan fail CSV kepada fail yang lebih kecil dengan pengepala yang sama.</string>
+    <string name="history_transfer_format">Pilih CSV sejarah Fasting Shift atau fasts.csv daripada arkib eksport yang telah diekstrak. Maksimum 20,000 rekod setiap fail.</string>
+    <string name="history_transfer_error">Fail tidak dapat dibaca atau ditulis. Semak lokasi yang dipilih.</string>
+    <string name="history_transfer_preview">Semak import sejarah</string>
+    <string name="history_transfer_done">Import sejarah selesai</string>
+    <string name="history_transfer_add">Tambah puasa</string>
+    <string name="history_transfer_range">%1$s – %2$s</string>
+    <plurals name="history_transfer_ready">
+        <item quantity="other">%d puasa sedia ditambah</item>
+    </plurals>
+    <plurals name="history_transfer_added">
+        <item quantity="other">%d puasa ditambah</item>
+    </plurals>
+    <plurals name="history_transfer_duplicates">
+        <item quantity="other">%d rekod pendua dilangkau</item>
+    </plurals>
+    <plurals name="history_transfer_overlaps">
+        <item quantity="other">%d puasa dengan masa bertindih dilangkau</item>
+    </plurals>
+    <plurals name="history_transfer_no_goal">
+        <item quantity="other">%d baris dilangkau kerana sasaran asal tiada</item>
+    </plurals>
+    <plurals name="history_transfer_legacy">
+        <item quantity="other">%d baris Zero versi lama dilangkau kerana sasaran asal dan zon waktu tiada</item>
+    </plurals>
+    <plurals name="history_transfer_unfinished">
+        <item quantity="other">%d puasa belum tamat dilangkau</item>
+    </plurals>
+    <plurals name="history_transfer_invalid">
+        <item quantity="other">%d baris tidak sah dilangkau. Semak masa, ofset UTC dan jenis puasa.</item>
+    </plurals>
+</resources>

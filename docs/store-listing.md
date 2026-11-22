@@ -29,7 +29,7 @@ BUILD A HABIT, NOT A RECORD
 Streaks count the days you completed your plan, never how long you fasted.
 
 SHIFT+ (OPTIONAL)
-The 21-day guided program from the book The Fasting Shift, plus weekly insights. 7-day free trial on the annual plan, a reminder before it ends, and one-tap cancel. Lifetime option available.
+See your weekly consistency, average fast by weekday, and optional weight entries alongside your fasting history. View available plans, prices and trial terms before purchase. Manage subscriptions through Google Play. You can also read a free reflection in the app.
 
 Fasting Shift is not medical advice and does not diagnose or treat any condition. Talk to your doctor before fasting, especially if you take medication.
 

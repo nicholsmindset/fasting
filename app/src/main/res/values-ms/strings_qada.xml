@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qada_ledger">Rekod qada</string>
+    <string name="qada_intro">Catat hari Ramadan yang tertinggal dan tarikh anda menggantikannya.</string>
+    <string name="qada_hide">Sembunyikan rekod</string>
+    <string name="qada_manage">Urus rekod</string>
+    <string name="qada_year_label">%1$d H</string>
+    <string name="qada_balance">Asal %1$d · Diganti %2$d · Baki %3$d</string>
+    <string name="qada_edit_debt">Edit hari tertinggal</string>
+    <string name="qada_record">Catat hari qada</string>
+    <string name="qada_edit_day">Edit %1$s</string>
+    <string name="qada_add_year">Tambah tahun Hijrah</string>
+    <string name="qada_hijri_year">Tahun Hijrah</string>
+    <string name="qada_original_days">Bilangan hari asal yang tertinggal</string>
+    <string name="qada_range">Masukkan %1$d hingga 30 hari.</string>
+    <string name="qada_changed">Perubahan gagal disimpan. Semak tahun dan tarikh lalu cuba lagi.</string>
+    <string name="qada_save">Simpan</string>
+    <string name="qada_cancel">Batal</string>
+    <string name="qada_correct">Edit hari qada</string>
+    <string name="qada_observed">Tarikh berpuasa</string>
+    <string name="qada_allocate">Kira hari ini bagi</string>
+    <string name="qada_duplicate">Tarikh ini sudah mempunyai rekod qada.</string>
+    <string name="qada_undo">Batalkan catatan hari qada ini</string>
+    <plurals name="qada_remaining">
+        <item quantity="other">Baki %1$d hari</item>
+    </plurals>
+</resources>

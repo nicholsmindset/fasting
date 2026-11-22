@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="program_preview_title">Renungan percuma</string>
+    <string name="program_read_sample">Baca renungan percuma</string>
+    <string name="program_sample_title">Apakah yang ingin anda ingat?</string>
+    <string name="program_sample_body">Ingat kembali kali terakhir rancangan anda berubah secara tiba-tiba. Mungkin mesyuarat berlanjutan atau seseorang mengajak anda makan malam. Apakah yang ingin anda ingat tentang hari itu apabila anda menyemak sejarah anda nanti?</string>
+    <string name="program_sample_prompt">Cuba lengkapkan ayat ini dengan kata-kata anda sendiri: “Rancangan saya berubah apabila …” Beberapa patah perkataan boleh menggambarkan perkara yang tidak dapat dilihat melalui pemasa sahaja.</string>
+    <string name="program_in_preparation">Program berpandu penuh sedang disediakan. Renungan ini percuma untuk dibaca.</string>
+    <string name="program_full_title">The Fasting Shift · 21 hari</string>
+    <string name="program_released_intro">Terokai satu pelajaran ringkas pada satu masa, mengikut rentak anda.</string>
+    <string name="program_see_plans">Lihat pilihan pelan</string>
+    <string name="program_offer_insights">Shift+ menunjukkan konsistensi mingguan dan purata tempoh puasa mengikut hari. Semak harga dan syarat percubaan sebelum membuat pilihan.</string>
+    <string name="program_trial_available">Percubaan percuma tersedia</string>
+    <string name="program_trial_duration">Percubaan percuma · %1$s</string>
+    <string name="program_trial_action">Mulakan percubaan percuma</string>
+    <string name="program_purchase_terms">Google Play memaparkan harga dan syarat percubaan sebelum pembelian. Langganan diperbaharui secara automatik sehingga dibatalkan di Google Play. Pelan seumur hidup hanya memerlukan satu bayaran.</string>
+</resources>

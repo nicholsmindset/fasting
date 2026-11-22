@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qada_ledger">Qada ledger</string>
+    <string name="qada_intro">Keep track of missed Ramadan days and the dates you made them up.</string>
+    <string name="qada_hide">Hide ledger</string>
+    <string name="qada_manage">Manage ledger</string>
+    <string name="qada_year_label">%1$d AH</string>
+    <string name="qada_balance">Originally owed %1$d · Made up %2$d · Remaining %3$d</string>
+    <string name="qada_edit_debt">Edit missed days</string>
+    <string name="qada_record">Record a make-up day</string>
+    <string name="qada_edit_day">Edit %1$s</string>
+    <string name="qada_add_year">Add Hijri year</string>
+    <string name="qada_hijri_year">Hijri year</string>
+    <string name="qada_original_days">Days originally missed</string>
+    <string name="qada_range">Enter %1$d to 30 days.</string>
+    <string name="qada_changed">Could not save this change. Check the year and date and try again.</string>
+    <string name="qada_save">Save</string>
+    <string name="qada_cancel">Cancel</string>
+    <string name="qada_correct">Edit make-up day</string>
+    <string name="qada_observed">Date observed</string>
+    <string name="qada_allocate">Apply this day to</string>
+    <string name="qada_duplicate">This date already has a make-up entry.</string>
+    <string name="qada_undo">Undo this make-up day</string>
+    <plurals name="qada_remaining">
+        <item quantity="one">%1$d day remaining</item>
+        <item quantity="other">%1$d days remaining</item>
+    </plurals>
+</resources>

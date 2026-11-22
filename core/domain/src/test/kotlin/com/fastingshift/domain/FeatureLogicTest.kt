@@ -19,7 +19,8 @@ import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.program.GuidedPrograms
 import com.fastingshift.domain.program.ProgramProgress
-import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.program.Program
+import com.fastingshift.domain.program.ProgramDay
 import com.fastingshift.domain.safety.Helplines
 import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.timeline.BodyTimeline
@@ -96,10 +97,22 @@ class FeatureLogicTest {
     }
 
     // Program
-    @Test fun `program stays within the soft-gate limit and unlocks daily`() {
-        val p = GuidedPrograms.fastingShift21
-        assertEquals(21, p.days.size)
-        assertTrue(p.days.all { hours(it.targetHours.toLong()) < FastPolicy.EXTENDED_THRESHOLD })
+    @Test fun `draft program cannot surface a timer target or accept old progress`() {
+        val draft = GuidedPrograms.fastingShift21
+        val oldProgress = (1..21).associateWith { at(fri, 9) }
+        assertFalse(draft.isPublished)
+        assertNull(GuidedPrograms.byId(draft.id))
+        assertNull(ProgramProgress.currentDay(draft, oldProgress, zone, fri))
+        assertFalse(ProgramProgress.isFinished(draft, oldProgress))
+    }
+
+    @Test fun `program unlocks daily only after a complete release`() {
+        val days = (1..21).map { ProgramDay(it, "Reflection $it", "Prompt $it") }
+        val p = Program(id = "test", days = days, expectedDays = 21, approvedForRelease = true)
+        assertFalse(p.copy(approvedForRelease = false).isPublished)
+        assertFalse(p.copy(days = days.dropLast(1)).isPublished)
+        assertFalse(p.copy(days = days.reversed()).isPublished)
+        assertFalse(p.copy(days = days.dropLast(1) + days.last().copy(lesson = "")).isPublished)
         assertEquals(1, ProgramProgress.currentDay(p, emptyMap(), zone, fri)!!.day)
         val doneToday = mapOf(1 to at(fri, 9))
         assertNull(ProgramProgress.currentDay(p, doneToday, zone, fri))

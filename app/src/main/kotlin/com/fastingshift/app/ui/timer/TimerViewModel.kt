@@ -11,7 +11,6 @@ import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.app.ui.components.latestKg
 import com.fastingshift.app.ui.components.startOfTodayFlow
 import com.fastingshift.domain.hydration.WaterGoal
-import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.service.StreakFreezeRepository
 import com.fastingshift.domain.streak.StreakCalculator
 import com.fastingshift.data.settings.SettingsRepository
@@ -199,10 +198,10 @@ class TimerViewModel @Inject constructor(
         val zone = ZoneId.systemDefault()
         val todayDate = s.now.atZone(zone).toLocalDate()
         val today = TodaySummary(
-            next = Today.nextFast(s.active != null, window, d.schedules, zone, s.now),
+            next = Today.nextFast(s.active != null, window, d.schedules, zone, s.now, appSettings.planHistory.breakWeeks),
             waterMl = d.waterMl,
             waterGoalMl = Today.waterGoalMl(appSettings.waterGoalMl, d.latestKg),
-            streak = StreakCalculator.calculate(all, zone, todayDate, d.frozen) { ScheduleCalculator.isPlannedDay(d.schedules, it) }.current,
+            streak = StreakCalculator.calculate(all, zone, todayDate, d.frozen, appSettings.planHistory::isPlanned).current,
         )
         s.copy(programTargetHours = target, eatingWindow = window, today = today)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

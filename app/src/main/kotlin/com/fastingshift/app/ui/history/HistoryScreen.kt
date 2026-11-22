@@ -71,7 +71,7 @@ import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.components.hoursLabel
-import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.domain.schedule.WeekChoice
 import com.fastingshift.domain.history.History
 import com.fastingshift.domain.history.HistoryStats
 import com.fastingshift.domain.history.Period
@@ -81,7 +81,6 @@ import com.fastingshift.domain.history.WeekSegment
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastStatus
 import com.fastingshift.domain.protocol.Presets
-import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.StreakFreezeRepository
 import com.fastingshift.domain.streak.StreakCalculator
@@ -123,15 +122,16 @@ data class HistoryState(
     val freezeableDay: LocalDate? = null,
     /** This week so far, then last week on Mondays and Tuesdays. */
     val recaps: List<RecapItem> = emptyList(),
+    val trackedFrom: LocalDate? = null,
+    val nextWeekChoice: WeekChoice? = null,
 )
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     fasts: FastRepository,
     private val freezes: StreakFreezeRepository,
-    schedules: ScheduleRepository,
     logs: LogRepository,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val month = MutableStateFlow(YearMonth.now(clock.withZone(ZoneId.systemDefault())))
@@ -154,18 +154,19 @@ class HistoryViewModel @Inject constructor(
     }
 
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */
-    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), schedules.observeAll(), view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, sch, (m, p), timedHydration ->
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), settings.settings, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, preferences, (m, p), timedHydration ->
         val (hydrationValues, now) = timedHydration
         val (water, goal) = hydrationValues
         val zone = ZoneId.systemDefault()
         val today = now.atZone(zone).toLocalDate()
-        val planned: (LocalDate) -> Boolean = { ScheduleCalculator.isPlannedDay(sch, it) }
+        val history = preferences.planHistory
+        val planned = history::isPlanned
         val completed = StreakCalculator.completedDays(all, zone)
         val yesterday = today.minusDays(1)
         // A day whose fast is still running isn't missed yet, so it's never offered for a freeze.
         val running = all.filter { it.isActive }.map { it.startAt.atZone(zone).toLocalDate() }.toSet()
         val freezeable = yesterday.takeIf {
-            it !in completed && it !in running && planned(it) && completed.any { d -> d.isBefore(it) } && StreakCalculator.canFreeze(it, frozen, today)
+            it !in completed && it !in running && planned(it) && completed.any { d -> d.isBefore(it) && planned(d) } && StreakCalculator.canFreeze(it, frozen, today)
         }
         val firstRow = History.weekStart(m.atDay(1))
         val rows = generateSequence(firstRow) { it.plusWeeks(1) }
@@ -174,6 +175,8 @@ class HistoryViewModel @Inject constructor(
             .toList()
         HistoryState(
             period = p,
+            trackedFrom = history.trackedFrom,
+            nextWeekChoice = history.choices[History.weekStart(today).plusWeeks(1)],
             summary = HistoryStats.periodSummary(all, zone, p, today, now, planned),
             recent = HistoryStats.recentFasts(all),
             month = m,
@@ -195,6 +198,10 @@ class HistoryViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    fun chooseWeek(week: LocalDate, choice: WeekChoice) = viewModelScope.launch {
+        settings.setNextWeekChoice(week, choice, LocalDate.now(clock.withZone(ZoneId.systemDefault())))
+    }
+
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
     fun setPeriod(p: Period) = period.update { p }
     fun freeze(day: LocalDate) = viewModelScope.launch {
@@ -203,7 +210,7 @@ class HistoryViewModel @Inject constructor(
 }
 
 @Composable
-fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
+fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, onOpenSchedules: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
     val loaded by vm.state.collectAsStateWithLifecycle()
     val st = loaded
     if (st == null) {
@@ -215,7 +222,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
     ) {
         section { LargeTitle(stringResource(R.string.history_title)) }
-        section { st.summary?.let { SummaryCard(st.period, it, vm::setPeriod) } }
+        section { st.summary?.let { SummaryCard(st.period, it, st.trackedFrom, vm::setPeriod) } }
         section {
             // Streaks count consistency, never length (SR-3). Neutral copy, no badges.
             AppCard {
@@ -235,6 +242,10 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         section { RecentFastsCard(st.recent, onEditFast) }
         section { CalendarCard(st, vm::shiftMonth, onEditFast) }
         st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
+        section {
+            val nextWeek = History.weekStart(st.today).plusWeeks(1)
+            WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
+        }
         section {
             InsetGroup {
                 GroupRow(stringResource(R.string.history_insights), showChevron = true, onClick = onOpenInsights)
@@ -261,7 +272,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
 // ---------- Summary ring ----------
 
 @Composable
-private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> Unit) {
+private fun SummaryCard(period: Period, s: PeriodSummary, trackedFrom: LocalDate?, onPeriod: (Period) -> Unit) {
     AppCard {
         SegmentedControl(
             Period.entries.map { stringResource(periodLabel(it)) },
@@ -269,7 +280,11 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
             { onPeriod(Period.entries[it]) },
         )
         val fastedLabel = stringResource(fastedIn(period))
-        val ringA11y = stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
+        val ringA11y = if (s.plannedDays > 0) {
+            stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
+        } else {
+            stringResource(R.string.history_ring_no_planned, s.totalFasting.hoursMinutes(), fastedLabel)
+        }
         Box(
             Modifier.fillMaxWidth().padding(vertical = 8.dp).clearAndSetSemantics { contentDescription = ringA11y },
             contentAlignment = Alignment.Center,
@@ -281,10 +296,18 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
             }
         }
         Text(
-            stringResource(R.string.history_stat_planned_days) + " · " + s.completedDays + "/" + s.plannedDays,
+            if (s.plannedDays == 0) stringResource(R.string.history_no_planned_days)
+            else stringResource(R.string.history_stat_planned_days) + " · " + s.completedDays + "/" + s.plannedDays,
             modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (trackedFrom != null && trackedFrom > s.range.start) {
+            Text(
+                stringResource(R.string.history_tracking_since, trackedFrom.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))),
+                modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Row(Modifier.fillMaxWidth()) {
             Stat(stringResource(R.string.history_stat_fasts), s.fasts.toString(), Modifier.weight(1f))
             Stat(stringResource(R.string.history_stat_average), s.average?.hoursMinutes() ?: "—", Modifier.weight(1f))

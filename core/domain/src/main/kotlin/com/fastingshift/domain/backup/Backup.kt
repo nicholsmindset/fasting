@@ -31,10 +31,11 @@ data class Backup(
     val metrics: List<MetricRecord> = emptyList(),
     /** v4+: challenges joined on this device. */
     val challenges: List<ChallengeRecord> = emptyList(),
+    @SerialName("qada_repayments") val qadaRepayments: List<QadaRepaymentRecord> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "fasting-shift-backup"
-        const val VERSION = 4
+        const val VERSION = 5
     }
 }
 
@@ -65,6 +66,8 @@ data class Backup(
     @SerialName("hijri_offset_days") val hijriOffsetDays: Int = 0,
     @SerialName("sunnah_reminders") val sunnahReminders: Boolean = false,
     @SerialName("sunnah_types") val sunnahTypes: List<String> = emptyList(),
+    @SerialName("plan_revisions") val planRevisions: Map<String, Int> = emptyMap(),
+    @SerialName("week_choices") val weekChoices: Map<String, String> = emptyMap(),
 )
 
 @Serializable data class FastRecord(
@@ -76,6 +79,8 @@ data class Backup(
     /** v4+: REGULAR, RAMADAN, SUNNAH or QADA. */
     val kind: String = "REGULAR",
 )
+
+@Serializable data class QadaRepaymentRecord(@SerialName("observed_on") val observedOn: String, @SerialName("hijri_year") val hijriYear: Int)
 
 @Serializable data class QadaDebtRecord(@SerialName("hijri_year") val hijriYear: Int, @SerialName("days_owed") val daysOwed: Int)
 
@@ -156,6 +161,7 @@ object BackupCodec {
         unique("protocol", backup.protocols.map { it.id })
         unique("streak freeze", backup.streakFreezes)
         unique("program day", backup.programProgress.map { it.programId to it.day })
+        unique("qada repayment date", backup.qadaRepayments.map { it.observedOn })
         unique("qada year", backup.qadaDebts.map { it.hijriYear })
         unique("metric", backup.metrics.map { it.id })
         unique("challenge", backup.challenges.map { it.id })
