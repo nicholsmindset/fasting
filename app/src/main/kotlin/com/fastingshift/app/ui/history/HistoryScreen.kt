@@ -349,7 +349,7 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
         val barArea = 120.dp
         val maxBar = 100.dp
         val done = MaterialTheme.colorScheme.primary
-        val early = MaterialTheme.colorScheme.outline
+        val early = MaterialTheme.colorScheme.secondary
         val averageFraction = (recent.average?.toMinutes() ?: 0L) / 60f / maxHours
         Box(Modifier.fillMaxWidth().height(barArea).drawBehind {
             val y = size.height - maxBar.toPx() * averageFraction
@@ -478,9 +478,13 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
     val color = when {
         seg.fast.isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
         seg.fast.status == FastStatus.COMPLETED -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.secondary
     }
-    val onColor = if (seg.fast.isActive) MaterialTheme.colorScheme.onSurface else if (seg.fast.status == FastStatus.COMPLETED) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.surface
+    val onColor = when (seg.fast.status) {
+        FastStatus.ACTIVE -> MaterialTheme.colorScheme.onSurface
+        FastStatus.COMPLETED -> MaterialTheme.colorScheme.onPrimary
+        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.onSecondary
+    }
     val desc = stringResource(R.string.a11y_fast_bar, seg.totalLength.hoursMinutes(), stringResource(statusLabel(seg.fast.status)))
     Box(
         Modifier.offset(x = dayWidth * seg.startDay).width(width).fillMaxHeight().padding(horizontal = 1.dp)
@@ -523,7 +527,7 @@ private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit)
                     val color = when (f.status) {
                         FastStatus.ACTIVE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
                         FastStatus.COMPLETED -> MaterialTheme.colorScheme.primary
-                        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.outline
+                        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.secondary
                     }
                     Box(Modifier.size(10.dp).clip(CircleShape).background(color))
                 },
