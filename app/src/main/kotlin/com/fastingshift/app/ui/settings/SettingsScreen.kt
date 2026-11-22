@@ -156,6 +156,7 @@ fun SettingsRoute(
     onOpenSchedules: () -> Unit,
     onOpenPaywall: () -> Unit,
     onOpenRefeeding: () -> Unit,
+    onOpenTrust: () -> Unit = {},
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsStateWithLifecycle()
@@ -262,6 +263,8 @@ fun SettingsRoute(
             }
 
             InsetGroup(header = stringResource(R.string.settings_privacy), footer = stringResource(R.string.settings_data_footer)) {
+                GroupRow(stringResource(R.string.trust_row), showChevron = true, onClick = onOpenTrust)
+                GroupDivider()
                 SwitchGroupRow(stringResource(R.string.settings_hide_weight), s.hideWeight, { v -> vm.set { setHideWeight(v) } })
                 if (vm.health.isAvailable()) {
                     GroupDivider()

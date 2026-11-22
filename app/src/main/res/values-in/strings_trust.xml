@@ -70,4 +70,35 @@
     <string name="report_reason_glp1">Menggunakan obat GLP-1</string>
     <string name="report_disclaimer">Laporan ini dibuat oleh aplikasi Fasting Shift milik pengguna dari data yang mereka catat. Ini bukan diagnosis atau nasihat medis dan belum ditinjau oleh tenaga medis. Waktu mengikuti zona waktu ponsel.</string>
     <string name="report_footer">Laporan Fasting Shift · halaman %1$d</string>
+
+    <!-- Trust center -->
+    <string name="trust_row">Cara data Anda dilindungi</string>
+    <string name="trust_title">Pusat kepercayaan</string>
+    <string name="trust_intro">Fasting Shift dibuat agar data kesehatan Anda tetap milik Anda. Inilah artinya.</string>
+    <string name="trust_on_device_title">Data Anda tetap di ponsel ini</string>
+    <string name="trust_on_device_body">Puasa, catatan, cek gejala, dan jawaban keamanan hanya disimpan di perangkat ini. Tidak ada server Fasting Shift dan tidak ada salinan cloud, dan pencadangan otomatis Android dinonaktifkan untuk aplikasi ini.</string>
+    <string name="trust_encrypted_title">Terenkripsi</string>
+    <string name="trust_encrypted_body">Basis data dienkripsi dengan SQLCipher. Kuncinya dilindungi oleh Android Keystore di ponsel ini.</string>
+    <string name="trust_no_account_title">Tanpa akun</string>
+    <string name="trust_no_account_body">Anda tidak perlu mendaftar atau masuk. Tidak ada email atau profil yang bisa bocor.</string>
+    <string name="trust_no_tracking_title">Tanpa iklan, analitik, atau pelacak</string>
+    <string name="trust_no_tracking_body">Aplikasi ini tidak berisi alat iklan, analitik, atau pelacakan, dan data Anda tidak pernah dijual atau dibagikan untuk pemasaran.</string>
+    <string name="trust_leaves_title">Apa yang keluar dari ponsel ini, dan kapan</string>
+    <string name="trust_leaves_purchases_title">Pembelian: Google Play dan RevenueCat</string>
+    <string name="trust_leaves_purchases_body">Untuk membeli, memulihkan, atau memeriksa Shift+, aplikasi terhubung ke Google Play dan RevenueCat, layanan pembelian kami. Mereka melihat ID aplikasi anonim dan pembelian Anda, bukan puasa atau data kesehatan Anda.</string>
+    <string name="trust_leaves_hc_title">Health Connect: hanya jika Anda mengaktifkannya</string>
+    <string name="trust_leaves_hc_body">Jika Anda mengaktifkan Health Connect di Setelan, aplikasi hanya bertukar jenis data yang Anda izinkan (seperti berat badan dan air) dengan Health Connect di ponsel ini.</string>
+    <string name="trust_leaves_files_title">File: hanya saat Anda mengekspor atau membagikan</string>
+    <string name="trust_leaves_files_body">Ekspor, cadangan, laporan dokter, dan kartu berbagi dibuat di ponsel ini dan hanya dikirim ke tempat yang Anda pilih.</string>
+    <string name="trust_leaves_links_title">Tautan tantangan: hanya pengaturan</string>
+    <string name="trust_leaves_links_body">Tautan tantangan hanya berisi tantangannya (jenis, tanggal, dan nama opsional). Setiap orang mencatat kemajuannya sendiri di ponselnya masing-masing.</string>
+    <string name="trust_your_data">Data Anda</string>
+    <string name="trust_export">Ekspor salinan data saya</string>
+    <string name="trust_export_subtitle">File zip berisi cadangan lengkap dan file spreadsheet</string>
+    <string name="trust_delete">Hapus semua data</string>
+    <string name="trust_deleting">Menghapus…</string>
+    <string name="trust_delete_footer">Menghapus akan membuang semua yang disimpan aplikasi ini di ponsel ini dan memulainya dari awal. Ekspor dulu jika Anda ingin menyimpan salinan.</string>
+    <string name="trust_delete_confirm_title">Hapus semua data?</string>
+    <string name="trust_delete_confirm_body">Puasa, catatan, cek gejala, jawaban keamanan, tantangan, dan setelan Anda akan dihapus permanen dari ponsel ini. File yang Anda ekspor dan data di Health Connect tidak terpengaruh. Pembelian Shift+ tetap ada di akun Google Play Anda. Ini tidak dapat dibatalkan.</string>
+    <string name="trust_delete_confirm">Hapus semuanya</string>
 </resources>

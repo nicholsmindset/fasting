@@ -48,6 +48,7 @@ import com.fastingshift.app.ui.safety.StopFastRoute
 import com.fastingshift.app.ui.settings.SchedulesRoute
 import com.fastingshift.app.ui.settings.SettingsRoute
 import com.fastingshift.app.ui.timer.TimerRoute
+import com.fastingshift.app.ui.trust.TrustRoute
 import com.fastingshift.domain.safety.RefeedingTier
 
 object Routes {
@@ -65,6 +66,7 @@ object Routes {
     const val CHECKIN = "checkin/{fastId}"
     const val EDIT_FAST = "fast/{fastId}"
     const val ADD_PAST_FAST = "addfast"
+    const val TRUST = "trust"
 
     /** Refeeding guidance. No tier shows every tier (from Settings); fastId offers Undo. */
     const val REFEEDING = "refeeding?tier={tier}&fastId={fastId}"
@@ -174,9 +176,11 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
                     onOpenPaywall = { nav.navigate(Routes.PAYWALL) },
                     onOpenRefeeding = { nav.navigate(Routes.refeeding(null)) },
+                    onOpenTrust = { nav.navigate(Routes.TRUST) },
                 )
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
+            composable(Routes.TRUST) { TrustRoute(onBack = back) }
             composable(Routes.SCHEDULES) { SchedulesRoute(onBack = back) }
             composable(Routes.PAYWALL) { PaywallRoute(onClose = back) }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }

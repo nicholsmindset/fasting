@@ -70,4 +70,35 @@
     <string name="report_reason_glp1">使用 GLP-1 类药物</string>
     <string name="report_disclaimer">本报告由用户的 Fasting Shift 应用根据其记录生成，不是诊断或医疗建议，也未经医生审核。时间为手机所在时区。</string>
     <string name="report_footer">Fasting Shift 报告 · 第 %1$d 页</string>
+
+    <!-- Trust center -->
+    <string name="trust_row">你的数据如何受到保护</string>
+    <string name="trust_title">信任中心</string>
+    <string name="trust_intro">Fasting Shift 的设计让你的健康数据始终属于你。具体如下。</string>
+    <string name="trust_on_device_title">数据只留在这部手机上</string>
+    <string name="trust_on_device_body">断食、记录、症状记录和安全问答只保存在本设备上。没有 Fasting Shift 服务器，也没有云端副本，本应用也关闭了 Android 自动备份。</string>
+    <string name="trust_encrypted_title">已加密</string>
+    <string name="trust_encrypted_body">数据库使用 SQLCipher 加密，密钥由本机的 Android Keystore 保护。</string>
+    <string name="trust_no_account_title">无需账号</string>
+    <string name="trust_no_account_body">无需注册或登录，没有可泄露的邮箱或个人资料。</string>
+    <string name="trust_no_tracking_title">无广告、无分析、无追踪</string>
+    <string name="trust_no_tracking_body">应用不包含任何广告、分析或追踪工具，你的数据从不出售，也不会用于营销。</string>
+    <string name="trust_leaves_title">哪些数据会离开手机，何时离开</string>
+    <string name="trust_leaves_purchases_title">购买：Google Play 和 RevenueCat</string>
+    <string name="trust_leaves_purchases_body">购买、恢复或查看 Shift+ 时，应用会连接 Google Play 和我们的购买服务 RevenueCat。它们只能看到匿名的应用 ID 和你的购买记录，看不到你的断食或健康数据。</string>
+    <string name="trust_leaves_hc_title">Health Connect：仅在你开启后</string>
+    <string name="trust_leaves_hc_body">如果你在设置中开启 Health Connect，应用只会与本机的 Health Connect 交换你允许的数据类型（例如体重和饮水）。</string>
+    <string name="trust_leaves_files_title">文件：仅在你导出或分享时</string>
+    <string name="trust_leaves_files_body">导出文件、备份、医生报告和分享卡片都在本机生成，只会发送到你选择的地方。</string>
+    <string name="trust_leaves_links_title">挑战链接：只含挑战设置</string>
+    <string name="trust_leaves_links_body">挑战链接只包含挑战本身（类型、日期和可选名称）。每个人在自己的手机上记录自己的进度。</string>
+    <string name="trust_your_data">你的数据</string>
+    <string name="trust_export">导出我的数据副本</string>
+    <string name="trust_export_subtitle">包含完整备份和表格文件的 zip</string>
+    <string name="trust_delete">删除所有数据</string>
+    <string name="trust_deleting">正在删除…</string>
+    <string name="trust_delete_footer">删除会清除本应用在这部手机上保存的所有内容，并重新启动应用。如需保留副本，请先导出。</string>
+    <string name="trust_delete_confirm_title">删除所有数据？</string>
+    <string name="trust_delete_confirm_body">你的断食、记录、症状记录、安全问答、挑战和设置将从这部手机上永久删除。已导出的文件和 Health Connect 中的数据不受影响。Shift+ 购买仍绑定你的 Google Play 账号。此操作无法撤销。</string>
+    <string name="trust_delete_confirm">全部删除</string>
 </resources>
