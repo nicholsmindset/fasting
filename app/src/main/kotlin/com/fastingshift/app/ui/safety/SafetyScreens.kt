@@ -6,26 +6,31 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,10 +40,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +53,13 @@ import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.platform.RegionResolver
 import com.fastingshift.app.ui.components.SecondaryScaffold
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.PrimaryButton
+import com.fastingshift.app.ui.design.Spacing
+import com.fastingshift.app.ui.design.rememberHaptics
+import com.fastingshift.app.ui.onboarding.CheckGroupRow
+import com.fastingshift.app.ui.onboarding.HeroIcon
 import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.domain.safety.EmergencyNumbers
 import com.fastingshift.domain.safety.Helplines
@@ -106,23 +119,19 @@ private val symptomSetSaver = listSaver<Set<Symptom>, String>(
 fun CheckInRoute(fastId: Long, onRedFlag: () -> Unit, onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
     var selected by rememberSaveable(stateSaver = symptomSetSaver) { mutableStateOf(emptySet<Symptom>()) }
     SecondaryScaffold(title = stringResource(R.string.checkin_title), onBack = onDone) {
-        Text(stringResource(R.string.checkin_body))
-        Column {
-            Symptom.entries.forEach { s ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().toggleable(
-                        value = s in selected, role = Role.Checkbox,
-                        onValueChange = { on -> selected = if (on) selected + s else selected - s },
-                    ),
-                ) {
-                    Checkbox(checked = s in selected, onCheckedChange = null)
-                    Text(stringResource(symptomLabel(s)), Modifier.padding(vertical = 12.dp))
-                }
+        Text(stringResource(R.string.checkin_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        InsetGroup(header = stringResource(R.string.checkin_group), footer = stringResource(R.string.checkin_footer)) {
+            Symptom.entries.forEachIndexed { i, s ->
+                if (i > 0) GroupDivider()
+                CheckGroupRow(stringResource(symptomLabel(s)), s in selected, { on -> selected = if (on) selected + s else selected - s })
             }
         }
-        Button(onClick = { vm.submit(fastId, selected, onRedFlag, onDone) }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (selected.isEmpty()) R.string.checkin_feel_fine else R.string.checkin_submit))
+        AnimatedContent(selected.isEmpty(), label = "checkinButton") { none ->
+            PrimaryButton(
+                stringResource(if (none) R.string.checkin_feel_fine else R.string.checkin_submit),
+                onClick = { vm.submit(fastId, selected, onRedFlag, onDone) },
+                haptic = true,
+            )
         }
     }
 }
@@ -136,25 +145,45 @@ fun CheckInRoute(fastId: Long, onRedFlag: () -> Unit, onDone: () -> Unit, vm: Sa
 fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val number = remember { EmergencyNumbers.forRegion(emergencyRegion(context)) }
+    val haptics = rememberHaptics()
     BackHandler { vm.endFast(onDone) }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.errorContainer) {
         Column(
-            Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Text(stringResource(R.string.stop_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.stop_body))
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.stop_number_label), style = MaterialTheme.typography.labelLarge)
-                Text(number, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+            HeroIcon(Icons.Filled.Warning, size = 64.dp, container = MaterialTheme.colorScheme.error, tint = MaterialTheme.colorScheme.onError)
+            Text(
+                stringResource(R.string.stop_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.semantics { heading() },
+            )
+            Text(stringResource(R.string.stop_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onErrorContainer)
+            Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.stop_number_label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(number, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                    Button(
+                        onClick = { haptics.confirm(); dial(context, number) },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    ) {
+                        Icon(Icons.Filled.Call, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.stop_call, number), style = MaterialTheme.typography.labelLarge)
+                    }
+                }
             }
             Button(
-                onClick = { dial(context, number) },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.stop_call, number)) }
-            OutlinedButton(onClick = { vm.endFast(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop_end_fast)) }
-            Text(stringResource(R.string.stop_after), style = MaterialTheme.typography.bodySmall)
+                onClick = { vm.endFast(onDone) },
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer, contentColor = MaterialTheme.colorScheme.error),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            ) { Text(stringResource(R.string.stop_end_fast), style = MaterialTheme.typography.labelLarge) }
+            Text(stringResource(R.string.stop_reassure), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onErrorContainer)
+            Text(stringResource(R.string.stop_after), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
         }
     }
 }
@@ -164,18 +193,20 @@ fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
 fun HelplineList() {
     val context = LocalContext.current
     val lines = remember { Helplines.forRegion(emergencyRegion(context)) }
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(stringResource(R.string.helplines_title), style = MaterialTheme.typography.titleSmall)
-        lines.forEach { h ->
-            TextButton(onClick = { dial(context, h.phone) }, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth()) {
-                    Text(h.name, style = MaterialTheme.typography.bodyMedium)
-                    Text(h.phone, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(h.note, style = MaterialTheme.typography.bodySmall)
+    InsetGroup(header = stringResource(R.string.helplines_title)) {
+        lines.forEachIndexed { i, h ->
+            if (i > 0) GroupDivider()
+            Row(
+                Modifier.fillMaxWidth().clickable(role = Role.Button) { dial(context, h.phone) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(h.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(h.phone, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(h.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                Icon(Icons.Filled.Call, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

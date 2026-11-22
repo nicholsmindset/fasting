@@ -142,4 +142,45 @@ class FirstWeekScreenshotTest {
         compose.onNodeWithText(s(R.string.coach_card_label)).performScrollTo()
         shoot("13-coaching")
     }
+
+    private fun seedOk() = runBlocking {
+        screening.save(ScreeningRecord(Instant.now(), ScreeningAnswers(40, false, false, false, emptySet(), 175.0, 70.0), GateResult.OK, false))
+        settings.setOnboardingComplete(true)
+    }
+
+    @Test fun safetyScreens() {
+        seedOk()
+        runBlocking {
+            // A past fast, so the first-fast card stays out of the way.
+            val start = Instant.now().minus(Duration.ofDays(3))
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8").end(start.plus(Duration.ofHours(16))))
+        }
+        waitFor(s(R.string.timer_start))
+        click("36h")
+        click(s(R.string.timer_start))
+        waitFor(s(R.string.checklist_title))
+        shoot("20-checklist")
+        click(s(R.string.checklist_confirm))
+        waitFor(s(R.string.timer_check_in))
+        click(s(R.string.timer_check_in))
+        waitFor(s(R.string.checkin_body))
+        click(s(R.string.sym_headache))
+        shoot("21-checkin")
+        click(s(R.string.sym_fainting))
+        click(s(R.string.checkin_submit))
+        waitFor(s(R.string.stop_title))
+        shoot("22-stop")
+    }
+
+    @Test fun refeeding() {
+        seedOk()
+        runBlocking {
+            val start = Instant.now().minus(Duration.ofHours(50))
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(48)), protocolId = "duration_48"))
+        }
+        waitFor(s(R.string.timer_end))
+        click(s(R.string.timer_end))
+        waitFor(s(R.string.refeed_intro))
+        shoot("23-refeeding")
+    }
 }

@@ -1,22 +1,34 @@
 package com.fastingshift.app.ui.safety
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.fastingshift.app.ui.design.AppCard
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.PlainButton
+import com.fastingshift.app.ui.design.PrimaryButton
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.SecondaryScaffold
-import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.safety.RefeedingTier
@@ -62,17 +74,33 @@ fun RefeedingRoute(tier: RefeedingTier?, fastId: Long, onDone: () -> Unit, vm: R
     LaunchedEffect(fastId) { vm.load(fastId) }
     val fast by vm.fast.collectAsStateWithLifecycle()
     SecondaryScaffold(title = stringResource(R.string.refeed_title), onBack = onDone) {
-        fast?.actualDuration?.let { Text(stringResource(R.string.refeed_your_fast, it.hoursMinutes()), style = MaterialTheme.typography.titleMedium) }
-        Text(stringResource(R.string.refeed_intro))
+        fast?.actualDuration?.let {
+            Text(stringResource(R.string.refeed_your_fast, it.hoursMinutes()), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+        }
+        Text(stringResource(R.string.refeed_intro), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val tiers = tier?.let { listOf(it) } ?: RefeedingTier.entries
         tiers.forEach { t ->
-            SectionCard(title = stringResource(tierTitle(t))) { Text(stringResource(refeedingText(t))) }
+            AppCard {
+                Text(stringResource(tierTitle(t)), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(refeedingText(t)), style = MaterialTheme.typography.bodyMedium)
+            }
         }
-        listOf(R.string.refeed_tip_water, R.string.refeed_tip_avoid, R.string.refeed_tip_signs).forEach { Text("• " + stringResource(it)) }
-        Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.refeed_done)) }
+        InsetGroup(header = stringResource(R.string.refeed_tips_title), footer = stringResource(R.string.disclaimer)) {
+            listOf(
+                Icons.Filled.Favorite to R.string.refeed_tip_water,
+                Icons.Filled.Info to R.string.refeed_tip_avoid,
+                Icons.Filled.Warning to R.string.refeed_tip_signs,
+            ).forEachIndexed { i, (icon, text) ->
+                if (i > 0) GroupDivider()
+                Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Text(stringResource(text), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        PrimaryButton(stringResource(R.string.refeed_done), onClick = onDone)
         if (fast?.let(vm::canUndo) == true) {
-            TextButton(onClick = { vm.undo(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.refeed_undo)) }
+            PlainButton(stringResource(R.string.refeed_undo), onClick = { vm.undo(onDone) }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
