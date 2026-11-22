@@ -17,4 +17,24 @@
     <string name="metrics_glucose_syncing">血糖读数也会保存到 Health Connect。</string>
     <string name="metrics_glucose_sync_offer">也将血糖读数保存到 Health Connect？</string>
     <string name="metrics_glucose_sync_allow">允许</string>
+    <string name="body_title">身体信号</string>
+    <string name="body_correlation_note">相关，不代表因果：睡眠、心率和血糖会因很多原因变化。只有两边的数据都足够时才会显示对比。仅为一般信息，不是建议。</string>
+    <string name="body_vs">%1$s 对比 %2$s</string>
+    <string name="body_bpm_value">%1$s 次/分</string>
+    <string name="body_sleep">断食日之后的睡眠</string>
+    <string name="body_sleep_counts">断食日之后 %1$d 晚，其他 %2$d 晚</string>
+    <string name="body_sleep_need">每类至少需要 %1$d 晚的数据</string>
+    <string name="body_heart_rate">静息心率（断食周）</string>
+    <string name="body_heart_rate_counts">断食周 %1$d 周，其他 %2$d 周</string>
+    <string name="body_heart_rate_need">每类至少需要 %1$d 周的数据</string>
+    <string name="body_glucose">断食期间的血糖</string>
+    <string name="body_glucose_counts">断食期间 %1$d 次读数，断食以外 %2$d 次</string>
+    <string name="body_glucose_need">断食期间和断食以外各至少需要 %1$d 次读数</string>
+    <string name="body_trend_title">每周静息心率</string>
+    <string name="body_trend_legend">高亮的柱为断食周（2 个或以上断食日）。</string>
+    <string name="body_trend_a11y">%1$d 周的每周静息心率</string>
+    <string name="body_connect_title">把睡眠和心率与断食放在一起看</string>
+    <string name="body_connect_body">允许 Fasting Shift 从 Health Connect 读取睡眠和静息心率。仅读取：不会更改、保存或共享任何数据。血糖使用你在应用中记录的读数。</string>
+    <string name="body_connect_button">在 Health Connect 中允许</string>
+    <string name="body_unavailable">此设备上无法使用 Health Connect。</string>
 </resources>

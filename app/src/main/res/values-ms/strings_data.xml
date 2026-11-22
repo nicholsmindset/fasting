@@ -17,4 +17,24 @@
     <string name="metrics_glucose_syncing">Bacaan glukosa turut disimpan ke Health Connect.</string>
     <string name="metrics_glucose_sync_offer">Simpan bacaan glukosa ke Health Connect juga?</string>
     <string name="metrics_glucose_sync_allow">Benarkan</string>
+    <string name="body_title">Isyarat badan</string>
+    <string name="body_correlation_note">Korelasi, bukan punca: tidur, kadar denyutan jantung dan glukosa berubah atas banyak sebab. Perbandingan hanya dipaparkan apabila data mencukupi di kedua-dua belah. Maklumat umum, bukan nasihat.</string>
+    <string name="body_vs">%1$s berbanding %2$s</string>
+    <string name="body_bpm_value">%1$s bpm</string>
+    <string name="body_sleep">Tidur selepas hari berpuasa</string>
+    <string name="body_sleep_counts">%1$d malam selepas hari berpuasa berbanding %2$d malam lain</string>
+    <string name="body_sleep_need">Perlukan sekurang-kurangnya %1$d malam bagi setiap jenis</string>
+    <string name="body_heart_rate">Kadar denyutan jantung rehat, minggu berpuasa</string>
+    <string name="body_heart_rate_counts">%1$d minggu berpuasa berbanding %2$d minggu lain</string>
+    <string name="body_heart_rate_need">Perlukan sekurang-kurangnya %1$d minggu bagi setiap jenis</string>
+    <string name="body_glucose">Glukosa semasa berpuasa</string>
+    <string name="body_glucose_counts">%1$d bacaan semasa berpuasa berbanding %2$d di luar</string>
+    <string name="body_glucose_need">Perlukan sekurang-kurangnya %1$d bacaan semasa dan di luar puasa</string>
+    <string name="body_trend_title">Kadar denyutan jantung rehat mengikut minggu</string>
+    <string name="body_trend_legend">Bar yang diserlahkan ialah minggu berpuasa (2 hari berpuasa atau lebih).</string>
+    <string name="body_trend_a11y">Kadar denyutan jantung rehat mingguan untuk %1$d minggu</string>
+    <string name="body_connect_title">Lihat tidur dan kadar denyutan jantung di sebelah puasa anda</string>
+    <string name="body_connect_body">Benarkan Fasting Shift membaca Tidur dan Kadar denyutan jantung rehat daripada Health Connect. Ia baca sahaja: tiada apa-apa diubah, disimpan atau dikongsi. Glukosa menggunakan bacaan yang anda catat dalam aplikasi.</string>
+    <string name="body_connect_button">Benarkan dalam Health Connect</string>
+    <string name="body_unavailable">Health Connect tidak tersedia pada peranti ini.</string>
 </resources>

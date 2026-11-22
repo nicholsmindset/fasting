@@ -22,4 +22,24 @@
     <string name="metrics_glucose_syncing">Glucose readings are also saved to Health Connect.</string>
     <string name="metrics_glucose_sync_offer">Save glucose readings to Health Connect too?</string>
     <string name="metrics_glucose_sync_allow">Allow</string>
+    <string name="body_title">Body signals</string>
+    <string name="body_correlation_note">Correlation, not cause: sleep, heart rate and glucose change for many reasons. Comparisons appear only once there is enough data on both sides. General information, not advice.</string>
+    <string name="body_vs">%1$s vs %2$s</string>
+    <string name="body_bpm_value">%1$s bpm</string>
+    <string name="body_sleep">Sleep after a fasting day</string>
+    <string name="body_sleep_counts">%1$d nights after a fasting day vs %2$d other nights</string>
+    <string name="body_sleep_need">Needs at least %1$d nights of each kind</string>
+    <string name="body_heart_rate">Resting heart rate, fasting weeks</string>
+    <string name="body_heart_rate_counts">%1$d fasting weeks vs %2$d other weeks</string>
+    <string name="body_heart_rate_need">Needs at least %1$d weeks of each kind</string>
+    <string name="body_glucose">Glucose during fasts</string>
+    <string name="body_glucose_counts">%1$d readings during fasts vs %2$d outside</string>
+    <string name="body_glucose_need">Needs at least %1$d readings during and outside fasts</string>
+    <string name="body_trend_title">Resting heart rate by week</string>
+    <string name="body_trend_legend">Highlighted bars are fasting weeks (2 or more fasting days).</string>
+    <string name="body_trend_a11y">Weekly resting heart rate for %1$d weeks</string>
+    <string name="body_connect_title">See sleep and heart rate next to your fasts</string>
+    <string name="body_connect_body">Allow Fasting Shift to read Sleep and Resting heart rate from Health Connect. It is read-only: nothing is changed, stored or shared. Glucose uses the readings you log in the app.</string>
+    <string name="body_connect_button">Allow in Health Connect</string>
+    <string name="body_unavailable">Health Connect is not available on this device.</string>
 </resources>
