@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +22,8 @@ jobs:
           java-version: "17"
 
       - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36"
 
       - uses: gradle/actions/setup-gradle@v4
 
@@ -34,8 +36,24 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug
 
+      - name: Lint and build the staging preview
+        if: github.event_name == 'pull_request'
+        run: |
+          ./gradlew :app:lintDebug :app:assembleStaging
+          ./gradlew :app:testDebugUnitTest --tests '*.StoreScreenshotTest' -Pscreenshots
+
+      - uses: actions/upload-artifact@v4
+        if: success() && github.event_name == 'pull_request'
+        with:
+          name: fasting-shift-history-preview
+          path: |
+            app/build/outputs/apk/staging/*.apk
+            docs/screenshots/2*.png
+          if-no-files-found: error
+
       - name: Check Room schema is committed
-        run: git diff --exit-code -- core/data/schemas || (echo "Room schema changed: commit core/data/schemas" && exit 1)
+        run: |
+          git diff --exit-code -- core/data/schemas || (echo "Room schema changed: commit core/data/schemas" && exit 1)
 
       - uses: actions/upload-artifact@v4
         if: always()
