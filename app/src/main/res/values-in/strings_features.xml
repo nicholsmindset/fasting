@@ -337,4 +337,5 @@
         <item quantity="other">%1$d dari %2$d hari selesai</item>
     </plurals>
     <string name="schedules_locked">Jadwal tersedia setelah jawaban keselamatan Anda memungkinkan puasa.</string>
+    <string name="history_chart_average">Rata-rata %1$s</string>
 </resources>

@@ -341,4 +341,5 @@
         <item quantity="other">已完成 %1$d / %2$d 天</item>
     </plurals>
     <string name="schedules_locked">当你的安全问题回答允许断食后，即可使用计划功能。</string>
+    <string name="history_chart_average">平均 %1$s</string>
 </resources>

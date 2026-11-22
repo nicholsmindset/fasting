@@ -30,6 +30,7 @@ class HistoryStatsTest {
         assertEquals(1, s.fasts) // only the Wednesday fast started this week
         assertEquals(0, s.completed)
         assertEquals(hours(10), s.average)
+        assertEquals(hours(10), s.longest)
         assertEquals(5, s.plannedDays) // Mon..Fri so far
         assertEquals(0, s.completedDays) // the Sunday-night fast counts for Sunday, last week
         assertEquals(0f, s.consistency)
@@ -43,6 +44,7 @@ class HistoryStatsTest {
         assertEquals(hours(4), HistoryStats.monthTotal(listOf(acrossMonths), zone, YearMonth.of(2026, 10), now))
         val month = HistoryStats.periodSummary(listOf(acrossMonths, active), zone, Period.MONTH, fri, now)
         assertEquals(1, month.fasts)
+        assertNull(month.longest)
         assertNull(month.average) // the only fast started in November is still running
     }
 

@@ -341,4 +341,5 @@
         <item quantity="other">%1$d daripada %2$d hari selesai</item>
     </plurals>
     <string name="schedules_locked">Jadual akan tersedia setelah jawapan keselamatan anda membenarkan puasa.</string>
+    <string name="history_chart_average">Purata %1$s</string>
 </resources>
