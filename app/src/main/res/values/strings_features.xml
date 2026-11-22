@@ -348,4 +348,7 @@
     <string name="schedules_locked">Schedules become available once your safety answers allow fasting.</string>
     <string name="history_chart_average">Average %1$s</string>
     <string name="history_chart_range" translatable="false">%1$s – %2$s</string>
+    <string name="restore_confirm_title">Replace data on this phone?</string>
+    <string name="restore_confirm_body">Restoring this backup replaces your fasting history, logs, screening answers and schedules. Back up your current data first if you want to keep it.</string>
+    <string name="restore_confirm_action">Replace and restore</string>
 </resources>

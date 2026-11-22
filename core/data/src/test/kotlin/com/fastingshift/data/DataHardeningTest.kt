@@ -97,6 +97,19 @@ class DataHardeningTest {
         assertEquals(t0.plusSeconds(16 * 3600), restored.endedAt)
     }
 
+    @Test fun delayedRestoreDoesNotRestartAnExpiredFast() = runTest {
+        val ok = ScreeningRecordDto(t0.toEpochMilli(), 40, false, false, false, emptyList(), 175.0, 75.0, "OK", false)
+        val active = FastRecord(1, t0.toEpochMilli(), t0.plusSeconds(16 * 3600).toEpochMilli(), null, "window_16_8", "ACTIVE")
+        val exported = t0.plusSeconds(3600)
+        val backup = Backup(exportedAt = exported.toEpochMilli(), fasts = listOf(active), screenings = listOf(ok))
+        val repo = RoomFastRepository(db.fastDao())
+        BackupRepository(db).restore(backup, restoredAt = exported)
+        assertNotNull(repo.getActive())
+        BackupRepository(db).restore(backup, restoredAt = t0.plus(Duration.ofDays(10)))
+        assertNull(repo.getActive())
+        assertEquals(exported, repo.getAll().single().endedAt)
+    }
+
     @Test fun restoreKeepsWeightHiddenAndClearsPendingRefeeding() = runTest {
         val settings = SettingsRepository(context)
         settings.setHideWeight(true)

@@ -92,9 +92,9 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
      * Replaces all data with [backup] in one transaction. Mapping errors (unknown enum names,
      * bad dates) abort before anything is deleted.
      */
-    suspend fun restore(backup: Backup) {
+    suspend fun restore(backup: Backup, restoredAt: Instant = Instant.now()) {
         val mapped = try {
-            Mapped(backup)
+            Mapped(backup, restoredAt)
         } catch (e: IllegalArgumentException) {
             throw BackupFormatException("The backup contains values this version cannot read.", e)
         } catch (e: IllegalStateException) {
@@ -132,7 +132,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
      * restore here instead of crashing the app later. Safety results are recomputed, never
      * trusted from the file: the screening gate (SR-1/SR-2) and check-in red flags (SR-4).
      */
-    private class Mapped(b: Backup) {
+    private class Mapped(b: Backup, restoredAt: Instant) {
         val screenings = b.screenings.map {
             val answers = ScreeningAnswers(
                 it.ageYears, it.pregnantOrBreastfeeding, it.eatingDisorderHistory, it.type1Diabetes,
@@ -146,7 +146,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
 
         /**
          * An active fast comes back only if it is still allowed: not older than the longest
-         * fast at export time, and permitted by the restored screening. Otherwise it is ended
+         * fast at either export or restore time, and permitted by the restored screening. Otherwise it is ended
          * (at its goal, or at the export time if earlier) so a restore can't resume an unsafe fast.
          */
         val fasts = b.fasts.map {
@@ -155,9 +155,10 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             val latest = screenings.maxByOrNull { s -> s.answeredAt }
             val decision = FastPolicy.evaluateStart(latest?.gateResult, latest?.clinicianAcknowledged ?: false, f.plannedDuration)
             val exportedAt = b.exportedAt.inst
-            val tooOld = Duration.between(f.startAt, exportedAt) > FastPolicy.MAX_FAST
+            require(!f.startAt.isAfter(restoredAt)) { "Active fast starts after the restore time." }
+            val tooOld = Duration.between(f.startAt, maxOf(exportedAt, restoredAt)) > FastPolicy.MAX_FAST
             if (decision is StartDecision.Allowed && !tooOld) return@map f.toEntity()
-            val endAt = maxOf(f.startAt.plus(Duration.ofMinutes(1)), minOf(f.targetEndAt, exportedAt))
+            val endAt = maxOf(f.startAt, minOf(f.targetEndAt, exportedAt, restoredAt))
             f.end(endAt).toEntity()
         }
 

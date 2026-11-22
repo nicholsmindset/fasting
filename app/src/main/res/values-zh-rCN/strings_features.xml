@@ -342,4 +342,7 @@
     </plurals>
     <string name="schedules_locked">当你的安全问题回答允许断食后，即可使用计划功能。</string>
     <string name="history_chart_average">平均 %1$s</string>
+    <string name="restore_confirm_title">替换此手机上的数据？</string>
+    <string name="restore_confirm_body">恢复此备份将替换您的禁食历史、日志、筛查答案和计划。如需保留当前数据，请先备份。</string>
+    <string name="restore_confirm_action">替换并恢复</string>
 </resources>
