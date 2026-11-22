@@ -5,13 +5,11 @@
 -->
 <resources>
     <!-- Common -->
-    <string name="back">Back</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>
     <string name="unit_kg">kg</string>
     <string name="unit_lb">lb</string>
     <string name="unit_mg">mg</string>
-    <string name="unit_ml">ml</string>
     <string name="unit_kg_value">%1$.1f kg</string>
     <string name="unit_lb_value">%1$.1f lb</string>
     <string name="unit_mg_value">%1$d mg</string>
@@ -33,7 +31,6 @@
     <string name="quick_weight_added">Weight saved</string>
     <string name="quick_electrolyte_added">Electrolytes saved</string>
     <string name="quick_amount_mg">Amount (mg)</string>
-    <string name="timer_ended_snack">Fast ended after %1$s</string>
     <string name="timer_undo_failed">That fast can\'t be reopened any more.</string>
     <string name="timer_start_earlier">Started earlier?</string>
     <string name="timer_start_earlier_title">When did you start?</string>
@@ -77,10 +74,8 @@
     <string name="settings_refeeding">Breaking a long fast</string>
     <string name="stop_number_label">Emergency number</string>
     <string name="dial_unavailable">This device can\'t place calls. Please dial %1$s from a phone.</string>
-    <string name="undo">Undo</string>
     <string name="navigate_up">Navigate up</string>
     <string name="off">Off</string>
-    <string name="loading">Loading…</string>
     <string name="privacy_policy_url" translatable="false">https://fastingshift.com/privacy</string>
 
     <!-- Tabs -->
@@ -102,7 +97,6 @@
     <string name="notif_renewal_body">Your Shift+ annual plan renews on %1$s. You can cancel in Google Play before then.</string>
 
     <!-- Timer additions -->
-    <string name="timer_started_at">Started %1$s</string>
     <string name="timer_edit">Edit times</string>
     <string name="timer_check_in">Check in now</string>
     <string name="timer_custom">Custom length</string>
@@ -113,7 +107,6 @@
     <!-- Edit fast -->
     <string name="edit_title">Edit fast</string>
     <string name="edit_start">Started</string>
-    <string name="edit_goal">Goal (%1$s)</string>
     <string name="edit_end">Ended</string>
     <string name="edit_note">Note</string>
     <string name="edit_delete">Delete this fast</string>
@@ -145,9 +138,7 @@
 
     <!-- Log -->
     <string name="log_water">Water</string>
-    <string name="log_water_today">Today: %1$d ml</string>
     <string name="log_electrolytes">Electrolytes</string>
-    <string name="log_electrolyte_today">%1$s today: %2$d mg</string>
     <string name="log_weight">Weight</string>
     <string name="log_add">Add</string>
     <string name="el_sodium">Sodium</string>
@@ -249,9 +240,6 @@
     <string name="settings_start_alert">When it\'s time to start my next fast</string>
     <string name="settings_ongoing">Show a live timer notification</string>
     <string name="settings_milestones">Milestone alerts</string>
-    <string name="settings_forgot">\"Forgot to end your fast?\" after</string>
-    <string name="settings_eating_window">Eating window after long fasts: %1$dh</string>
-    <string name="settings_schedules">Weekly schedules (5:2, alternate day)</string>
     <string name="settings_reliability">Reliability check</string>
     <string name="settings_privacy">Privacy and data</string>
     <string name="settings_hide_weight">Hide weight everywhere</string>
@@ -259,11 +247,9 @@
     <string name="settings_hc_note">Writes your weight and water to Health Connect and reads weight from other apps. Turn off any time.</string>
     <string name="settings_hc_on">Health Connect sync is on.</string>
     <string name="settings_hc_denied">Health Connect permissions weren\'t granted, so sync stays off.</string>
-    <string name="settings_local_note">Your data is stored only on this phone, encrypted. It is never sent to analytics or ad services.</string>
     <string name="settings_export">Export (CSV + JSON)</string>
     <string name="settings_backup">Back up to a file</string>
     <string name="settings_restore">Restore from a backup</string>
-    <string name="settings_restore_note">Restoring replaces everything currently in the app with the backup.</string>
     <string name="settings_exported">Export saved.</string>
     <string name="settings_backed_up">Backup saved.</string>
     <string name="settings_restored">Backup restored.</string>
@@ -278,7 +264,6 @@
     <!-- Schedules -->
     <string name="schedules_title">Weekly schedules</string>
     <string name="schedules_body">Pick your fasting days. Days off-schedule never break your streak.</string>
-    <string name="schedules_start_at">Starts at %1$s</string>
     <string name="schedules_add_52">Add 5:2 schedule</string>
     <string name="schedules_add_adf">Add alternate-day schedule</string>
 
@@ -324,7 +309,6 @@
     <string name="insights_consistency_note">Share of planned days completed, last 8 weeks.</string>
     <string name="insights_weekday">Average fast by weekday</string>
     <string name="insights_weight">Weight and fasting hours</string>
-    <string name="insights_weight_row">Week of %1$s: %2$dh fasting, %3$s</string>
     <string name="insights_weight_note">This shows patterns, not cause and effect.</string>
 
     <!-- Widgets -->
@@ -343,9 +327,6 @@
     <string name="a11y_increase">Increase</string>
     <string name="a11y_prev_month">Previous month</string>
     <string name="a11y_next_month">Next month</string>
-    <string name="a11y_day_completed">%1$s, completed as planned</string>
-    <string name="a11y_day_fasted">%1$s, fasted</string>
-    <string name="a11y_day_none">%1$s</string>
 
     <!-- Counts -->
     <plurals name="history_streak">
