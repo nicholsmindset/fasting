@@ -367,6 +367,8 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
                     }
                 }
             }
+            // Sleep, resting heart rate and glucose next to fasting (BodySignals.kt).
+            BodySignalsRoute()
         }
     }
 }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_title">血糖与酮体</string>
+    <string name="metrics_glucose">血糖</string>
+    <string name="metrics_ketones">酮体</string>
+    <string name="metrics_invalid">请输入 %1$s 到 %2$s %3$s 之间的读数。</string>
+    <string name="metrics_glucose_note">可选。如果你会监测血糖，可以记录血糖仪的读数。</string>
+    <string name="metrics_ketones_local">酮体读数只保存在本设备上。Health Connect 没有酮体数据类型，因此不会共享。</string>
+    <string name="metrics_empty">暂无读数</string>
+    <string name="metrics_deleted">已删除 %1$s</string>
+    <string name="metrics_undo">撤销</string>
+    <string name="metrics_ranges_note">读数因人而异，也因仪器而异。这里显示的任何范围都只是一般信息，不是建议。你的医生可以告诉你什么适合你。</string>
+    <string name="metrics_low_title">这次血糖读数偏低</string>
+    <string name="metrics_low_body">低于 70 mg/dL（3.9 mmol/L）的读数通常被视为偏低。现在适合用含糖的食物结束断食，并按照医生为你制定的方案处理。如果感到发抖、意识模糊或不适，请寻求医疗帮助。</string>
+    <string name="metrics_high_ketone_title">这次酮体读数偏高</string>
+    <string name="metrics_high_ketone_body">3.0 mmol/L 或以上的酮体高于断食时的常见水平。如果你患有糖尿病，或感到恶心、口渴或呼吸急促，请停止断食并联系你的医生。</string>
+    <string name="metrics_glucose_syncing">血糖读数也会保存到 Health Connect。</string>
+    <string name="metrics_glucose_sync_offer">也将血糖读数保存到 Health Connect？</string>
+    <string name="metrics_glucose_sync_allow">允许</string>
+    <string name="body_title">身体信号</string>
+    <string name="body_correlation_note">相关，不代表因果：睡眠、心率和血糖会因很多原因变化。只有两边的数据都足够时才会显示对比。仅为一般信息，不是建议。</string>
+    <string name="body_vs">%1$s 对比 %2$s</string>
+    <string name="body_bpm_value">%1$s 次/分</string>
+    <string name="body_sleep">断食日之后的睡眠</string>
+    <string name="body_sleep_counts">断食日之后 %1$d 晚，其他 %2$d 晚</string>
+    <string name="body_sleep_need">每类至少需要 %1$d 晚的数据</string>
+    <string name="body_heart_rate">静息心率（断食周）</string>
+    <string name="body_heart_rate_counts">断食周 %1$d 周，其他 %2$d 周</string>
+    <string name="body_heart_rate_need">每类至少需要 %1$d 周的数据</string>
+    <string name="body_glucose">断食期间的血糖</string>
+    <string name="body_glucose_counts">断食期间 %1$d 次读数，断食以外 %2$d 次</string>
+    <string name="body_glucose_need">断食期间和断食以外各至少需要 %1$d 次读数</string>
+    <string name="body_trend_title">每周静息心率</string>
+    <string name="body_trend_legend">高亮的柱为断食周（2 个或以上断食日）。</string>
+    <string name="body_trend_a11y">%1$d 周的每周静息心率</string>
+    <string name="body_connect_title">把睡眠和心率与断食放在一起看</string>
+    <string name="body_connect_body">允许 Fasting Shift 从 Health Connect 读取睡眠和静息心率。仅读取：不会更改、保存或共享任何数据。血糖使用你在应用中记录的读数。</string>
+    <string name="body_connect_button">在 Health Connect 中允许</string>
+    <string name="body_unavailable">此设备上无法使用 Health Connect。</string>
+</resources>

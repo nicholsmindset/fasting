@@ -33,9 +33,11 @@ The app excludes its private data from Android's automatic cloud backup and devi
 
 ## Health Connect
 
-You can enable sync in Settings and grant Android's Health Connect permissions. When you grant access, the app reads recent weight entries from Health Connect into your weight log. When you log weight or water with sync enabled, it writes the measurement and its time to Health Connect. Weight entries can also appear in your personal trends. Other apps can access Health Connect records according to the permissions you give them.
+You can enable sync in Settings and grant Android's Health Connect permissions. When you grant access, the app reads recent weight entries from Health Connect into your weight log. When you log weight or water with sync enabled, it writes the measurement and its time to Health Connect. Weight entries can also appear in your personal trends.
 
-If a write fails, the measurement stays in the encrypted database. The app saves the local row number and a fingerprint in private preferences so you can retry from the Log screen. These references are excluded from the app's export and backup files. A successful retry or deletion of the local entry clears the corresponding pending reference. Turning sync off stops further attempts. The app does not request Health Connect access to glucose, ketones or religious records.
+With sync enabled, you can also allow the app to write glucose readings you log, so other apps you choose can see them; deleting a reading in the app removes the copy it wrote. If you open Body signals in Shift+ Insights and allow it, the app reads your sleep sessions and resting heart rate to compare fasting and non-fasting days. These are read while that screen is open and are not stored. Other apps can access Health Connect records according to the permissions you give them.
+
+If a write fails, the measurement stays in the encrypted database. The app saves the local row number and a fingerprint in private preferences so you can retry from the Log screen. These references are excluded from the app's export and backup files. A successful retry or deletion of the local entry clears the corresponding pending reference. Turning sync off stops further attempts. The app does not read glucose from Health Connect, and never writes ketones (Health Connect has no ketone type) or religious records there.
 
 To stop future access, turn off sync and revoke permissions in Health Connect. To remove existing copies, delete the local entry in Fasting Shift and manage the Health Connect entry separately. Other apps you allowed to read that entry may also hold a copy. [Manage Health Connect data](https://support.google.com/android/answer/12201232)
 

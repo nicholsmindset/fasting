@@ -7,10 +7,14 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Health Connect (F6): only the three data types the app uses. Requested on sync opt-in. -->
+    <!-- Health Connect (F6): only the data types the app uses. Requested on sync opt-in. -->
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
     <uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
     <uses-permission android:name="android.permission.health.WRITE_HYDRATION" />
+    <!-- Requested incrementally: glucose from the Log screen, sleep and resting HR (read-only) from Shift+ insights. -->
+    <uses-permission android:name="android.permission.health.WRITE_BLOOD_GLUCOSE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

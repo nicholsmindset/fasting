@@ -4,7 +4,7 @@ This worksheet describes the Android implementation. The publisher must check th
 
 | Data or flow | Implementation and proposed treatment |
 | --- | --- |
-| Fast history, notes, mood, screening, symptoms, weight, water, electrolytes, glucose and ketones | Processed on the device. The app has no endpoint for uploading these records. Optional Health Connect access reads weight and writes weight and hydration. |
+| Fast history, notes, mood, screening, symptoms, weight, water, electrolytes, glucose and ketones | Processed on the device. The app has no endpoint for uploading these records. Optional Health Connect access reads weight, sleep and resting heart rate (sleep and heart rate are not stored) and writes weight, hydration and glucose. |
 | Religious observance and city | Ramadan and Sunnah choices, fast types and qada repayments can reveal religious practice. The city is selected manually. The calendar uses bundled data and local calculations. It does not request location access or send these records to a service. |
 | User-directed files | A history CSV includes the fast type. Full JSON backups and ZIP exports also contain available health, screening and religious records. These are unencrypted files written to a destination the user selects. Assess this user-directed transfer separately from developer collection or sharing. |
 | Failed Health Connect writes | Private Android preferences store a local row ID and SHA-256 fingerprint to identify the entry on retry. Measurements and timestamps are read from the encrypted database. The retry list stays on the device and is excluded from exports. |
