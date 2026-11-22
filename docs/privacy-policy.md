@@ -49,7 +49,7 @@ Google Play processes Shift+ purchases and code redemptions. In builds with bill
 
 ## Retention, deletion and support
 
-Your app records stay on your device until you delete them or clear the app's storage. To remove all local records, including settings and pending sync references, clear Fasting Shift's storage in Android Settings or uninstall it. Delete any exported files at the destination where you saved them. Copies already held by Health Connect, another app or a file provider have their own deletion controls.
+Your app records stay on your device until you delete them or clear the app's storage. To remove all local records, including settings and pending sync references, use **Settings → Privacy and data → How your data is protected → Delete all data** in the app (it asks you to confirm first), clear Fasting Shift's storage in Android Settings, or uninstall it. Delete any exported files at the destination where you saved them. Copies already held by Health Connect, another app or a file provider have their own deletion controls.
 
 Manage or cancel subscriptions in Google Play. Uninstalling Fasting Shift does not cancel a subscription. For questions or a request about billing information held on our behalf, contact [monitored privacy contact]. Google Play manages its own transaction records.
 

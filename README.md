@@ -6,7 +6,15 @@ long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
 ## Status
 
 All MVP features (F1–F10) are built, audited twice and fixed. The whole project builds (debug,
-staging, release AAB) with 0 lint errors and 131 tests passing:
+staging, release AAB) with 0 lint errors and 325 tests passing.
+
+Moats (see `docs/moats.md`): Muslim fasting hub (Hijri date, Sunnah calendar, qada ledger, start a
+fast until maghrib), doctor report PDF, trust center with delete-all, Ramadan safety card,
+serverless challenges with invite links, share cards, glucose/ketone logging and Body signals
+(sleep and resting heart rate from Health Connect). Needs device checks: PDF output, delete-all
+restart, Health Connect reads/writes, invite links opening the app.
+
+Earlier test breakdown:
 
 - `:core:domain`: 80 JVM tests (timer, safety gates and edit rules, streaks, reminders, insights,
   backup format and hardening, history stats)
