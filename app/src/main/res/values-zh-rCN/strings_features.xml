@@ -172,7 +172,7 @@
     <string name="onb_height">身高（cm）</string>
     <string name="onb_weight">体重（kg）</string>
     <string name="onb_form_error">请检查你的年龄、身高和体重。</string>
-    <string name="onb_screen_privacy">你的回答仅加密保存在这部手机上。你可以随时在“设置”中更改。</string>
+    <string name="onb_screen_privacy">你的答案加密保存在应用数据库中，也会包含在你选择保存的完整备份和 ZIP 导出文件中。你可以在设置中更改答案。</string>
     <string name="onb_ok_title">一切就绪</string>
     <string name="onb_ok_body">所有方案均可使用。24 小时或更长的断食都会附带一份简短的安全检查清单。</string>
     <string name="onb_soft_title">请先咨询医生</string>
