@@ -85,6 +85,7 @@ import com.fastingshift.app.ui.firstweek.CoachingTipCard
 import com.fastingshift.app.ui.firstweek.FastSummarySheet
 import com.fastingshift.app.ui.firstweek.FirstFastCard
 import com.fastingshift.app.ui.ramadan.RamadanCard
+import com.fastingshift.app.ui.safety.RamadanSafetyCard
 import com.fastingshift.app.ui.safety.ChecklistDialog
 import com.fastingshift.app.ui.safety.HelplineList
 import com.fastingshift.domain.model.Electrolyte
@@ -207,6 +208,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
             val active = state.active
             TimerHeader(state)
             RamadanCard()
+            RamadanSafetyCard()
             // A gentle cross-fade between fasting and not fasting.
             AnimatedContent(
                 targetState = active != null && timer != null,

@@ -101,4 +101,12 @@
     <string name="trust_delete_confirm_title">删除所有数据？</string>
     <string name="trust_delete_confirm_body">你的断食、记录、症状记录、安全问答、挑战和设置将从这部手机上永久删除。已导出的文件和 Health Connect 中的数据不受影响。Shift+ 购买仍绑定你的 Google Play 账号。此操作无法撤销。</string>
     <string name="trust_delete_confirm">全部删除</string>
+
+    <!-- Ramadan safety card -->
+    <string name="ramadan_safety_title">服用糖尿病药物时的斋戒</string>
+    <string name="ramadan_safety_clinician">胰岛素和磺脲类药物在禁食期间可能引起低血糖。请在斋月前与医生讨论用药时间和剂量。</string>
+    <string name="ramadan_safety_break_title">如有以下感觉，请立即开斋：</string>
+    <string name="ramadan_safety_break_body">发抖、出汗、意识混乱或非常虚弱，或任何身体不适。</string>
+    <string name="ramadan_safety_allowed">保护健康最重要。身体不适时开斋是允许的，之后可以补斋。</string>
+    <string name="ramadan_safety_emergency">紧急情况请拨打 %1$s</string>
 </resources>

@@ -101,4 +101,12 @@
     <string name="trust_delete_confirm_title">Padam semua data?</string>
     <string name="trust_delete_confirm_body">Puasa, log, semakan, jawapan keselamatan, cabaran dan tetapan anda akan dibuang secara kekal dari telefon ini. Fail yang anda eksport dan data dalam Health Connect tidak terjejas. Pembelian Shift+ anda kekal dengan akaun Google Play anda. Tindakan ini tidak boleh dibatalkan.</string>
     <string name="trust_delete_confirm">Padam semuanya</string>
+
+    <!-- Ramadan safety card -->
+    <string name="ramadan_safety_title">Berpuasa dengan ubat diabetes</string>
+    <string name="ramadan_safety_clinician">Insulin dan sulfonilurea boleh menyebabkan gula darah rendah semasa berpuasa. Sila berbincang dengan doktor anda sebelum Ramadan tentang masa dan dos ubat anda.</string>
+    <string name="ramadan_safety_break_title">Berbuka segera jika anda berasa:</string>
+    <string name="ramadan_safety_break_body">menggeletar, berpeluh, keliru atau sangat lemah, atau jika anda berasa tidak sihat.</string>
+    <string name="ramadan_safety_allowed">Menjaga kesihatan diutamakan. Berbuka ketika tidak sihat dibenarkan, dan puasa itu boleh diganti kemudian.</string>
+    <string name="ramadan_safety_emergency">Dalam kecemasan, hubungi %1$s</string>
 </resources>

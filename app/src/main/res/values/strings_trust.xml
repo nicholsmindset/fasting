@@ -104,4 +104,12 @@
     <string name="trust_delete_confirm_title">Delete all data?</string>
     <string name="trust_delete_confirm_body">Your fasts, logs, check-ins, safety answers, challenges and settings will be permanently removed from this phone. Files you exported and data in Health Connect are not affected. Your Shift+ purchase stays with your Google Play account. This can\'t be undone.</string>
     <string name="trust_delete_confirm">Delete everything</string>
+
+    <!-- Ramadan safety card -->
+    <string name="ramadan_safety_title">Fasting with diabetes medicine</string>
+    <string name="ramadan_safety_clinician">Insulin and sulfonylureas can cause low blood sugar while fasting. Please talk to your doctor before Ramadan about the timing and dose of your medicine.</string>
+    <string name="ramadan_safety_break_title">Break your fast straight away if you feel:</string>
+    <string name="ramadan_safety_break_body">shaky, sweaty, confused or very weak, or if you feel unwell in any way.</string>
+    <string name="ramadan_safety_allowed">Protecting your health comes first. Breaking a fast when you are unwell is allowed, and the day can be made up later.</string>
+    <string name="ramadan_safety_emergency">In an emergency, call %1$s</string>
 </resources>

@@ -101,4 +101,12 @@
     <string name="trust_delete_confirm_title">Hapus semua data?</string>
     <string name="trust_delete_confirm_body">Puasa, catatan, cek gejala, jawaban keamanan, tantangan, dan setelan Anda akan dihapus permanen dari ponsel ini. File yang Anda ekspor dan data di Health Connect tidak terpengaruh. Pembelian Shift+ tetap ada di akun Google Play Anda. Ini tidak dapat dibatalkan.</string>
     <string name="trust_delete_confirm">Hapus semuanya</string>
+
+    <!-- Ramadan safety card -->
+    <string name="ramadan_safety_title">Berpuasa dengan obat diabetes</string>
+    <string name="ramadan_safety_clinician">Insulin dan sulfonilurea dapat menyebabkan gula darah rendah saat berpuasa. Bicarakan dengan dokter Anda sebelum Ramadan tentang waktu dan dosis obat Anda.</string>
+    <string name="ramadan_safety_break_title">Segera batalkan puasa jika Anda merasa:</string>
+    <string name="ramadan_safety_break_body">gemetar, berkeringat, bingung, atau sangat lemas, atau jika Anda merasa tidak enak badan.</string>
+    <string name="ramadan_safety_allowed">Menjaga kesehatan adalah yang utama. Membatalkan puasa saat sakit diperbolehkan, dan puasanya dapat diganti nanti.</string>
+    <string name="ramadan_safety_emergency">Dalam keadaan darurat, hubungi %1$s</string>
 </resources>
