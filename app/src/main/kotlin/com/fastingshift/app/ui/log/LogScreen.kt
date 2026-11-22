@@ -1,23 +1,23 @@
 package com.fastingshift.app.ui.log
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,15 +37,31 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.health.HealthConnectManager
-import com.fastingshift.app.ui.components.SectionCard
+import com.fastingshift.app.ui.components.ProgressRing
+import com.fastingshift.app.ui.components.TabularNumbers
 import com.fastingshift.app.ui.components.convertWeight
 import com.fastingshift.app.ui.components.formatDate
 import com.fastingshift.app.ui.components.formatTime
+import com.fastingshift.app.ui.components.latestKg
+import com.fastingshift.app.ui.components.startOfTodayFlow
+import com.fastingshift.app.ui.components.waterLabel
 import com.fastingshift.app.ui.components.weightText
 import com.fastingshift.app.ui.components.weightUnitLabel
+import com.fastingshift.app.ui.design.AppCard
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.LargeTitle
+import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.app.ui.design.SegmentedControl
+import com.fastingshift.app.ui.design.Spacing
+import com.fastingshift.app.ui.design.rememberHaptics
+import com.fastingshift.app.ui.timer.Today
+import com.fastingshift.app.ui.timer.WaterBlue
 import com.fastingshift.app.ui.timer.electrolyteLabel
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.hydration.WaterGoal
 import com.fastingshift.domain.model.Electrolyte
 import com.fastingshift.domain.model.ElectrolyteLog
 import com.fastingshift.domain.model.VolumeUnit
@@ -51,19 +70,13 @@ import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.model.WeightUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
-import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -75,6 +88,11 @@ data class LogState(
     val electrolytesToday: Map<Electrolyte, Double> = emptyMap(),
     val waterEntries: List<WaterLog> = emptyList(),
     val electrolyteEntries: List<ElectrolyteLog> = emptyList(),
+    /** The user's goal, or the wellness default from their latest weight. */
+    val waterGoalMl: Int = WaterGoal.FALLBACK_ML,
+    /** Weight entries of the last 90 days, oldest first, for the trend chart. */
+    val trend: List<WeightLog> = emptyList(),
+    val now: Instant = Instant.EPOCH,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -85,28 +103,20 @@ class LogViewModel @Inject constructor(
     private val health: HealthConnectManager,
     private val clock: Clock,
 ) : ViewModel() {
-    /** Local midnight, re-checked every minute so today's totals reset at midnight (and on zone changes). */
-    private val startOfToday: Flow<Instant> = flow {
-        while (true) {
-            val zone = ZoneId.systemDefault()
-            val now = clock.instant()
-            val today = now.atZone(zone).toLocalDate()
-            emit(today.atStartOfDay(zone).toInstant())
-            val untilMidnight = Duration.between(now, today.plusDays(1).atStartOfDay(zone).toInstant()).toMillis()
-            delay(untilMidnight.coerceIn(1_000, 60_000))
-        }
-    }.distinctUntilChanged()
-
-    val state: StateFlow<LogState> = startOfToday.flatMapLatest { from ->
+    val state: StateFlow<LogState> = startOfTodayFlow(clock).flatMapLatest { from ->
         combine(settings.settings, logs.observeWeights(), logs.observeWaterSince(from), logs.observeElectrolytesSince(from)) { s, w, water, el ->
+            val now = clock.instant()
             LogState(
                 hideWeight = s.hideWeight,
                 weightUnit = s.weightUnit,
                 weights = w.take(10),
-                waterTodayMl = water.sumOf { if (it.unit == VolumeUnit.ML) it.value else it.value * 29.5735 },
+                waterTodayMl = water.sumOf(WaterGoal::toMl),
                 electrolytesToday = el.groupBy { it.electrolyte }.mapValues { (_, l) -> l.sumOf { it.milligrams } },
                 waterEntries = water.sortedByDescending { it.at },
                 electrolyteEntries = el.sortedByDescending { it.at },
+                waterGoalMl = Today.waterGoalMl(s.waterGoalMl, w.latestKg()),
+                trend = weightTrendPoints(w, now),
+                now = now,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LogState())
@@ -134,61 +144,130 @@ class LogViewModel @Inject constructor(
     fun deleteElectrolyte(id: Long) = viewModelScope.launch { logs.deleteElectrolyte(id) }
 }
 
+/** Everything the Log screen can ask for. */
+class LogActions(
+    val addWater: (Double) -> Unit = {},
+    val addElectrolyte: (Electrolyte, Double) -> Unit = { _, _ -> },
+    val addWeight: (Double, WeightUnit) -> Unit = { _, _ -> },
+    val setWeightUnit: (WeightUnit) -> Unit = {},
+    val deleteWater: (Long) -> Unit = {},
+    val deleteElectrolyte: (Long) -> Unit = {},
+    val deleteWeight: (Long) -> Unit = {},
+)
+
 @Composable
 fun LogRoute(vm: LogViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionCard(title = stringResource(R.string.log_water)) {
-            Text(stringResource(R.string.log_water_today, st.waterTodayMl.toInt()))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(250, 500).forEach { ml -> OutlinedButton(onClick = { vm.addWater(ml.toDouble()) }) { Text(stringResource(R.string.log_add_water, ml)) } }
+    LogScreen(
+        st,
+        LogActions(
+            addWater = { vm.addWater(it) }, addElectrolyte = { e, mg -> vm.addElectrolyte(e, mg) }, addWeight = { v, u -> vm.addWeight(v, u) },
+            setWeightUnit = { vm.setWeightUnit(it) }, deleteWater = { vm.deleteWater(it) }, deleteElectrolyte = { vm.deleteElectrolyte(it) },
+            deleteWeight = { vm.deleteWeight(it) },
+        ),
+    )
+}
+
+@Composable
+fun LogScreen(st: LogState, actions: LogActions) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(Spacing.section),
+    ) {
+        LargeTitle(stringResource(R.string.log_title))
+        WaterCard(st, actions)
+        ElectrolyteGroup(st, actions)
+        // Hide weight mode removes weight from every screen (SR-6), the trend chart included.
+        if (!st.hideWeight) {
+            WeightGroup(st, actions)
+        }
+    }
+}
+
+@Composable
+private fun WaterCard(st: LogState, actions: LogActions) {
+    val haptics = rememberHaptics()
+    val progress = WaterGoal.progress(st.waterTodayMl, st.waterGoalMl)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        AppCard(Modifier.testTag("water_card")) {
+            Text(stringResource(R.string.log_water), style = MaterialTheme.typography.titleMedium)
+            val a11y = stringResource(R.string.daily_water_a11y, st.waterTodayMl.toInt(), st.waterGoalMl)
+            Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).clearAndSetSemantics { contentDescription = a11y }, contentAlignment = Alignment.Center) {
+                ProgressRing(progress, Modifier.size(184.dp), stroke = 16.dp, color = WaterBlue)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        stringResource(R.string.unit_ml_value, st.waterTodayMl.toInt()),
+                        style = MaterialTheme.typography.headlineMedium.merge(TabularNumbers),
+                    )
+                    Text(
+                        stringResource(R.string.log_water_goal, waterLabel(st.waterGoalMl.toDouble())),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (progress >= 1f) {
+                        Text(stringResource(R.string.log_water_goal_met), style = MaterialTheme.typography.labelMedium, color = WaterBlue)
+                    }
+                }
             }
-            Column {
-                st.waterEntries.forEach { w ->
-                    val ml = if (w.unit == VolumeUnit.ML) w.value else w.value * 29.5735
-                    EntryRow("${w.at.formatTime()} · ${stringResource(R.string.unit_ml_value, ml.toInt())}") { vm.deleteWater(w.id) }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(250, 500).forEach { ml ->
+                    SecondaryButton(stringResource(R.string.log_add_water, ml), onClick = { haptics.tick(); actions.addWater(ml.toDouble()) }, modifier = Modifier.weight(1f))
                 }
             }
         }
-        ElectrolyteCard(st, vm)
-        // Hide weight mode removes weight from every screen (SR-6).
-        if (!st.hideWeight) WeightCard(st, vm)
+        if (st.waterEntries.isNotEmpty()) {
+            InsetGroup(header = stringResource(R.string.log_today_entries)) {
+                st.waterEntries.forEachIndexed { i, w ->
+                    if (i > 0) GroupDivider()
+                    EntryRow(w.at.formatTime(), stringResource(R.string.unit_ml_value, WaterGoal.toMl(w).toInt())) { actions.deleteWater(w.id) }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun EntryRow(text: String, onDelete: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-        TextButton(onClick = onDelete) { Text(stringResource(R.string.delete)) }
+private fun EntryRow(title: String, value: String, onDelete: () -> Unit) {
+    val delete = stringResource(R.string.delete)
+    GroupRow(title = title, value = value) {
+        IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Filled.Delete, contentDescription = "$delete $title", tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ElectrolyteCard(st: LogState, vm: LogViewModel) {
+private fun ElectrolyteGroup(st: LogState, actions: LogActions) {
     var which by rememberSaveable { mutableStateOf(Electrolyte.SODIUM) }
     var amount by rememberSaveable { mutableStateOf("") }
-    SectionCard(title = stringResource(R.string.log_electrolytes)) {
-        Electrolyte.entries.forEach { e ->
-            Text(stringResource(R.string.log_electrolyte_today, stringResource(electrolyteLabel(e)), (st.electrolytesToday[e] ?: 0.0).toInt()))
-        }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Electrolyte.entries.forEach { e -> FilterChip(selected = which == e, onClick = { which = e }, label = { Text(stringResource(electrolyteLabel(e))) }) }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = amount, onValueChange = { amount = it.filter(Char::isDigit).take(5) }, label = { Text(stringResource(R.string.unit_mg)) }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
-            )
-            Button(onClick = { amount.toDoubleOrNull()?.takeIf { it > 0 }?.let { vm.addElectrolyte(which, it); amount = "" } }) {
-                Text(stringResource(R.string.log_add))
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        InsetGroup(header = stringResource(R.string.log_electrolytes)) {
+            Electrolyte.entries.forEachIndexed { i, e ->
+                if (i > 0) GroupDivider()
+                GroupRow(title = stringResource(electrolyteLabel(e)), value = stringResource(R.string.unit_mg_value, (st.electrolytesToday[e] ?: 0.0).toInt()))
             }
         }
-        Column {
-            st.electrolyteEntries.forEach { e ->
-                EntryRow("${e.at.formatTime()} · ${stringResource(electrolyteLabel(e.electrolyte))} ${stringResource(R.string.unit_mg_value, e.milligrams.toInt())}") {
-                    vm.deleteElectrolyte(e.id)
+        AppCard {
+            SegmentedControl(Electrolyte.entries.map { stringResource(electrolyteLabel(it)) }, Electrolyte.entries.indexOf(which), { which = Electrolyte.entries[it] })
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = amount, onValueChange = { amount = it.filter(Char::isDigit).take(5) }, label = { Text(stringResource(R.string.unit_mg)) }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
+                )
+                SecondaryButton(
+                    stringResource(R.string.log_add),
+                    onClick = { amount.toDoubleOrNull()?.takeIf { it > 0 }?.let { actions.addElectrolyte(which, it); amount = "" } },
+                    modifier = Modifier.weight(0.6f).padding(top = 6.dp),
+                )
+            }
+        }
+        if (st.electrolyteEntries.isNotEmpty()) {
+            InsetGroup {
+                st.electrolyteEntries.forEachIndexed { i, e ->
+                    if (i > 0) GroupDivider()
+                    EntryRow("${e.at.formatTime()} · ${stringResource(electrolyteLabel(e.electrolyte))}", stringResource(R.string.unit_mg_value, e.milligrams.toInt())) {
+                        actions.deleteElectrolyte(e.id)
+                    }
                 }
             }
         }
@@ -196,24 +275,33 @@ private fun ElectrolyteCard(st: LogState, vm: LogViewModel) {
 }
 
 @Composable
-private fun WeightCard(st: LogState, vm: LogViewModel) {
+private fun WeightGroup(st: LogState, actions: LogActions) {
     var value by rememberSaveable { mutableStateOf("") }
     val unit = st.weightUnit
-    SectionCard(title = stringResource(R.string.log_weight)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = value, onValueChange = { value = it.take(6) }, singleLine = true, label = { Text(weightUnitLabel(unit)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        com.fastingshift.app.ui.design.GroupHeader(stringResource(R.string.log_weight))
+        AppCard {
             // The chosen unit is remembered for next time.
-            WeightUnit.entries.forEach { u -> FilterChip(selected = unit == u, onClick = { vm.setWeightUnit(u) }, label = { Text(weightUnitLabel(u)) }) }
+            SegmentedControl(WeightUnit.entries.map { weightUnitLabel(it) }, WeightUnit.entries.indexOf(unit), { actions.setWeightUnit(WeightUnit.entries[it]) })
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = value, onValueChange = { value = it.take(6) }, singleLine = true, label = { Text(weightUnitLabel(unit)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
+                )
+                SecondaryButton(
+                    stringResource(R.string.log_add),
+                    onClick = { value.replace(',', '.').toDoubleOrNull()?.takeIf { it in 20.0..900.0 }?.let { actions.addWeight(it, unit); value = "" } },
+                    modifier = Modifier.weight(0.6f).padding(top = 6.dp),
+                )
+            }
         }
-        Button(onClick = {
-            value.replace(',', '.').toDoubleOrNull()?.takeIf { it in 20.0..900.0 }?.let { vm.addWeight(it, unit); value = "" }
-        }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.log_add)) }
-        Column {
-            st.weights.forEach { w ->
-                EntryRow("${w.at.formatDate()}: ${weightText(convertWeight(w.value, w.unit, unit), unit)}") { vm.deleteWeight(w.id) }
+        WeightTrendCard(st.trend, unit, st.now)
+        if (st.weights.isNotEmpty()) {
+            InsetGroup {
+                st.weights.take(5).forEachIndexed { i, w ->
+                    if (i > 0) GroupDivider()
+                    EntryRow(w.at.formatDate(), weightText(convertWeight(w.value, w.unit, unit), unit)) { actions.deleteWeight(w.id) }
+                }
             }
         }
     }

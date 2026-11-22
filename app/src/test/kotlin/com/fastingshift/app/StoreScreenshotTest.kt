@@ -4,6 +4,8 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onAllNodesWithText
@@ -96,13 +98,21 @@ class StoreScreenshotTest {
             fasts.update(f.end(start.plus(ended)))
         }
         fasts.insert(Fast(startAt = activeStart, targetEndAt = activeStart.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
-        listOf(83.4, 83.0, 82.7, 82.5, 82.1).forEachIndexed { i, kg ->
-            logs.addWeight(WeightLog(at = now.minus(Duration.ofDays((5 - i) * 4L)), value = kg, unit = WeightUnit.KG))
+        // About ten weigh-ins over the last 80 days, gently drifting with day-to-day noise.
+        listOf(84.6, 84.2, 84.5, 83.8, 83.4, 83.6, 83.0, 82.7, 82.9, 82.5, 82.1).forEachIndexed { i, kg ->
+            logs.addWeight(WeightLog(at = now.minus(Duration.ofDays((10 - i) * 8L)).minusSeconds(i.toLong()), value = kg, unit = WeightUnit.KG))
         }
-        logs.addWater(WaterLog(at = now.minus(Duration.ofMinutes(3)), value = 750.0, unit = VolumeUnit.ML))
-        logs.addWater(WaterLog(at = now.minus(Duration.ofMinutes(2)), value = 500.0, unit = VolumeUnit.ML))
-        logs.addElectrolyte(ElectrolyteLog(at = now.minus(Duration.ofMinutes(2)), electrolyte = Electrolyte.SODIUM, milligrams = 1000.0))
-        logs.addElectrolyte(ElectrolyteLog(at = now.minus(Duration.ofMinutes(2)), electrolyte = Electrolyte.MAGNESIUM, milligrams = 200.0))
+        // Water on the previous days (for the weekly recap), at midday.
+        val midnight = LocalDate.now(zone).atStartOfDay(zone).toInstant()
+        listOf(2900.0, 2400.0, 3000.0, 2900.0, 1800.0, 2950.0).forEachIndexed { i, ml ->
+            logs.addWater(WaterLog(at = midnight.minus(Duration.ofDays(i + 1L)).plus(Duration.ofHours(12)), value = ml, unit = VolumeUnit.ML))
+        }
+        // Logged "a few minutes ago", but never before midnight so they always count as today.
+        fun recent(minutes: Long) = maxOf(now.minus(Duration.ofMinutes(minutes)), midnight.plusSeconds(200 - minutes * 30))
+        logs.addWater(WaterLog(at = recent(3), value = 750.0, unit = VolumeUnit.ML))
+        logs.addWater(WaterLog(at = recent(2), value = 500.0, unit = VolumeUnit.ML))
+        logs.addElectrolyte(ElectrolyteLog(at = recent(2), electrolyte = Electrolyte.SODIUM, milligrams = 1000.0))
+        logs.addElectrolyte(ElectrolyteLog(at = recent(2), electrolyte = Electrolyte.MAGNESIUM, milligrams = 200.0))
     }
 
     private fun s(id: Int) = compose.activity.getString(id)
@@ -147,9 +157,11 @@ class StoreScreenshotTest {
         compose.onNodeWithText(s(R.string.tab_log)).performClick()
         // Wait for the seeded data itself (today's water and the weight list), so the capture
         // can't race the database. Logs are seeded minutes ago so they're always "today".
-        waitFor(compose.activity.getString(R.string.log_water_today, 1250))
+        waitForDescription(compose.activity.getString(R.string.daily_water_a11y, 1250, 0).substringBefore(" of "))
         compose.waitUntil(15_000) { compose.onAllNodesWithText("82.1 kg", substring = true).fetchSemanticsNodes().isNotEmpty() }
         shoot("3-log", mode)
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("weight_chart"))
+        shoot("3b-log-trend", mode)
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
         waitFor(s(R.string.settings_plan))
         shoot("4-settings", mode)

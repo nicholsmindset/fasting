@@ -31,4 +31,16 @@
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
+
+    <!-- Log -->
+    <string name="log_title">Log</string>
+    <string name="log_water_goal">of %1$s today</string>
+    <string name="log_water_goal_met">Goal reached</string>
+    <string name="log_today_entries">Today</string>
+    <string name="log_trend_title">Weight trend · 90 days</string>
+    <string name="log_trend_empty">Log your weight on two or more days to see a trend here.</string>
+    <string name="log_trend_low">Lowest</string>
+    <string name="log_trend_latest">Latest</string>
+    <string name="log_trend_high">Highest</string>
+    <string name="log_trend_a11y">Weight trend, %1$d entries in the last 90 days. From %2$s to %3$s. Lowest %4$s, highest %5$s.</string>
 </resources>
