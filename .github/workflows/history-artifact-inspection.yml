@@ -17,9 +17,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
-          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/45005295966"
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/45006880225"
           head="$(gh api "$endpoint" --jq .head_sha)"
-          test "$head" = "cbc6eca3a77b1829886178f3f01e34918778a8ea"
+          test "$head" = "cb7446b8223e14236b19593408a2cd3b45383ea8"
           for attempt in $(seq 1 75); do
             artifact_id="$(gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.name == "fasting-shift-history-preview" and .expired == false) | .id' | head -1)"
             if [[ -n "$artifact_id" ]]; then
