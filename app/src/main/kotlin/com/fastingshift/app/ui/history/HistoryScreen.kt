@@ -392,7 +392,11 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Bottom,
                     ) {
-                        Text(hoursLabel(bar.length.toHours()), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            hoursLabel(bar.length.toHours()),
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 1.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                         Box(
                             Modifier.width(14.dp).height(maxBar * (hours / maxHours).coerceIn(0.04f, 1f))
                                 .clip(RoundedCornerShape(topStart = 7.dp, topEnd = 7.dp))
