@@ -11,17 +11,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,7 +29,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.fastingshift.app.R
 import com.fastingshift.app.notifications.Notifications
-import com.fastingshift.app.ui.components.SectionCard
+import com.fastingshift.app.ui.components.SecondaryScaffold
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.InsetGroup
 
 /**
  * Reliability check (PRD F3): exact alarms, notifications, and battery optimisation, with
@@ -50,42 +45,54 @@ fun ReliabilityRoute(onBack: () -> Unit) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh++ }
     val checks = remember(refresh) { Checks.read(context) }
 
-    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.rel_title), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.rel_body))
-        Item(R.string.rel_exact, checks.exactAlarms, R.string.rel_exact_fix) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
+    SecondaryScaffold(title = stringResource(R.string.rel_title), onBack = onBack) {
+        Text(
+            stringResource(R.string.rel_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        InsetGroup(footer = stringResource(R.string.rel_fix_footer)) {
+            Item(R.string.rel_exact, checks.exactAlarms, R.string.rel_exact_fix) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
+                }
             }
-        }
-        Item(R.string.rel_notifications, checks.notifications, R.string.rel_notifications_fix) {
-            context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
-        }
-        // Safety alerts and check-ins can be switched off one channel at a time.
-        if (checks.notifications) {
-            for ((channel, name) in SAFETY_CHANNELS) {
-                if (channel in checks.blockedChannels) {
-                    Item(stringResource(R.string.rel_channel_title, stringResource(name)), false, R.string.rel_channel_fix) {
-                        context.startActivity(
-                            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
-                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                .putExtra(Settings.EXTRA_CHANNEL_ID, channel),
-                        )
+            GroupDivider()
+            Item(R.string.rel_notifications, checks.notifications, R.string.rel_notifications_fix) {
+                context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+            }
+            // Safety alerts and check-ins can be switched off one channel at a time.
+            if (checks.notifications) {
+                for ((channel, name) in SAFETY_CHANNELS) {
+                    if (channel in checks.blockedChannels) {
+                        GroupDivider()
+                        Item(stringResource(R.string.rel_channel_title, stringResource(name)), false, R.string.rel_channel_fix) {
+                            context.startActivity(
+                                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                    .putExtra(Settings.EXTRA_CHANNEL_ID, channel),
+                            )
+                        }
                     }
                 }
             }
-        }
-        Item(R.string.rel_battery, checks.unrestrictedBattery, R.string.rel_battery_fix) {
-            // Opens the system list; the app never requests the exemption directly (Play policy).
-            context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        }
-        OemHelp.forManufacturer(Build.MANUFACTURER)?.let { oem ->
-            SectionCard(title = stringResource(R.string.rel_oem_title, oem.label)) {
-                Text(stringResource(oem.instructions))
-                OutlinedButton(onClick = { OemHelp.open(context, oem) }) { Text(stringResource(R.string.rel_open_settings)) }
+            GroupDivider()
+            Item(R.string.rel_battery, checks.unrestrictedBattery, R.string.rel_battery_fix) {
+                // Opens the system list; the app never requests the exemption directly (Play policy).
+                context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
             }
         }
-        TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+        OemHelp.forManufacturer(Build.MANUFACTURER)?.let { oem ->
+            InsetGroup(header = stringResource(R.string.rel_oem_title, oem.label), footer = stringResource(oem.instructions)) {
+                GroupRow(
+                    stringResource(R.string.rel_open_settings),
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    showChevron = true,
+                    onClick = { OemHelp.open(context, oem) },
+                )
+            }
+        }
     }
 }
 
@@ -97,11 +104,20 @@ private val SAFETY_CHANNELS = listOf(
 @Composable
 private fun Item(label: Int, ok: Boolean, fixLabel: Int, onFix: () -> Unit) = Item(stringResource(label), ok, fixLabel, onFix)
 
+/** One check: status on the right; when it needs attention the row is tappable and says how to fix it. */
 @Composable
 private fun Item(label: String, ok: Boolean, fixLabel: Int, onFix: () -> Unit) {
-    SectionCard(title = label) {
-        Text(stringResource(if (ok) R.string.rel_ok else R.string.rel_needs_attention), color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
-        if (!ok) OutlinedButton(onClick = onFix) { Text(stringResource(fixLabel)) }
+    GroupRow(
+        title = label,
+        subtitle = if (ok) null else stringResource(fixLabel),
+        showChevron = !ok,
+        onClick = if (ok) null else { { runCatching { onFix() } } },
+    ) {
+        Text(
+            stringResource(if (ok) R.string.rel_ok else R.string.rel_needs_attention),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+        )
     }
 }
 

@@ -2,6 +2,7 @@ package com.fastingshift.app
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -102,6 +103,19 @@ class RamadanSettingsCaptureTest {
         compose.onNodeWithText(s(R.string.settings_water_goal)).performClick()
         waitFor(s(R.string.settings_water_use_auto))
         shoot("r8-water-sheet", mode)
+        compose.onNodeWithText(s(R.string.settings_done)).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText(s(R.string.settings_water_use_auto)).fetchSemanticsNodes().isEmpty() }
+        scrollTo(s(R.string.settings_schedules_title))
+        compose.onNodeWithText(s(R.string.settings_schedules_title)).performClick()
+        waitFor(s(R.string.schedules_add_52))
+        compose.onNodeWithText(s(R.string.schedules_add_52)).performClick()
+        waitFor(s(R.string.schedules_start_time))
+        shoot("r9-schedules", mode)
+        compose.onNodeWithContentDescription(s(R.string.navigate_up)).performClick()
+        scrollTo(s(R.string.settings_reliability))
+        compose.onNodeWithText(s(R.string.settings_reliability)).performClick()
+        waitFor(s(R.string.rel_battery))
+        shoot("r10-reliability", mode)
     }
 
     @Config(qualifiers = "w411dp-h822dp-notnight-xxhdpi")
