@@ -518,7 +518,7 @@ private fun BodyTimelineCard(elapsed: Duration?) {
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        "${stage.fromHours}h · ${stage.title}",
+                        "${com.fastingshift.app.ui.components.hoursLabel(stage.fromHours.toLong())} · ${stage.title}",
                         style = MaterialTheme.typography.titleSmall,
                         color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     )

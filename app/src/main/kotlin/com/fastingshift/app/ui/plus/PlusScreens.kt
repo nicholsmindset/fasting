@@ -51,6 +51,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.billing.PlanOffer
 import com.fastingshift.app.ui.components.LoadingBox
@@ -319,7 +320,7 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
                     val avg = st.byWeekday[d]
                     GroupRow(
                         title = d.getDisplayName(TextStyle.FULL, Locale.getDefault()),
-                        value = avg?.let { "${it.toHours()}h ${it.toMinutes() % 60}m" } ?: "—",
+                        value = avg?.hoursMinutes() ?: "—",
                     )
                 }
             }
@@ -330,7 +331,7 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
                         if (i > 0) GroupDivider()
                         GroupRow(
                             title = w.weekStart.format(f),
-                            subtitle = "${w.fastingHours.toInt()}h",
+                            subtitle = com.fastingshift.app.ui.components.hoursLabel(w.fastingHours.toLong()),
                             value = w.averageWeightKg?.let { kg -> weightText(convertWeight(kg, WeightUnit.KG, st.weightUnit), st.weightUnit) } ?: "—",
                         )
                     }

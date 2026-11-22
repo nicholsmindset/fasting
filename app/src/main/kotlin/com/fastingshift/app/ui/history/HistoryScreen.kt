@@ -66,6 +66,7 @@ import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
+import com.fastingshift.app.ui.components.hoursLabel
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.domain.history.History
 import com.fastingshift.domain.history.HistoryStats
@@ -294,7 +295,8 @@ private fun LazyListScope.section(content: @Composable () -> Unit) {
 }
 
 /** "76h" for the ring; minutes only matter for short totals. */
-internal fun totalLabel(d: Duration): String = if (d.toHours() >= 10) "${d.toHours()}h" else d.hoursMinutes()
+@Composable
+internal fun totalLabel(d: Duration): String = if (d.toHours() >= 10) hoursLabel(d.toHours()) else d.hoursMinutes()
 
 // ---------- Recent fasts chart ----------
 
@@ -340,7 +342,7 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Bottom,
                     ) {
-                        Text("${bar.length.toHours()}h", style = MaterialTheme.typography.labelSmall)
+                        Text(hoursLabel(bar.length.toHours()), style = MaterialTheme.typography.labelSmall)
                         Box(
                             Modifier.width(14.dp).height(maxBar * (hours / maxHours).coerceIn(0.04f, 1f))
                                 .clip(RoundedCornerShape(topStart = 7.dp, topEnd = 7.dp))
@@ -463,7 +465,7 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
         if (seg.showLabel && width >= 20.dp) {
             // Narrow pieces (a fast split across two week rows) get a smaller label.
             val style = if (width >= 30.dp) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall
-            Text("${seg.totalLength.toHours()}h", style = style, fontWeight = FontWeight.SemiBold, color = onColor, maxLines = 1, softWrap = false)
+            Text(hoursLabel(seg.totalLength.toHours()), style = style, fontWeight = FontWeight.SemiBold, color = onColor, maxLines = 1, softWrap = false)
         }
     }
 }

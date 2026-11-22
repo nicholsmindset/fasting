@@ -259,4 +259,6 @@ fun FastSummarySheet(fast: Fast, onUndo: () -> Unit, onDismiss: () -> Unit, vm: 
 }
 
 /** "13h 40m", or "25m" for a fast under an hour (never a bare "0h"). */
-private fun shortLength(d: java.time.Duration): String = if (d.toHours() == 0L) "${d.toMinutes()}m" else d.hoursMinutes()
+@Composable
+private fun shortLength(d: java.time.Duration): String =
+    if (d.toHours() == 0L) com.fastingshift.app.ui.components.minutesLabel(d.toMinutes()) else d.hoursMinutes()

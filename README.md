@@ -17,7 +17,14 @@ staging, release AAB) with 0 lint errors and 131 tests passing:
 
 Highlights beyond the PRD: tappable timer (fasted / time left / break-fast time), eating-window
 countdown, quick-add on the Timer, undo after ending, add a past fast, "started earlier",
-refeeding screen, History hours ring + fast bars, database-key recovery screen.
+refeeding screen, History hours ring + fast bars, database-key recovery screen, a guided first
+week (first-fast card, coaching tips, end-of-fast summary with mood), weekly recap, hydration
+goal, Ramadan mode (offline suhoor/iftar times for MUIS, JAKIM, KEMENAG, MWL) and an
+iOS-inspired design.
+
+Languages: English, Bahasa Melayu, Bahasa Indonesia, Simplified Chinese (per-app language
+picker on Android 13+). The three translations are drafts and need a native-speaker review,
+especially the safety and refeeding copy.
 
 Not yet done: testing on real devices (alarm timing, widgets, OEM battery settings) — the cloud
 build environment has no emulator.
@@ -74,6 +81,7 @@ For a quick sideload without Play, `./gradlew :app:assembleStaging` builds an in
 - [ ] Verify every helpline and emergency number
 - [ ] Device tests on Samsung, Xiaomi and Pixel (alarm timing, widgets, OEM battery settings)
 - [ ] Replace the placeholder launcher icon
+- [ ] Native-speaker review of `values-ms`, `values-in`, `values-zh-rCN` (safety copy first)
 
 ## Modules
 

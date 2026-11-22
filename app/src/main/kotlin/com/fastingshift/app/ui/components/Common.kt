@@ -119,12 +119,23 @@ fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
 }
 
-/** "16h 20m" — for summaries; the live timer uses H:MM:SS. */
-fun Duration.hoursMinutes(): String {
+/** "16h 20m" (in the app's language) — for summaries; the live timer uses H:MM:SS. */
+fun Duration.hoursMinutes(res: android.content.res.Resources): String {
     val h = toHours()
     val m = toMinutes() % 60
-    return if (m == 0L) "${h}h" else "${h}h ${m}m"
+    return if (m == 0L) res.getString(R.string.duration_h, h) else res.getString(R.string.duration_hm, h, m)
 }
+
+@Composable
+fun Duration.hoursMinutes(): String = hoursMinutes(androidx.compose.ui.platform.LocalResources.current)
+
+/** "16h" — whole hours, in the app's language. */
+@Composable
+fun hoursLabel(hours: Long): String = stringResource(R.string.duration_h, hours)
+
+/** "25m" — minutes, in the app's language. */
+@Composable
+fun minutesLabel(minutes: Long): String = stringResource(R.string.duration_m, minutes)
 
 const val LB_PER_KG = 2.2046226
 

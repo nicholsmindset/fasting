@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.fastingshift.app.R
 import com.fastingshift.app.alarm.AlarmReceiver
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
@@ -63,11 +64,11 @@ object Notifications {
             ReminderKind.FAST_END -> Content(
                 CHANNEL_FAST_ALERTS, ID_FAST,
                 context.getString(R.string.notif_fast_end_title),
-                context.getString(R.string.notif_fast_end_body, fast.plannedDuration.toHoursLabel()),
+                context.getString(R.string.notif_fast_end_body, fast.plannedDuration.hoursMinutes(context.resources)),
             )
             ReminderKind.MILESTONE -> Content(
                 CHANNEL_FAST_ALERTS, ID_FAST,
-                context.getString(R.string.notif_milestone_title, Duration.between(fast.startAt, reminder.triggerAt).toHoursLabel()),
+                context.getString(R.string.notif_milestone_title, Duration.between(fast.startAt, reminder.triggerAt).hoursMinutes(context.resources)),
                 context.getString(R.string.notif_milestone_body),
             )
             ReminderKind.FORGOT_TO_END -> Content(
@@ -164,7 +165,7 @@ object Notifications {
         val builder = NotificationCompat.Builder(context, CHANNEL_ONGOING)
             .setSmallIcon(R.drawable.ic_stat_fast)
             .setContentTitle(context.getString(R.string.notif_ongoing_title))
-            .setContentText(context.getString(R.string.notif_ongoing_body, fast.plannedDuration.toHoursLabel()))
+            .setContentText(context.getString(R.string.notif_ongoing_body, fast.plannedDuration.hoursMinutes(context.resources)))
             .setUsesChronometer(true)
             .setWhen(fast.startAt.toEpochMilli())
             .setShowWhen(true)
@@ -226,9 +227,4 @@ object Notifications {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
-    private fun Duration.toHoursLabel(): String {
-        val h = toHours()
-        val m = toMinutes() % 60
-        return if (m == 0L) "${h}h" else "${h}h ${m}m"
-    }
 }
