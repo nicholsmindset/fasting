@@ -1,0 +1,102 @@
+name: Inspect staging APK and History screenshots
+on:
+  push:
+    branches: [codex/feature-artifact-check]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Locate the exact staging artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/45005295966"
+          head="$(gh api "$endpoint" --jq .head_sha)"
+          test "$head" = "cbc6eca3a77b1829886178f3f01e34918778a8ea"
+          for attempt in $(seq 1 75); do
+            artifact_id="$(gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.name == "fasting-shift-history-preview" and .expired == false) | .id' | head -1)"
+            if [[ -n "$artifact_id" ]]; then
+              echo "Verifying staging artifact $artifact_id from $head"
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/staging.zip"
+              unzip -q "$RUNNER_TEMP/staging.zip" -d preview
+              exit 0
+            fi
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+              echo "::error::The specified app build completed without a staging artifact."
+              exit 1
+            fi
+            sleep 12
+          done
+          exit 1
+      - name: Verify the APK signing identity and staging application ID
+        run: |
+          set -euo pipefail
+          apk="preview/app/build/outputs/apk/staging/app-staging.apk"
+          tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          "$tools/apksigner" verify --print-certs "$apk"
+          "$tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/badging.txt"
+          grep "^package: name='com.fastingshift.app.staging'" "$RUNNER_TEMP/badging.txt"
+          sha256sum "$apk"
+      - name: Inspect timetable and render the six synthetic History screens
+        run: |
+          set -eu
+          python -c 'import PIL' 2>/dev/null || python -m pip install -q Pillow
+          python - <<'PY'
+          from base64 import b64encode
+          from datetime import date, timedelta
+          from hashlib import sha256
+          from io import BytesIO
+          from pathlib import Path
+          from zipfile import ZipFile
+          from PIL import Image, ImageDraw, ImageFont
+          import csv
+          
+          apk = Path("preview/app/build/outputs/apk/staging/app-staging.apk")
+          with ZipFile(apk) as z:
+              assert z.testzip() is None
+              names = [n for n in z.namelist() if n.endswith("muis-singapore.csv")]
+              assert len(names) == 1, names
+              data = z.read(names[0])
+          assert sha256(data).hexdigest() == "c4cc8227df4ddab3b84752294c7c138b47ed62d93b167e0a5de79275b84dc0ae"
+          rows = list(csv.DictReader(data.decode("utf-8").splitlines()))
+          assert len(rows) == 730
+          first = date(2026, 1, 1)
+          assert all(r["date"] == str(first + timedelta(days=i)) for i,r in enumerate(rows))
+          print(f"Timetable packaged at {names[0]} with {len(rows)} consecutive days matching the verified CSV")
+          
+          screens = Path("preview/docs/screenshots")
+          pairs = [("2-history","Period overview"),("2a-recent","Recent fasts"),("2b-calendar","Calendar")]
+          tiles = []
+          for theme in ("light","dark"):
+              for prefix, title in pairs:
+                  p = screens / f"{prefix}-{theme}.png"
+                  with Image.open(p) as im:
+                      im.load()
+                      assert im.width > 300 and im.height > im.width
+                      print(p.name, im.size, sha256(p.read_bytes()).hexdigest())
+                      thumb = im.convert("RGB")
+                      thumb.thumbnail((360,800), Image.Resampling.LANCZOS)
+                      tiles.append((title + " / " + theme, thumb))
+          width, height = max(v.width for _,v in tiles),max(v.height for _,v in tiles)
+          sheet = Image.new("RGB", (3*(width+10)+10, 2*(height+42)+10), "#e6e9e8")
+          draw = ImageDraw.Draw(sheet)
+          font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 17)
+          for k,(label,im) in enumerate(tiles):
+              x,y = 10 + (k%3)*(width+10), 8 + (k//3)*(height+42)
+              draw.text((x,y),label,fill="#182321",font=font)
+              sheet.paste(im,(x,y+28))
+          out = BytesIO()
+          sheet.save(out, "JPEG", quality=87, optimize=True)
+          payload = out.getvalue()
+          print("HISTORY_SHEET_SHA",sha256(payload).hexdigest(),len(payload))
+          enc = b64encode(payload).decode("ascii")
+          for i in range(0,len(enc),960):
+              print("HISTORY_SHEET_DATA",enc[i:i+960])
+          PY
