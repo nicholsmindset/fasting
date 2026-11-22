@@ -46,7 +46,7 @@
     <string name="settings_forgot_footer">Pengingat lembut jika puasa berjalan selama ini melewati targetnya.</string>
     <string name="settings_near_goal">Satu jam sebelum target</string>
     <string name="settings_window_closing">Saat jendela makan akan berakhir</string>
-    <string name="settings_hydration">Pengingat minum pada puasa panjang</string>
+    <string name="settings_hydration">Ingatkan minum di puasa panjang</string>
     <string name="settings_coaching">Tips minggu pertama</string>
     <string name="settings_weekly_recap">Rekap mingguan</string>
     <string name="settings_water">Air</string>

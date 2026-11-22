@@ -14,8 +14,8 @@
 
     <!-- Today card -->
     <string name="daily_today_title">Hari ini</string>
-    <string name="daily_next_fast">Puasa berikutnya</string>
-    <string name="daily_fasting_now">Sedang berpuasa</string>
+    <string name="daily_next_fast">Berikutnya</string>
+    <string name="daily_fasting_now">Berpuasa</string>
     <string name="daily_next_none">Belum direncanakan</string>
     <string name="daily_water">Air</string>
     <string name="daily_water_of">%1$s / %2$s</string>
@@ -46,7 +46,7 @@
     <string name="recap_this_week">Minggu berjalan</string>
     <string name="recap_last_week">Minggu lalu</string>
     <string name="recap_hours">Berpuasa</string>
-    <string name="recap_to_plan">Puasa sesuai rencana</string>
+    <string name="recap_to_plan">Sesuai rencana</string>
     <string name="recap_water_days">Hari target air</string>
     <string name="recap_x_of_y">%1$d dari %2$d</string>
     <string name="recap_msg_empty">Minggu yang baru. Berpuasalah saat sesuai rencana Anda.</string>
