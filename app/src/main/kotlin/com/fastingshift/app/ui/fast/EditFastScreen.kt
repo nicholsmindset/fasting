@@ -4,19 +4,20 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.text.format.DateFormat
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.PrimaryButton
+import com.fastingshift.app.ui.onboarding.TextFieldGroupRow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -129,23 +130,33 @@ fun EditFastRoute(fastId: Long, onDone: () -> Unit, vm: EditFastViewModel = hilt
             LoadingBox()
             return@SecondaryScaffold
         }
-        st.start?.let { s ->
-            Text(stringResource(R.string.edit_start))
-            OutlinedButton(onClick = { pickDateTime(context, s, vm::setStart) }, modifier = Modifier.fillMaxWidth()) { Text(s.formatDateTime()) }
+        InsetGroup(header = stringResource(R.string.edit_times)) {
+            st.start?.let { s ->
+                GroupRow(stringResource(R.string.edit_start), value = s.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, s, vm::setStart) })
+            }
+            st.targetEnd?.let { t ->
+                GroupDivider()
+                GroupRow(
+                    stringResource(R.string.edit_goal_label), subtitle = Duration.between(st.start, t).hoursMinutes(),
+                    value = t.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, t, vm::setTargetEnd) },
+                )
+            }
+            st.end?.let { e ->
+                GroupDivider()
+                GroupRow(stringResource(R.string.edit_end), value = e.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, e, vm::setEnd) })
+            }
         }
-        st.targetEnd?.let { t ->
-            Text(stringResource(R.string.edit_goal, Duration.between(st.start, t).hoursMinutes()))
-            OutlinedButton(onClick = { pickDateTime(context, t, vm::setTargetEnd) }, modifier = Modifier.fillMaxWidth()) { Text(t.formatDateTime()) }
+        InsetGroup(header = stringResource(R.string.edit_note)) {
+            TextFieldGroupRow(stringResource(R.string.edit_note), st.note, vm::setNote, keyboardType = KeyboardType.Text, singleLine = false)
         }
-        st.end?.let { e ->
-            Text(stringResource(R.string.edit_end))
-            OutlinedButton(onClick = { pickDateTime(context, e, vm::setEnd) }, modifier = Modifier.fillMaxWidth()) { Text(e.formatDateTime()) }
+        AnimatedVisibility(st.error != null) {
+            st.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
         }
-        OutlinedTextField(value = st.note, onValueChange = vm::setNote, label = { Text(stringResource(R.string.edit_note)) }, modifier = Modifier.fillMaxWidth())
-        st.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-        Button(onClick = { vm.save(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
+        PrimaryButton(stringResource(R.string.save), onClick = { vm.save(onDone) }, haptic = true)
         if (!f.isActive) {
-            TextButton(onClick = { vm.delete(onDone) }) { Text(stringResource(R.string.edit_delete)) }
+            InsetGroup {
+                GroupRow(stringResource(R.string.edit_delete), titleColor = MaterialTheme.colorScheme.error, onClick = { vm.delete(onDone) })
+            }
         }
     }
     st.confirm?.let { reqs -> ChecklistDialog(reqs, onConfirm = { vm.confirmAndSave(onDone) }, onDismiss = vm::dismissConfirm) }

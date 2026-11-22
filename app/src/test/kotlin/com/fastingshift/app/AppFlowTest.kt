@@ -69,6 +69,12 @@ class AppFlowTest {
         // Onboarding with a hard-block answer (under 18).
         waitFor(s(R.string.onb_get_started))
         click(s(R.string.onb_get_started))
+        // Intro pages: one Next, then Skip the rest.
+        waitFor(s(R.string.onb_intro_timer_title))
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.onb_intro_safety_title))
+        click(s(R.string.onb_skip))
+        waitFor(s(R.string.onb_goal_title))
         click(s(R.string.goal_consistency))
         click(s(R.string.onb_next))
         field(s(R.string.onb_age), "16")
@@ -97,13 +103,13 @@ class AppFlowTest {
         waitFor(s(R.string.screening_ok))
         click(s(R.string.tab_timer))
 
-        // Start a 16:8 fast, then end it with one tap.
+        // Start the plan suggested for a consistency goal (14:10), then end it with one tap.
         waitFor(s(R.string.timer_start))
         click(s(R.string.timer_start))
         waitFor(s(R.string.timer_end))
         val active = runBlocking { fasts.getActive() }
         assertNotNull(active)
-        assertEquals(16, active.plannedDuration.toHours().toInt())
+        assertEquals(14, active.plannedDuration.toHours().toInt())
         // TalkBack reads the ring as one node with elapsed, goal and percent.
         compose.onNode(hasContentDescription("Fasted ", substring = true)).assertExists()
 
