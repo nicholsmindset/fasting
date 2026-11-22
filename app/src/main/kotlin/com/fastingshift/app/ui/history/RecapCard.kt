@@ -1,5 +1,8 @@
 package com.fastingshift.app.ui.history
 
+import com.fastingshift.app.ui.design.PlainButton
+import com.fastingshift.app.share.ShareCards
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,6 +76,10 @@ fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (!r.isEmpty && r.fastsStarted > 0) {
+            val context = LocalContext.current
+            PlainButton(stringResource(R.string.share), onClick = { ShareCards.shareWeek(context, r) })
+        }
     }
 }
 
