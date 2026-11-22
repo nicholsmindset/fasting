@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared strings for the moats foundation. Feature strings live in strings_<area>.xml. -->
+    <string name="notif_sunnah_title">Sunnah fast tomorrow</string>
+    <string name="notif_sunnah_body">Tomorrow is a Sunnah fasting day. Plan your suhoor tonight if you\'d like to fast.</string>
+</resources>

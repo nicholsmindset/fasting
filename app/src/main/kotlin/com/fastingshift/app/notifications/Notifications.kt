@@ -96,7 +96,7 @@ object Notifications {
                 Content(CHANNEL_REMINDERS, ID_COACHING, context.getString(coachingTitle(tip)), context.getString(coachingBody(tip)))
             }
             ReminderKind.FAST_START, ReminderKind.EATING_WINDOW_CLOSING, ReminderKind.WEEKLY_RECAP,
-            ReminderKind.SUHOOR, ReminderKind.IFTAR -> return showGeneral(context, reminder)
+            ReminderKind.SUHOOR, ReminderKind.IFTAR, ReminderKind.SUNNAH_FAST -> return showGeneral(context, reminder)
         }
         val route = if (reminder.kind == ReminderKind.SYMPTOM_CHECK_IN) "checkin/${fast.id}" else null
         val builder = base(context, channel, title, body, route)
@@ -129,6 +129,11 @@ object Notifications {
                 CHANNEL_REMINDERS, ID_RAMADAN,
                 context.getString(R.string.notif_iftar_title),
                 context.getString(R.string.notif_iftar_body),
+            )
+            ReminderKind.SUNNAH_FAST -> Content(
+                CHANNEL_REMINDERS, ID_RAMADAN,
+                context.getString(R.string.notif_sunnah_title),
+                context.getString(R.string.notif_sunnah_body),
             )
             else -> return
         }

@@ -72,6 +72,15 @@ object AppModule {
     @Provides @Singleton
     fun backupRepository(db: FastingDatabase, settings: SettingsRepository): BackupRepository = BackupRepository(db, settings)
 
+    @Provides @Singleton
+    fun metricRepository(db: FastingDatabase): com.fastingshift.data.repo.MetricRepository = com.fastingshift.data.repo.MetricRepository(db.metricDao())
+
+    @Provides @Singleton
+    fun qadaRepository(db: FastingDatabase): com.fastingshift.data.repo.QadaRepository = com.fastingshift.data.repo.QadaRepository(db.qadaDao())
+
+    @Provides @Singleton
+    fun challengeRepository(db: FastingDatabase): com.fastingshift.data.repo.ChallengeRepository = com.fastingshift.data.repo.ChallengeRepository(db.challengeDao())
+
     /** UTC clock. Display code converts to the device's current zone at render time. */
     @Provides @Singleton
     fun clock(): Clock = Clock.systemUTC()

@@ -25,10 +25,16 @@ data class Backup(
     @SerialName("streak_freezes") val streakFreezes: List<String> = emptyList(),
     /** App preferences (v2+). Absent in v1 backups, which restore with current settings kept. */
     val settings: SettingsRecord? = null,
+    /** v4+: Ramadan days owed per Hijri year. */
+    @SerialName("qada_debts") val qadaDebts: List<QadaDebtRecord> = emptyList(),
+    /** v4+: glucose and ketone readings. */
+    val metrics: List<MetricRecord> = emptyList(),
+    /** v4+: challenges joined on this device. */
+    val challenges: List<ChallengeRecord> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "fasting-shift-backup"
-        const val VERSION = 3
+        const val VERSION = 4
     }
 }
 
@@ -56,6 +62,9 @@ data class Backup(
     @SerialName("ramadan_enabled") val ramadanEnabled: Boolean = false,
     @SerialName("ramadan_city") val ramadanCityId: String? = null,
     @SerialName("ramadan_method") val ramadanMethod: String? = null,
+    @SerialName("hijri_offset_days") val hijriOffsetDays: Int = 0,
+    @SerialName("sunnah_reminders") val sunnahReminders: Boolean = false,
+    @SerialName("sunnah_types") val sunnahTypes: List<String> = emptyList(),
 )
 
 @Serializable data class FastRecord(
@@ -64,6 +73,20 @@ data class Backup(
     val status: String, val note: String? = null,
     /** v3+: optional end-of-fast reflection 1..5. */
     val mood: Int? = null,
+    /** v4+: REGULAR, RAMADAN, SUNNAH or QADA. */
+    val kind: String = "REGULAR",
+)
+
+@Serializable data class QadaDebtRecord(@SerialName("hijri_year") val hijriYear: Int, @SerialName("days_owed") val daysOwed: Int)
+
+@Serializable data class MetricRecord(
+    val id: Long, val at: Long, val type: String, val value: Double, val unit: String, val source: String, val note: String? = null,
+)
+
+@Serializable data class ChallengeRecord(
+    val id: Long, val type: String, @SerialName("protocol_id") val protocolId: String? = null,
+    @SerialName("start_date") val startDate: String, @SerialName("length_days") val lengthDays: Int,
+    val name: String? = null, @SerialName("joined_at") val joinedAt: Long, @SerialName("left_at") val leftAt: Long? = null,
 )
 
 @Serializable data class ProtocolRecord(
@@ -133,6 +156,9 @@ object BackupCodec {
         unique("protocol", backup.protocols.map { it.id })
         unique("streak freeze", backup.streakFreezes)
         unique("program day", backup.programProgress.map { it.programId to it.day })
+        unique("qada year", backup.qadaDebts.map { it.hijriYear })
+        unique("metric", backup.metrics.map { it.id })
+        unique("challenge", backup.challenges.map { it.id })
         backup.schedules.forEach {
             if (it.startMinute !in 0 until 24 * 60) throw BackupFormatException("Schedule ${it.id} has an invalid start time.")
         }
@@ -148,8 +174,12 @@ object BackupCodec {
 object CsvExport {
     fun files(b: Backup): Map<String, String> = mapOf(
         "fasts.csv" to table(
-            listOf("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status", "note", "mood"),
-            b.fasts.map { listOf(it.id, iso(it.startAt), iso(it.targetEndAt), it.endedAt?.let(::iso), it.protocolId, it.status, it.note, it.mood) },
+            listOf("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status", "note", "mood", "kind"),
+            b.fasts.map { listOf(it.id, iso(it.startAt), iso(it.targetEndAt), it.endedAt?.let(::iso), it.protocolId, it.status, it.note, it.mood, it.kind) },
+        ),
+        "metrics.csv" to table(
+            listOf("id", "at", "type", "value", "unit", "source", "note"),
+            b.metrics.map { listOf(it.id, iso(it.at), it.type, it.value, it.unit, it.source, it.note) },
         ),
         "weight.csv" to table(listOf("id", "at", "value", "unit", "source"), b.weights.map { listOf(it.id, iso(it.at), it.value, it.unit, it.source) }),
         "water.csv" to table(listOf("id", "at", "value", "unit", "source"), b.water.map { listOf(it.id, iso(it.at), it.value, it.unit, it.source) }),

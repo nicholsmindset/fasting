@@ -6,7 +6,11 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.fastingshift.domain.model.Electrolyte
+import com.fastingshift.domain.model.FastKind
 import com.fastingshift.domain.model.FastStatus
+import com.fastingshift.domain.model.ChallengeType
+import com.fastingshift.domain.model.MetricType
+import com.fastingshift.domain.model.MetricUnit
 import com.fastingshift.domain.model.ProtocolType
 import com.fastingshift.domain.model.RecordSource
 import com.fastingshift.domain.model.VolumeUnit
@@ -29,6 +33,8 @@ data class FastEntity(
     val note: String?,
     /** Optional reflection 1..5 recorded when the fast ended (schema v2). */
     @ColumnInfo(defaultValue = "NULL") val mood: Int? = null,
+    /** REGULAR / RAMADAN / SUNNAH / QADA (schema v3). */
+    @ColumnInfo(defaultValue = "REGULAR") val kind: FastKind = FastKind.REGULAR,
 )
 
 /** Custom protocols. Built-in presets live in code (Presets) and are not stored. */
@@ -119,4 +125,36 @@ data class ProgramProgressEntity(
 @Entity(tableName = "streak_freeze")
 data class StreakFreezeEntity(
     @PrimaryKey val day: LocalDate,
+)
+
+/** Glucose and ketone readings (schema v3). */
+@Entity(tableName = "log_metric", indices = [Index("at"), Index("type")])
+data class MetricLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val at: Instant,
+    val type: MetricType,
+    val value: Double,
+    val unit: MetricUnit,
+    val source: RecordSource,
+    val note: String?,
+)
+
+/** Ramadan days owed per Hijri year (schema v3). */
+@Entity(tableName = "qada_debt")
+data class QadaDebtEntity(
+    @PrimaryKey @ColumnInfo(name = "hijri_year") val hijriYear: Int,
+    @ColumnInfo(name = "days_owed") val daysOwed: Int,
+)
+
+/** Challenges joined on this device (schema v3). */
+@Entity(tableName = "challenge")
+data class ChallengeEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val type: ChallengeType,
+    @ColumnInfo(name = "protocol_id") val protocolId: String?,
+    @ColumnInfo(name = "start_date") val startDate: LocalDate,
+    @ColumnInfo(name = "length_days") val lengthDays: Int,
+    val name: String?,
+    @ColumnInfo(name = "joined_at") val joinedAt: Instant,
+    @ColumnInfo(name = "left_at") val leftAt: Instant?,
 )

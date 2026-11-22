@@ -1,6 +1,7 @@
 package com.fastingshift.domain.service
 
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.FastKind
 import com.fastingshift.domain.model.FastStatus
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.safety.FastPolicy
@@ -54,6 +55,9 @@ class FastService(
         protocol: Protocol,
         confirmed: Set<StartRequirement> = emptySet(),
         startAt: Instant = clock.instant(),
+        kind: FastKind = FastKind.REGULAR,
+        /** Planned end, for fasts that end at a set time (e.g. maghrib) instead of after the protocol's hours. */
+        targetEndAt: Instant? = null,
     ): StartResult {
         val now = clock.instant()
         if (startAt.isAfter(now.plus(CLOCK_SLACK)) || startAt.isBefore(now.minus(FastPolicy.MAX_FAST))) {
@@ -62,7 +66,7 @@ class FastService(
         fasts.getActive()?.let { return StartResult.AlreadyActive(it) }
         // "I started earlier" can't reach back into a fast that's already recorded.
         if (overlapsAny(startAt, now, excludeId = null)) return StartResult.InvalidStartTime
-        val planned = Duration.ofHours(protocol.fastHours.toLong())
+        val planned = targetEndAt?.let { Duration.between(startAt, it) } ?: Duration.ofHours(protocol.fastHours.toLong())
         when (val decision = evaluate(planned)) {
             is StartDecision.Blocked -> return StartResult.Blocked(decision)
             is StartDecision.Allowed -> {
@@ -70,7 +74,7 @@ class FastService(
                 if (missing.isNotEmpty()) return StartResult.NeedsConfirmation(missing)
             }
         }
-        val fast = Fast(startAt = startAt, targetEndAt = startAt.plus(planned), protocolId = protocol.id)
+        val fast = Fast(startAt = startAt, targetEndAt = startAt.plus(planned), protocolId = protocol.id, kind = kind)
         val saved = fasts.insertIfNoActive(fast)
             ?: return fasts.getActive()?.let { StartResult.AlreadyActive(it) } ?: StartResult.InvalidStartTime
         return StartResult.Started(saved)

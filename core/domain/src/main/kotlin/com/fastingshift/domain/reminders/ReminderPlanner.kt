@@ -33,6 +33,9 @@ enum class ReminderKind {
 
     /** Ramadan: time for iftar (Maghrib). */
     IFTAR,
+
+    /** The evening before a Sunnah fast the user follows. */
+    SUNNAH_FAST,
 }
 
 /**

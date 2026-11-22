@@ -21,10 +21,13 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         ScreeningEntity::class,
         ProgramProgressEntity::class,
         StreakFreezeEntity::class,
+        MetricLogEntity::class,
+        QadaDebtEntity::class,
+        ChallengeEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @TypeConverters(Converters::class)
 abstract class FastingDatabase : RoomDatabase() {
@@ -37,6 +40,9 @@ abstract class FastingDatabase : RoomDatabase() {
     abstract fun protocolDao(): ProtocolDao
     abstract fun programProgressDao(): ProgramProgressDao
     abstract fun backupDao(): BackupDao
+    abstract fun metricDao(): MetricDao
+    abstract fun qadaDao(): QadaDao
+    abstract fun challengeDao(): ChallengeDao
 
     companion object {
         const val NAME = "fasting.db"

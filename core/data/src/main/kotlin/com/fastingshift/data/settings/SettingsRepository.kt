@@ -14,6 +14,7 @@ import com.fastingshift.domain.backup.SettingsRecord
 import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.onboarding.Goal
 import com.fastingshift.domain.ramadan.PrayerMethod
+import com.fastingshift.domain.ramadan.SunnahType
 import com.fastingshift.domain.reminders.ReminderSettings
 import com.fastingshift.domain.timer.TimerDisplayMode
 import java.time.Duration
@@ -54,6 +55,11 @@ data class AppSettings(
     val ramadanEnabled: Boolean = false,
     val ramadanCityId: String? = null,
     val ramadanMethod: PrayerMethod? = null,
+    /** Days added to the calculated (Umm al-Qura) Hijri date for local moon sighting, −2..+2. */
+    val hijriOffsetDays: Int = 0,
+    /** Evening-before reminders for the Sunnah fasts in [sunnahTypes]. */
+    val sunnahReminders: Boolean = false,
+    val sunnahTypes: Set<SunnahType> = emptySet(),
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -92,6 +98,9 @@ class SettingsRepository(context: Context) {
             ramadanEnabled = p[RAMADAN] ?: false,
             ramadanCityId = p[RAMADAN_CITY],
             ramadanMethod = p[RAMADAN_METHOD]?.let { runCatching { PrayerMethod.valueOf(it) }.getOrNull() },
+            hijriOffsetDays = (p[HIJRI_OFFSET] ?: 0).coerceIn(-2, 2),
+            sunnahReminders = p[SUNNAH_REMINDERS] ?: false,
+            sunnahTypes = (p[SUNNAH_TYPES] ?: emptySet()).mapNotNull { runCatching { SunnahType.valueOf(it) }.getOrNull() }.toSet(),
         )
     }
 
@@ -145,6 +154,10 @@ class SettingsRepository(context: Context) {
         it[RAMADAN_METHOD] = method.name
     }
 
+    suspend fun setHijriOffsetDays(days: Int) = store.edit { it[HIJRI_OFFSET] = days.coerceIn(-2, 2) }
+    suspend fun setSunnahReminders(enabled: Boolean) = store.edit { it[SUNNAH_REMINDERS] = enabled }
+    suspend fun setSunnahTypes(types: Set<SunnahType>) = store.edit { it[SUNNAH_TYPES] = types.map { t -> t.name }.toSet() }
+
     suspend fun setBillingRemindedFor(expiresAtMillis: Long) = store.edit { it[BILLING_REMINDED] = expiresAtMillis }
 
     /** Preferences for a backup (F8). Device-specific items (Health Connect, billing) are left out. */
@@ -172,6 +185,9 @@ class SettingsRepository(context: Context) {
             ramadanEnabled = s.ramadanEnabled,
             ramadanCityId = s.ramadanCityId,
             ramadanMethod = s.ramadanMethod?.name,
+            hijriOffsetDays = s.hijriOffsetDays,
+            sunnahReminders = s.sunnahReminders,
+            sunnahTypes = s.sunnahTypes.map { it.name }.sorted(),
         )
     }
 
@@ -198,6 +214,9 @@ class SettingsRepository(context: Context) {
         it[RAMADAN] = r.ramadanEnabled
         r.ramadanCityId?.let { c -> it[RAMADAN_CITY] = c }
         r.ramadanMethod?.takeIf { m -> PrayerMethod.entries.any { e -> e.name == m } }?.let { m -> it[RAMADAN_METHOD] = m }
+        it[HIJRI_OFFSET] = r.hijriOffsetDays.coerceIn(-2, 2)
+        it[SUNNAH_REMINDERS] = r.sunnahReminders
+        it[SUNNAH_TYPES] = r.sunnahTypes.filter { t -> SunnahType.entries.any { e -> e.name == t } }.toSet()
         r.timerMode?.takeIf { m -> TimerDisplayMode.entries.any { e -> e.name == m } }?.let { m -> it[TIMER_MODE] = m }
     }
 
@@ -217,6 +236,9 @@ class SettingsRepository(context: Context) {
         val RAMADAN = booleanPreferencesKey("ramadan_enabled")
         val RAMADAN_CITY = stringPreferencesKey("ramadan_city")
         val RAMADAN_METHOD = stringPreferencesKey("ramadan_method")
+        val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
+        val SUNNAH_REMINDERS = booleanPreferencesKey("sunnah_reminders")
+        val SUNNAH_TYPES = stringSetPreferencesKey("sunnah_types")
         val FAST_END = booleanPreferencesKey("reminder_fast_end")
         val FAST_START = booleanPreferencesKey("reminder_fast_start")
         val MILESTONES = stringSetPreferencesKey("reminder_milestone_hours")

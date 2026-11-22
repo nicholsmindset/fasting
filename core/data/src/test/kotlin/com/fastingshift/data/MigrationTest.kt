@@ -31,4 +31,24 @@ class MigrationTest {
             }
         }
     }
+
+    @Test fun v2ToV3KeepsFastsAsRegularAndAddsTables() {
+        helper.createDatabase("migration-test-3", 2).use { db ->
+            db.execSQL(
+                "INSERT INTO fast (id, start_at, target_end_at, ended_at, protocol_id, status, note, mood) " +
+                    "VALUES (1, 1000, 2000, 2500, 'window_16_8', 'COMPLETED', 'kept', 4)",
+            )
+        }
+        helper.runMigrationsAndValidate("migration-test-3", 3, true).use { db ->
+            db.query("SELECT note, mood, kind FROM fast WHERE id = 1").use { c ->
+                c.moveToFirst()
+                assertEquals("kept", c.getString(0))
+                assertEquals(4, c.getInt(1))
+                assertEquals("REGULAR", c.getString(2))
+            }
+            db.query("SELECT COUNT(*) FROM log_metric").use { c -> c.moveToFirst(); assertEquals(0, c.getInt(0)) }
+            db.query("SELECT COUNT(*) FROM qada_debt").use { c -> c.moveToFirst(); assertEquals(0, c.getInt(0)) }
+            db.query("SELECT COUNT(*) FROM challenge").use { c -> c.moveToFirst(); assertEquals(0, c.getInt(0)) }
+        }
+    }
 }

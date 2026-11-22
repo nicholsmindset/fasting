@@ -35,6 +35,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import com.fastingshift.data.repo.ChallengeRepository
+import com.fastingshift.data.repo.MetricRepository
+import com.fastingshift.data.repo.QadaRepository
+import com.fastingshift.domain.model.Challenge
+import com.fastingshift.domain.model.ChallengeType
+import com.fastingshift.domain.model.FastKind
+import com.fastingshift.domain.model.MetricLog
+import com.fastingshift.domain.model.MetricType
+import com.fastingshift.domain.model.MetricUnit
+import com.fastingshift.domain.model.QadaDebt
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
@@ -64,6 +74,16 @@ class BackupRepositoryTest {
         ScheduleRepository(db.scheduleDao()).save(Schedule(protocolId = "weekly_5_2", days = setOf(DayOfWeek.MONDAY), startTime = LocalTime.of(20, 30)))
         ProgramRepository(db.programProgressDao()).completeDay("fasting_shift_21", 1, t0)
         RoomStreakFreezeRepository(db.streakFreezeDao()).addFrozenDay(LocalDate.of(2026, 11, 19), LocalDate.of(2026, 11, 20))
+        fasts.insert(
+            Fast(startAt = t0.minus(Duration.ofDays(3)), targetEndAt = t0.minus(Duration.ofDays(3)).plus(Duration.ofHours(14)), protocolId = "window_16_8", kind = FastKind.QADA)
+                .end(t0.minus(Duration.ofDays(3)).plus(Duration.ofHours(14))),
+        )
+        MetricRepository(db.metricDao()).add(MetricLog(at = t0, type = MetricType.GLUCOSE, value = 92.0, unit = MetricUnit.MG_DL))
+        MetricRepository(db.metricDao()).add(MetricLog(at = t0, type = MetricType.KETONE, value = 0.8, unit = MetricUnit.MMOL_L, note = "morning"))
+        QadaRepository(db.qadaDao()).setOwed(QadaDebt(1447, 6))
+        ChallengeRepository(db.challengeDao()).join(
+            Challenge(type = ChallengeType.SUNNAH_MON_THU, startDate = LocalDate.of(2026, 11, 23), lengthDays = 28, name = "Family", joinedAt = t0),
+        )
 
         val exported = BackupRepository(db).export(t0)
         val text = BackupCodec.encode(exported)
@@ -74,7 +94,11 @@ class BackupRepositoryTest {
         val again = BackupRepository(fresh).export(t0)
         // Screening ids are regenerated; everything else must match exactly.
         assertEquals(exported, again)
-        assertEquals(2, RoomFastRepository(fresh.fastDao()).getAll().size)
+        assertEquals(3, RoomFastRepository(fresh.fastDao()).getAll().size)
+        assertEquals(FastKind.QADA, RoomFastRepository(fresh.fastDao()).getAll().single { it.kind != FastKind.REGULAR }.kind)
+        assertEquals(2, again.metrics.size)
+        assertEquals(listOf(com.fastingshift.domain.backup.QadaDebtRecord(1447, 6)), again.qadaDebts)
+        assertEquals(1, again.challenges.size)
         assertEquals(1, RoomFastRepository(fresh.fastDao()).getAll().count { it.isActive })
         fresh.close()
     }

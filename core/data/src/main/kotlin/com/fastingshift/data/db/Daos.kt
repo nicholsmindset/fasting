@@ -139,6 +139,15 @@ interface BackupDao {
     @Query("DELETE FROM screening") suspend fun clearScreenings()
     @Query("DELETE FROM program_progress") suspend fun clearProgress()
     @Query("DELETE FROM streak_freeze") suspend fun clearFreezes()
+    @Query("DELETE FROM log_metric") suspend fun clearMetrics()
+    @Query("DELETE FROM qada_debt") suspend fun clearQada()
+    @Query("DELETE FROM challenge") suspend fun clearChallenges()
+    @Query("SELECT * FROM log_metric") suspend fun metrics(): List<MetricLogEntity>
+    @Query("SELECT * FROM qada_debt") suspend fun qada(): List<QadaDebtEntity>
+    @Query("SELECT * FROM challenge") suspend fun challenges(): List<ChallengeEntity>
+    @Insert suspend fun insertMetrics(items: List<MetricLogEntity>)
+    @Insert suspend fun insertQada(items: List<QadaDebtEntity>)
+    @Insert suspend fun insertChallenges(items: List<ChallengeEntity>)
 
     @Insert suspend fun insertFasts(items: List<FastEntity>)
     @Insert suspend fun insertProtocols(items: List<ProtocolEntity>)
@@ -150,4 +159,30 @@ interface BackupDao {
     @Insert suspend fun insertScreenings(items: List<ScreeningEntity>)
     @Insert suspend fun insertProgress(items: List<ProgramProgressEntity>)
     @Insert suspend fun insertFreezes(items: List<StreakFreezeEntity>)
+}
+
+@Dao
+interface MetricDao {
+    @Insert suspend fun insert(entity: MetricLogEntity): Long
+    @Query("SELECT * FROM log_metric ORDER BY at DESC") fun observeAll(): Flow<List<MetricLogEntity>>
+    @Query("SELECT * FROM log_metric WHERE at >= :fromMillis ORDER BY at DESC") suspend fun since(fromMillis: Long): List<MetricLogEntity>
+    @Query("SELECT * FROM log_metric WHERE id = :id") suspend fun get(id: Long): MetricLogEntity?
+    @Query("DELETE FROM log_metric WHERE id = :id") suspend fun delete(id: Long)
+}
+
+@Dao
+interface QadaDao {
+    @Query("SELECT * FROM qada_debt ORDER BY hijri_year") fun observeAll(): Flow<List<QadaDebtEntity>>
+    @Query("SELECT * FROM qada_debt ORDER BY hijri_year") suspend fun getAll(): List<QadaDebtEntity>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(entity: QadaDebtEntity)
+    @Query("DELETE FROM qada_debt WHERE hijri_year = :year") suspend fun delete(year: Int)
+}
+
+@Dao
+interface ChallengeDao {
+    @Query("SELECT * FROM challenge ORDER BY start_date DESC, id DESC") fun observeAll(): Flow<List<ChallengeEntity>>
+    @Query("SELECT * FROM challenge WHERE id = :id") suspend fun get(id: Long): ChallengeEntity?
+    @Insert suspend fun insert(entity: ChallengeEntity): Long
+    @Update suspend fun update(entity: ChallengeEntity)
+    @Query("DELETE FROM challenge WHERE id = :id") suspend fun delete(id: Long)
 }

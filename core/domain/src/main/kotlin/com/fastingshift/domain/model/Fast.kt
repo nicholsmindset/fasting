@@ -29,6 +29,8 @@ data class Fast(
     val note: String? = null,
     /** How the user felt when it ended, 1 (rough) to 5 (great); optional reflection. */
     val mood: Int? = null,
+    /** Regular protocol fast, or a Ramadan / Sunnah / qada (make-up) fast. */
+    val kind: FastKind = FastKind.REGULAR,
 ) {
     init {
         require(targetEndAt.isAfter(startAt)) { "targetEndAt must be after startAt" }

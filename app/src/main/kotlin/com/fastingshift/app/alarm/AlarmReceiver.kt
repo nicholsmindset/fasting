@@ -84,7 +84,7 @@ class AlarmReceiver : BroadcastReceiver() {
             when (reminder.kind) {
                 ReminderKind.FAST_START, ReminderKind.EATING_WINDOW_CLOSING -> if (active == null) Notifications.showGeneral(context, reminder)
                 // Not tied to a fast: Ramadan times and the weekly recap (only once there is history).
-                ReminderKind.SUHOOR, ReminderKind.IFTAR -> Notifications.showGeneral(context, reminder)
+                ReminderKind.SUHOOR, ReminderKind.IFTAR, ReminderKind.SUNNAH_FAST -> Notifications.showGeneral(context, reminder)
                 ReminderKind.WEEKLY_RECAP -> if (fasts.get().getAll().isNotEmpty()) Notifications.showGeneral(context, reminder)
                 // Stale alarms for a fast that has ended or been replaced are ignored.
                 else -> if (active != null && active.id == reminder.fastId) Notifications.showForReminder(context, reminder, active)
