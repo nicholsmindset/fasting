@@ -64,7 +64,9 @@ class Screen:
         self.click("onb_next")
         self.find("onb_protocol_title")
         self.click("onb_next")
-        self.click("onb_not_now")
+        self.click("onb_notif_allow")
+        # Answer the runtime dialog now so it cannot cover the timer on its first start.
+        self.device(resourceIdMatches=".*permissioncontroller:id/permission_allow_button").click(timeout=15)
         self.click("onb_offer_free")
         self.click("timer_start", scroll=True)
         self.click("timer_end", scroll=True)
@@ -140,6 +142,12 @@ if __name__ == "__main__":
     except Exception:
         DIAGNOSTICS.mkdir(exist_ok=True)
         (DIAGNOSTICS / "logcat.txt").write_text(adb("logcat", "-d", "-t", "1200"))
-        (DIAGNOSTICS / "screen.xml").write_text(device.dump_hierarchy())
+        hierarchy = device.dump_hierarchy()
+        (DIAGNOSTICS / "screen.xml").write_text(hierarchy)
+        for node in ET.fromstring(hierarchy).iter("node"):
+            attrs = node.attrib
+            label = attrs.get("text") or attrs.get("content-desc")
+            if label:
+                print(f"{attrs.get('package')} | {label} | {attrs.get('bounds')}")
         device.screenshot(str(DIAGNOSTICS / "screen.png"))
         raise

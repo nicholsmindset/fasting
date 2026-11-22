@@ -27,10 +27,17 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
       - name: Domain tests
         run: ./gradlew :core:domain:test
 
       - name: Android unit tests
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: ./gradlew :core:data:testDebugUnitTest :app:testDebugUnitTest
 
       - name: Assemble debug APK
@@ -38,6 +45,8 @@ jobs:
 
       - name: Lint and build the staging preview
         if: github.event_name == 'pull_request'
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: |
           ./gradlew :app:lintDebug :app:assembleStaging
           ./gradlew :app:testDebugUnitTest --tests '*.StoreScreenshotTest' -Pscreenshots
@@ -60,10 +69,13 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew :app:assembleInternalBeta
-          export BETA_KEYSTORE="$HOME/.android/debug.keystore"
+          export BETA_KEYSTORE="$RUNNER_TEMP/ci-beta-signing.p12"
+          keytool -genkeypair -alias "$BETA_KEY_ALIAS" -keystore "$BETA_KEYSTORE" -storetype PKCS12 \
+            -storepass "$BETA_STORE_PASSWORD" -keypass "$BETA_KEY_PASSWORD" -keyalg RSA -keysize 2048 \
+            -validity 2 -dname "CN=Disposable Android CI key" -noprompt
           export BETA_CERT_SHA256="$(keytool -exportcert -keystore "$BETA_KEYSTORE" -alias "$BETA_KEY_ALIAS" -storepass "$BETA_STORE_PASSWORD" | sha256sum | cut -d' ' -f1)"
           bash scripts/sign-internal-beta.sh app/build/outputs/apk/internalBeta/*-unsigned.apk "$RUNNER_TEMP/test-beta.apk"
-          if BETA_CERT_SHA256=invalid bash scripts/sign-internal-beta.sh app/build/outputs/apk/internalBeta/*-unsigned.apk "$RUNNER_TEMP/mismatch.apk"; then exit 1; fi
+          if BETA_CERT_SHA256=0000000000000000000000000000000000000000000000000000000000000000 bash scripts/sign-internal-beta.sh app/build/outputs/apk/internalBeta/*-unsigned.apk "$RUNNER_TEMP/mismatch.apk"; then exit 1; fi
           test ! -e "$RUNNER_TEMP/mismatch.apk"
 
       - name: Check Room schema is committed
