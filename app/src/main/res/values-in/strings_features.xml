@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="save">Simpan</string>
+    <string name="delete">Hapus</string>
+    <string name="unit_kg">kg</string>
+    <string name="unit_lb">lb</string>
+    <string name="unit_mg">mg</string>
+    <string name="unit_kg_value">%1$.1f kg</string>
+    <string name="unit_lb_value">%1$.1f lb</string>
+    <string name="unit_mg_value">%1$d mg</string>
+    <string name="unit_ml_value">%1$d ml</string>
+    <string name="log_add_water">+%1$d ml</string>
+    <string name="today">Hari ini</string>
+    <string name="yesterday">Kemarin</string>
+
+    <!-- Timer: eating window, quick add, start earlier, undo -->
+    <string name="eating_title">Jendela makan</string>
+    <string name="eating_next_in">Puasa berikutnya dalam %1$s</string>
+    <string name="eating_next_at">Puasa berikutnya pukul %1$s</string>
+    <string name="eating_a11y">Jendela makan. Puasa berikutnya dalam %1$s, pukul %2$s</string>
+    <string name="quick_add_title">Tambah cepat</string>
+    <string name="quick_water">+250 ml air</string>
+    <string name="quick_weight">Berat</string>
+    <string name="quick_electrolytes">Elektrolit</string>
+    <string name="quick_water_added">250 ml air ditambahkan</string>
+    <string name="quick_weight_added">Berat disimpan</string>
+    <string name="quick_electrolyte_added">Elektrolit disimpan</string>
+    <string name="quick_amount_mg">Jumlah (mg)</string>
+    <string name="timer_undo_failed">Puasa itu tidak bisa dibuka kembali.</string>
+    <string name="timer_start_earlier">Mulai lebih awal?</string>
+    <string name="timer_start_earlier_title">Kapan Anda mulai?</string>
+    <string name="timer_starting_at">Mulai dari %1$s</string>
+    <string name="timer_start_now">Mulai sekarang saja</string>
+    <string name="timer_invalid_start">Waktu mulai itu tidak mungkin. Pilih waktu yang sudah lewat, dalam 5 hari terakhir.</string>
+    <string name="timer_custom_hours">Jam</string>
+    <string name="timer_custom_range">1 sampai %1$d jam</string>
+    <string name="timer_needs_screening">Selesaikan pertanyaan keselamatan untuk mulai berpuasa.</string>
+    <string name="timer_finish_screening">Selesaikan pertanyaan keselamatan</string>
+    <string name="timer_confirm_doctor">Konfirmasi pemeriksaan dokter</string>
+    <string name="checklist_over72_ack">Saya mengerti puasa lebih dari 72 jam lebih berisiko</string>
+
+    <!-- Refeeding screen (SR-5). Pending clinician review. -->
+    <string name="refeed_intro">Setelah puasa panjang, tubuh Anda butuh waktu untuk terbiasa lagi dengan makanan. Pelan-pelan saja, dan jaga porsi makan pertama tetap kecil.</string>
+    <string name="refeed_tier_standard">Setelah 48 hingga 72 jam</string>
+    <string name="refeed_tier_extended">Setelah 72 hingga 96 jam</string>
+    <string name="refeed_tier_prolonged">Setelah 96 jam atau lebih</string>
+    <string name="refeed_tip_water">Terus minum air sedikit demi sedikit, dan sertakan sedikit garam atau elektrolit.</string>
+    <string name="refeed_tip_avoid">Hindari makanan porsi besar, manis, atau sangat berlemak di awal.</string>
+    <string name="refeed_tip_signs">Cari bantuan medis jika Anda merasa lemas, bingung, sesak napas, jantung berdebar cepat, atau melihat pembengkakan.</string>
+    <string name="refeed_done">Mengerti</string>
+    <string name="refeed_undo">Saya tidak bermaksud mengakhiri puasa</string>
+    <string name="refeed_your_fast">Puasa Anda: %1$s</string>
+
+    <!-- Add past fast -->
+    <string name="add_past_title">Tambah puasa sebelumnya</string>
+    <string name="add_past_button">+ Tambah puasa lalu</string>
+    <string name="add_past_body">Lupa menyalakan timer? Tambahkan puasa yang sudah Anda jalani.</string>
+    <string name="add_past_protocol">Jenis puasa</string>
+    <string name="add_past_error">Puasa itu tidak bisa ditambahkan. Durasinya harus 1 sampai 120 jam, berakhir di masa lalu, dalam setahun terakhir, dan tidak tumpang tindih dengan puasa lain.</string>
+    <string name="history_all_fasts">Semua puasa</string>
+
+    <!-- Settings: safety status -->
+    <string name="settings_screening_status">Jawaban keselamatan Anda</string>
+    <string name="screening_ok">OK: semua protokol tersedia.</string>
+    <string name="screening_soft_ack">Pemeriksaan dokter dikonfirmasi: puasa hingga 24 jam.</string>
+    <string name="screening_soft">Perlu pemeriksaan dokter: puasa dikunci sampai Anda mengonfirmasi sudah berbicara dengan dokter.</string>
+    <string name="screening_block">Puasa tidak ditawarkan berdasarkan jawaban Anda saat ini.</string>
+    <string name="screening_none">Belum diperiksa. Jawab pertanyaan keselamatan untuk mulai berpuasa.</string>
+    <string name="settings_refeeding">Mengakhiri puasa panjang</string>
+    <string name="stop_number_label">Nomor darurat</string>
+    <string name="dial_unavailable">Perangkat ini tidak bisa melakukan panggilan. Silakan hubungi %1$s dari ponsel.</string>
+    <string name="navigate_up">Kembali</string>
+    <string name="off">Mati</string>
+
+    <!-- Tabs -->
+    <string name="tab_timer">Timer</string>
+    <string name="tab_history">Riwayat</string>
+    <string name="tab_log">Catatan</string>
+    <string name="tab_settings">Setelan</string>
+
+    <!-- Channels and notifications -->
+    <string name="channel_ongoing">Puasa berlangsung</string>
+    <string name="channel_ongoing_desc">Timer langsung opsional selama Anda berpuasa</string>
+    <string name="channel_account">Paket dan tagihan</string>
+    <string name="channel_account_desc">Pengingat sebelum uji coba berakhir atau paket diperpanjang</string>
+    <string name="notif_ongoing_title">Berpuasa</string>
+    <string name="notif_ongoing_body">Target: %1$s</string>
+    <string name="notif_trial_title">Uji coba gratis Anda segera berakhir</string>
+    <string name="notif_trial_body">Uji coba Shift+ Anda berakhir pada %1$s. Batalkan kapan saja di Google Play jika Anda tidak ingin melanjutkan.</string>
+    <string name="notif_renewal_title">Paket Anda segera diperpanjang</string>
+    <string name="notif_renewal_body">Paket tahunan Shift+ Anda diperpanjang pada %1$s. Anda dapat membatalkannya di Google Play sebelum tanggal itu.</string>
+
+    <!-- Timer additions -->
+    <string name="timer_edit">Ubah waktu</string>
+    <string name="timer_check_in">Cek sekarang</string>
+    <string name="timer_custom">Durasi khusus</string>
+    <string name="timer_program_target">Target program hari ini: %1$d jam</string>
+    <string name="timeline_title">Apa yang mungkin terjadi</string>
+    <string name="timeline_note">Waktunya berbeda pada setiap orang. Setiap baris menunjukkan seberapa kuat buktinya.</string>
+
+    <!-- Edit fast -->
+    <string name="edit_title">Ubah puasa</string>
+    <string name="edit_start">Mulai</string>
+    <string name="edit_end">Selesai</string>
+    <string name="edit_note">Catatan</string>
+    <string name="edit_delete">Hapus puasa ini</string>
+    <string name="edit_error_invalid">Waktu tersebut tidak cocok. Waktu selesai harus setelah waktu mulai, dan puasa yang sedang berjalan tidak bisa dimulai di masa depan.</string>
+    <string name="edit_error_blocked">Durasi itu tidak tersedia berdasarkan jawaban keselamatan Anda saat ini.</string>
+
+    <!-- History -->
+    <string name="history_streak_title">Konsistensi</string>
+    <string name="history_streak_missed">Kemarin tidak berjalan sesuai rencana. Tidak apa-apa. Anda bisa memakai pembeku streak minggu ini untuk menjaga rangkaian Anda.</string>
+    <string name="history_use_freeze">Pakai pembeku streak</string>
+    <string name="history_empty">Puasa Anda akan muncul di sini.</string>
+    <string name="history_insights">Lihat wawasan</string>
+    <string name="history_period_week">Minggu</string>
+    <string name="history_period_month">Bulan</string>
+    <string name="history_period_year">Tahun</string>
+    <string name="history_fasted_week">berpuasa minggu ini</string>
+    <string name="history_fasted_month">berpuasa bulan ini</string>
+    <string name="history_fasted_year">berpuasa tahun ini</string>
+    <string name="history_stat_fasts">Puasa</string>
+    <string name="history_stat_average">Rata-rata</string>
+    <string name="history_stat_planned_days">Hari terencana selesai</string>
+    <string name="history_recent">Puasa terakhir</string>
+    <string name="history_average">Rata-rata %1$s · %2$d puasa terakhir</string>
+    <string name="history_ring_a11y">%1$s %2$s. %3$d dari %4$d hari terencana selesai.</string>
+    <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
+    <string name="status_active">Berlangsung</string>
+    <string name="status_completed">Selesai sesuai rencana</string>
+    <string name="status_ended">Diakhiri</string>
+
+    <!-- Log -->
+    <string name="log_water">Air</string>
+    <string name="log_electrolytes">Elektrolit</string>
+    <string name="log_weight">Berat</string>
+    <string name="log_add">Tambah</string>
+    <string name="el_sodium">Natrium</string>
+    <string name="el_potassium">Kalium</string>
+    <string name="el_magnesium">Magnesium</string>
+
+    <!-- Onboarding -->
+    <string name="onb_welcome_title">Selamat datang di Fasting Shift</string>
+    <string name="onb_welcome_body">Timer puasa yang sederhana dan jujur. Tanpa akun, dan data Anda tetap di ponsel Anda.</string>
+    <string name="onb_get_started">Mulai</string>
+    <string name="onb_next">Berikutnya</string>
+    <string name="onb_continue">Lanjutkan</string>
+    <string name="onb_not_now">Nanti saja</string>
+    <string name="onb_goal_title">Apa tujuan Anda?</string>
+    <string name="goal_consistency">Membangun kebiasaan yang konsisten</string>
+    <string name="goal_weight">Mengelola berat badan</string>
+    <string name="goal_metabolic">Kesehatan metabolik</string>
+    <string name="goal_long">Puasa lebih panjang</string>
+    <string name="onb_screen_title">Beberapa pertanyaan keselamatan</string>
+    <string name="onb_screen_body">Puasa tidak cocok untuk semua orang. Jawaban Anda menentukan pilihan yang kami tawarkan. Ini bukan diagnosis.</string>
+    <string name="onb_age">Usia</string>
+    <string name="onb_pregnant">Saya sedang hamil atau menyusui</string>
+    <string name="onb_ed">Saya memiliki, atau pernah memiliki, gangguan makan</string>
+    <string name="onb_t1d">Saya menderita diabetes tipe 1</string>
+    <string name="onb_meds_title">Apakah Anda memakai salah satu obat ini?</string>
+    <string name="med_insulin">Insulin</string>
+    <string name="med_sulfonylurea">Sulfonilurea (mis. gliklazid, glipizid)</string>
+    <string name="med_sglt2">Penghambat SGLT2 (mis. empagliflozin, dapagliflozin)</string>
+    <string name="med_diuretic">Diuretik (obat peluruh air)</string>
+    <string name="med_bp">Obat tekanan darah</string>
+    <string name="med_glp1">Obat GLP-1 (mis. semaglutida, tirzepatida)</string>
+    <string name="onb_height">Tinggi (cm)</string>
+    <string name="onb_weight">Berat (kg)</string>
+    <string name="onb_form_error">Mohon periksa usia, tinggi, dan berat Anda.</string>
+    <string name="onb_screen_privacy">Jawaban Anda hanya disimpan di ponsel ini, dalam bentuk terenkripsi. Anda dapat mengubahnya kapan saja di Setelan.</string>
+    <string name="onb_ok_title">Semua siap</string>
+    <string name="onb_ok_body">Semua protokol tersedia untuk Anda. Puasa 24 jam atau lebih selalu disertai daftar periksa keselamatan singkat.</string>
+    <string name="onb_soft_title">Silakan periksa ke dokter</string>
+    <string name="onb_soft_body">Beberapa obat perlu disesuaikan saat Anda berpuasa. Bicarakan dengan dokter sebelum memulai. Puasa lebih dari 24 jam akan tetap dikunci.</string>
+    <string name="onb_soft_ack">Saya sudah membicarakan puasa dengan dokter</string>
+    <string name="reason_glucose">Insulin atau sulfonilurea dapat menyebabkan gula darah rendah saat berpuasa.</string>
+    <string name="reason_sglt2">Penghambat SGLT2 berisiko menyebabkan ketoasidosis saat berpuasa.</string>
+    <string name="reason_bp">Diuretik dan obat tekanan darah dapat memengaruhi cairan dan garam tubuh.</string>
+    <string name="reason_glp1">Obat GLP-1 sudah mengurangi nafsu makan dan asupan.</string>
+    <string name="reason_other">Jawaban Anda menunjukkan perlunya kehati-hatian ekstra.</string>
+    <string name="onb_block_title">Protokol puasa belum ditawarkan untuk Anda saat ini</string>
+    <string name="onb_block_body">Berdasarkan jawaban Anda, puasa bisa berisiko bagi Anda, jadi kami tidak menawarkan rencana puasa. Jika Anda ingin berbicara dengan seseorang, layanan dukungan di bawah dapat membantu, dan Anda tetap bisa membaca bagaimana tubuh merespons puasa. Jika ada yang berubah, Anda dapat memperbarui jawaban di Setelan.</string>
+    <string name="onb_protocol_title">Pilih puasa yang biasa Anda lakukan</string>
+    <string name="onb_protocol_body">Anda dapat mengubahnya kapan saja. 16:8 adalah titik awal yang umum.</string>
+    <string name="onb_notif_title">Ingin diingatkan saat puasa berakhir?</string>
+    <string name="onb_notif_body">Kami hanya mengirim pengingat yang Anda pilih: saat puasa berakhir, tonggak, dan cek keselamatan pada puasa panjang.</string>
+    <string name="onb_notif_allow">Izinkan notifikasi</string>
+    <string name="onb_offer_title">Shift+ bersifat opsional</string>
+    <string name="onb_offer_body">Program terpandu Fasting Shift 21 hari dan wawasan mingguan. Gratis 7 hari untuk paket tahunan. Harga ditampilkan di Google Play sebelum Anda membayar. Batalkan kapan saja di Google Play.</string>
+    <string name="onb_offer_free_note">Timer, widget, semua protokol, riwayat, ekspor, dan semua fitur keselamatan gratis selamanya.</string>
+    <string name="onb_offer_trial">Mulai uji coba gratis</string>
+    <string name="onb_offer_free">Lanjut gratis</string>
+
+    <!-- Safety -->
+    <string name="checkin_title">Bagaimana perasaan Anda?</string>
+    <string name="checkin_body">Centang apa pun yang Anda rasakan saat ini.</string>
+    <string name="checkin_feel_fine">Saya baik-baik saja</string>
+    <string name="checkin_submit">Kirim</string>
+    <string name="sym_fainting">Pingsan atau hampir pingsan</string>
+    <string name="sym_chest_pain">Nyeri dada</string>
+    <string name="sym_palpitations">Detak jantung cepat atau tidak teratur</string>
+    <string name="sym_confusion">Bingung</string>
+    <string name="sym_severe_weakness">Sangat lemas</string>
+    <string name="sym_lightheaded">Pusing saat berdiri</string>
+    <string name="sym_headache">Sakit kepala</string>
+    <string name="sym_nausea">Mual</string>
+    <string name="sym_cramps">Kram otot</string>
+    <string name="sym_fatigue">Lelah</string>
+    <string name="sym_hunger">Lapar</string>
+    <string name="sym_irritability">Mudah marah</string>
+    <string name="stop_title">Akhiri puasa dan cari bantuan medis</string>
+    <string name="stop_body">Gejala yang Anda sebutkan bisa serius. Hentikan puasa sekarang, dan hubungi bantuan jika gejalanya berat atau memburuk.</string>
+    <string name="stop_call">Hubungi %1$s</string>
+    <string name="stop_end_fast">Akhiri puasa saya</string>
+    <string name="stop_after">Setelah Anda merasa aman, minum air sedikit-sedikit dan makan sesuatu yang kecil dan ringan. Jangan menyetir jika Anda merasa mau pingsan.</string>
+    <string name="helplines_title">Dukungan</string>
+
+    <!-- Settings -->
+    <string name="settings_plan">Paket Anda</string>
+    <string name="plan_free">Gratis</string>
+    <string name="plan_monthly">Shift+ bulanan</string>
+    <string name="plan_annual">Shift+ tahunan</string>
+    <string name="plan_lifetime">Shift+ seumur hidup</string>
+    <string name="plan_trial">uji coba gratis</string>
+    <string name="plan_renews">Diperpanjang pada %1$s</string>
+    <string name="plan_ends">Berakhir pada %1$s</string>
+    <string name="plan_see_plus">Tentang Shift+</string>
+    <string name="plan_cancel">Kelola atau batalkan di Google Play</string>
+    <string name="plan_restore">Pulihkan pembelian</string>
+    <string name="plan_book_code">Kode buku</string>
+    <string name="plan_redeem">Tukarkan</string>
+    <string name="settings_reminders">Pengingat</string>
+    <string name="settings_end_alert">Saat puasa mencapai target</string>
+    <string name="settings_start_alert">Saat tiba waktunya puasa berikutnya</string>
+    <string name="settings_ongoing">Tampilkan notifikasi timer langsung</string>
+    <string name="settings_milestones">Peringatan tonggak</string>
+    <string name="settings_reliability">Cek keandalan</string>
+    <string name="settings_privacy">Privasi dan data</string>
+    <string name="settings_hide_weight">Sembunyikan berat di semua tempat</string>
+    <string name="settings_health_connect">Sinkronkan dengan Health Connect</string>
+    <string name="settings_hc_note">Menulis berat dan air Anda ke Health Connect serta membaca berat dari aplikasi lain. Matikan kapan saja.</string>
+    <string name="settings_hc_on">Sinkronisasi Health Connect aktif.</string>
+    <string name="settings_hc_denied">Izin Health Connect tidak diberikan, jadi sinkronisasi tetap mati.</string>
+    <string name="settings_export">Ekspor (CSV + JSON)</string>
+    <string name="settings_backup">Cadangkan ke file</string>
+    <string name="settings_restore">Pulihkan dari cadangan</string>
+    <string name="settings_exported">Ekspor disimpan.</string>
+    <string name="settings_backed_up">Cadangan disimpan.</string>
+    <string name="settings_restored">Cadangan dipulihkan.</string>
+    <string name="settings_restore_invalid">File itu bukan cadangan Fasting Shift yang valid. Tidak ada yang diubah.</string>
+    <string name="settings_file_error">Tidak dapat membaca atau menulis file itu. Tidak ada yang diubah.</string>
+    <string name="settings_purchases_restored">Pembelian dipulihkan.</string>
+    <string name="settings_billing_error">Tidak dapat terhubung ke Google Play. Silakan coba lagi.</string>
+    <string name="settings_safety">Keselamatan</string>
+    <string name="settings_rerun_screening">Perbarui jawaban keselamatan</string>
+    <string name="settings_privacy_policy">Kebijakan privasi</string>
+
+    <!-- Schedules -->
+    <string name="schedules_title">Jadwal mingguan</string>
+    <string name="schedules_body">Pilih hari puasa Anda. Hari di luar jadwal tidak pernah memutus streak Anda.</string>
+    <string name="schedules_add_52">Tambah jadwal 5:2</string>
+    <string name="schedules_add_adf">Tambah jadwal selang-seling</string>
+
+    <!-- Reliability -->
+    <string name="rel_title">Cek keandalan</string>
+    <string name="rel_body">Beberapa ponsel menghentikan aplikasi di latar belakang untuk menghemat baterai, sehingga peringatan bisa tertunda. Pemeriksaan ini membantu pengingat Anda tiba tepat waktu.</string>
+    <string name="rel_exact">Alarm tepat waktu</string>
+    <string name="rel_exact_fix">Izinkan alarm tepat waktu</string>
+    <string name="rel_notifications">Notifikasi</string>
+    <string name="rel_notifications_fix">Aktifkan notifikasi</string>
+    <string name="rel_battery">Optimasi baterai</string>
+    <string name="rel_battery_fix">Buka setelan baterai</string>
+    <string name="rel_ok">Semua baik</string>
+    <string name="rel_needs_attention">Perlu perhatian</string>
+    <string name="rel_oem_title">Langkah tambahan untuk ponsel %1$s</string>
+    <string name="rel_oem_samsung">Buka Baterai, lalu pastikan Fasting Shift tidak ada di \"Aplikasi tidur\" atau \"Aplikasi tidur nyenyak\".</string>
+    <string name="rel_oem_xiaomi">Aktifkan Mulai otomatis untuk Fasting Shift, dan atur Penghemat baterai ke \"Tidak ada pembatasan\".</string>
+    <string name="rel_oem_oppo">Izinkan Fasting Shift untuk diluncurkan otomatis dan berjalan di latar belakang.</string>
+    <string name="rel_oem_vivo">Izinkan Fasting Shift berjalan di latar belakang (penggunaan daya latar belakang tinggi).</string>
+    <string name="rel_open_settings">Buka setelan</string>
+
+    <!-- Shift+ -->
+    <string name="paywall_title">Shift+</string>
+    <string name="paywall_point_program">Program terpandu Fasting Shift: 21 hari, dengan pelajaran singkat dan target puasa setiap hari.</string>
+    <string name="paywall_point_insights">Wawasan: konsistensi mingguan, berat di samping jam puasa, dan rata-rata puasa Anda per hari dalam seminggu.</string>
+    <string name="paywall_free_forever">Semua yang lain tetap gratis: timer, widget, semua protokol, riwayat, ekspor, dan semua fitur keselamatan.</string>
+    <string name="paywall_trial_note">Gratis 7 hari</string>
+    <string name="paywall_terms">Paket tahunan termasuk uji coba gratis 7 hari. Kami mengingatkan Anda 3 hari sebelum berakhir. Langganan diperpanjang sampai dibatalkan di Google Play. Seumur hidup adalah pembelian satu kali.</string>
+    <string name="paywall_unavailable">Shift+ saat ini tidak tersedia di perangkat ini.</string>
+    <string name="paywall_already">Anda sudah memiliki Shift+. Terima kasih.</string>
+    <string name="program_locked">Program terpandu adalah bagian dari Shift+.</string>
+    <string name="program_intro">21 hari, satu pelajaran singkat, dan target puasa yang ringan setiap hari. Target tetap 18 jam atau kurang.</string>
+    <string name="program_start">Mulai program</string>
+    <string name="program_day">Hari %1$d · %2$s</string>
+    <string name="program_chapter">Dari buku: %1$s</string>
+    <string name="program_complete">Tandai hari ini selesai</string>
+    <string name="program_come_back">Pelajaran hari ini selesai. Pelajaran berikutnya terbuka besok.</string>
+    <string name="program_finished">Anda telah menyelesaikan program.</string>
+    <string name="program_stop">Hentikan program</string>
+    <string name="insights_title">Wawasan</string>
+    <string name="insights_locked">Wawasan adalah bagian dari Shift+.</string>
+    <string name="insights_consistency">Konsistensi mingguan</string>
+    <string name="insights_consistency_note">Persentase hari terencana yang selesai, 8 minggu terakhir.</string>
+    <string name="insights_weekday">Rata-rata puasa per hari</string>
+    <string name="insights_weight">Berat dan jam puasa</string>
+    <string name="insights_weight_note">Ini menunjukkan pola, bukan sebab dan akibat.</string>
+
+    <!-- Widgets -->
+    <string name="widget_ring_description">Cincin progres puasa</string>
+    <string name="widget_detail_description">Timer puasa dengan mulai dan berhenti</string>
+    <string name="widget_idle">Tidak berpuasa</string>
+    <string name="widget_idle_short">Siap</string>
+    <string name="widget_elapsed">%1$s berpuasa</string>
+    <string name="widget_remaining">%1$s lagi</string>
+    <string name="widget_goal_reached">Target tercapai</string>
+    <string name="widget_next_milestone">Berikutnya: %1$d jam</string>
+
+    <!-- Accessibility (TalkBack) -->
+    <string name="a11y_timer">Berpuasa %1$s dari %2$s, %3$d persen</string>
+    <string name="a11y_decrease">Kurangi</string>
+    <string name="a11y_increase">Tambah</string>
+    <string name="a11y_prev_month">Bulan sebelumnya</string>
+    <string name="a11y_next_month">Bulan berikutnya</string>
+
+    <!-- Counts -->
+    <plurals name="history_streak">
+        <item quantity="other">%1$d hari berturut-turut</item>
+    </plurals>
+    <plurals name="history_streak_longest">
+        <item quantity="other">Rangkaian terpanjang: %1$d hari</item>
+    </plurals>
+    <plurals name="program_target">
+        <item quantity="other">Target puasa hari ini: %1$d jam</item>
+    </plurals>
+    <plurals name="program_progress">
+        <item quantity="other">%1$d dari %2$d hari selesai</item>
+    </plurals>
+    <string name="schedules_locked">Jadwal tersedia setelah jawaban keselamatan Anda memungkinkan puasa.</string>
+</resources>

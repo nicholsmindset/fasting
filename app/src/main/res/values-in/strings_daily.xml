@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Timer -->
+    <string name="daily_header_fasting">Berpuasa</string>
+    <string name="daily_header_ready">Mulai kapan pun Anda siap</string>
+    <string name="daily_started">Mulai</string>
+    <string name="daily_goal">Target</string>
+    <string name="daily_yesterday_at">Kemarin, %1$s</string>
+    <string name="daily_protocol_fast">Puasa %1$d jam</string>
+    <string name="daily_protocol_eat">Makan %1$d jam</string>
+    <plurals name="daily_streak_pill">
+        <item quantity="other">%1$d hari beruntun</item>
+    </plurals>
+
+    <!-- Today card -->
+    <string name="daily_today_title">Hari ini</string>
+    <string name="daily_next_fast">Berikutnya</string>
+    <string name="daily_fasting_now">Berpuasa</string>
+    <string name="daily_next_none">Belum direncanakan</string>
+    <string name="daily_water">Air</string>
+    <string name="daily_water_of">%1$s / %2$s</string>
+    <string name="daily_water_a11y">Air hari ini: %1$d dari %2$d ml</string>
+    <string name="daily_add_water">Tambah 250 ml air</string>
+    <string name="daily_streak">Beruntun</string>
+    <plurals name="daily_streak_days">
+        <item quantity="other">%1$d hari</item>
+    </plurals>
+
+    <!-- Log -->
+    <string name="log_title">Catatan</string>
+    <string name="log_water_goal">dari %1$s hari ini</string>
+    <string name="log_water_goal_met">Target tercapai</string>
+    <string name="log_today_entries">Hari ini</string>
+    <string name="log_trend_title">Tren berat · 90 hari</string>
+    <string name="log_trend_empty">Catat berat badan Anda pada dua hari atau lebih untuk melihat tren di sini.</string>
+    <string name="log_trend_low">Terendah</string>
+    <string name="log_trend_latest">Terbaru</string>
+    <string name="log_trend_high">Tertinggi</string>
+    <!-- Shift+ -->
+    <string name="paywall_best_value">Paling hemat</string>
+    <string name="paywall_continue">Lanjutkan</string>
+    <string name="paywall_start_trial">Mulai uji coba gratis 7 hari</string>
+
+    <!-- History -->
+    <string name="history_title">Riwayat</string>
+    <string name="recap_this_week">Minggu berjalan</string>
+    <string name="recap_last_week">Minggu lalu</string>
+    <string name="recap_hours">Berpuasa</string>
+    <string name="recap_to_plan">Sesuai rencana</string>
+    <string name="recap_water_days">Hari target air</string>
+    <string name="recap_x_of_y">%1$d dari %2$d</string>
+    <string name="recap_msg_empty">Minggu yang baru. Berpuasalah saat sesuai rencana Anda.</string>
+    <string name="recap_msg_empty_last">Minggu yang tenang. Tidak apa-apa. Lanjutkan kapan pun Anda siap.</string>
+    <string name="recap_msg_all">%1$d dari %2$d hari terencana berjalan sesuai rencana. Yang penting adalah konsisten.</string>
+    <string name="recap_msg_some">%1$d dari %2$d hari terencana berjalan sesuai rencana. Konsistensi lebih penting daripada durasi.</string>
+    <string name="recap_msg_none">Belum ada hari terencana yang selesai. Setiap hari adalah awal yang baru.</string>
+    <string name="log_trend_a11y">Tren berat, %1$d catatan dalam 90 hari terakhir. Dari %2$s ke %3$s. Terendah %4$s, tertinggi %5$s.</string>
+</resources>

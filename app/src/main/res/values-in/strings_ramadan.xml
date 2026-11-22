@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ramadan card on the Timer -->
+    <string name="ramadan_mode_city">Mode Ramadan · %1$s</string>
+    <string name="ramadan_mode_title">Mode Ramadan</string>
+    <string name="ramadan_iftar_in">Berbuka dalam %1$s</string>
+    <string name="ramadan_iftar_at">Berbuka pukul %1$s</string>
+    <string name="ramadan_suhoor_ends">Sahur berakhir %1$s</string>
+    <string name="ramadan_in">dalam %1$s</string>
+    <string name="ramadan_hours_minutes">%1$d j %2$02d m</string>
+    <string name="ramadan_minutes">%1$d mnt</string>
+    <string name="ramadan_fajr_at">Subuh %1$s</string>
+    <string name="ramadan_maghrib_at">Maghrib %1$s</string>
+    <string name="ramadan_times_method">Waktu: metode %1$s</string>
+    <string name="ramadan_choose_city_body">Pilih kota Anda untuk melihat waktu sahur dan berbuka hari ini.</string>
+    <string name="ramadan_choose_city">Pilih kota</string>
+    <string name="a11y_ramadan_progress">Hari puasa %1$d%% selesai</string>
+
+    <!-- Ramadan settings -->
+    <string name="ramadan_group">Ramadan</string>
+    <string name="ramadan_city">Kota</string>
+    <string name="ramadan_city_none">Belum diatur</string>
+    <string name="ramadan_method">Metode perhitungan</string>
+    <string name="ramadan_today_suhoor">Sahur berakhir hari ini</string>
+    <string name="ramadan_today_iftar">Berbuka hari ini</string>
+    <string name="ramadan_footer">Subuh mengakhiri waktu sahur dan Maghrib adalah waktu berbuka. Waktu ini hasil perhitungan, jadi periksa masjid setempat atau jadwal resmi. Jika Anda minum obat diabetes, bicarakan dengan dokter sebelum berpuasa.</string>
+    <string name="ramadan_footer_off">Puasa harian dari Subuh hingga Maghrib untuk kota Anda, dengan pengingat sahur dan berbuka. Gratis.</string>
+    <string name="ramadan_search">Cari kota atau negara</string>
+    <string name="ramadan_no_cities">Tidak ada kota yang cocok dengan \"%1$s\".</string>
+    <string name="ramadan_method_muis">Majlis Ugama Islam Singapura</string>
+    <string name="ramadan_method_jakim">Jabatan Kemajuan Islam Malaysia</string>
+    <string name="ramadan_method_kemenag">Kementerian Agama, Indonesia</string>
+    <string name="ramadan_method_mwl">Muslim World League</string>
+    <string name="ramadan_method_footer">Setiap kota dimulai dengan metode yang biasa dipakai di negaranya.</string>
+    <string name="ramadan_method_recommended">Biasa dipakai di %1$s</string>
+    <string name="a11y_selected">Dipilih</string>
+
+    <!-- Settings redesign -->
+    <string name="settings_title">Setelan</string>
+    <string name="settings_plan_row">Paket</string>
+    <string name="settings_reminders_footer">Jika pengingat datang terlambat, jalankan cek keandalan di bagian Puasa.</string>
+    <string name="settings_after_hours">Setelah %1$d jam</string>
+    <string name="settings_hours_value">%1$d jam</string>
+    <string name="settings_milestones_footer">Dapatkan notifikasi saat puasa Anda mencapai durasi ini.</string>
+    <string name="settings_forgot_title">\"Lupa mengakhiri puasa?\"</string>
+    <string name="settings_forgot_footer">Pengingat lembut jika puasa berjalan selama ini melewati targetnya.</string>
+    <string name="settings_near_goal">Satu jam sebelum target</string>
+    <string name="settings_window_closing">Saat jendela makan akan berakhir</string>
+    <string name="settings_hydration">Ingatkan minum di puasa panjang</string>
+    <string name="settings_coaching">Tips minggu pertama</string>
+    <string name="settings_weekly_recap">Rekap mingguan</string>
+    <string name="settings_water">Air</string>
+    <string name="settings_water_goal">Target harian</string>
+    <string name="settings_water_auto">Otomatis (%1$s)</string>
+    <string name="settings_liters">%1$s L</string>
+    <string name="settings_water_custom">Khusus</string>
+    <string name="settings_water_use_auto">Pakai otomatis</string>
+    <string name="settings_water_footer">Otomatis memakai 35 ml per kg dari berat terakhir Anda, antara 1,5 dan 4 L. Panduan umum, bukan nasihat medis.</string>
+    <string name="settings_fasting">Puasa</string>
+    <string name="settings_eating_window_title">Jendela makan</string>
+    <string name="settings_eating_window_subtitle">Setelah puasa panjang</string>
+    <string name="settings_schedules_title">Jadwal mingguan</string>
+    <string name="settings_schedules_subtitle">5:2 dan selang-seling</string>
+    <string name="settings_data_footer">Memulihkan akan mengganti semua isi aplikasi saat ini dengan cadangan. Data Anda hanya disimpan di ponsel ini, terenkripsi, dan tidak pernah dikirim ke layanan analitik atau iklan.</string>
+    <string name="settings_language">Bahasa</string>
+    <string name="settings_app_language">Bahasa aplikasi</string>
+    <string name="settings_language_system">Default sistem</string>
+    <string name="settings_language_footer">Membuka setelan ponsel untuk memilih bahasa Fasting Shift.</string>
+    <string name="settings_language_note">Ubah bahasa aplikasi di setelan ponsel Anda.</string>
+    <string name="settings_done">Selesai</string>
+    <string name="settings_cancel">Batal</string>
+
+    <!-- Schedules and reliability -->
+    <string name="schedules_enabled">Aktif</string>
+    <string name="schedules_days">Hari</string>
+    <string name="schedules_start_time">Waktu mulai</string>
+    <string name="schedules_new">Jadwal baru</string>
+    <string name="rel_fix_footer">Ketuk item yang perlu perhatian untuk memperbaikinya.</string>
+</resources>
