@@ -1,6 +1,5 @@
 package com.fastingshift.app.ui.history
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,14 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,9 +31,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import com.fastingshift.app.ui.components.ProgressRing
+import com.fastingshift.app.ui.components.TabularNumbers
+import com.fastingshift.app.ui.components.latestKg
+import com.fastingshift.app.ui.design.AppCard
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.LargeTitle
+import com.fastingshift.app.ui.design.PlainButton
+import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.app.ui.design.SegmentedControl
+import com.fastingshift.app.ui.design.Spacing
+import com.fastingshift.app.ui.timer.Today
+import com.fastingshift.data.repo.LogRepository
+import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.history.WeeklyRecaps
+import java.time.DayOfWeek
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -103,6 +114,8 @@ data class HistoryState(
     val streak: StreakResult = StreakResult(0, 0),
     /** The missed day a freeze can cover, if any. */
     val freezeableDay: LocalDate? = null,
+    /** This week so far, then last week on Mondays and Tuesdays. */
+    val recaps: List<RecapItem> = emptyList(),
 )
 
 @HiltViewModel
@@ -110,14 +123,25 @@ class HistoryViewModel @Inject constructor(
     fasts: FastRepository,
     private val freezes: StreakFreezeRepository,
     schedules: ScheduleRepository,
+    logs: LogRepository,
+    settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val month = MutableStateFlow(YearMonth.now())
     private val period = MutableStateFlow(Period.WEEK)
     private val view = combine(month, period) { m, p -> m to p }
 
+    /** Water since the start of last week, and the water goal, for the weekly recaps. */
+    private val hydration = run {
+        val lastWeek = History.weekStart(LocalDate.now(clock.withZone(ZoneId.systemDefault()))).minusWeeks(1)
+        val from = lastWeek.atStartOfDay(ZoneId.systemDefault()).toInstant()
+        combine(logs.observeWaterSince(from), logs.observeWeights(), settings.settings) { water, weights, s ->
+            water to Today.waterGoalMl(s.waterGoalMl, weights.latestKg())
+        }
+    }
+
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */
-    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), schedules.observeAll(), view) { all, frozen, sch, (m, p) ->
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), schedules.observeAll(), view, hydration) { all, frozen, sch, (m, p), (water, goal) ->
         val zone = ZoneId.systemDefault()
         val now = clock.instant()
         val today = now.atZone(zone).toLocalDate()
@@ -145,6 +169,15 @@ class HistoryViewModel @Inject constructor(
             fasts = all,
             streak = StreakCalculator.calculate(all, zone, today, frozen, planned),
             freezeableDay = freezeable,
+            recaps = buildList {
+                val thisWeek = WeeklyRecaps.weekFor(today)
+                // Early in the week, last week's full picture leads; this week is just starting.
+                if (today.dayOfWeek == DayOfWeek.MONDAY || today.dayOfWeek == DayOfWeek.TUESDAY) {
+                    val last = thisWeek.minusWeeks(1)
+                    add(RecapItem(WeeklyRecaps.compute(all, water, zone, last, now, goal, planned), true, 7))
+                }
+                add(RecapItem(WeeklyRecaps.compute(all, water, zone, thisWeek, now, goal, planned), false, RecapCopy.daysInWeek(thisWeek, today)))
+            },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -164,37 +197,50 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         return
     }
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
+        Modifier.fillMaxSize().padding(horizontal = Spacing.screen),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
     ) {
-        item { st.summary?.let { SummaryCard(st.period, it, vm::setPeriod) } }
-        item { RecentFastsCard(st.recent, onEditFast) }
-        item { CalendarCard(st, vm::shiftMonth, onEditFast) }
-        item {
+        section { LargeTitle(stringResource(R.string.history_title)) }
+        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
+        section { st.summary?.let { SummaryCard(st.period, it, vm::setPeriod) } }
+        section { RecentFastsCard(st.recent, onEditFast) }
+        section { CalendarCard(st, vm::shiftMonth, onEditFast) }
+        section {
             // Streaks count consistency, never length (SR-3). Neutral copy, no badges.
-            SectionCard(title = stringResource(R.string.history_streak_title)) {
+            AppCard {
+                Text(stringResource(R.string.history_streak_title), style = MaterialTheme.typography.titleMedium)
                 Text(pluralStringResource(R.plurals.history_streak, st.streak.current, st.streak.current), style = MaterialTheme.typography.headlineSmall)
-                Text(pluralStringResource(R.plurals.history_streak_longest, st.streak.longest, st.streak.longest), style = MaterialTheme.typography.bodySmall)
+                Text(
+                    pluralStringResource(R.plurals.history_streak_longest, st.streak.longest, st.streak.longest),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 st.freezeableDay?.let { day ->
-                    Text(stringResource(R.string.history_streak_missed))
-                    OutlinedButton(onClick = { vm.freeze(day) }) { Text(stringResource(R.string.history_use_freeze)) }
+                    Text(stringResource(R.string.history_streak_missed), style = MaterialTheme.typography.bodyMedium)
+                    SecondaryButton(stringResource(R.string.history_use_freeze), onClick = { vm.freeze(day) })
                 }
-                TextButton(onClick = onOpenInsights) { Text(stringResource(R.string.history_insights)) }
             }
         }
-        item {
+        section {
+            InsetGroup {
+                GroupRow(stringResource(R.string.history_insights), showChevron = true, onClick = onOpenInsights)
+            }
+        }
+        section {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Text(
                     stringResource(R.string.history_all_fasts),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                TextButton(onClick = onAddPastFast) { Text(stringResource(R.string.add_past_button)) }
+                PlainButton(stringResource(R.string.add_past_button), onClick = onAddPastFast)
             }
         }
-        if (st.fasts.isEmpty()) item { Text(stringResource(R.string.history_empty)) }
-        items(st.fasts, key = { it.id }) { f -> FastRow(f) { onEditFast(f.id) } }
+        if (st.fasts.isEmpty()) item { Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        // One inset group drawn row by row, so the list stays lazy.
+        itemsIndexed(st.fasts, key = { _, f -> f.id }) { i, f ->
+            FastRow(f, first = i == 0, last = i == st.fasts.lastIndex) { onEditFast(f.id) }
+        }
     }
 }
 
@@ -202,16 +248,12 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
 
 @Composable
 private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> Unit) {
-    SectionCard {
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            Period.entries.forEachIndexed { i, p ->
-                SegmentedButton(
-                    selected = p == period,
-                    onClick = { onPeriod(p) },
-                    shape = SegmentedButtonDefaults.itemShape(i, Period.entries.size),
-                ) { Text(stringResource(periodLabel(p))) }
-            }
-        }
+    AppCard {
+        SegmentedControl(
+            Period.entries.map { stringResource(periodLabel(it)) },
+            Period.entries.indexOf(period),
+            { onPeriod(Period.entries[it]) },
+        )
         val fastedLabel = stringResource(fastedIn(period))
         val ringA11y = stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
         Box(
@@ -220,8 +262,8 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
         ) {
             ConsistencyRing(s.consistency, Modifier.size(200.dp))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(totalLabel(s.totalFasting), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.SemiBold)
-                Text(fastedLabel, style = MaterialTheme.typography.bodyMedium)
+                Text(totalLabel(s.totalFasting), style = MaterialTheme.typography.displayMedium.merge(TabularNumbers), fontWeight = FontWeight.SemiBold)
+                Text(fastedLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Row(Modifier.fillMaxWidth()) {
@@ -235,29 +277,24 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
 /** The ring fills with consistency (planned days completed), never with hours: longer isn't better. */
 @Composable
 private fun ConsistencyRing(progress: Float, modifier: Modifier) {
-    val track = MaterialTheme.colorScheme.surfaceVariant
-    val fill = MaterialTheme.colorScheme.primary
-    Canvas(modifier) {
-        val stroke = 14.dp.toPx()
-        val inset = stroke / 2
-        val arcSize = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke)
-        drawArc(track, 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
-        if (progress > 0f) {
-            drawArc(fill, -90f, 360f * progress.coerceIn(0f, 1f), false, Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
-        }
-    }
+    ProgressRing(progress, modifier, stroke = 16.dp)
 }
 
 @Composable
 private fun Stat(label: String, value: String, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleLarge)
-        Text(label, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+        Text(value, style = MaterialTheme.typography.titleLarge.merge(TabularNumbers))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
 
+/** Gap below each section of the History list (fast rows sit flush, as one inset group). */
+private fun LazyListScope.section(content: @Composable () -> Unit) {
+    item { Box(Modifier.padding(bottom = 16.dp)) { content() } }
+}
+
 /** "76h" for the ring; minutes only matter for short totals. */
-private fun totalLabel(d: Duration): String = if (d.toHours() >= 10) "${d.toHours()}h" else d.hoursMinutes()
+internal fun totalLabel(d: Duration): String = if (d.toHours() >= 10) "${d.toHours()}h" else d.hoursMinutes()
 
 // ---------- Recent fasts chart ----------
 
@@ -432,17 +469,39 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
 }
 
 @Composable
-private fun FastRow(f: Fast, onClick: () -> Unit) {
-    SectionCard(modifier = Modifier.clickable(onClick = onClick)) {
-        val length = Duration.between(f.startAt, f.endedAt ?: java.time.Instant.now())
-        Text("${Presets.byId(f.protocolId)?.name ?: f.protocolId} · ${length.hoursMinutes()}", style = MaterialTheme.typography.titleSmall)
-        Text(f.startAt.formatDateTime(), style = MaterialTheme.typography.bodySmall)
-        Text(
-            stringResource(statusLabel(f.status)),
-            style = if (f.isActive) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodySmall,
-            color = if (f.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        f.note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit) {
+    // One row of the "All fasts" inset group: rounded only at the group's top and bottom.
+    val r = 22.dp
+    val shape = RoundedCornerShape(
+        topStart = if (first) r else 0.dp, topEnd = if (first) r else 0.dp,
+        bottomStart = if (last) r else 0.dp, bottomEnd = if (last) r else 0.dp,
+    )
+    val length = Duration.between(f.startAt, f.endedAt ?: java.time.Instant.now())
+    val status = stringResource(statusLabel(f.status))
+    Surface(shape = shape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Column {
+            if (!first) GroupDivider()
+            GroupRow(
+                title = "${Presets.byId(f.protocolId)?.name ?: f.protocolId} · ${length.hoursMinutes()}",
+                subtitle = listOfNotNull(f.startAt.formatDateTime(), f.note).joinToString(" · "),
+                showChevron = true,
+                onClick = onClick,
+                leading = {
+                    val color = when (f.status) {
+                        FastStatus.ACTIVE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+                        FastStatus.COMPLETED -> MaterialTheme.colorScheme.primary
+                        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.outline
+                    }
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(color))
+                },
+            ) {
+                Text(
+                    status,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (f.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

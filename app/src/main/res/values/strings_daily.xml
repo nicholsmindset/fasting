@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Daily-use screens (Timer, Today card, Log, History recap, Shift+ screens). Same tone rules
+    as strings_features.xml (SR-6): plain, neutral, no praise for longer fasts.
+-->
+<resources>
+    <!-- Timer -->
+    <string name="daily_header_fasting">Fasting</string>
+    <string name="daily_header_ready">Ready when you are</string>
+    <string name="daily_started">Started</string>
+    <string name="daily_goal">Goal</string>
+    <string name="daily_yesterday_at">Yesterday, %1$s</string>
+    <string name="daily_protocol_fast">%1$dh fast</string>
+    <string name="daily_protocol_eat">%1$dh eating</string>
+    <plurals name="daily_streak_pill">
+        <item quantity="one">%1$d-day streak</item>
+        <item quantity="other">%1$d-day streak</item>
+    </plurals>
+
+    <!-- Today card -->
+    <string name="daily_today_title">Today</string>
+    <string name="daily_next_fast">Next fast</string>
+    <string name="daily_fasting_now">Fasting now</string>
+    <string name="daily_next_none">Not planned</string>
+    <string name="daily_water">Water</string>
+    <string name="daily_water_of">%1$s / %2$s</string>
+    <string name="daily_water_a11y">Water today: %1$d of %2$d ml</string>
+    <string name="daily_add_water">Add 250 ml of water</string>
+    <string name="daily_streak">Streak</string>
+    <plurals name="daily_streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+
+    <!-- Log -->
+    <string name="log_title">Log</string>
+    <string name="log_water_goal">of %1$s today</string>
+    <string name="log_water_goal_met">Goal reached</string>
+    <string name="log_today_entries">Today</string>
+    <string name="log_trend_title">Weight trend · 90 days</string>
+    <string name="log_trend_empty">Log your weight on two or more days to see a trend here.</string>
+    <string name="log_trend_low">Lowest</string>
+    <string name="log_trend_latest">Latest</string>
+    <string name="log_trend_high">Highest</string>
+    <!-- Shift+ -->
+    <string name="paywall_best_value">Best value</string>
+    <string name="paywall_continue">Continue</string>
+    <string name="paywall_start_trial">Start 7-day free trial</string>
+
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="recap_this_week">This week so far</string>
+    <string name="recap_last_week">Last week</string>
+    <string name="recap_hours">Fasted</string>
+    <string name="recap_to_plan">Fasts to plan</string>
+    <string name="recap_water_days">Water-goal days</string>
+    <string name="recap_x_of_y">%1$d of %2$d</string>
+    <!-- Each message gets (completed planned days, planned days); not all use them. -->
+    <string name="recap_msg_empty">A fresh week. Fast when it suits your plan.</string>
+    <string name="recap_msg_empty_last">A quiet week. That\'s fine. Pick up whenever you\'re ready.</string>
+    <string name="recap_msg_all">%1$d of %2$d planned days went to plan. Steady is what counts.</string>
+    <string name="recap_msg_some">%1$d of %2$d planned days went to plan. Consistency matters more than length.</string>
+    <string name="recap_msg_none">No planned days completed yet. Each day is a fresh start.</string>
+    <string name="log_trend_a11y">Weight trend, %1$d entries in the last 90 days. From %2$s to %3$s. Lowest %4$s, highest %5$s.</string>
+</resources>

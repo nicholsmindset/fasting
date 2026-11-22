@@ -2,19 +2,34 @@ package com.fastingshift.app.ui.timer
 
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import com.fastingshift.app.ui.design.GroupHeader
+import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.app.ui.design.SegmentedControl
+import com.fastingshift.app.ui.design.rememberHaptics
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,18 +63,59 @@ fun QuickAddRow(
     onElectrolyte: (Electrolyte, Double) -> Unit,
 ) {
     var dialog by rememberSaveable { mutableStateOf<String?>(null) }
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.quick_add_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
-            AssistChip(onClick = onWater, label = { Text(stringResource(R.string.quick_water)) })
+    val haptics = rememberHaptics()
+    Column(Modifier.fillMaxWidth()) {
+        GroupHeader(stringResource(R.string.quick_add_title))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            QuickTile(stringResource(R.string.quick_water), WaterBlue, Modifier.weight(1f), onClick = { haptics.tick(); onWater() }) { WaterDrop(it) }
             // Hide weight mode removes weight from every screen (SR-6).
-            if (showWeight) AssistChip(onClick = { dialog = "weight" }, label = { Text(stringResource(R.string.quick_weight)) })
-            AssistChip(onClick = { dialog = "electrolytes" }, label = { Text(stringResource(R.string.quick_electrolytes)) })
+            if (showWeight) {
+                QuickTile(stringResource(R.string.quick_weight), MaterialTheme.colorScheme.primary, Modifier.weight(1f), onClick = { dialog = "weight" }) {
+                    Text(weightUnitLabel(weightUnit), style = MaterialTheme.typography.titleSmall, color = it)
+                }
+            }
+            QuickTile(stringResource(R.string.quick_electrolytes), MaterialTheme.colorScheme.tertiary, Modifier.weight(1f), onClick = { dialog = "electrolytes" }) {
+                Text("Na", style = MaterialTheme.typography.titleSmall, color = it)
+            }
         }
     }
     when (dialog) {
         "weight" -> WeightDialog(weightUnit, onDismiss = { dialog = null }) { v, u -> onWeight(v, u); dialog = null }
         "electrolytes" -> ElectrolyteDialog(onDismiss = { dialog = null }) { e, mg -> onElectrolyte(e, mg); dialog = null }
+    }
+}
+
+/** A rounded white tile: a tinted badge with a glyph, and a label. The whole tile is one button. */
+@Composable
+private fun QuickTile(label: String, tint: Color, modifier: Modifier, onClick: () -> Unit, glyph: @Composable (Color) -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = modifier.heightIn(min = 88.dp).semantics { role = Role.Button },
+    ) {
+        Column(Modifier.padding(vertical = 14.dp, horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) { glyph(tint) }
+            Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2)
+        }
+    }
+}
+
+/** A small water drop, drawn so it needs no icon font. */
+@Composable
+fun WaterDrop(color: Color, modifier: Modifier = Modifier.size(width = 14.dp, height = 18.dp)) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w / 2, 0f)
+            cubicTo(w * 0.9f, h * 0.38f, w, h * 0.55f, w, h * 0.66f)
+            cubicTo(w, h * 0.86f, w * 0.78f, h, w / 2, h)
+            cubicTo(w * 0.22f, h, 0f, h * 0.86f, 0f, h * 0.66f)
+            cubicTo(0f, h * 0.55f, w * 0.1f, h * 0.38f, w / 2, 0f)
+            close()
+        }
+        drawPath(path, color)
     }
 }
 
@@ -72,12 +128,12 @@ private fun WeightDialog(initialUnit: WeightUnit, onDismiss: () -> Unit, onSave:
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.log_weight)) },
         text = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = value, onValueChange = { value = it.take(6) }, singleLine = true, label = { Text(weightUnitLabel(unit)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
                 )
-                WeightUnit.entries.forEach { u -> FilterChip(selected = unit == u, onClick = { unit = u }, label = { Text(weightUnitLabel(u)) }) }
+                SegmentedControl(WeightUnit.entries.map { weightUnitLabel(it) }, WeightUnit.entries.indexOf(unit), { unit = WeightUnit.entries[it] })
             }
         },
         confirmButton = { TextButton(enabled = parsed != null, onClick = { parsed?.let { onSave(it, unit) } }) { Text(stringResource(R.string.save)) } },
@@ -95,10 +151,8 @@ private fun ElectrolyteDialog(onDismiss: () -> Unit, onSave: (Electrolyte, Doubl
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.log_electrolytes)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Electrolyte.entries.forEach { e -> FilterChip(selected = which == e, onClick = { which = e }, label = { Text(stringResource(electrolyteLabel(e))) }) }
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SegmentedControl(Electrolyte.entries.map { stringResource(electrolyteLabel(it)) }, Electrolyte.entries.indexOf(which), { which = Electrolyte.entries[it] })
                 OutlinedTextField(
                     value = amount, onValueChange = { amount = it.filter(Char::isDigit).take(5) }, singleLine = true,
                     label = { Text(stringResource(R.string.quick_amount_mg)) },
@@ -135,16 +189,18 @@ fun StartEarlierDialog(initial: Instant?, onDismiss: () -> Unit, onPick: (Instan
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.timer_start_earlier_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !yesterday, onClick = { yesterday = false }, label = { Text(stringResource(R.string.today)) })
-                    FilterChip(selected = yesterday, onClick = { yesterday = true }, label = { Text(stringResource(R.string.yesterday)) })
-                }
-                OutlinedButton(onClick = {
-                    TimePickerDialog(context, { _, h, m -> minutes = h * 60 + m }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
-                }, modifier = Modifier.fillMaxWidth()) {
-                    Text(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(time))
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SegmentedControl(
+                    listOf(stringResource(R.string.today), stringResource(R.string.yesterday)),
+                    if (yesterday) 1 else 0,
+                    { yesterday = it == 1 },
+                )
+                SecondaryButton(
+                    java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(time),
+                    onClick = {
+                        TimePickerDialog(context, { _, h, m -> minutes = h * 60 + m }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
+                    },
+                )
             }
         },
         confirmButton = { TextButton(onClick = { onPick(picked) }) { Text(stringResource(R.string.ok)) } },

@@ -7,6 +7,13 @@ import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.repo.ProgramRepository
+import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.app.ui.components.latestKg
+import com.fastingshift.app.ui.components.startOfTodayFlow
+import com.fastingshift.domain.hydration.WaterGoal
+import com.fastingshift.domain.schedule.ScheduleCalculator
+import com.fastingshift.domain.service.StreakFreezeRepository
+import com.fastingshift.domain.streak.StreakCalculator
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.billing.Feature
 import com.fastingshift.domain.model.Electrolyte
@@ -79,6 +86,15 @@ data class TimerUiState(
     val startAt: Instant? = null,
     val hideWeight: Boolean = false,
     val weightUnit: WeightUnit = WeightUnit.KG,
+    /** The "Today" card: next fast, water vs goal, streak. */
+    val today: TodaySummary = TodaySummary(),
+)
+
+private data class DailyInputs(
+    val waterMl: Double,
+    val latestKg: Double?,
+    val schedules: List<com.fastingshift.domain.model.Schedule>,
+    val frozen: Set<LocalDate>,
 )
 
 /** Where to send the user for refeeding guidance (SR-5). */
@@ -106,6 +122,8 @@ class TimerViewModel @Inject constructor(
     private val health: HealthConnectManager,
     private val service: FastService,
     private val clock: Clock,
+    schedules: ScheduleRepository,
+    freezes: StreakFreezeRepository,
 ) : ViewModel() {
 
     private val selected = MutableStateFlow<Protocol?>(null)
@@ -130,8 +148,15 @@ class TimerViewModel @Inject constructor(
         }
     }
 
-    /** The most recently ended fast, for the eating-window view. */
-    private val lastEnded = fasts.observeAll().map { all -> all.filter { !it.isActive }.maxByOrNull { it.endedAt!! } }
+    private val allFasts = fasts.observeAll()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val waterToday = startOfTodayFlow(clock).flatMapLatest { from -> logs.observeWaterSince(from) }
+
+    /** Inputs of the Today card that don't tick every second. */
+    private val daily = combine(waterToday, logs.observeWeights(), schedules.observeAll(), freezes.observeFrozenDays()) { w, weights, sch, frozen ->
+        DailyInputs(w.sumOf(WaterGoal::toMl), weights.latestKg(), sch, frozen)
+    }
 
     private val choices = combine(selected, startAt) { sel, at -> sel to at }
 
@@ -161,7 +186,8 @@ class TimerViewModel @Inject constructor(
     }
 
     /** Null until the first values load, so nothing flashes (no "Ready when you are" mid-fast). */
-    val state: StateFlow<TimerUiState?> = combine(base, programTarget, lastEnded) { (s, eatHours), target, last ->
+    val state: StateFlow<TimerUiState?> = combine(base, programTarget, allFasts, daily, settings.settings) { (s, eatHours), target, all, d, appSettings ->
+        val last = all.filter { !it.isActive }.maxByOrNull { it.endedAt!! }
         val window = if (s.active == null && last != null) {
             val ended = last.endedAt!!
             val hours = Presets.byId(last.protocolId)?.eatHours ?: eatHours
@@ -170,7 +196,15 @@ class TimerViewModel @Inject constructor(
         } else {
             null
         }
-        s.copy(programTargetHours = target, eatingWindow = window)
+        val zone = ZoneId.systemDefault()
+        val todayDate = s.now.atZone(zone).toLocalDate()
+        val today = TodaySummary(
+            next = Today.nextFast(s.active != null, window, d.schedules, zone, s.now),
+            waterMl = d.waterMl,
+            waterGoalMl = Today.waterGoalMl(appSettings.waterGoalMl, d.latestKg),
+            streak = StreakCalculator.calculate(all, zone, todayDate, d.frozen) { ScheduleCalculator.isPlannedDay(d.schedules, it) }.current,
+        )
+        s.copy(programTargetHours = target, eatingWindow = window, today = today)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
@@ -242,6 +276,13 @@ class TimerViewModel @Inject constructor(
         val id = logs.addWater(log)
         if (settings.current().healthConnectSync) health.writeWater(log.copy(id = id))
         _events.update { it.copy(message = R.string.quick_water_added) }
+    }
+
+    /** Water from the Today card: no snackbar, the ring itself shows the change. */
+    fun addWaterQuietly() = viewModelScope.launch {
+        val log = WaterLog(at = clock.instant(), value = 250.0, unit = VolumeUnit.ML)
+        val id = logs.addWater(log)
+        if (settings.current().healthConnectSync) health.writeWater(log.copy(id = id))
     }
 
     fun addWeight(value: Double, unit: WeightUnit) = viewModelScope.launch {

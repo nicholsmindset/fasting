@@ -7,6 +7,15 @@ import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.app.ui.timer.TimerViewModel
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.repo.ProgramRepository
+import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.domain.service.StreakFreezeRepository
+import com.fastingshift.app.ui.timer.NextFast
+import com.fastingshift.domain.model.VolumeUnit
+import com.fastingshift.domain.model.WaterLog
+import com.fastingshift.domain.model.WeightLog
+import com.fastingshift.domain.model.WeightUnit
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.MainScope
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.safety.GateResult
@@ -50,6 +59,8 @@ class TimerViewModelTest {
     @Inject lateinit var health: HealthConnectManager
     @Inject lateinit var service: FastService
     @Inject lateinit var clock: Clock
+    @Inject lateinit var schedules: ScheduleRepository
+    @Inject lateinit var freezes: StreakFreezeRepository
 
     @Before fun setUp() {
         hilt.inject()
@@ -59,10 +70,13 @@ class TimerViewModelTest {
     }
 
     @After fun tearDown() {
-        runBlocking { settings.setPendingRefeeding(null) }
+        runBlocking {
+            settings.setPendingRefeeding(null)
+            settings.setWaterGoalMl(null)
+        }
     }
 
-    private fun vm() = TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, clock)
+    private fun vm() = TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, clock, schedules, freezes)
 
     /** viewModelScope runs on the main looper, which the test thread must keep turning. */
     private fun <T> await(read: () -> T?): T {
@@ -110,5 +124,47 @@ class TimerViewModelTest {
         val nav = await { vm.events.value.refeeding }
         assertEquals(RefeedingTier.EXTENDED, nav.tier)
         await { runBlocking { settings.current() }.takeIf { it.pendingRefeedingFastId == null } }
+    }
+
+    /** Collects state like the screen would (it is shared WhileSubscribed). */
+    private fun <T> awaitState(vm: TimerViewModel, read: (com.fastingshift.app.ui.timer.TimerUiState) -> T?): T {
+        val job = vm.state.launchIn(MainScope())
+        try {
+            return await { vm.state.value?.let(read) }
+        } finally {
+            job.cancel()
+        }
+    }
+
+    @Test fun todayCardUsesTheWeightBasedWaterGoalUntilOneIsSet() {
+        runBlocking {
+            settings.setWaterGoalMl(null)
+            logs.addWeight(WeightLog(at = Instant.now(), value = 80.0, unit = WeightUnit.KG))
+            logs.addWater(WaterLog(at = Instant.now(), value = 500.0, unit = VolumeUnit.ML))
+        }
+        val vm = vm()
+        // 80 kg x 35 ml = 2800 ml.
+        val today = awaitState(vm) { s -> s.today.takeIf { it.waterGoalMl == 2_800 && it.waterMl >= 500.0 } }
+        assertEquals(NextFast.None, today.next)
+        runBlocking { settings.setWaterGoalMl(3_000) }
+        awaitState(vm) { s -> s.today.takeIf { it.waterGoalMl == 3_000 } }
+    }
+
+    @Test fun todayCardSaysFastingNowDuringAFast() {
+        activeFast(hoursIn = 2)
+        val vm = vm()
+        awaitState(vm) { s -> s.today.next.takeIf { it == NextFast.FastingNow } }
+    }
+
+    @Test fun todayCardShowsTheEatingWindowEndAsTheNextFast() {
+        val start = Instant.now().minus(Duration.ofHours(18)).truncatedTo(java.time.temporal.ChronoUnit.MILLIS)
+        runBlocking {
+            val f = fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
+            fasts.update(f.end(start.plus(Duration.ofHours(16))))
+        }
+        val vm = vm()
+        val next = awaitState(vm) { s -> s.today.next as? NextFast.At }
+        // The 8h window after a 16:8 fast that ended 2h ago.
+        assertEquals(start.plus(Duration.ofHours(24)), next.at)
     }
 }

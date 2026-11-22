@@ -30,7 +30,25 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.R
+import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.model.WeightUnit
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -133,3 +151,56 @@ private val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 fun Instant.formatDateTime(): String = dateTime.format(atZone(ZoneId.systemDefault()))
 fun Instant.formatDate(): String = date.format(atZone(ZoneId.systemDefault()))
 fun Instant.formatTime(): String = time.format(atZone(ZoneId.systemDefault()))
+
+/** Local midnight, re-checked every minute so "today" totals reset at midnight (and on zone changes). */
+fun startOfTodayFlow(clock: java.time.Clock): Flow<Instant> = flow {
+    while (true) {
+        val zone = ZoneId.systemDefault()
+        val now = clock.instant()
+        val today = now.atZone(zone).toLocalDate()
+        emit(today.atStartOfDay(zone).toInstant())
+        val untilMidnight = Duration.between(now, today.plusDays(1).atStartOfDay(zone).toInstant()).toMillis()
+        delay(untilMidnight.coerceIn(1_000, 60_000))
+    }
+}.distinctUntilChanged()
+
+/** The latest weight in kilograms, if any. */
+fun List<WeightLog>.latestKg(): Double? =
+    maxByOrNull { it.at }?.let { convertWeight(it.value, it.unit, WeightUnit.KG) }
+
+/** "750 ml" / "1.3 L" for water amounts. */
+fun waterLabel(ml: Double): String =
+    if (ml >= 1_000) String.format(Locale.getDefault(), "%.1f L", ml / 1_000)
+    else String.format(Locale.getDefault(), "%d ml", ml.toInt())
+
+/** Digits that don't jiggle as they change (tabular figures), for timers and totals. */
+val TabularNumbers = TextStyle(fontFeatureSettings = "tnum")
+
+/**
+ * A clean progress ring: soft track, solid accent arc with rounded caps, animated when the
+ * value changes. Decorative; callers set the semantics on their container.
+ */
+@Composable
+fun ProgressRing(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    stroke: Dp = 12.dp,
+    color: Color = MaterialTheme.colorScheme.primary,
+    trackColor: Color = color.copy(alpha = 0.14f),
+) {
+    val animated by animateFloatAsState(
+        progress.coerceIn(0f, 1f),
+        tween(durationMillis = 700, easing = FastOutSlowInEasing),
+        label = "ring",
+    )
+    Canvas(modifier) {
+        val px = stroke.toPx()
+        val inset = px / 2
+        val arc = Size(size.width - px, size.height - px)
+        val topLeft = Offset(inset, inset)
+        drawArc(trackColor, 0f, 360f, false, topLeft, arc, style = Stroke(px))
+        if (animated > 0f) {
+            drawArc(color, -90f, 360f * animated, false, topLeft, arc, style = Stroke(px, cap = StrokeCap.Round))
+        }
+    }
+}

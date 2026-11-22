@@ -1,5 +1,12 @@
 package com.fastingshift.app.ui.timer
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,15 +14,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,7 +39,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.ProgressRing
+import com.fastingshift.app.ui.components.TabularNumbers
 import com.fastingshift.app.ui.components.hoursMinutes
+import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.timer.TimerDisplayMode
 import com.fastingshift.domain.timer.TimerState
@@ -102,10 +113,12 @@ fun TimerRing(
     }
     val description = "$base. $modeDescription"
     val switchLabel = stringResource(R.string.a11y_timer_switch)
+    val haptics = rememberHaptics()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
+                .size(256.dp)
                 .clip(CircleShape)
                 .clearAndSetSemantics {
                     contentDescription = description
@@ -113,33 +126,49 @@ fun TimerRing(
                     role = Role.Button
                     onClick(label = switchLabel) { onToggle(); true }
                 }
-                .clickable(onClickLabel = switchLabel, role = Role.Button, onClick = onToggle),
+                .clickable(onClickLabel = switchLabel, role = Role.Button) { haptics.tick(); onToggle() },
         ) {
-            CircularProgressIndicator(
-                progress = { timer.progress },
-                modifier = Modifier.size(260.dp),
-                strokeWidth = 14.dp,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 36.dp)) {
-                Text(text.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                Text(text.big, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
-                text.sub?.let { Text(it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
+            ProgressRing(timer.progress, Modifier.fillMaxSize(), stroke = 18.dp)
+            AnimatedContent(
+                targetState = mode,
+                transitionSpec = {
+                    (fadeIn(tween(220, delayMillis = 60)) + scaleIn(tween(220, delayMillis = 60), initialScale = 0.94f))
+                        .togetherWith(fadeOut(tween(120)))
+                },
+                label = "timerMode",
+            ) { shown ->
+                RingFace(if (shown == mode) text else ringText(shown, fast, timer, now))
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(16.dp))
         ModeDots(mode)
         Text(stringResource(R.string.timer_tap_hint), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
+private fun RingFace(t: RingText) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 30.dp)) {
+        Text(t.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(
+            t.big,
+            style = MaterialTheme.typography.displaySmall.merge(TabularNumbers),
+            fontWeight = FontWeight.Light,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(vertical = 2.dp),
+        )
+        t.sub?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
+    }
+}
+
+@Composable
 private fun ModeDots(mode: TimerDisplayMode) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
         TimerDisplayMode.entries.forEach { m ->
+            val width by animateDpAsState(if (m == mode) 18.dp else 6.dp, label = "dot")
             Box(
-                Modifier.size(if (m == mode) 8.dp else 6.dp).clip(CircleShape).background(
+                Modifier.height(6.dp).width(width).clip(CircleShape).background(
                     if (m == mode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                 ),
             )
