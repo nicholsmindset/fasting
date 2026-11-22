@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -81,6 +82,7 @@ class StoreScreenshotTest {
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
         settings.setOnboardingComplete(true)
+        settings.recordSchedule(now.atZone(zone).toLocalDate().minusWeeks(3), com.fastingshift.domain.schedule.PlanHistory.EVERY_DAY)
         settings.setTimerMode(TimerDisplayMode.ELAPSED)
         settings.setMilestoneHours(setOf(12, 16))
         screening.save(ScreeningRecord(now, ScreeningAnswers(42, false, false, false, emptySet(), 178.0, 82.0), GateResult.OK, false))
@@ -89,12 +91,12 @@ class StoreScreenshotTest {
         // Three weeks of mostly-kept 16:8 days (one a day, leading up to the active fast), one
         // shorter day, one longer weekend fast. Relative to the active start so nothing overlaps.
         for (back in 21 downTo 1) {
-            if (back == 9) continue // a day off: streaks are about consistency, not perfection
+            if (back == 9 || back == 4 || back == 5) continue // a day off: streaks are about consistency, not perfection
             val long = back == 6
             val start = activeStart.minus(Duration.ofDays(back.toLong())).minus(Duration.ofHours(if (long) 4 else 0))
-            val planned = if (long) 24L else 16L
-            val f = fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(planned)), protocolId = if (long) "duration_24" else "window_16_8"))
-            val ended = Duration.ofHours(if (back == 13) 13L else planned).plus(Duration.ofMinutes(if (long) 0 else 12))
+            val planned = if (long) 72L else 16L
+            val f = fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(planned)), protocolId = if (long) "duration_72" else "window_16_8"))
+            val ended = Duration.ofHours(if (back == 3) 13L else planned).plus(Duration.ofMinutes(if (long) 0 else 12))
             fasts.update(f.end(start.plus(ended)))
         }
         fasts.insert(Fast(startAt = activeStart, targetEndAt = activeStart.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
@@ -149,10 +151,14 @@ class StoreScreenshotTest {
         compose.onNode(hasClickAction() and hasContentDescription("Fasted ", substring = true)).performClick()
         waitForDescription(s(R.string.a11y_mode_elapsed))
         compose.onNodeWithText(s(R.string.tab_history)).performClick()
-        val averagePrefix = compose.activity.getString(R.string.history_average, "", 0).substringBefore(" ")
-        compose.waitUntil(15_000) { compose.onAllNodesWithText(averagePrefix, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        waitFor(s(R.string.history_stat_fasts))
         shoot("2-history", mode)
-        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(compose.activity.getString(R.string.history_streak_title)))
+        val history = compose.onNode(hasScrollToNodeAction())
+        history.performScrollToIndex(3)
+        waitFor(s(R.string.history_recent))
+        shoot("2a-recent", mode)
+        history.performScrollToIndex(4)
+        waitForDescription(s(R.string.a11y_next_month))
         shoot("2b-calendar", mode)
         compose.onNodeWithText(s(R.string.tab_log)).performClick()
         // Wait for the seeded data itself (today's water and the weight list), so the capture

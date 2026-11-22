@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="program_preview_title">Refleksi gratis</string>
+    <string name="program_read_sample">Baca refleksi gratis</string>
+    <string name="program_sample_title">Apa yang ingin Anda ingat?</string>
+    <string name="program_sample_body">Ingat kembali saat rencana Anda tiba-tiba berubah. Mungkin rapat berlangsung lebih lama atau ada yang mengajak makan malam. Saat melihat riwayat Anda nanti, apa yang ingin Anda ingat dari hari itu?</string>
+    <string name="program_sample_prompt">Coba lengkapi kalimat ini dengan kata-kata Anda sendiri: “Rencana saya berubah ketika …” Beberapa kata tentang hari itu bisa menceritakan hal yang tidak terlihat dari durasi saja.</string>
+    <string name="program_in_preparation">Program panduan lengkap sedang disiapkan. Refleksi ini gratis untuk dibaca.</string>
+    <string name="program_full_title">The Fasting Shift · 21 hari</string>
+    <string name="program_released_intro">Jelajahi satu pelajaran singkat setiap kali, sesuai ritme Anda.</string>
+    <string name="program_see_plans">Lihat pilihan paket</string>
+    <string name="program_offer_insights">Shift+ menampilkan konsistensi mingguan dan rata-rata durasi puasa menurut hari. Lihat harga dan ketentuan uji coba sebelum memilih.</string>
+    <string name="program_trial_available">Tersedia uji coba gratis</string>
+    <string name="program_trial_duration">Uji coba gratis · %1$s</string>
+    <string name="program_trial_action">Mulai uji coba gratis</string>
+    <string name="program_purchase_terms">Google Play menampilkan harga dan ketentuan uji coba sebelum pembelian. Langganan diperpanjang otomatis hingga dibatalkan di Google Play. Paket seumur hidup cukup dibayar sekali.</string>
+</resources>

@@ -32,6 +32,30 @@ class MigrationTest {
         }
     }
 
+    @Test fun v3ToV4KeepsDebtAndLeavesLegacyFastsUnassigned() {
+        helper.createDatabase("qada-migration", 3).use { db ->
+            db.execSQL("INSERT INTO qada_debt(hijri_year, days_owed) VALUES (1446, 7)")
+            db.execSQL(
+                "INSERT INTO fast(id, start_at, target_end_at, ended_at, protocol_id, status, kind) " +
+                    "VALUES (1, 1000, 2000, 2000, 'window_16_8', 'COMPLETED', 'QADA')",
+            )
+        }
+        helper.runMigrationsAndValidate("qada-migration", 4, true).use { db ->
+            db.query("SELECT days_owed FROM qada_debt WHERE hijri_year = 1446").use { c ->
+                c.moveToFirst()
+                assertEquals(7, c.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM qada_repayment").use { c ->
+                c.moveToFirst()
+                assertEquals(0, c.getInt(0))
+            }
+            db.query("SELECT kind FROM fast WHERE id = 1").use { c ->
+                c.moveToFirst()
+                assertEquals("QADA", c.getString(0))
+            }
+        }
+    }
+
     @Test fun v2ToV3KeepsFastsAsRegularAndAddsTables() {
         helper.createDatabase("migration-test-3", 2).use { db ->
             db.execSQL(

@@ -2,9 +2,9 @@
 
 Wellness language only. No disease claims (diabetes, PCOS, etc.), no "lose X kg in Y days", no autophagy promises. Content rating: adults.
 
-**Title (30):** Fasting Shift: Fasting Tracker & Widget  _(check availability; may need trimming to 30 chars: "Fasting Shift: Fast Tracker")_
+**Title (30):** Fasting Shift: Fasting Tracker
 
-**Short description (80):** A fasting timer that always works. Free widgets, no subscription traps.
+**Short description (80):** Track fasts, see your weekly habits and use free home-screen widgets.
 
 **Full description:**
 
@@ -22,14 +22,14 @@ A short safety check before you start. A checklist before long fasts, regular ch
 HONEST ABOUT THE SCIENCE
 The body timeline labels every claim: Established, Emerging, Animal-only or Unknown.
 
-YOUR DATA STAYS ON YOUR PHONE
-No account. Encrypted on your device. Optional Health Connect sync. Export or back up any time.
+YOUR RECORDS
+Your fasting and health records are encrypted in the app database. Optional Health Connect sync reads weight and writes weight and water. You can export fasting history or save a full backup to a file you choose. No account is required.
 
 BUILD A HABIT, NOT A RECORD
 Streaks count the days you completed your plan, never how long you fasted.
 
 SHIFT+ (OPTIONAL)
-The 21-day guided program from the book The Fasting Shift, plus weekly insights. 7-day free trial on the annual plan, a reminder before it ends, and one-tap cancel. Lifetime option available.
+See your weekly consistency, average fast by weekday, and optional weight entries alongside your fasting history. View available plans, prices and trial terms before purchase. Manage subscriptions through Google Play. You can also read a free reflection in the app.
 
 Fasting Shift is not medical advice and does not diagnose or treat any condition. Talk to your doctor before fasting, especially if you take medication.
 

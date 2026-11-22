@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
+import com.fastingshift.domain.schedule.WeekChoice
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ object RecapCopy {
     fun message(recap: WeeklyRecap, isLastWeek: Boolean): Int = when {
         recap.isEmpty -> if (isLastWeek) R.string.recap_msg_empty_last else R.string.recap_msg_empty
         recap.plannedDays > 0 && recap.completedDays >= recap.plannedDays -> R.string.recap_msg_all
+        recap.plannedDays == 0 -> R.string.history_no_planned_days
         recap.completedDays > 0 -> R.string.recap_msg_some
         else -> R.string.recap_msg_none
     }
@@ -70,6 +73,31 @@ fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+fun WeekPlanCard(week: LocalDate, choice: WeekChoice?, onChoice: (WeekChoice) -> Unit, onEdit: () -> Unit) {
+    val date = week.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+    AppCard {
+        Text(
+            stringResource(R.string.history_next_week, date),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.semantics { heading() },
+        )
+        val message = when (choice) {
+            WeekChoice.BREAK -> R.string.history_break_selected
+            WeekChoice.KEEP -> R.string.history_keep_selected
+            null -> R.string.history_next_week_hint
+        }
+        Text(stringResource(message), style = MaterialTheme.typography.bodyMedium)
+        TextButton(onClick = { onChoice(WeekChoice.KEEP) }, enabled = choice != WeekChoice.KEEP) {
+            Text(stringResource(R.string.history_keep_plan))
+        }
+        TextButton(onClick = onEdit) { Text(stringResource(R.string.history_edit_schedule)) }
+        TextButton(onClick = { onChoice(WeekChoice.BREAK) }, enabled = choice != WeekChoice.BREAK) {
+            Text(stringResource(R.string.history_take_break))
+        }
     }
 }
 

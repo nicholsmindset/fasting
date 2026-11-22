@@ -81,13 +81,13 @@
     <string name="trust_encrypted_body">数据库使用 SQLCipher 加密，密钥由本机的 Android Keystore 保护。</string>
     <string name="trust_no_account_title">无需账号</string>
     <string name="trust_no_account_body">无需注册或登录，没有可泄露的邮箱或个人资料。</string>
-    <string name="trust_no_tracking_title">无广告、无分析、无追踪</string>
-    <string name="trust_no_tracking_body">应用不包含任何广告、分析或追踪工具，你的数据从不出售，也不会用于营销。</string>
+    <string name="trust_no_tracking_title">无广告、无追踪</string>
+    <string name="trust_no_tracking_body">应用不包含任何广告、追踪或健康分析工具。你的健康记录从不出售，也不会用于营销。</string>
     <string name="trust_leaves_title">哪些数据会离开手机，何时离开</string>
     <string name="trust_leaves_purchases_title">购买：Google Play 和 RevenueCat</string>
-    <string name="trust_leaves_purchases_body">购买、恢复或查看 Shift+ 时，应用会连接 Google Play 和我们的购买服务 RevenueCat。它们只能看到匿名的应用 ID 和你的购买记录，看不到你的断食或健康数据。</string>
+    <string name="trust_leaves_purchases_body">每次打开应用时，它会通过 Google Play 和我们的计费服务 RevenueCat 使用自动生成的应用 ID 查询 Shift+ 状态，即使你从未购买。它们处理购买信息和基本设备信息，绝不会接触你的断食、筛查回答或测量数据。</string>
     <string name="trust_leaves_hc_title">Health Connect：仅在你开启后</string>
-    <string name="trust_leaves_hc_body">如果你在设置中开启 Health Connect，应用只会与本机的 Health Connect 交换你允许的数据类型（例如体重和饮水）。</string>
+    <string name="trust_leaves_hc_body">如果你在设置中开启 Health Connect，应用只会与本机的 Health Connect 交换你允许的数据类型（例如体重、饮水和血糖）。</string>
     <string name="trust_leaves_files_title">文件：仅在你导出或分享时</string>
     <string name="trust_leaves_files_body">导出文件、备份、医生报告和分享卡片都在本机生成，只会发送到你选择的地方。</string>
     <string name="trust_leaves_links_title">挑战链接：只含挑战设置</string>

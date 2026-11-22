@@ -33,7 +33,7 @@ data class MetricLog(
     }
 }
 
-/** Ramadan days owed (qada) for one Hijri year. Days made up are fasts of kind [FastKind.QADA]. */
+/** Ramadan days owed (qada) for one Hijri year. Repayments are recorded explicitly against the owed year. */
 data class QadaDebt(val hijriYear: Int, val daysOwed: Int) {
     init {
         require(daysOwed in 0..30) { "a Ramadan has at most 30 days" }

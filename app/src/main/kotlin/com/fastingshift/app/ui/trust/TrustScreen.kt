@@ -77,7 +77,8 @@ private data class Promise(val title: Int, val body: Int)
  * - storage: Room + SQLCipher (FastingDatabase.createEncrypted), passphrase wrapped by an
  *   AES-GCM key in the Android Keystore (DatabaseKeyProvider); Auto Backup is off
  * - network: the app declares no INTERNET permission itself; it comes only from the
- *   RevenueCat/Play Billing libraries. No analytics, ads, crash-reporting or tracking SDKs.
+ *   RevenueCat/Play Billing libraries (RevenueCat starts at launch in billing builds; see
+ *   docs/privacy-policy.md). No ads, tracking, crash-reporting or health-analytics SDKs.
  * - Health Connect: only after the user turns it on and grants permissions (Settings)
  * - files: export/backup via the system file picker; report/cards via the share sheet only
  */

@@ -81,13 +81,13 @@
     <string name="trust_encrypted_body">Basis data dienkripsi dengan SQLCipher. Kuncinya dilindungi oleh Android Keystore di ponsel ini.</string>
     <string name="trust_no_account_title">Tanpa akun</string>
     <string name="trust_no_account_body">Anda tidak perlu mendaftar atau masuk. Tidak ada email atau profil yang bisa bocor.</string>
-    <string name="trust_no_tracking_title">Tanpa iklan, analitik, atau pelacak</string>
-    <string name="trust_no_tracking_body">Aplikasi ini tidak berisi alat iklan, analitik, atau pelacakan, dan data Anda tidak pernah dijual atau dibagikan untuk pemasaran.</string>
+    <string name="trust_no_tracking_title">Tanpa iklan dan tanpa pelacakan</string>
+    <string name="trust_no_tracking_body">Aplikasi ini tidak berisi alat iklan, pelacakan, atau analitik kesehatan. Catatan kesehatan Anda tidak pernah dijual atau digunakan untuk pemasaran.</string>
     <string name="trust_leaves_title">Apa yang keluar dari ponsel ini, dan kapan</string>
     <string name="trust_leaves_purchases_title">Pembelian: Google Play dan RevenueCat</string>
-    <string name="trust_leaves_purchases_body">Untuk membeli, memulihkan, atau memeriksa Shift+, aplikasi terhubung ke Google Play dan RevenueCat, layanan pembelian kami. Mereka melihat ID aplikasi anonim dan pembelian Anda, bukan puasa atau data kesehatan Anda.</string>
+    <string name="trust_leaves_purchases_body">Setiap kali aplikasi dibuka, aplikasi memeriksa Shift+ dengan Google Play dan RevenueCat, layanan penagihan kami, menggunakan ID aplikasi yang dibuat otomatis, meskipun Anda tidak pernah membeli. Mereka menangani informasi pembelian dan perangkat dasar, bukan puasa, jawaban skrining, atau pengukuran Anda.</string>
     <string name="trust_leaves_hc_title">Health Connect: hanya jika Anda mengaktifkannya</string>
-    <string name="trust_leaves_hc_body">Jika Anda mengaktifkan Health Connect di Setelan, aplikasi hanya bertukar jenis data yang Anda izinkan (seperti berat badan dan air) dengan Health Connect di ponsel ini.</string>
+    <string name="trust_leaves_hc_body">Jika Anda mengaktifkan Health Connect di Setelan, aplikasi hanya bertukar jenis data yang Anda izinkan (seperti berat badan, air, dan glukosa) dengan Health Connect di ponsel ini.</string>
     <string name="trust_leaves_files_title">File: hanya saat Anda mengekspor atau membagikan</string>
     <string name="trust_leaves_files_body">Ekspor, cadangan, laporan dokter, dan kartu berbagi dibuat di ponsel ini dan hanya dikirim ke tempat yang Anda pilih.</string>
     <string name="trust_leaves_links_title">Tautan tantangan: hanya pengaturan</string>

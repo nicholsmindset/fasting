@@ -28,6 +28,7 @@ data class PeriodSummary(
     val completed: Int,
     /** Average length of ended fasts that started in the period. */
     val average: Duration?,
+    val longest: Duration?,
     val plannedDays: Int,
     val completedDays: Int,
 ) {
@@ -85,6 +86,7 @@ object HistoryStats {
             fasts = started.size,
             completed = started.count { it.status == FastStatus.COMPLETED },
             average = ended.takeIf { it.isNotEmpty() }?.let { l -> l.reduce(Duration::plus).dividedBy(l.size.toLong()) },
+            longest = ended.maxOrNull(),
             plannedDays = plannedDays,
             completedDays = completedDays.size,
         )
@@ -140,11 +142,11 @@ object HistoryStats {
     private fun widestRow(f: Fast, end: Instant, zone: ZoneId): LocalDate {
         var week = History.weekStart(f.startAt.atZone(zone).toLocalDate())
         var best = week
-        var bestWidth = -1L
+        var bestWidth = -1f
         while (week.atStartOfDay(zone).toInstant().isBefore(end)) {
             val rowStart = week.atStartOfDay(zone).toInstant()
             val rowEnd = week.plusWeeks(1).atStartOfDay(zone).toInstant()
-            val width = Duration.between(maxOf(f.startAt, rowStart), minOf(end, rowEnd)).seconds
+            val width = position(minOf(end, rowEnd), week, zone) - position(maxOf(f.startAt, rowStart), week, zone)
             if (width > bestWidth) { bestWidth = width; best = week }
             week = week.plusWeeks(1)
         }

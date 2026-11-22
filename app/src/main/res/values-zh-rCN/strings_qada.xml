@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qada_ledger">补斋记录</string>
+    <string name="qada_intro">记录斋月期间错过的天数和补斋日期。</string>
+    <string name="qada_hide">收起记录</string>
+    <string name="qada_manage">管理记录</string>
+    <string name="qada_year_label">伊历 %1$d 年</string>
+    <string name="qada_balance">原欠 %1$d 天 · 已补 %2$d 天 · 剩余 %3$d 天</string>
+    <string name="qada_edit_debt">编辑欠斋天数</string>
+    <string name="qada_record">记录补斋</string>
+    <string name="qada_edit_day">编辑 %1$s</string>
+    <string name="qada_add_year">添加伊历年份</string>
+    <string name="qada_hijri_year">伊历年份</string>
+    <string name="qada_original_days">最初欠斋天数</string>
+    <string name="qada_range">请输入 %1$d 至 30 天。</string>
+    <string name="qada_changed">保存失败。请核对年份和日期后重试。</string>
+    <string name="qada_save">保存</string>
+    <string name="qada_cancel">取消</string>
+    <string name="qada_correct">编辑补斋记录</string>
+    <string name="qada_observed">补斋日期</string>
+    <string name="qada_allocate">抵扣哪个年份的欠斋</string>
+    <string name="qada_duplicate">此日期已有补斋记录。</string>
+    <string name="qada_undo">撤销这次补斋记录</string>
+    <plurals name="qada_remaining">
+        <item quantity="other">剩余 %1$d 天</item>
+    </plurals>
+    <string name="sunnah_title">圣行斋</string>
+    <string name="sunnah_when">可选提醒会在前一天晚上 8 点发出，使用所选城市或设备的时区。</string>
+    <string name="sunnah_enable">前一晚提醒</string>
+    <string name="sunnah_days">选择斋戒日期</string>
+    <string name="sunnah_offset">本地伊历日期校正</string>
+    <string name="sunnah_offset_hint">如果本地伊历日期与计算日期不同，请选择需要加减的天数。</string>
+    <string name="sunnah_offset_none">按计算日期</string>
+    <string name="sunnah_offset_value">%1$+d 天</string>
+    <string name="sunnah_mon_thu">星期一和星期四</string>
+    <string name="sunnah_white">白日斋（伊历每月 13 至 15 日）</string>
+    <string name="sunnah_arafah">阿拉法日</string>
+    <string name="sunnah_ashura">塔苏阿日和阿舒拉日</string>
+    <string name="sunnah_shawwal">闪瓦鲁月六天斋（开斋节后提醒一次）</string>
+</resources>

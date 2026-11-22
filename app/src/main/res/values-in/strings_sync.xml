@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="health_sync_pending">
+        <item quantity="other">%d entri tersimpan di perangkat ini dan menunggu sinkronisasi dengan Health Connect.</item>
+    </plurals>
+    <string name="health_sync_retry">Coba sinkronkan lagi</string>
+    <string name="health_sync_retrying">Mencoba sinkronisasi lagi…</string>
+    <string name="health_sync_check_access">Pastikan Health Connect tersedia dan Fasting Shift memiliki izin untuk menulis entri.</string>
+</resources>

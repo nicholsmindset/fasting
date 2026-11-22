@@ -67,6 +67,7 @@ object Routes {
     const val EDIT_FAST = "fast/{fastId}"
     const val ADD_PAST_FAST = "addfast"
     const val TRUST = "trust"
+    const val MUSLIM = "muslim"
 
     /** Refeeding guidance. No tier shows every tier (from Settings); fastId offers Undo. */
     const val REFEEDING = "refeeding?tier={tier}&fastId={fastId}"
@@ -98,6 +99,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
     }
 
     val back: () -> Unit = { nav.popBackStack() }
+    val toTimer: () -> Unit = { if (!nav.popBackStack(Routes.TIMER, inclusive = false)) nav.navigate(Routes.TIMER) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -159,12 +161,14 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenCheckIn = { nav.navigate(Routes.checkIn(it)) },
                     onOpenRefeeding = { tier, id -> nav.navigate(Routes.refeeding(tier, id)) { launchSingleTop = true } },
                     onOpenScreening = { nav.navigate(Routes.ONBOARDING) },
+                    onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
                 )
             }
             composable(Routes.HISTORY) {
                 HistoryRoute(
                     onEditFast = { nav.navigate(Routes.editFast(it)) },
                     onOpenInsights = { nav.navigate(Routes.INSIGHTS) },
+                    onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
                     onAddPastFast = { nav.navigate(Routes.ADD_PAST_FAST) },
                 )
             }
@@ -177,12 +181,13 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenPaywall = { nav.navigate(Routes.PAYWALL) },
                     onOpenRefeeding = { nav.navigate(Routes.refeeding(null)) },
                     onOpenTrust = { nav.navigate(Routes.TRUST) },
+                    onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
                 )
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
             composable(Routes.TRUST) { TrustRoute(onBack = back) }
             composable(Routes.SCHEDULES) { SchedulesRoute(onBack = back) }
-            composable(Routes.PAYWALL) { PaywallRoute(onClose = back) }
+            composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
             composable(Routes.INSIGHTS) { InsightsRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
             composable(Routes.STOP) { StopFastRoute(onDone = { nav.popBackStack(Routes.TIMER, inclusive = false) }) }
@@ -195,6 +200,9 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
             }
             composable(Routes.EDIT_FAST, arguments = listOf(navArgument("fastId") { type = NavType.LongType })) { e ->
                 EditFastRoute(fastId = e.arguments?.getLong("fastId") ?: 0L, onDone = back)
+            }
+            composable(Routes.MUSLIM) {
+                com.fastingshift.app.ui.ramadan.MuslimHubRoute(onBack = back, onOpenTimer = toTimer)
             }
             composable(Routes.ADD_PAST_FAST) { AddPastFastRoute(onDone = back) }
             composable(

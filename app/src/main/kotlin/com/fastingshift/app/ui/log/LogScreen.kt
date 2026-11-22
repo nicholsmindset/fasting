@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -73,12 +74,15 @@ import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+enum class HealthRetryStatus { IDLE, RUNNING, FAILED }
 
 data class LogState(
     val hideWeight: Boolean = false,
@@ -93,6 +97,8 @@ data class LogState(
     /** Weight entries of the last 90 days, oldest first, for the trend chart. */
     val trend: List<WeightLog> = emptyList(),
     val now: Instant = Instant.EPOCH,
+    val pendingHealthWrites: Int = 0,
+    val healthRetryStatus: HealthRetryStatus = HealthRetryStatus.IDLE,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -103,8 +109,11 @@ class LogViewModel @Inject constructor(
     private val health: HealthConnectManager,
     private val clock: Clock,
 ) : ViewModel() {
+    private val retryStatus = MutableStateFlow(HealthRetryStatus.IDLE)
+    private val syncState = combine(health.pendingWriteCount, retryStatus) { count, status -> count to status }
+
     val state: StateFlow<LogState> = startOfTodayFlow(clock).flatMapLatest { from ->
-        combine(settings.settings, logs.observeWeights(), logs.observeWaterSince(from), logs.observeElectrolytesSince(from)) { s, w, water, el ->
+        combine(settings.settings, logs.observeWeights(), logs.observeWaterSince(from), logs.observeElectrolytesSince(from), syncState) { s, w, water, el, (count, status) ->
             val now = clock.instant()
             LogState(
                 hideWeight = s.hideWeight,
@@ -117,6 +126,8 @@ class LogViewModel @Inject constructor(
                 waterGoalMl = Today.waterGoalMl(s.waterGoalMl, w.latestKg()),
                 trend = weightTrendPoints(w, now),
                 now = now,
+                pendingHealthWrites = if (s.healthConnectSync) count else 0,
+                healthRetryStatus = status,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LogState())
@@ -139,8 +150,28 @@ class LogViewModel @Inject constructor(
     }
 
     fun setWeightUnit(unit: WeightUnit) = viewModelScope.launch { settings.setWeightUnit(unit) }
-    fun deleteWeight(id: Long) = viewModelScope.launch { logs.deleteWeight(id) }
-    fun deleteWater(id: Long) = viewModelScope.launch { logs.deleteWater(id) }
+    fun deleteWeight(id: Long) = viewModelScope.launch {
+        val entry = logs.getWeight(id)
+        logs.deleteWeight(id)
+        if (entry != null) health.forgetWeight(entry)
+    }
+
+    fun deleteWater(id: Long) = viewModelScope.launch {
+        val entry = logs.getWater(id)
+        logs.deleteWater(id)
+        if (entry != null) health.forgetWater(entry)
+    }
+
+    fun retryHealthSync() = viewModelScope.launch {
+        if (retryStatus.value == HealthRetryStatus.RUNNING) return@launch
+        retryStatus.value = HealthRetryStatus.RUNNING
+        try {
+            health.retryPendingWrites()
+        } finally {
+            retryStatus.value = if (health.pendingWriteCount.value == 0) HealthRetryStatus.IDLE else HealthRetryStatus.FAILED
+        }
+    }
+
     fun deleteElectrolyte(id: Long) = viewModelScope.launch { logs.deleteElectrolyte(id) }
 }
 
@@ -153,6 +184,7 @@ class LogActions(
     val deleteWater: (Long) -> Unit = {},
     val deleteElectrolyte: (Long) -> Unit = {},
     val deleteWeight: (Long) -> Unit = {},
+    val retryHealthSync: () -> Unit = {},
 )
 
 @Composable
@@ -163,20 +195,36 @@ fun LogRoute(vm: LogViewModel = hiltViewModel()) {
         LogActions(
             addWater = { vm.addWater(it) }, addElectrolyte = { e, mg -> vm.addElectrolyte(e, mg) }, addWeight = { v, u -> vm.addWeight(v, u) },
             setWeightUnit = { vm.setWeightUnit(it) }, deleteWater = { vm.deleteWater(it) }, deleteElectrolyte = { vm.deleteElectrolyte(it) },
-            deleteWeight = { vm.deleteWeight(it) },
+            deleteWeight = { vm.deleteWeight(it) }, retryHealthSync = { vm.retryHealthSync() },
         ),
+        metrics = { MetricsRoute() },
     )
 }
 
 @Composable
-fun LogScreen(st: LogState, actions: LogActions) {
+fun LogScreen(st: LogState, actions: LogActions, metrics: @Composable () -> Unit = {}) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.section),
     ) {
         LargeTitle(stringResource(R.string.log_title))
+        if (st.pendingHealthWrites > 0) {
+            AppCard(Modifier.testTag("health_sync_retry")) {
+                Text(pluralStringResource(R.plurals.health_sync_pending, st.pendingHealthWrites, st.pendingHealthWrites))
+                if (st.healthRetryStatus == HealthRetryStatus.FAILED) {
+                    Text(stringResource(R.string.health_sync_check_access), style = MaterialTheme.typography.bodySmall)
+                }
+                if (st.healthRetryStatus == HealthRetryStatus.RUNNING) {
+                    Text(stringResource(R.string.health_sync_retrying))
+                } else {
+                    SecondaryButton(stringResource(R.string.health_sync_retry), onClick = actions.retryHealthSync)
+                }
+            }
+        }
         WaterCard(st, actions)
         ElectrolyteGroup(st, actions)
+        // Glucose & ketones (MetricsSection.kt), separate state so this screen stays small.
+        metrics()
         // Hide weight mode removes weight from every screen (SR-6), the trend chart included.
         if (!st.hideWeight) {
             WeightGroup(st, actions)

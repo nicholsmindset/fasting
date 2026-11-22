@@ -16,7 +16,14 @@ import com.fastingshift.domain.model.WaterLog
 import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.safety.Symptom
 import com.fastingshift.domain.safety.SymptomCheck
+import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.schedule.PlanHistory
+import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -43,13 +50,56 @@ class LogRepository(private val dao: LogDao) {
     suspend fun deleteElectrolyte(id: Long) = dao.deleteElectrolyte(id)
 }
 
-class ScheduleRepository(private val dao: ScheduleDao) {
+class ScheduleRepository(
+    private val dao: ScheduleDao,
+    private val settings: SettingsRepository,
+    private val clock: Clock,
+) {
+    private val changes = Mutex()
+
     fun observeAll(): Flow<List<Schedule>> = dao.observeAll().map { l -> l.map { it.toDomain() } }
     suspend fun getAll(): List<Schedule> = dao.getAll().map { it.toDomain() }
-    suspend fun save(schedule: Schedule): Long = dao.upsert(
-        ScheduleEntity(schedule.id, schedule.protocolId, schedule.days, schedule.startTime.hour * 60 + schedule.startTime.minute, schedule.enabled),
+    suspend fun save(schedule: Schedule): Long = changes.withLock {
+        val id = upsert(schedule)
+        recordCurrentPlan()
+        id
+    }
+
+    fun firstEvening(): Pair<Long, LocalDate>? = settings.firstEvening()
+
+    /** A one-off first-fast reminder must never become a recurring weekly plan. */
+    suspend fun saveFirstEvening(schedule: Schedule, date: LocalDate): Long = changes.withLock {
+        firstEvening()?.let { dao.delete(it.first) }
+        val id = upsert(schedule)
+        settings.rememberFirstEvening(id, date)
+        recordCurrentPlan()
+        id
+    }
+
+    suspend fun cancelFirstEvening() = changes.withLock {
+        firstEvening()?.let { dao.delete(it.first) }
+        settings.clearFirstEvening()
+        recordCurrentPlan()
+    }
+
+    private suspend fun upsert(s: Schedule) = dao.upsert(
+        ScheduleEntity(s.id, s.protocolId, s.days, s.startTime.hour * 60 + s.startTime.minute, s.enabled),
     )
-    suspend fun delete(id: Long) = dao.delete(id)
+
+    suspend fun delete(id: Long) = changes.withLock {
+        dao.delete(id)
+        if (settings.firstEvening()?.first == id) settings.clearFirstEvening()
+        recordCurrentPlan()
+    }
+
+    /** Establish a baseline on upgrade or restore, without inferring earlier schedules. */
+    suspend fun refreshPlanHistory() = changes.withLock { recordCurrentPlan() }
+
+    private suspend fun recordCurrentPlan() {
+        val today = LocalDate.now(clock.withZone(ZoneId.systemDefault()))
+        val temporary = firstEvening()?.first
+        settings.recordSchedule(today, PlanHistory.mask(getAll().filter { it.id != temporary }))
+    }
 
     private fun ScheduleEntity.toDomain() = Schedule(id, protocolId, days, LocalTime.of(startMinute / 60, startMinute % 60), enabled)
 }

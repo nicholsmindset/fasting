@@ -43,6 +43,7 @@ import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.ramadan.Cities
 import com.fastingshift.domain.ramadan.City
+import com.fastingshift.domain.ramadan.FastingTimeSource
 import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.ramadan.RamadanPlanner
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -64,7 +65,15 @@ import kotlinx.coroutines.launch
 sealed interface RamadanCardState {
     data object Hidden : RamadanCardState
     data object NeedsCity : RamadanCardState
-    data class Active(val city: City, val method: PrayerMethod, val status: RamadanStatus, val fajr: Instant, val maghrib: Instant) : RamadanCardState
+    data class NeedsTimetable(val city: City) : RamadanCardState
+    data class Active(
+        val city: City,
+        val method: PrayerMethod,
+        val status: RamadanStatus,
+        val fajr: Instant,
+        val maghrib: Instant,
+        val fastingTimeSource: FastingTimeSource,
+    ) : RamadanCardState
 }
 
 @HiltViewModel
@@ -85,14 +94,14 @@ class RamadanCardViewModel @Inject constructor(
         if (!s.ramadanEnabled) return@combine RamadanCardState.Hidden
         val city = Cities.byId(s.ramadanCityId) ?: return@combine RamadanCardState.NeedsCity
         val method = s.ramadanMethod ?: Cities.defaultMethod(city)
-        val phase = RamadanPlanner.phase(city, method, now)
+        val phase = RamadanPlanner.phase(city, method, now) ?: return@combine RamadanCardState.NeedsTimetable(city)
         val status = RamadanText.status(phase, now)
         // The bar runs Fajr to Maghrib of the day being fasted (or about to be).
         val (fajr, maghrib) = when (phase) {
             is com.fastingshift.domain.ramadan.RamadanPhase.Fasting -> phase.suhoorEnded to phase.iftar
             is com.fastingshift.domain.ramadan.RamadanPhase.Eating -> phase.suhoorEnds to phase.nextIftar
         }
-        RamadanCardState.Active(city, method, status, fajr, maghrib)
+        RamadanCardState.Active(city, method, status, fajr, maghrib, phase.fastingTimeSource)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RamadanCardState.Hidden)
 
     fun chooseCity(city: City) = viewModelScope.launch { settings.setRamadanCity(city.id, Cities.defaultMethod(city)) }
@@ -103,7 +112,7 @@ class RamadanCardViewModel @Inject constructor(
  * while eating. Shows nothing when Ramadan mode is off.
  */
 @Composable
-fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
+fun RamadanCard(onOpenHub: () -> Unit = {}, vm: RamadanCardViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var picking by rememberSaveable { mutableStateOf(false) }
     when (val s = state) {
@@ -113,7 +122,15 @@ fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
             Text(stringResource(R.string.ramadan_choose_city_body), style = MaterialTheme.typography.bodyMedium)
             SecondaryButton(stringResource(R.string.ramadan_choose_city), onClick = { picking = true })
         }
+        is RamadanCardState.NeedsTimetable -> AppCard {
+            Header(stringResource(R.string.ramadan_mode_city, s.city.name))
+            Text(stringResource(R.string.ramadan_local_timetable), style = MaterialTheme.typography.bodyMedium)
+        }
         is RamadanCardState.Active -> ActiveCard(s)
+    }
+    if (state != RamadanCardState.Hidden) {
+        QadaLedgerCard()
+        com.fastingshift.app.ui.design.PlainButton(stringResource(R.string.muslim_hub_entry), onClick = onOpenHub)
     }
     if (picking) {
         CityPickerSheet(selectedId = null, onPick = { vm.chooseCity(it); picking = false }, onDismiss = { picking = false })
@@ -157,7 +174,13 @@ private fun ActiveCard(s: RamadanCardState.Active) {
                 )
             }
         }
-        Caption(stringResource(R.string.ramadan_times_method, RamadanText.methodName(s.method)))
+        val source = when (s.fastingTimeSource) {
+            FastingTimeSource.MUIS_TIMETABLE ->
+                stringResource(R.string.ramadan_source_muis_timetable, s.fajr.atZone(zone).year)
+            FastingTimeSource.CALCULATED ->
+                stringResource(R.string.ramadan_source_calculated, RamadanText.methodName(s.method))
+        }
+        Caption(source)
     }
 }
 

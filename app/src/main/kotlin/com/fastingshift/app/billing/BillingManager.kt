@@ -30,7 +30,16 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-data class PlanOffer(val plan: PlanType, val price: String, val hasTrial: Boolean, internal val pkg: Package)
+data class PlanOffer(val plan: PlanType, val price: String, internal val pkg: Package) {
+    private val freePhase get() = pkg.product.defaultOption?.freePhase
+    val hasTrial get() = freePhase != null
+    val trialPeriod: java.time.Period? get() = freePhase?.let { phase ->
+        runCatching {
+            java.time.Period.parse(phase.billingPeriod.iso8601)
+                .multipliedBy((phase.billingCycleCount ?: 1).coerceAtLeast(1))
+        }.getOrNull()
+    }
+}
 
 /**
  * Shift+ billing through RevenueCat over Play Billing (PRD F10). No account, no backend: the
@@ -82,8 +91,7 @@ class BillingManager @Inject constructor(
                 PackageType.LIFETIME -> PlanType.LIFETIME
                 else -> return@mapNotNull null
             }
-            val hasTrial = pkg.product.defaultOption?.freePhase != null
-            PlanOffer(plan, pkg.product.price.formatted, hasTrial, pkg)
+            PlanOffer(plan, pkg.product.price.formatted, pkg)
         }.sortedBy { it.plan.ordinal }
     }
 

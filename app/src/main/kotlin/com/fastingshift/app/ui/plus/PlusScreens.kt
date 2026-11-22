@@ -1,8 +1,10 @@
 package com.fastingshift.app.ui.plus
 
+import android.icu.text.MeasureFormat
+import android.icu.util.Measure
+import android.icu.util.MeasureUnit
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -61,7 +64,6 @@ import com.fastingshift.app.ui.components.weightText
 import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.repo.ProgramRepository
-import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.billing.Feature
 import com.fastingshift.domain.billing.PlanType
@@ -71,7 +73,6 @@ import com.fastingshift.domain.insights.WeightVsFasting
 import com.fastingshift.domain.program.GuidedPrograms
 import com.fastingshift.domain.program.ProgramDay
 import com.fastingshift.domain.program.ProgramProgress
-import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.service.FastRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
@@ -97,7 +98,7 @@ class PaywallViewModel @Inject constructor(val billing: BillingManager) : ViewMo
  * and how to cancel, on the same screen.
  */
 @Composable
-fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
+fun PaywallRoute(onClose: () -> Unit, onOpenProgram: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
     val activity = LocalActivity.current ?: return
     val scope = rememberCoroutineScope()
     var offers by remember { mutableStateOf<List<PlanOffer>?>(null) }
@@ -108,13 +109,17 @@ fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
     var chosen by remember { mutableStateOf<PlanType?>(null) }
     SecondaryScaffold(title = stringResource(R.string.paywall_title), onBack = onClose) {
         InsetGroup(footer = stringResource(R.string.paywall_free_forever)) {
-            listOf(R.string.paywall_point_program, R.string.paywall_point_insights).forEachIndexed { i, point ->
-                if (i > 0) GroupDivider()
-                GroupRow(
-                    title = stringResource(point),
-                    leading = { Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                )
+            GroupRow(
+                title = stringResource(R.string.paywall_point_insights),
+                leading = { Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            )
+            if (GuidedPrograms.fastingShift21.isPublished) {
+                GroupDivider()
+                GroupRow(title = stringResource(R.string.program_full_title), onClick = onOpenProgram)
             }
+        }
+        if (!GuidedPrograms.fastingShift21.isPublished) {
+            SecondaryButton(stringResource(R.string.program_read_sample), onClick = onOpenProgram)
         }
         val list = offers
         when {
@@ -123,14 +128,14 @@ fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
             list == null -> LoadingBox()
             list.isEmpty() -> AppCard { Text(stringResource(R.string.paywall_unavailable)) }
             else -> {
-                // Annual is highlighted and preselected; every plan shows its full price.
+                // Preselect annual when offered. Each card shows the price for its own billing period.
                 val selected = chosen ?: list.firstOrNull { it.plan == PlanType.ANNUAL }?.plan ?: list.first().plan
                 Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     list.forEach { offer -> PlanCard(offer, offer.plan == selected) { chosen = offer.plan } }
                 }
                 val offer = list.first { it.plan == selected }
                 PrimaryButton(
-                    stringResource(if (offer.hasTrial) R.string.paywall_start_trial else R.string.paywall_continue),
+                    stringResource(if (offer.hasTrial) R.string.program_trial_action else R.string.paywall_continue),
                     onClick = { scope.launch { error = vm.billing.purchase(activity, offer); if (error == null && vm.billing.entitlement.value.isShiftPlus) onClose() } },
                     haptic = true,
                 )
@@ -138,8 +143,8 @@ fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         // Paywall rule 1: leaving is as easy as buying.
-        SecondaryButton(stringResource(R.string.onb_offer_free), onClick = onClose)
-        Text(stringResource(R.string.paywall_terms), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SecondaryButton(stringResource(if (ent.isShiftPlus) R.string.settings_done else R.string.onb_offer_free), onClick = onClose)
+        Text(stringResource(R.string.program_purchase_terms), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -164,18 +169,21 @@ private fun PlanCard(offer: PlanOffer, selected: Boolean, onSelect: () -> Unit) 
     ) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(label, style = MaterialTheme.typography.titleMedium)
-                    if (offer.plan == PlanType.ANNUAL) {
-                        Text(
-                            stringResource(R.string.paywall_best_value),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 8.dp, vertical = 3.dp),
-                        )
+                Text(label, style = MaterialTheme.typography.titleMedium)
+                if (offer.hasTrial) {
+                    val period = offer.trialPeriod
+                    val measures = listOfNotNull(
+                        period?.years?.takeIf { it > 0 }?.let { Measure(it, MeasureUnit.YEAR) },
+                        period?.months?.takeIf { it > 0 }?.let { Measure(it, MeasureUnit.MONTH) },
+                        period?.days?.takeIf { it > 0 }?.let { Measure(it, MeasureUnit.DAY) },
+                    )
+                    val trial = if (measures.isEmpty()) stringResource(R.string.program_trial_available) else {
+                        val locale = LocalConfiguration.current.locales[0]
+                        val duration = MeasureFormat.getInstance(locale, MeasureFormat.FormatWidth.WIDE).formatMeasures(*measures.toTypedArray())
+                        stringResource(R.string.program_trial_duration, duration)
                     }
+                    Text(trial, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
-                if (offer.hasTrial) Text(stringResource(R.string.paywall_trial_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }
             Text(offer.price, style = MaterialTheme.typography.titleMedium)
             RadioButton(selected = selected, onClick = null)
@@ -194,19 +202,31 @@ class ProgramViewModel @Inject constructor(
 ) : ViewModel() {
     private val program = GuidedPrograms.fastingShift21
     val state = combine(programs.observeCompleted(program.id), settings.settings, billing.entitlement) { done, s, ent ->
+        val localClock = clock.withZone(ZoneId.systemDefault())
         ProgramState(
             available = Feature.GUIDED_PROGRAM.isAvailable(ent),
             started = s.activeProgramId == program.id,
             done = done,
-            today = ProgramProgress.currentDay(program, done, ZoneId.systemDefault(), LocalDate.now()),
+            today = ProgramProgress.currentDay(program, done, localClock.zone, LocalDate.now(localClock)),
             finished = ProgramProgress.isFinished(program, done),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val days = program.days
-    fun start() = viewModelScope.launch { settings.setActiveProgram(program.id) }
+    fun start() = viewModelScope.launch {
+        if (program.isPublished && Feature.GUIDED_PROGRAM.isAvailable(billing.entitlement.value)) {
+            settings.setActiveProgram(program.id)
+        }
+    }
     fun stop() = viewModelScope.launch { settings.setActiveProgram(null) }
-    fun complete(day: Int) = viewModelScope.launch { programs.completeDay(program.id, day, clock.instant()) }
+    fun complete(day: Int) = viewModelScope.launch {
+        val current = state.value ?: return@launch
+        if (program.isPublished && Feature.GUIDED_PROGRAM.isAvailable(billing.entitlement.value) &&
+            current.started && current.today?.day == day
+        ) {
+            programs.completeDay(program.id, day, clock.instant())
+        }
+    }
 }
 
 data class ProgramState(
@@ -219,8 +239,19 @@ data class ProgramState(
 
 @Composable
 fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel = hiltViewModel()) {
+    if (!GuidedPrograms.fastingShift21.isPublished) {
+        SecondaryScaffold(title = stringResource(R.string.program_preview_title), onBack = onBack) {
+            AppCard {
+                Text(stringResource(R.string.program_sample_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.program_sample_body), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.program_sample_prompt), style = MaterialTheme.typography.bodyLarge)
+            }
+            Text(stringResource(R.string.program_in_preparation), style = MaterialTheme.typography.bodyMedium)
+        }
+        return
+    }
     val loaded by vm.state.collectAsStateWithLifecycle()
-    SecondaryScaffold(title = GuidedPrograms.fastingShift21.name, onBack = onBack) {
+    SecondaryScaffold(title = stringResource(R.string.program_full_title), onBack = onBack) {
         val st = loaded
         if (st == null) {
             LoadingBox()
@@ -228,7 +259,7 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
             AppCard { Text(stringResource(R.string.program_locked), style = MaterialTheme.typography.bodyLarge) }
             PrimaryButton(stringResource(R.string.plan_see_plus), onClick = onUpgrade)
         } else if (!st.started) {
-            AppCard { Text(stringResource(R.string.program_intro), style = MaterialTheme.typography.bodyLarge) }
+            AppCard { Text(stringResource(R.string.program_released_intro), style = MaterialTheme.typography.bodyLarge) }
             PrimaryButton(stringResource(R.string.program_start), onClick = vm::start, haptic = true)
         } else {
             // Progress through the 21 days as a calm bar, not a score.
@@ -249,12 +280,12 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
                     AppCard {
                         Text(stringResource(R.string.program_day, day.day, day.title), style = MaterialTheme.typography.titleLarge)
                         Text(day.lesson, style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            pluralStringResource(R.plurals.program_target, day.targetHours, day.targetHours),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal = 10.dp, vertical = 4.dp),
-                        )
+                        day.targetHours?.let { target ->
+                            Text(
+                                pluralStringResource(R.plurals.program_target, target, target),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
                         day.chapter?.let { Text(stringResource(R.string.program_chapter, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     PrimaryButton(stringResource(R.string.program_complete), onClick = { vm.complete(day.day) }, haptic = true)
@@ -280,16 +311,15 @@ data class InsightsState(
 class InsightsViewModel @Inject constructor(
     fasts: FastRepository,
     logs: LogRepository,
-    schedules: ScheduleRepository,
     settings: SettingsRepository,
     billing: BillingManager,
     clock: Clock,
 ) : ViewModel() {
-    val state = combine(fasts.observeAll(), logs.observeWeights(), schedules.observeAll(), settings.settings, billing.entitlement) { f, w, sch, s, ent ->
+    val state = combine(fasts.observeAll(), logs.observeWeights(), settings.settings, billing.entitlement) { f, w, s, ent ->
         val zone = ZoneId.systemDefault()
         InsightsState(
             available = Feature.INSIGHTS.isAvailable(ent),
-            consistency = Insights.weeklyConsistency(f, zone, LocalDate.now(zone), 8) { ScheduleCalculator.isPlannedDay(sch, it) },
+            consistency = Insights.weeklyConsistency(f, zone, LocalDate.now(clock.withZone(zone)), 8, s.planHistory::isPlanned),
             byWeekday = Insights.averageByWeekday(f, zone),
             weight = Insights.weightVsFasting(f, w, zone, clock.instant()).takeLast(8),
             hideWeight = s.hideWeight,
@@ -337,6 +367,8 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
                     }
                 }
             }
+            // Sleep, resting heart rate and glucose next to fasting (BodySignals.kt).
+            BodySignalsRoute()
         }
     }
 }

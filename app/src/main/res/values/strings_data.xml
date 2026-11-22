@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Data depth: glucose and ketone logging, Health Connect body signals. Education only. -->
+    <string name="unit_mg_dl" translatable="false">mg/dL</string>
+    <string name="unit_mmol_l" translatable="false">mmol/L</string>
+    <string name="metrics_value_unit" translatable="false">%1$s %2$s</string>
+
+    <string name="metrics_title">Glucose &amp; ketones</string>
+    <string name="metrics_glucose">Glucose</string>
+    <string name="metrics_ketones">Ketones</string>
+    <string name="metrics_invalid">Enter a reading between %1$s and %2$s %3$s.</string>
+    <string name="metrics_glucose_note">Optional. Log a reading from your meter if you track glucose.</string>
+    <string name="metrics_ketones_local">Ketone readings stay on this device. Health Connect has no ketone type, so they are not shared.</string>
+    <string name="metrics_empty">No readings yet</string>
+    <string name="metrics_deleted">Deleted %1$s</string>
+    <string name="metrics_undo">Undo</string>
+    <string name="metrics_ranges_note">Readings vary from person to person and meter to meter. Any ranges shown here are general information, not advice. Your clinician can tell you what is right for you.</string>
+    <string name="metrics_low_title">This glucose reading is low</string>
+    <string name="metrics_low_body">A reading under 70 mg/dL (3.9 mmol/L) is generally considered low. It is a good moment to break your fast with something that contains sugar and to follow your clinician\'s plan. If you feel shaky, confused or unwell, get medical help.</string>
+    <string name="metrics_high_ketone_title">This ketone reading is high</string>
+    <string name="metrics_high_ketone_body">Ketones of 3.0 mmol/L or more are higher than usual for fasting. If you have diabetes, or you feel sick, thirsty or short of breath, stop fasting and contact your clinician.</string>
+    <string name="metrics_glucose_syncing">Glucose readings are also saved to Health Connect.</string>
+    <string name="metrics_glucose_sync_offer">Save glucose readings to Health Connect too?</string>
+    <string name="metrics_glucose_sync_allow">Allow</string>
+    <string name="body_title">Body signals</string>
+    <string name="body_correlation_note">Correlation, not cause: sleep, heart rate and glucose change for many reasons. Comparisons appear only once there is enough data on both sides. General information, not advice.</string>
+    <string name="body_vs">%1$s vs %2$s</string>
+    <string name="body_bpm_value">%1$s bpm</string>
+    <string name="body_sleep">Sleep after a fasting day</string>
+    <string name="body_sleep_counts">%1$d nights after a fasting day vs %2$d other nights</string>
+    <string name="body_sleep_need">Needs at least %1$d nights of each kind</string>
+    <string name="body_heart_rate">Resting heart rate, fasting weeks</string>
+    <string name="body_heart_rate_counts">%1$d fasting weeks vs %2$d other weeks</string>
+    <string name="body_heart_rate_need">Needs at least %1$d weeks of each kind</string>
+    <string name="body_glucose">Glucose during fasts</string>
+    <string name="body_glucose_counts">%1$d readings during fasts vs %2$d outside</string>
+    <string name="body_glucose_need">Needs at least %1$d readings during and outside fasts</string>
+    <string name="body_trend_title">Resting heart rate by week</string>
+    <string name="body_trend_legend">Highlighted bars are fasting weeks (2 or more fasting days).</string>
+    <string name="body_trend_a11y">Weekly resting heart rate for %1$d weeks</string>
+    <string name="body_connect_title">See sleep and heart rate next to your fasts</string>
+    <string name="body_connect_body">Allow Fasting Shift to read Sleep and Resting heart rate from Health Connect. It is read-only: nothing is changed, stored or shared. Glucose uses the readings you log in the app.</string>
+    <string name="body_connect_button">Allow in Health Connect</string>
+    <string name="body_unavailable">Health Connect is not available on this device.</string>
+</resources>

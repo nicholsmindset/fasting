@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ramadan_local_timetable">The selected method cannot calculate every fasting time for this date. Check the timetable from your local mosque.</string>
+    <string name="ramadan_time_unavailable">See local timetable</string>
+</resources>

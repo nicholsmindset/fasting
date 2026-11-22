@@ -172,7 +172,7 @@
     <string name="onb_height">Tinggi (cm)</string>
     <string name="onb_weight">Berat (kg)</string>
     <string name="onb_form_error">Sila semak umur, tinggi dan berat anda.</string>
-    <string name="onb_screen_privacy">Jawapan anda disimpan dalam telefon ini sahaja, secara tersulit. Anda boleh mengubahnya bila-bila masa dalam Tetapan.</string>
+    <string name="onb_screen_privacy">Jawapan anda disulitkan dalam pangkalan data aplikasi dan disertakan dalam sandaran penuh dan eksport ZIP yang anda pilih untuk simpan. Anda boleh mengubah jawapan dalam Tetapan.</string>
     <string name="onb_ok_title">Semuanya sudah sedia</string>
     <string name="onb_ok_body">Semua protokol tersedia untuk anda. Puasa 24 jam atau lebih sentiasa disertakan dengan senarai semak keselamatan yang ringkas.</string>
     <string name="onb_soft_title">Sila rujuk doktor anda</string>
@@ -341,4 +341,18 @@
         <item quantity="other">%1$d daripada %2$d hari selesai</item>
     </plurals>
     <string name="schedules_locked">Jadual akan tersedia setelah jawapan keselamatan anda membenarkan puasa.</string>
+    <string name="history_chart_average">Purata %1$s</string>
+    <string name="restore_confirm_title">Gantikan data pada telefon ini?</string>
+    <string name="restore_confirm_body">Pemulihan sandaran ini akan menggantikan sejarah puasa, log, jawapan saringan dan jadual anda. Sandarkan data semasa dahulu jika mahu menyimpannya.</string>
+    <string name="restore_confirm_action">Ganti dan pulihkan</string>
+    <string name="history_ring_no_planned">%1$s %2$s. Tiada hari yang dirancang direkodkan.</string>
+    <string name="history_no_planned_days">Tiada hari yang dirancang direkodkan untuk tempoh ini.</string>
+    <string name="history_tracking_since">Penjejakan rancangan bermula pada %1$s.</string>
+    <string name="history_next_week">Minggu bermula %1$s</string>
+    <string name="history_next_week_hint">Anda boleh meneruskan rancangan biasa, mengubah jadual tetap mulai hari ini atau berehat minggu depan.</string>
+    <string name="history_keep_selected">Jadual tetap anda akan diteruskan minggu depan.</string>
+    <string name="history_break_selected">Tiada hari puasa dirancang minggu depan. Peringatan rutin untuk mula berpuasa dan waktu makan akan disambung pada minggu berikutnya.</string>
+    <string name="history_keep_plan">Kekalkan rancangan saya</string>
+    <string name="history_edit_schedule">Ubah jadual tetap</string>
+    <string name="history_take_break">Berehat minggu depan</string>
 </resources>

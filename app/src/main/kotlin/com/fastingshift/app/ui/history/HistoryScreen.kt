@@ -30,6 +30,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.draw.clip
 import com.fastingshift.app.ui.components.ProgressRing
 import com.fastingshift.app.ui.components.TabularNumbers
@@ -67,7 +71,7 @@ import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.components.hoursLabel
-import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.domain.schedule.WeekChoice
 import com.fastingshift.domain.history.History
 import com.fastingshift.domain.history.HistoryStats
 import com.fastingshift.domain.history.Period
@@ -77,7 +81,6 @@ import com.fastingshift.domain.history.WeekSegment
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastStatus
 import com.fastingshift.domain.protocol.Presets
-import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.StreakFreezeRepository
 import com.fastingshift.domain.streak.StreakCalculator
@@ -100,6 +103,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 
 data class WeekRow(val weekStart: LocalDate, val segments: List<WeekSegment>)
 
@@ -117,20 +122,27 @@ data class HistoryState(
     val freezeableDay: LocalDate? = null,
     /** This week so far, then last week on Mondays and Tuesdays. */
     val recaps: List<RecapItem> = emptyList(),
+    val trackedFrom: LocalDate? = null,
+    val nextWeekChoice: WeekChoice? = null,
 )
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     fasts: FastRepository,
     private val freezes: StreakFreezeRepository,
-    schedules: ScheduleRepository,
     logs: LogRepository,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
-    private val month = MutableStateFlow(YearMonth.now())
+    private val month = MutableStateFlow(YearMonth.now(clock.withZone(ZoneId.systemDefault())))
     private val period = MutableStateFlow(Period.WEEK)
     private val view = combine(month, period) { m, p -> m to p }
+    private val minuteClock = flow {
+        while (true) {
+            emit(clock.instant())
+            delay(60_000)
+        }
+    }
 
     /** Water since the start of last week, and the water goal, for the weekly recaps. */
     private val hydration = run {
@@ -142,17 +154,19 @@ class HistoryViewModel @Inject constructor(
     }
 
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */
-    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), schedules.observeAll(), view, hydration) { all, frozen, sch, (m, p), (water, goal) ->
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), settings.settings, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, preferences, (m, p), timedHydration ->
+        val (hydrationValues, now) = timedHydration
+        val (water, goal) = hydrationValues
         val zone = ZoneId.systemDefault()
-        val now = clock.instant()
         val today = now.atZone(zone).toLocalDate()
-        val planned: (LocalDate) -> Boolean = { ScheduleCalculator.isPlannedDay(sch, it) }
+        val history = preferences.planHistory
+        val planned = history::isPlanned
         val completed = StreakCalculator.completedDays(all, zone)
         val yesterday = today.minusDays(1)
         // A day whose fast is still running isn't missed yet, so it's never offered for a freeze.
         val running = all.filter { it.isActive }.map { it.startAt.atZone(zone).toLocalDate() }.toSet()
         val freezeable = yesterday.takeIf {
-            it !in completed && it !in running && planned(it) && completed.any { d -> d.isBefore(it) } && StreakCalculator.canFreeze(it, frozen, today)
+            it !in completed && it !in running && planned(it) && completed.any { d -> d.isBefore(it) && planned(d) } && StreakCalculator.canFreeze(it, frozen, today)
         }
         val firstRow = History.weekStart(m.atDay(1))
         val rows = generateSequence(firstRow) { it.plusWeeks(1) }
@@ -161,6 +175,8 @@ class HistoryViewModel @Inject constructor(
             .toList()
         HistoryState(
             period = p,
+            trackedFrom = history.trackedFrom,
+            nextWeekChoice = history.choices[History.weekStart(today).plusWeeks(1)],
             summary = HistoryStats.periodSummary(all, zone, p, today, now, planned),
             recent = HistoryStats.recentFasts(all),
             month = m,
@@ -182,6 +198,10 @@ class HistoryViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    fun chooseWeek(week: LocalDate, choice: WeekChoice) = viewModelScope.launch {
+        settings.setNextWeekChoice(week, choice, LocalDate.now(clock.withZone(ZoneId.systemDefault())))
+    }
+
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
     fun setPeriod(p: Period) = period.update { p }
     fun freeze(day: LocalDate) = viewModelScope.launch {
@@ -190,7 +210,7 @@ class HistoryViewModel @Inject constructor(
 }
 
 @Composable
-fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
+fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, onOpenSchedules: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
     val loaded by vm.state.collectAsStateWithLifecycle()
     val st = loaded
     if (st == null) {
@@ -202,10 +222,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
     ) {
         section { LargeTitle(stringResource(R.string.history_title)) }
-        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
-        section { st.summary?.let { SummaryCard(st.period, it, vm::setPeriod) } }
-        section { RecentFastsCard(st.recent, onEditFast) }
-        section { CalendarCard(st, vm::shiftMonth, onEditFast) }
+        section { st.summary?.let { SummaryCard(st.period, it, st.trackedFrom, vm::setPeriod) } }
         section {
             // Streaks count consistency, never length (SR-3). Neutral copy, no badges.
             AppCard {
@@ -221,6 +238,13 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
                     SecondaryButton(stringResource(R.string.history_use_freeze), onClick = { vm.freeze(day) })
                 }
             }
+        }
+        section { RecentFastsCard(st.recent, onEditFast) }
+        section { CalendarCard(st, vm::shiftMonth, onEditFast) }
+        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
+        section {
+            val nextWeek = History.weekStart(st.today).plusWeeks(1)
+            WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
         }
         section {
             InsetGroup {
@@ -248,7 +272,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
 // ---------- Summary ring ----------
 
 @Composable
-private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> Unit) {
+private fun SummaryCard(period: Period, s: PeriodSummary, trackedFrom: LocalDate?, onPeriod: (Period) -> Unit) {
     AppCard {
         SegmentedControl(
             Period.entries.map { stringResource(periodLabel(it)) },
@@ -256,7 +280,11 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
             { onPeriod(Period.entries[it]) },
         )
         val fastedLabel = stringResource(fastedIn(period))
-        val ringA11y = stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
+        val ringA11y = if (s.plannedDays > 0) {
+            stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
+        } else {
+            stringResource(R.string.history_ring_no_planned, s.totalFasting.hoursMinutes(), fastedLabel)
+        }
         Box(
             Modifier.fillMaxWidth().padding(vertical = 8.dp).clearAndSetSemantics { contentDescription = ringA11y },
             contentAlignment = Alignment.Center,
@@ -267,10 +295,23 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
                 Text(fastedLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        Text(
+            if (s.plannedDays == 0) stringResource(R.string.history_no_planned_days)
+            else stringResource(R.string.history_stat_planned_days) + " · " + s.completedDays + "/" + s.plannedDays,
+            modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (trackedFrom != null && trackedFrom > s.range.start) {
+            Text(
+                stringResource(R.string.history_tracking_since, trackedFrom.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))),
+                modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Row(Modifier.fillMaxWidth()) {
             Stat(stringResource(R.string.history_stat_fasts), s.fasts.toString(), Modifier.weight(1f))
             Stat(stringResource(R.string.history_stat_average), s.average?.hoursMinutes() ?: "—", Modifier.weight(1f))
-            Stat(stringResource(R.string.history_stat_planned_days), "${s.completedDays}/${s.plannedDays}", Modifier.weight(1f))
+            Stat(stringResource(R.string.status_completed), s.completed.toString(), Modifier.weight(1f))
         }
     }
 }
@@ -320,15 +361,24 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
             return@SectionCard
         }
         recent.average?.let {
-            Text(stringResource(R.string.history_average, it.hoursMinutes(), recent.bars.size), style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.history_chart_average, it.hoursMinutes()), style = MaterialTheme.typography.headlineSmall)
         }
         val zone = ZoneId.systemDefault()
+        val dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        val first = recent.bars.first().fast.startAt.atZone(zone).format(dateFormat)
+        val last = recent.bars.last().fast.startAt.atZone(zone).format(dateFormat)
+        Text(stringResource(R.string.history_chart_range, first, last), style = MaterialTheme.typography.bodySmall)
         val maxHours = maxOf(recent.bars.maxOf { it.length.toMinutes() } / 60f, 16f)
         val barArea = 120.dp
         val maxBar = 100.dp
         val done = MaterialTheme.colorScheme.primary
-        val early = MaterialTheme.colorScheme.outline
-        Box(Modifier.fillMaxWidth().height(barArea)) {
+        val early = MaterialTheme.colorScheme.secondary
+        val averageFraction = (recent.average?.toMinutes() ?: 0L) / 60f / maxHours
+        Box(Modifier.fillMaxWidth().height(barArea).drawBehind {
+            val y = size.height - maxBar.toPx() * averageFraction
+            drawLine(early, Offset(0f, y), Offset(size.width, y), 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())))
+        }) {
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 recent.bars.forEach { bar ->
                     val hours = bar.length.toMinutes() / 60f
@@ -338,11 +388,15 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
                         stringResource(if (bar.completed) R.string.status_completed else R.string.status_ended),
                     )
                     Column(
-                        Modifier.fillMaxHeight().clickable { onEditFast(bar.fast.id) }.semantics { contentDescription = desc },
+                        Modifier.weight(1f).fillMaxHeight().clickable { onEditFast(bar.fast.id) }.semantics { contentDescription = desc },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Bottom,
                     ) {
-                        Text(hoursLabel(bar.length.toHours()), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            hoursLabel(bar.length.toHours()),
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 1.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                         Box(
                             Modifier.width(14.dp).height(maxBar * (hours / maxHours).coerceIn(0.04f, 1f))
                                 .clip(RoundedCornerShape(topStart = 7.dp, topEnd = 7.dp))
@@ -353,7 +407,7 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            recent.bars.forEach { Text(it.fast.startAt.atZone(zone).format(shortDate), style = MaterialTheme.typography.labelSmall) }
+            recent.bars.forEach { Text(it.fast.startAt.atZone(zone).format(shortDate), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 1, style = MaterialTheme.typography.labelSmall) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Legend(done, stringResource(R.string.status_completed))
@@ -451,13 +505,21 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
     val color = when {
         seg.fast.isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
         seg.fast.status == FastStatus.COMPLETED -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.secondary
     }
-    val onColor = if (seg.fast.status == FastStatus.COMPLETED || seg.fast.isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.surface
+    val onColor = when (seg.fast.status) {
+        FastStatus.ACTIVE -> MaterialTheme.colorScheme.onSurface
+        FastStatus.COMPLETED -> MaterialTheme.colorScheme.onPrimary
+        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.onSecondary
+    }
     val desc = stringResource(R.string.a11y_fast_bar, seg.totalLength.hoursMinutes(), stringResource(statusLabel(seg.fast.status)))
     Box(
         Modifier.offset(x = dayWidth * seg.startDay).width(width).fillMaxHeight().padding(horizontal = 1.dp)
-            .clip(shape).background(color)
+            .clip(shape).then(
+                if (seg.fast.isActive && !seg.continuesAfter) Modifier.background(
+                    Brush.horizontalGradient(0f to color, 0.65f to color, 1f to color.copy(alpha = 0.1f)),
+                ) else Modifier.background(color),
+            )
             .clickable { onEditFast(seg.fast.id) }
             .semantics { contentDescription = desc },
         contentAlignment = Alignment.Center,
@@ -492,11 +554,12 @@ private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit)
                     val color = when (f.status) {
                         FastStatus.ACTIVE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
                         FastStatus.COMPLETED -> MaterialTheme.colorScheme.primary
-                        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.outline
+                        FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.secondary
                     }
                     Box(Modifier.size(10.dp).clip(CircleShape).background(color))
                 },
             ) {
+                com.fastingshift.app.ui.ramadan.FastKindChip(f.kind)
                 Text(
                     status,
                     style = MaterialTheme.typography.bodySmall,

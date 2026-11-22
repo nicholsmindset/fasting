@@ -1,60 +1,56 @@
-# Fasting Shift — Privacy Policy (DRAFT)
+# Fasting Shift privacy policy (draft)
 
-> Draft for legal review. Publish as a live web page at https://fastingshift.com/privacy (Play requires a web page, not a PDF). The app links to that URL from Settings and from the Health Connect permission screen.
+> Release owner: add the verified publisher name, contact details and effective date before publication. The app opens https://fastingshift.com/privacy from Settings and from the Health Connect permission screen. Verify that the public page displays the approved policy.
 
-_Last updated: [date]_
+Effective date: [date of publication]  
+Publisher: [legal name shown on the Google Play listing]  
+Privacy contact: [monitored email address or contact page]
 
-Fasting Shift ("the app") is published by [legal entity, e.g. ONN Group LLP], [address] ("we").
+## Your records
 
-## The short version
+You can use Fasting Shift without creating an account. The app keeps your health and fasting records on your device for the features you choose.
 
-- You don't need an account. We don't know who you are.
-- Your fasting, weight, water, electrolyte, symptom and screening data is stored **only on your phone**, encrypted.
-- We don't sell data, show ads, or send your health data to analytics or advertising services.
-- You can export or delete everything at any time.
-
-## What the app stores on your phone
-
-| Data | Why |
+| Records | How the app uses them |
 | --- | --- |
-| Fasts (start, goal, end, notes) | The timer, history and streaks |
-| Safety screening answers (age, pregnancy/breastfeeding, eating-disorder history, type 1 diabetes, certain medications, height, weight) | To decide which fasting options are safe to offer |
-| Symptom check-ins during long fasts | To show safety guidance |
-| Weight, water and electrolyte logs | Your own tracking |
-| Guided-program progress, settings | App features |
+| Fast times, goals, protocols, fast types, notes and mood reflections | Timer, History, consistency summaries and insights |
+| Screening answers, including age, pregnancy or breastfeeding, eating-disorder history, diabetes, medications, height and weight | Decide which fasting options to offer and show safety guidance |
+| Symptoms and optional weight, water, electrolyte, glucose or ketone entries | Personal logs, check-ins and trends |
+| Optional Ramadan, Sunnah and qada records | Display fasting times and reminders, and track days owed by Hijri year and the dates you mark as made up |
+| Selected city and prayer method, schedules, weekly plan choices, guided-program progress and challenge records | Personalize the calendar, reminders and planning features |
 
-This data is kept in an encrypted database on your device. It is not included in Android cloud backups or device-to-device transfers. Uninstalling the app deletes it. Use **Settings → Back up to a file** or **Export** to keep a copy you control.
+The health and fasting database is encrypted. Android Keystore protects the key used to unlock it. The app keeps preferences, such as the city you select and reminder choices, in private app storage. It uses an offline list of cities and bundled prayer times or local calculations. Choosing a city does not request your device location or send your selections to a prayer-time provider.
+
+Fasting Shift has no advertising or health-analytics service. We do not sell your health or religious-observance records or send them to the billing provider. If you enable reminders or add a widget, information such as fasting times can appear in notifications or on your home screen.
+
+## Files you choose to save
+
+The app excludes its private data from Android's automatic cloud backup and device transfer. You can save copies yourself through the Android file picker.
+
+- **Export fasting history** writes a CSV of finished fasts, including their start, planned end, actual end, protocol and fast type. A fast type can reveal a religious observance.
+- **Back up to a file** writes a full JSON backup. **Export** writes a ZIP containing that JSON and spreadsheet files. The full backup includes available notes, screening answers, health logs, religious records and backed-up settings.
+- These files are readable by anyone with access to them. The app does not encrypt them. If you choose a cloud drive, its provider handles the file under its own terms. Choose a destination you trust.
+- Importing a history CSV reads the file you select and shows a preview before adding records. Restoring a full backup replaces the app's database records and applies the preferences included in the file.
 
 ## Health Connect
 
-If you turn on **Sync with Health Connect**, the app:
+You can enable sync in Settings and grant Android's Health Connect permissions. When you grant access, the app reads recent weight entries from Health Connect into your weight log. When you log weight or water with sync enabled, it writes the measurement and its time to Health Connect. Weight entries can also appear in your personal trends.
 
-- **writes** your weight entries (WeightRecord) and water entries (HydrationRecord) to Health Connect;
-- **reads** weight entries (WeightRecord) from Health Connect so weights recorded by other apps appear in your log.
+With sync enabled, you can also allow the app to write glucose readings you log, so other apps you choose can see them; deleting a reading in the app removes the copy it wrote. If you open Body signals in Shift+ Insights and allow it, the app reads your sleep sessions and resting heart rate to compare fasting and non-fasting days. These are read while that screen is open and are not stored. Other apps can access Health Connect records according to the permissions you give them.
 
-The app does not read or write any other Health Connect data. Data read from Health Connect is stored only on your device, is used only to show your own logs and insights, and is never transferred to us or any third party, used for advertising, or sold. You can revoke access at any time in Health Connect settings.
+If a write fails, the measurement stays in the encrypted database. The app saves the local row number and a fingerprint in private preferences so you can retry from the Log screen. These references are excluded from the app's export and backup files. A successful retry or deletion of the local entry clears the corresponding pending reference. Turning sync off stops further attempts. The app does not read glucose from Health Connect, and never writes ketones (Health Connect has no ketone type) or religious records there.
 
-The app's use of information received from Health Connect adheres to the [Health Connect Permissions policy](https://support.google.com/googleplay/android-developer/answer/12991134), including the Limited Use requirements.
+To stop future access, turn off sync and revoke permissions in Health Connect. To remove existing copies, delete the local entry in Fasting Shift and manage the Health Connect entry separately. Other apps you allowed to read that entry may also hold a copy. [Manage Health Connect data](https://support.google.com/android/answer/12201232)
 
-## Purchases (Shift+)
+Our use of Health Connect information is limited to the features you enable and follows Google's Health Connect limited-use requirements. [Android health permissions](https://support.google.com/googleplay/android-developer/answer/12991134)
 
-Subscriptions and purchases are processed by Google Play. We use RevenueCat to check whether you have Shift+. RevenueCat receives an anonymous app user ID and your purchase records from Google Play. It does not receive any of your health data. See RevenueCat's privacy policy at https://www.revenuecat.com/privacy.
+## Purchases and subscriptions
 
-## Analytics
+Google Play processes Shift+ purchases and code redemptions. In builds with billing enabled, the RevenueCat billing service starts when you open the app. It uses a generated app user ID to check access, including before you buy anything. It processes available purchase history, product and subscription status, and billing-related app and device information to manage access, restore purchases and report subscription activity. Its customer profile can use the store country or infer a country from the network address. The app does not send RevenueCat your screening answers, fasting records, prayer settings or measurements. [RevenueCat privacy policy](https://www.revenuecat.com/privacy) · [Google privacy policy](https://policies.google.com/privacy)
 
-[Choose before launch.] The MVP contains no analytics SDK. If optional analytics are added later, they will be opt-in, will never include health data, and this policy will be updated first.
+## Retention, deletion and support
 
-## Children
+Your app records stay on your device until you delete them or clear the app's storage. To remove all local records, including settings and pending sync references, clear Fasting Shift's storage in Android Settings or uninstall it. Delete any exported files at the destination where you saved them. Copies already held by Health Connect, another app or a file provider have their own deletion controls.
 
-The app is for adults (18+). The safety screening does not offer fasting plans to anyone under 18.
+Manage or cancel subscriptions in Google Play. Uninstalling Fasting Shift does not cancel a subscription. For questions or a request about billing information held on our behalf, contact [monitored privacy contact]. Google Play manages its own transaction records.
 
-## Your choices
-
-- **Export:** Settings → Export (CSV + JSON).
-- **Delete:** uninstall the app, or clear its storage in Android settings.
-- **Health Connect:** turn sync off in Settings, or revoke permissions in Health Connect.
-- **Cancel Shift+:** Settings → Manage or cancel in Google Play.
-
-## Contact
-
-[support email]
+Fasting Shift is intended for adults aged 18 and over. The safety screen restricts access to fasting plans for users under 18.

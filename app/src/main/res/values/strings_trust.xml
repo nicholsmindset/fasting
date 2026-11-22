@@ -84,13 +84,13 @@
     <string name="trust_encrypted_body">The database is encrypted with SQLCipher. Its key is protected by the Android Keystore on this phone.</string>
     <string name="trust_no_account_title">No account</string>
     <string name="trust_no_account_body">You never sign up or sign in. There is no email or profile to leak.</string>
-    <string name="trust_no_tracking_title">No ads, no analytics, no trackers</string>
-    <string name="trust_no_tracking_body">The app contains no advertising, analytics or tracking tools, and your data is never sold or shared for marketing.</string>
+    <string name="trust_no_tracking_title">No ads and no tracking</string>
+    <string name="trust_no_tracking_body">The app contains no advertising, tracking or health-analytics tools. Your health records are never sold or used for marketing.</string>
     <string name="trust_leaves_title">What leaves this phone, and when</string>
     <string name="trust_leaves_purchases_title">Purchases: Google Play and RevenueCat</string>
-    <string name="trust_leaves_purchases_body">To buy, restore or check Shift+, the app talks to Google Play and RevenueCat, our purchase service. They see an anonymous app ID and your purchase, never your fasts or health data.</string>
+    <string name="trust_leaves_purchases_body">Each time the app opens, it checks Shift+ with Google Play and RevenueCat, our billing service, using a generated app ID, even if you never buy. They handle purchase and basic device information, never your fasts, screening answers or measurements.</string>
     <string name="trust_leaves_hc_title">Health Connect: only if you turn it on</string>
-    <string name="trust_leaves_hc_body">If you turn on Health Connect in Settings, the app exchanges only the data types you allow (such as weight and water) with Health Connect on this phone.</string>
+    <string name="trust_leaves_hc_body">If you turn on Health Connect in Settings, the app exchanges only the data types you allow (such as weight, water and glucose) with Health Connect on this phone.</string>
     <string name="trust_leaves_files_title">Files: only when you export or share</string>
     <string name="trust_leaves_files_body">Exports, backups, doctor reports and share cards are created on this phone and go only where you send them.</string>
     <string name="trust_leaves_links_title">Challenge links: settings only</string>

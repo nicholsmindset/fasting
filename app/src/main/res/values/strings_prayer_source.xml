@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ramadan_source_muis_timetable">Subuh and Maghrib from the %1$d MUIS timetable</string>
+    <string name="ramadan_source_calculated">Calculated times using %1$s</string>
+    <string name="ramadan_footer_muis_timetable">Fajr ends suhoor and Maghrib is iftar. Both times come from the %1$d MUIS timetable for Singapore. If you take medicines for diabetes, talk to your doctor before fasting.</string>
+</resources>

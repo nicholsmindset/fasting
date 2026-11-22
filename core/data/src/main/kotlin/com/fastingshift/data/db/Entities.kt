@@ -139,6 +139,21 @@ data class MetricLogEntity(
     val note: String?,
 )
 
+@Entity(
+    tableName = "qada_repayment",
+    foreignKeys = [ForeignKey(
+        entity = QadaDebtEntity::class,
+        parentColumns = ["hijri_year"],
+        childColumns = ["hijri_year"],
+        onDelete = ForeignKey.RESTRICT,
+    )],
+    indices = [Index("hijri_year")],
+)
+data class QadaRepaymentEntity(
+    @PrimaryKey @ColumnInfo(name = "observed_on") val observedOn: LocalDate,
+    @ColumnInfo(name = "hijri_year") val hijriYear: Int,
+)
+
 /** Ramadan days owed per Hijri year (schema v3). */
 @Entity(tableName = "qada_debt")
 data class QadaDebtEntity(

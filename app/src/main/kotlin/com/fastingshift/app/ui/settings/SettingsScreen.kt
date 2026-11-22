@@ -57,6 +57,7 @@ import com.fastingshift.domain.billing.PlanType
 import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.ramadan.Cities
 import com.fastingshift.domain.ramadan.City
+import com.fastingshift.domain.ramadan.FastingTimeSource
 import com.fastingshift.domain.ramadan.PrayerDay
 import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.ramadan.RamadanPlanner
@@ -157,6 +158,7 @@ fun SettingsRoute(
     onOpenPaywall: () -> Unit,
     onOpenRefeeding: () -> Unit,
     onOpenTrust: () -> Unit = {},
+    onOpenMuslimHub: () -> Unit = {},
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsStateWithLifecycle()
@@ -171,7 +173,26 @@ fun SettingsRoute(
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { it?.let(vm::exportZip) }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let(vm::backup) }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::restore) }
+    var restoreFile by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { restoreFile = it }
+    restoreFile?.let { file ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { restoreFile = null },
+            title = { Text(stringResource(R.string.restore_confirm_title)) },
+            text = { Text(stringResource(R.string.restore_confirm_body)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    restoreFile = null
+                    vm.restore(file)
+                }) { Text(stringResource(R.string.restore_confirm_action)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { restoreFile = null }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
     val hcLauncher = rememberLauncherForActivityResult(vm.health.permissionContract()) { vm.onHealthPermissions(it) }
 
     msg?.let { m ->
@@ -242,6 +263,8 @@ fun SettingsRoute(
                 onMethod = { sheet = SettingsSheet.METHOD },
             )
 
+            SunnahSettingsGroup(s, vm, onOpenMuslimHub)
+
             InsetGroup(header = stringResource(R.string.settings_fasting)) {
                 GroupRow(stringResource(R.string.settings_eating_window_title), subtitle = stringResource(R.string.settings_eating_window_subtitle), value = stringResource(R.string.settings_hours_value, s.eatingWindowHours)) {
                     StepperControl(
@@ -283,6 +306,8 @@ fun SettingsRoute(
                         onClick = { runCatching { context.startActivity(vm.health.providerUpdateIntent()) } },
                     )
                 }
+                GroupDivider()
+                HistoryTransferRows()
                 GroupDivider()
                 ActionRow(stringResource(R.string.settings_export)) { exportLauncher.launch("fasting-shift-export.zip") }
                 GroupDivider()
@@ -371,7 +396,14 @@ private fun ActionRow(title: String, onClick: () -> Unit) =
 private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Boolean) -> Unit, onCity: () -> Unit, onMethod: () -> Unit) {
     InsetGroup(
         header = stringResource(R.string.ramadan_group),
-        footer = stringResource(if (s.ramadanEnabled) R.string.ramadan_footer else R.string.ramadan_footer_off),
+        footer = when {
+            !s.ramadanEnabled -> stringResource(R.string.ramadan_footer_off)
+            preview != null && (preview.today.fajr == null || preview.today.maghrib == null) ->
+                stringResource(R.string.ramadan_local_timetable)
+            preview != null && preview.today.fastingTimeSource == FastingTimeSource.MUIS_TIMETABLE ->
+                stringResource(R.string.ramadan_footer_muis_timetable, preview.today.date.year)
+            else -> stringResource(R.string.ramadan_footer)
+        },
     ) {
         SwitchGroupRow(stringResource(R.string.ramadan_mode_title), s.ramadanEnabled, onToggle)
         if (s.ramadanEnabled) {
@@ -386,9 +418,15 @@ private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Bo
                 GroupDivider()
                 GroupRow(stringResource(R.string.ramadan_method), value = RamadanText.methodName(preview.method), showChevron = true, onClick = onMethod)
                 GroupDivider()
-                GroupRow(stringResource(R.string.ramadan_today_suhoor), value = clockTime(preview.today.fajr, preview.city.zone))
+                GroupRow(
+                    stringResource(R.string.ramadan_today_suhoor),
+                    value = preview.today.fajr?.let { clockTime(it, preview.city.zone) } ?: stringResource(R.string.ramadan_time_unavailable),
+                )
                 GroupDivider()
-                GroupRow(stringResource(R.string.ramadan_today_iftar), value = clockTime(preview.today.maghrib, preview.city.zone))
+                GroupRow(
+                    stringResource(R.string.ramadan_today_iftar),
+                    value = preview.today.maghrib?.let { clockTime(it, preview.city.zone) } ?: stringResource(R.string.ramadan_time_unavailable),
+                )
             }
         }
     }
@@ -412,10 +450,8 @@ private fun PlanGroup(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: ()
             value = planName + if (ent.inTrial) " · " + stringResource(R.string.plan_trial) else "",
             subtitle = ent.expiresAt?.let { stringResource(if (ent.willRenew) R.string.plan_renews else R.string.plan_ends, it.formatDate()) },
         )
-        if (ent.plan == PlanType.FREE) {
-            GroupDivider()
-            GroupRow(stringResource(R.string.plan_see_plus), showChevron = true, onClick = onOpenPaywall)
-        }
+        GroupDivider()
+        GroupRow(stringResource(R.string.plan_see_plus), showChevron = true, onClick = onOpenPaywall)
         if (ent.plan == PlanType.MONTHLY || ent.plan == PlanType.ANNUAL) {
             GroupDivider()
             GroupRow(stringResource(R.string.plan_cancel), showChevron = true, onClick = {

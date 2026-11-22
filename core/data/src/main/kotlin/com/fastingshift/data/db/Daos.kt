@@ -1,5 +1,9 @@
 package com.fastingshift.data.db
 
+import androidx.room.Embedded
+import androidx.room.Relation
+import androidx.room.Upsert
+import java.time.LocalDate
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -140,12 +144,14 @@ interface BackupDao {
     @Query("DELETE FROM program_progress") suspend fun clearProgress()
     @Query("DELETE FROM streak_freeze") suspend fun clearFreezes()
     @Query("DELETE FROM log_metric") suspend fun clearMetrics()
+    @Query("DELETE FROM qada_repayment") suspend fun clearRepayments()
     @Query("DELETE FROM qada_debt") suspend fun clearQada()
     @Query("DELETE FROM challenge") suspend fun clearChallenges()
     @Query("SELECT * FROM log_metric") suspend fun metrics(): List<MetricLogEntity>
     @Query("SELECT * FROM qada_debt") suspend fun qada(): List<QadaDebtEntity>
     @Query("SELECT * FROM challenge") suspend fun challenges(): List<ChallengeEntity>
     @Insert suspend fun insertMetrics(items: List<MetricLogEntity>)
+    @Insert suspend fun insertRepayments(items: List<QadaRepaymentEntity>)
     @Insert suspend fun insertQada(items: List<QadaDebtEntity>)
     @Insert suspend fun insertChallenges(items: List<ChallengeEntity>)
 
@@ -170,12 +176,52 @@ interface MetricDao {
     @Query("DELETE FROM log_metric WHERE id = :id") suspend fun delete(id: Long)
 }
 
+data class QadaYearRows(
+    @Embedded val debt: QadaDebtEntity,
+    @Relation(parentColumn = "hijri_year", entityColumn = "hijri_year")
+    val repayments: List<QadaRepaymentEntity>,
+)
+
 @Dao
-interface QadaDao {
-    @Query("SELECT * FROM qada_debt ORDER BY hijri_year") fun observeAll(): Flow<List<QadaDebtEntity>>
-    @Query("SELECT * FROM qada_debt ORDER BY hijri_year") suspend fun getAll(): List<QadaDebtEntity>
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(entity: QadaDebtEntity)
-    @Query("DELETE FROM qada_debt WHERE hijri_year = :year") suspend fun delete(year: Int)
+abstract class QadaDao {
+    @Query("SELECT * FROM qada_debt ORDER BY hijri_year") abstract fun observeAll(): Flow<List<QadaDebtEntity>>
+    @Query("SELECT * FROM qada_debt ORDER BY hijri_year") abstract suspend fun getAll(): List<QadaDebtEntity>
+
+    @Transaction
+    @Query("SELECT * FROM qada_debt ORDER BY hijri_year DESC")
+    abstract fun observeLedger(): Flow<List<QadaYearRows>>
+
+    @Transaction
+    @Query("SELECT * FROM qada_debt ORDER BY hijri_year")
+    abstract suspend fun ledgerSnapshot(): List<QadaYearRows>
+
+    @Upsert protected abstract suspend fun putDebt(entity: QadaDebtEntity)
+    @Query("DELETE FROM qada_debt WHERE hijri_year = :year") protected abstract suspend fun deleteDebt(year: Int)
+    @Query("SELECT days_owed FROM qada_debt WHERE hijri_year = :year") protected abstract suspend fun owed(year: Int): Int?
+    @Query("SELECT COUNT(*) FROM qada_repayment WHERE hijri_year = :year") protected abstract suspend fun repaid(year: Int): Int
+    @Query("SELECT hijri_year FROM qada_repayment WHERE observed_on = :day") protected abstract suspend fun allocation(day: LocalDate): Int?
+    @Insert protected abstract suspend fun insertRepayment(row: QadaRepaymentEntity)
+    @Query("DELETE FROM qada_repayment WHERE observed_on = :day AND hijri_year = :year")
+    abstract suspend fun removeRepayment(day: LocalDate, year: Int): Int
+
+    @Transaction
+    open suspend fun setDebt(debt: QadaDebtEntity): Boolean {
+        if (debt.daysOwed < repaid(debt.hijriYear)) return false
+        if (debt.daysOwed == 0) deleteDebt(debt.hijriYear) else putDebt(debt)
+        return true
+    }
+
+    /** A stale editor cannot overwrite a different allocation. A change of date or year is atomic. */
+    @Transaction
+    open suspend fun saveRepayment(previous: QadaRepaymentEntity?, updated: QadaRepaymentEntity): Boolean {
+        if (previous != null && allocation(previous.observedOn) != previous.hijriYear) return false
+        if (previous?.observedOn != updated.observedOn && allocation(updated.observedOn) != null) return false
+        val limit = owed(updated.hijriYear) ?: return false
+        if (previous?.hijriYear != updated.hijriYear && repaid(updated.hijriYear) >= limit) return false
+        if (previous != null) removeRepayment(previous.observedOn, previous.hijriYear)
+        insertRepayment(updated)
+        return true
+    }
 }
 
 @Dao

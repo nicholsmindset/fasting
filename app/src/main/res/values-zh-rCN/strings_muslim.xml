@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="muslim_hub_title">穆斯林斋戒</string>
+    <string name="muslim_hub_entry">圣行斋戒与补斋（Qada）</string>
+    <string name="muslim_today">今天</string>
+    <string name="muslim_tomorrow">明天</string>
+    <string name="muslim_hijri_unavailable">该日期暂无伊斯兰历日期。</string>
+    <string name="muslim_hijri_adjusted">已调整 %1$s</string>
+    <string name="muslim_hijri_note">伊斯兰历日期采用乌姆古拉（Umm al-Qura）历法。各地见月可能相差一两天，请以当地宗教机构的公告为准，如有需要可在设置中调整日期。</string>
+    <string name="muslim_today_sunnah">圣行斋戒日</string>
+    <string name="muslim_today_none">今天不是圣行斋戒日。您仍可在方便的时候补斋。</string>
+    <string name="muslim_no_fast_ramadan">现在是斋月。本月不建议进行自愿斋戒。</string>
+    <string name="muslim_no_fast_eid_fitr">开斋节。今天不斋戒。开斋节快乐！</string>
+    <string name="muslim_no_fast_eid_adha">古尔邦节。今天不斋戒。节日快乐！</string>
+    <string name="muslim_no_fast_tashreeq">晒肉日（Tashreeq）。今天不建议斋戒。</string>
+    <string name="muslim_start_sunnah">开始圣行斋戒</string>
+    <string name="muslim_start_qada">开始补斋</string>
+    <string name="muslim_start_ramadan">开始今天的斋月封斋</string>
+    <string name="muslim_until_maghrib">至 %1$s 昏礼开斋 · %2$s</string>
+    <string name="muslim_too_late">昏礼时间为 %1$s，距离太近，今天不宜开始斋戒。</string>
+    <string name="muslim_fast_active">斋戒进行中</string>
+    <string name="muslim_fast_active_body">可以在计时页面查看。</string>
+    <string name="muslim_choose_city_body">请先选择城市，以便在昏礼时开斋。</string>
+    <string name="muslim_upcoming">未来 30 天</string>
+    <string name="muslim_upcoming_none">未来 30 天没有圣行斋戒日。</string>
+    <string name="muslim_upcoming_footer">仅供日历参考。各地日期可能不同，请以当地宗教机构的公告为准。</string>
+    <string name="muslim_open_timer">前往计时</string>
+    <string name="muslim_invalid_start">现在无法开始这次斋戒。可能距离昏礼太近，或与已记录的斋戒时间重叠。</string>
+    <string name="qada_year">伊斯兰历 %1$d 年斋月</string>
+    <string name="muslim_offset_none">无</string>
+    <plurals name="muslim_offset_days">
+        <item quantity="other">%d 天</item>
+    </plurals>
+
+    <string name="sunnah_type_mon_thu">周一和周四</string>
+    <string name="sunnah_type_mon_thu_desc">每周</string>
+    <string name="sunnah_type_white_days">白日斋（Ayyam al-Bid）</string>
+    <string name="sunnah_type_white_days_desc">每个伊斯兰历月的 13 至 15 日</string>
+    <string name="sunnah_type_arafah">阿拉法特日</string>
+    <string name="sunnah_type_arafah_desc">都尔黑哲月 9 日</string>
+    <string name="sunnah_type_ashura">塔素阿与阿舒拉</string>
+    <string name="sunnah_type_ashura_desc">穆哈兰姆月 9 日和 10 日</string>
+    <string name="sunnah_type_shawwal">闪瓦鲁月六日斋</string>
+    <string name="sunnah_type_shawwal_desc">开斋节之后的任意日子</string>
+
+    <string name="notif_sunnah_body_mon_thu">明天是周一或周四的圣行斋戒日。如果打算斋戒，今晚记得安排封斋饭。</string>
+    <string name="notif_sunnah_body_white_days">明天是白日斋之一。如果打算斋戒，今晚记得安排封斋饭。</string>
+    <string name="notif_sunnah_body_arafah">明天是阿拉法特日。如果打算斋戒，今晚记得安排封斋饭。</string>
+    <string name="notif_sunnah_body_ashura">明天是塔素阿或阿舒拉。如果打算斋戒，今晚记得安排封斋饭。</string>
+    <string name="notif_sunnah_body_shawwal">明天可以进行闪瓦鲁月六日斋之一。如果打算斋戒，今晚记得安排封斋饭。</string>
+
+    <string name="fast_kind_ramadan">斋月</string>
+    <string name="fast_kind_sunnah">圣行</string>
+    <string name="fast_kind_qada">补斋</string>
+
+    <string name="hijri_date">伊斯兰历 %3$d 年%2$s %1$d 日</string>
+    <string name="hijri_month_1">穆哈兰姆月</string>
+    <string name="hijri_month_2">色法尔月</string>
+    <string name="hijri_month_3">赖比尔·敏瓦鲁月</string>
+    <string name="hijri_month_4">赖比尔·阿色尼月</string>
+    <string name="hijri_month_5">主马达·敏拉月</string>
+    <string name="hijri_month_6">主马达·阿色尼月</string>
+    <string name="hijri_month_7">赖哲卜月</string>
+    <string name="hijri_month_8">舍尔邦月</string>
+    <string name="hijri_month_9">赖买丹月</string>
+    <string name="hijri_month_10">闪瓦鲁月</string>
+    <string name="hijri_month_11">都尔喀尔德月</string>
+    <string name="hijri_month_12">都尔黑哲月</string>
+</resources>

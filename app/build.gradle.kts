@@ -63,6 +63,14 @@ android {
             versionNameSuffix = "-staging"
             matchingFallbacks += listOf("release")
         }
+        // Signed after the build with the internal-testing certificate.
+        create("internalBeta") {
+            initWith(getByName("release"))
+            signingConfig = null
+            applicationIdSuffix = ".beta"
+            versionNameSuffix = "-beta"
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {

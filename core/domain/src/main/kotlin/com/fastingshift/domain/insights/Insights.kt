@@ -2,7 +2,8 @@ package com.fastingshift.domain.insights
 
 import com.fastingshift.domain.history.History
 import com.fastingshift.domain.model.Fast
-import com.fastingshift.domain.model.FastStatus
+import com.fastingshift.domain.history.HistoryStats
+import com.fastingshift.domain.history.Period
 import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.model.WeightUnit
 import java.time.DayOfWeek
@@ -29,12 +30,13 @@ object Insights {
         weeks: Int = 8,
         isPlannedDay: (LocalDate) -> Boolean = { true },
     ): List<WeeklyConsistency> {
-        val completed = com.fastingshift.domain.streak.StreakCalculator.completedDays(fasts, zone)
         val thisWeek = History.weekStart(today)
         return (weeks - 1 downTo 0).map { back ->
             val start = thisWeek.minusWeeks(back.toLong())
-            val days = (0L until 7L).map { start.plusDays(it) }.filter { !it.isAfter(today) }
-            WeeklyConsistency(start, days.count { it in completed && isPlannedDay(it) }, days.count(isPlannedDay))
+            val through = minOf(today, start.plusDays(6))
+            val end = through.plusDays(1).atStartOfDay(zone).toInstant()
+            val summary = HistoryStats.periodSummary(fasts, zone, Period.WEEK, through, end, isPlannedDay)
+            WeeklyConsistency(start, summary.completedDays, summary.plannedDays)
         }
     }
 

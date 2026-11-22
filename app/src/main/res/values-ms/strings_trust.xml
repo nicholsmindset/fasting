@@ -81,13 +81,13 @@
     <string name="trust_encrypted_body">Pangkalan data disulitkan dengan SQLCipher. Kuncinya dilindungi oleh Android Keystore dalam telefon ini.</string>
     <string name="trust_no_account_title">Tiada akaun</string>
     <string name="trust_no_account_body">Anda tidak perlu mendaftar atau log masuk. Tiada e-mel atau profil yang boleh bocor.</string>
-    <string name="trust_no_tracking_title">Tiada iklan, tiada analitik, tiada penjejak</string>
-    <string name="trust_no_tracking_body">Aplikasi ini tidak mengandungi alat iklan, analitik atau penjejakan, dan data anda tidak pernah dijual atau dikongsi untuk pemasaran.</string>
+    <string name="trust_no_tracking_title">Tiada iklan dan tiada penjejakan</string>
+    <string name="trust_no_tracking_body">Aplikasi ini tidak mengandungi alat iklan, penjejakan atau analitik kesihatan. Rekod kesihatan anda tidak pernah dijual atau digunakan untuk pemasaran.</string>
     <string name="trust_leaves_title">Apa yang keluar dari telefon ini, dan bila</string>
     <string name="trust_leaves_purchases_title">Pembelian: Google Play dan RevenueCat</string>
-    <string name="trust_leaves_purchases_body">Untuk membeli, memulihkan atau menyemak Shift+, aplikasi berhubung dengan Google Play dan RevenueCat, perkhidmatan pembelian kami. Mereka melihat ID aplikasi tanpa nama dan pembelian anda, bukan puasa atau data kesihatan anda.</string>
+    <string name="trust_leaves_purchases_body">Setiap kali aplikasi dibuka, ia menyemak Shift+ dengan Google Play dan RevenueCat, perkhidmatan bil kami, menggunakan ID aplikasi yang dijana, walaupun anda tidak pernah membeli. Mereka mengendalikan maklumat pembelian dan peranti asas, bukan puasa, jawapan saringan atau ukuran anda.</string>
     <string name="trust_leaves_hc_title">Health Connect: hanya jika anda menghidupkannya</string>
-    <string name="trust_leaves_hc_body">Jika anda menghidupkan Health Connect dalam Tetapan, aplikasi hanya bertukar jenis data yang anda benarkan (seperti berat badan dan air) dengan Health Connect dalam telefon ini.</string>
+    <string name="trust_leaves_hc_body">Jika anda menghidupkan Health Connect dalam Tetapan, aplikasi hanya bertukar jenis data yang anda benarkan (seperti berat badan, air dan glukosa) dengan Health Connect dalam telefon ini.</string>
     <string name="trust_leaves_files_title">Fail: hanya apabila anda eksport atau kongsi</string>
     <string name="trust_leaves_files_body">Eksport, sandaran, laporan doktor dan kad kongsi dibuat dalam telefon ini dan hanya pergi ke tempat yang anda hantar.</string>
     <string name="trust_leaves_links_title">Pautan cabaran: tetapan sahaja</string>

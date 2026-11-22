@@ -3,7 +3,6 @@ package com.fastingshift.domain.ramadan
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -30,15 +29,23 @@ enum class PrayerMethod(val fajrAngle: Double, val ishaAngle: Double, val ihtiya
     MWL(18.0, 17.0, 0),
 }
 
+/** Source for the two fasting boundaries, Fajr and Maghrib. */
+enum class FastingTimeSource {
+    CALCULATED,
+    MUIS_TIMETABLE,
+}
+
+/** A missing event means that the sun did not reach the method’s required angle that day. */
 data class PrayerDay(
     val date: LocalDate,
     /** End of suhoor / start of the fast. */
-    val fajr: Instant,
-    val sunrise: Instant,
+    val fajr: Instant?,
+    val sunrise: Instant?,
     val dhuhr: Instant,
     /** Iftar / end of the fast. */
-    val maghrib: Instant,
-    val isha: Instant,
+    val maghrib: Instant?,
+    val isha: Instant?,
+    val fastingTimeSource: FastingTimeSource = FastingTimeSource.CALCULATED,
 )
 
 /**
@@ -66,14 +73,17 @@ object PrayerTimes {
             val seconds = Math.round(utcHours * 3600)
             return date.atStartOfDay(ZoneId.of("UTC")).toInstant().plusSeconds(seconds).plusSeconds(extraMinutes * 60)
         }
+        fun eventTime(hours: Double, extraMinutes: Long): Instant? =
+            if (hours.isFinite()) toInstant(hours, extraMinutes) else null
+
         val ih = method.ihtiyatiMinutes
         return PrayerDay(
             date = date,
-            fajr = toInstant(times[0], ih),
-            sunrise = toInstant(times[1], -ih),
+            fajr = eventTime(times[0], ih),
+            sunrise = eventTime(times[1], -ih),
             dhuhr = toInstant(times[2], ih),
-            maghrib = toInstant(times[3], ih),
-            isha = toInstant(times[4], ih),
+            maghrib = eventTime(times[3], ih),
+            isha = eventTime(times[4], ih),
         )
     }
 
@@ -111,8 +121,8 @@ object PrayerTimes {
         val decl = sunPosition(jd + dayFraction).first
         val noon = midDay(jd, dayFraction)
         val cosT = (-dsin(angle) - dsin(decl) * dsin(lat)) / (dcos(decl) * dcos(lat))
-        // Polar day/night: no such sun angle; fall back to noon +/- 6h (not a concern in SE Asia).
-        val t = if (abs(cosT) > 1) 6.0 else darccos(cosT) / 15
+        // acos returns NaN when the requested angle is never reached on this date.
+        val t = darccos(cosT) / 15
         return noon + if (before) -t else t
     }
 
