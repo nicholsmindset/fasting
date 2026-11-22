@@ -338,4 +338,7 @@
     </plurals>
     <string name="schedules_locked">Jadwal tersedia setelah jawaban keselamatan Anda memungkinkan puasa.</string>
     <string name="history_chart_average">Rata-rata %1$s</string>
+    <string name="restore_confirm_title">Ganti data di ponsel ini?</string>
+    <string name="restore_confirm_body">Memulihkan cadangan ini akan mengganti riwayat puasa, catatan, jawaban skrining, dan jadwal Anda. Cadangkan data saat ini terlebih dahulu jika ingin menyimpannya.</string>
+    <string name="restore_confirm_action">Ganti dan pulihkan</string>
 </resources>

@@ -85,13 +85,14 @@ class BackupRepositoryTest {
             Challenge(type = ChallengeType.SUNNAH_MON_THU, startDate = LocalDate.of(2026, 11, 23), lengthDays = 28, name = "Family", joinedAt = t0),
         )
 
-        val exported = BackupRepository(db).export(t0)
+        val transferTime = t0.plus(Duration.ofHours(49))
+        val exported = BackupRepository(db).export(transferTime)
         val text = BackupCodec.encode(exported)
         db.close()
 
         val fresh = newDb()
-        BackupRepository(fresh).restore(BackupCodec.decode(text))
-        val again = BackupRepository(fresh).export(t0)
+        BackupRepository(fresh).restore(BackupCodec.decode(text), restoredAt = transferTime)
+        val again = BackupRepository(fresh).export(transferTime)
         // Screening ids are regenerated; everything else must match exactly.
         assertEquals(exported, again)
         assertEquals(3, RoomFastRepository(fresh.fastDao()).getAll().size)

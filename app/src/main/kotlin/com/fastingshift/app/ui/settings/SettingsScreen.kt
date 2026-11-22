@@ -170,7 +170,26 @@ fun SettingsRoute(
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { it?.let(vm::exportZip) }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let(vm::backup) }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(vm::restore) }
+    var restoreFile by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { restoreFile = it }
+    restoreFile?.let { file ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { restoreFile = null },
+            title = { Text(stringResource(R.string.restore_confirm_title)) },
+            text = { Text(stringResource(R.string.restore_confirm_body)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    restoreFile = null
+                    vm.restore(file)
+                }) { Text(stringResource(R.string.restore_confirm_action)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { restoreFile = null }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
     val hcLauncher = rememberLauncherForActivityResult(vm.health.permissionContract()) { vm.onHealthPermissions(it) }
 
     msg?.let { m ->

@@ -50,6 +50,6 @@ class ExportManager @Inject constructor(
     /** Replaces all data with the backup. Throws BackupFormatException for invalid files. */
     suspend fun restore(uri: Uri) = withContext(Dispatchers.IO) {
         val text = context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }
-        backups.restore(BackupCodec.decode(text))
+        backups.restore(BackupCodec.decode(text), clock.instant())
     }
 }
