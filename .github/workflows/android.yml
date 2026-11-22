@@ -50,7 +50,8 @@ jobs:
           if-no-files-found: error
 
       - name: Check Room schema is committed
-        run: git diff --exit-code -- core/data/schemas || (echo "Room schema changed: commit core/data/schemas" && exit 1)
+        run: |
+          git diff --exit-code -- core/data/schemas || (echo "Room schema changed: commit core/data/schemas" && exit 1)
 
       - uses: actions/upload-artifact@v4
         if: always()
