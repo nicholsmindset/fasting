@@ -392,6 +392,8 @@ private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Bo
         header = stringResource(R.string.ramadan_group),
         footer = when {
             !s.ramadanEnabled -> stringResource(R.string.ramadan_footer_off)
+            preview != null && (preview.today.fajr == null || preview.today.maghrib == null) ->
+                stringResource(R.string.ramadan_local_timetable)
             preview != null && preview.today.fastingTimeSource == FastingTimeSource.MUIS_TIMETABLE ->
                 stringResource(R.string.ramadan_footer_muis_timetable, preview.today.date.year)
             else -> stringResource(R.string.ramadan_footer)
@@ -410,9 +412,15 @@ private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Bo
                 GroupDivider()
                 GroupRow(stringResource(R.string.ramadan_method), value = RamadanText.methodName(preview.method), showChevron = true, onClick = onMethod)
                 GroupDivider()
-                GroupRow(stringResource(R.string.ramadan_today_suhoor), value = clockTime(preview.today.fajr, preview.city.zone))
+                GroupRow(
+                    stringResource(R.string.ramadan_today_suhoor),
+                    value = preview.today.fajr?.let { clockTime(it, preview.city.zone) } ?: stringResource(R.string.ramadan_time_unavailable),
+                )
                 GroupDivider()
-                GroupRow(stringResource(R.string.ramadan_today_iftar), value = clockTime(preview.today.maghrib, preview.city.zone))
+                GroupRow(
+                    stringResource(R.string.ramadan_today_iftar),
+                    value = preview.today.maghrib?.let { clockTime(it, preview.city.zone) } ?: stringResource(R.string.ramadan_time_unavailable),
+                )
             }
         }
     }

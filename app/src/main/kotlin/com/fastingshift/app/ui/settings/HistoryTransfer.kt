@@ -31,6 +31,7 @@ import com.fastingshift.data.db.FastingDatabase
 import com.fastingshift.data.repo.HistoryTransferRepository
 import com.fastingshift.domain.backup.HistoryBatch
 import com.fastingshift.domain.backup.HistoryCsv
+import com.fastingshift.domain.backup.HistoryImport
 import com.fastingshift.domain.backup.HistoryFileException
 import com.fastingshift.domain.backup.HistorySkip
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,7 +51,7 @@ import kotlinx.coroutines.withContext
 
 private class HistoryTooLarge : IOException()
 
-private fun InputStream.readHistoryCsv(): String {
+private fun InputStream.readHistoryFile(): String {
     val out = ByteArrayOutputStream()
     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
     while (true) {
@@ -83,8 +84,8 @@ class HistoryTransferViewModel @Inject constructor(
     fun dismiss() { if (state != TransferState.Busy) state = TransferState.Idle }
 
     fun open(uri: Uri) = runTransfer {
-        val csv = context.contentResolver.openInputStream(uri)?.use { it.readHistoryCsv() } ?: throw IOException()
-        TransferState.Preview(repo.preview(HistoryCsv.parse(csv, clock.instant())))
+        val contents = context.contentResolver.openInputStream(uri)?.use { it.readHistoryFile() } ?: throw IOException()
+        TransferState.Preview(repo.preview(HistoryImport.parse(contents, clock.instant())))
     }
 
     fun confirm() {
@@ -123,7 +124,7 @@ internal fun HistoryTransferRows(vm: HistoryTransferViewModel = hiltViewModel())
     val exportFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::export) }
     GroupRow(
         stringResource(R.string.history_transfer_import), subtitle = stringResource(R.string.history_transfer_hint),
-        showChevron = true, onClick = { importFile.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel", "application/octet-stream")) },
+        showChevron = true, onClick = { importFile.launch(arrayOf("application/json", "text/*", "application/csv", "application/vnd.ms-excel", "application/octet-stream")) },
     )
     GroupDivider()
     GroupRow(

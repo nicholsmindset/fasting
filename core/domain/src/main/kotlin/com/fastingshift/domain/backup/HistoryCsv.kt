@@ -15,7 +15,7 @@ data class HistoryBatch(
 
 object HistoryCsv {
     const val MAX_BYTES = 4 * 1024 * 1024
-    private const val MAX_ROWS = 20_000
+    internal const val MAX_ROWS = 20_000
     private val header = listOf("start_at", "target_end_at", "ended_at", "protocol_id", "kind")
     private val legacyZero = setOf("Date", "Start", "End", "Hours", "Night Eating")
 

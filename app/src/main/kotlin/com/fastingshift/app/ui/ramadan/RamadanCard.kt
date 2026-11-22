@@ -65,6 +65,7 @@ import kotlinx.coroutines.launch
 sealed interface RamadanCardState {
     data object Hidden : RamadanCardState
     data object NeedsCity : RamadanCardState
+    data class NeedsTimetable(val city: City) : RamadanCardState
     data class Active(
         val city: City,
         val method: PrayerMethod,
@@ -93,7 +94,7 @@ class RamadanCardViewModel @Inject constructor(
         if (!s.ramadanEnabled) return@combine RamadanCardState.Hidden
         val city = Cities.byId(s.ramadanCityId) ?: return@combine RamadanCardState.NeedsCity
         val method = s.ramadanMethod ?: Cities.defaultMethod(city)
-        val phase = RamadanPlanner.phase(city, method, now)
+        val phase = RamadanPlanner.phase(city, method, now) ?: return@combine RamadanCardState.NeedsTimetable(city)
         val status = RamadanText.status(phase, now)
         // The bar runs Fajr to Maghrib of the day being fasted (or about to be).
         val (fajr, maghrib) = when (phase) {
@@ -120,6 +121,10 @@ fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
             Header(stringResource(R.string.ramadan_mode_title))
             Text(stringResource(R.string.ramadan_choose_city_body), style = MaterialTheme.typography.bodyMedium)
             SecondaryButton(stringResource(R.string.ramadan_choose_city), onClick = { picking = true })
+        }
+        is RamadanCardState.NeedsTimetable -> AppCard {
+            Header(stringResource(R.string.ramadan_mode_city, s.city.name))
+            Text(stringResource(R.string.ramadan_local_timetable), style = MaterialTheme.typography.bodyMedium)
         }
         is RamadanCardState.Active -> ActiveCard(s)
     }

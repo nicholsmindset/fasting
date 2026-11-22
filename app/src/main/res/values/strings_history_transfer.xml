@@ -1,11 +1,11 @@
 <resources>
     <string name="history_transfer_import">Import fasting history</string>
-    <string name="history_transfer_hint">Choose a history CSV with start_at, target_end_at and ended_at in ISO 8601 format with a UTC offset.</string>
+    <string name="history_transfer_hint">Choose a Fasting Shift CSV, or unzip your Zero export and select firestore.json or biodata.json.</string>
     <string name="history_transfer_export">Export fasting history</string>
     <string name="history_transfer_privacy">CSV of finished fasts with times, goals and fast types. Notes and health logs stay on this device.</string>
     <string name="history_transfer_exported">History CSV exported.</string>
-    <string name="history_transfer_too_large">This file exceeds the 4 MiB limit. Split it into smaller CSV files with the same header.</string>
-    <string name="history_transfer_format">Choose a Fasting Shift history CSV or fasts.csv from an extracted export. Files may contain up to 20,000 records.</string>
+    <string name="history_transfer_too_large">This file exceeds the 4 MiB limit. Choose a smaller file.</string>
+    <string name="history_transfer_format">Choose a Fasting Shift history CSV, fasts.csv, or an extracted Zero firestore.json or biodata.json. Maximum 20,000 records per file.</string>
     <string name="history_transfer_error">The file could not be read or written. Check that the selected location is available.</string>
     <string name="history_transfer_preview">Review history import</string>
     <string name="history_transfer_done">History import complete</string>

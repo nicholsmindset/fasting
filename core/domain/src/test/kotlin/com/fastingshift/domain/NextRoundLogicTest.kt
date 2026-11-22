@@ -34,8 +34,8 @@ class NextRoundLogicTest {
     private fun fast(h: Long, start: Instant = t0) = Fast(id = 7, startAt = start, targetEndAt = start.plus(hours(h)), protocolId = "p")
 
     // Prayer times: within 3 minutes of published sunrise/sunset references (+2 min ihtiyati where applied).
-    private fun near(expected: String, actual: Instant, zone: ZoneId, minutes: Long = 3) {
-        val a = actual.atZone(zone).toLocalTime()
+    private fun near(expected: String, actual: Instant?, zone: ZoneId, minutes: Long = 3) {
+        val a = requireNotNull(actual).atZone(zone).toLocalTime()
         val diff = abs(Duration.between(LocalTime.parse(expected), a).toMinutes())
         assertTrue(diff <= minutes, "expected ~$expected, got $a")
     }
@@ -51,7 +51,8 @@ class NextRoundLogicTest {
         val march = RamadanPlanner.day(s, PrayerMethod.MUIS, LocalDate.of(2026, 3, 1))
         near("05:59", march.fajr, s.zone)
         near("19:21", march.maghrib, s.zone)
-        assertTrue(march.fajr < march.sunrise && march.sunrise < march.dhuhr && march.dhuhr < march.maghrib && march.maghrib < march.isha)
+        val events = listOf(march.fajr, march.sunrise, march.dhuhr, march.maghrib, march.isha).requireNoNulls()
+        assertTrue(events.zipWithNext().all { (earlier, later) -> earlier < later })
     }
 
     @Test fun `ramadan phase and reminders`() {

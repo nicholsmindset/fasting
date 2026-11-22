@@ -5,6 +5,7 @@ import com.fastingshift.domain.backup.BackupCodec
 import com.fastingshift.domain.backup.BackupFormatException
 import com.fastingshift.domain.backup.CsvExport
 import com.fastingshift.domain.backup.FastRecord
+import com.fastingshift.domain.backup.QadaRepaymentRecord
 import com.fastingshift.domain.backup.ScheduleRecord
 import com.fastingshift.domain.backup.SettingsRecord
 import com.fastingshift.domain.backup.WeightRecord
@@ -24,6 +25,12 @@ class BackupHardeningTest {
         assertFailsWith<BackupFormatException> { BackupCodec.decode(BackupCodec.encode(Backup(exportedAt = 1, streakFreezes = listOf("2026-11-19", "2026-11-19")))) }
     }
 
+    @Test fun `a repayment date cannot be counted for two years`() {
+        val day = QadaRepaymentRecord("2026-11-01", 1446)
+        val backup = Backup(exportedAt = 1, qadaRepayments = listOf(day, day.copy(hijriYear = 1447)))
+        assertFailsWith<BackupFormatException> { BackupCodec.decode(BackupCodec.encode(backup)) }
+    }
+
     @Test fun `bad versions and schedule times are rejected`() {
         assertFailsWith<BackupFormatException> { BackupCodec.decode(BackupCodec.encode(Backup(exportedAt = 1, version = 0))) }
         val bad = ScheduleRecord(1, "weekly_5_2", listOf("MONDAY"), 24 * 60, true)
@@ -35,7 +42,7 @@ class BackupHardeningTest {
         assertNull(BackupCodec.decode(v1).settings)
         val v2 = Backup(exportedAt = 1, settings = SettingsRecord(hideWeight = true, milestoneHours = listOf(12, 16)))
         assertEquals(v2, BackupCodec.decode(BackupCodec.encode(v2)))
-        assertEquals(4, Backup.VERSION)
+        assertEquals(5, Backup.VERSION)
     }
 
     @Test fun `csv neutralises formulas but keeps numbers`() {
@@ -45,5 +52,7 @@ class BackupHardeningTest {
         val files = CsvExport.files(Backup(exportedAt = 1, fasts = listOf(fast.copy(note = "=1+1"))))
         assertTrue("'=1+1" in files.getValue("fasts.csv"))
         assertTrue("protocols.csv" in files && "schedules.csv" in files)
+        val qada = CsvExport.files(Backup(exportedAt = 1, qadaRepayments = listOf(QadaRepaymentRecord("2026-11-01", 1446))))
+        assertEquals("observed_on,hijri_year\n2026-11-01,1446\n", qada.getValue("qada_repayments.csv"))
     }
 }

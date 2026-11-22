@@ -1,11 +1,11 @@
 <resources>
     <string name="history_transfer_import">导入禁食记录</string>
-    <string name="history_transfer_hint">选择包含 start_at、target_end_at 和 ended_at 的历史记录 CSV。时间须采用带 UTC 偏移量的 ISO 8601 格式。</string>
+    <string name="history_transfer_hint">选择 Fasting Shift CSV，或解压 Zero 导出文件并选择 firestore.json 或 biodata.json。</string>
     <string name="history_transfer_export">导出禁食记录</string>
     <string name="history_transfer_privacy">导出已结束禁食的时间、目标和类型。个人备注和健康日志保留在本设备上。</string>
     <string name="history_transfer_exported">已导出历史记录 CSV。</string>
-    <string name="history_transfer_too_large">文件大小超过 4 MiB。请保留相同的表头，将 CSV 拆分为多个较小的文件。</string>
-    <string name="history_transfer_format">请选择 Fasting Shift 历史记录 CSV，或从导出压缩包中解压的 fasts.csv。每个文件最多可包含 20,000 条记录。</string>
+    <string name="history_transfer_too_large">文件大小超过 4 MiB。请选择较小的文件。</string>
+    <string name="history_transfer_format">请选择 Fasting Shift 历史记录 CSV、fasts.csv，或解压后的 Zero 文件 firestore.json 或 biodata.json。每个文件最多可包含 20,000 条记录。</string>
     <string name="history_transfer_error">无法读写文件。请检查所选位置。</string>
     <string name="history_transfer_preview">检查待导入的记录</string>
     <string name="history_transfer_done">历史记录导入完毕</string>

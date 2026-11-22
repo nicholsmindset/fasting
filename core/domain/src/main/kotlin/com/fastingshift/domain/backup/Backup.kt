@@ -183,6 +183,14 @@ object CsvExport {
             listOf("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status", "note", "mood", "kind"),
             b.fasts.map { listOf(it.id, iso(it.startAt), iso(it.targetEndAt), it.endedAt?.let(::iso), it.protocolId, it.status, it.note, it.mood, it.kind) },
         ),
+        "qada_debts.csv" to table(
+            listOf("hijri_year", "days_owed"),
+            b.qadaDebts.map { listOf(it.hijriYear, it.daysOwed) },
+        ),
+        "qada_repayments.csv" to table(
+            listOf("observed_on", "hijri_year"),
+            b.qadaRepayments.map { listOf(it.observedOn, it.hijriYear) },
+        ),
         "metrics.csv" to table(
             listOf("id", "at", "type", "value", "unit", "source", "note"),
             b.metrics.map { listOf(it.id, iso(it.at), it.type, it.value, it.unit, it.source, it.note) },

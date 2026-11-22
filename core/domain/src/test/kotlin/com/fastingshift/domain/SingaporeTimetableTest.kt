@@ -30,8 +30,8 @@ class SingaporeTimetableTest {
                 val date = LocalDate.ofYearDay(year, ordinal)
                 val day = RamadanPlanner.day(city, method, date)
                 assertEquals(FastingTimeSource.MUIS_TIMETABLE, day.fastingTimeSource, date.toString())
-                val fajr = day.fajr.atZone(city.zone)
-                val maghrib = day.maghrib.atZone(city.zone)
+                val fajr = requireNotNull(day.fajr).atZone(city.zone)
+                val maghrib = requireNotNull(day.maghrib).atZone(city.zone)
                 assertEquals(date, fajr.toLocalDate())
                 assertEquals(date, maghrib.toLocalDate())
                 val row = "$date,${fajr.toLocalTime()},${maghrib.toLocalTime()}\n"
