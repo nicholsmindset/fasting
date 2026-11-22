@@ -1,0 +1,43 @@
+name: Verify archived Room schema
+on:
+  push:
+    branches: ["codex/verify-room-schema-45005295966"]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cbc6eca3a77b1829886178f3f01e34918778a8ea
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 45005295966
+          artifact-ids: 14748535156
+          path: "${{ runner.temp }}/schema-reports"
+      - name: Compare archived Room v4 schema bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          checked="core/data/schemas/com.fastingshift.data.db.FastingDatabase/4.json"
+          mapfile -d '' -t located < <(find "$RUNNER_TEMP/schema-reports" -type f -path "*/$checked" -print0)
+          test "${#located[@]}" = 1
+          generated="${located[0]}"
+          echo "Checked-in blob $(git hash-object "$checked")"
+          echo "Generated blob $(git hash-object "$generated")"
+          sha256sum "$checked" "$generated"
+          if cmp -s "$checked" "$generated"; then
+            echo "Archived schema matches the checked-in schema."
+          else
+            echo "ROOM_SCHEMA_REPLACEMENT_START"
+            base64 -w 120 "$generated"
+            echo "ROOM_SCHEMA_REPLACEMENT_END"
+            exit 1
+          fi
