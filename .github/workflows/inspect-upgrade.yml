@@ -1,0 +1,25 @@
+name: Inspect emulator failure
+on:
+  push:
+    branches: [codex/upgrade-diagnostics]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read synthetic UI hierarchy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/${{ github.repository }}/actions/artifacts/14748565784/zip" > "$RUNNER_TEMP/screen.zip"
+          unzip -p "$RUNNER_TEMP/screen.zip" screen.xml > "$RUNNER_TEMP/screen.xml"
+          python - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          root=ET.parse(os.path.join(os.environ["RUNNER_TEMP"], "screen.xml"))
+          for node in root.iter("node"):
+              a=node.attrib
+              print(a["package"], a["text"], a["content-desc"], a["bounds"])
+          PY
+          unzip -p "$RUNNER_TEMP/screen.zip" logcat.txt | grep -E 'FATAL EXCEPTION|Process: com.fastingshift|Caused by:|Exception in posted' | tail -50 || true
