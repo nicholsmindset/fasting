@@ -41,7 +41,28 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Challenge invite links (parameters only; no server). -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="fastingshift.com" />
+                <data android:host="www.fastingshift.com" />
+                <data android:pathPrefix="/c/" />
+            </intent-filter>
         </activity>
+
+        <!-- Doctor reports and share cards, shared only when the user taps Share. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
 
         <!-- Health Connect permission rationale (Android 13 and earlier). -->
         <activity

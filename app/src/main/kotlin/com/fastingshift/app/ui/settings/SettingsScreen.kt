@@ -292,6 +292,8 @@ fun SettingsRoute(
 
             LanguageGroup()
 
+            DoctorReportGroup()
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InsetGroup(header = stringResource(R.string.settings_safety)) {
                     screeningStatus?.let { st ->
