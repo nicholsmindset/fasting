@@ -165,11 +165,12 @@ fun LogRoute(vm: LogViewModel = hiltViewModel()) {
             setWeightUnit = { vm.setWeightUnit(it) }, deleteWater = { vm.deleteWater(it) }, deleteElectrolyte = { vm.deleteElectrolyte(it) },
             deleteWeight = { vm.deleteWeight(it) },
         ),
+        metrics = { MetricsRoute() },
     )
 }
 
 @Composable
-fun LogScreen(st: LogState, actions: LogActions) {
+fun LogScreen(st: LogState, actions: LogActions, metrics: @Composable () -> Unit = {}) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.section),
@@ -177,6 +178,8 @@ fun LogScreen(st: LogState, actions: LogActions) {
         LargeTitle(stringResource(R.string.log_title))
         WaterCard(st, actions)
         ElectrolyteGroup(st, actions)
+        // Glucose & ketones (MetricsSection.kt), separate state so this screen stays small.
+        metrics()
         // Hide weight mode removes weight from every screen (SR-6), the trend chart included.
         if (!st.hideWeight) {
             WeightGroup(st, actions)

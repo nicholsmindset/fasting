@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_title">血糖与酮体</string>
+    <string name="metrics_glucose">血糖</string>
+    <string name="metrics_ketones">酮体</string>
+    <string name="metrics_invalid">请输入 %1$s 到 %2$s %3$s 之间的读数。</string>
+    <string name="metrics_glucose_note">可选。如果你会监测血糖，可以记录血糖仪的读数。</string>
+    <string name="metrics_ketones_local">酮体读数只保存在本设备上。Health Connect 没有酮体数据类型，因此不会共享。</string>
+    <string name="metrics_empty">暂无读数</string>
+    <string name="metrics_deleted">已删除 %1$s</string>
+    <string name="metrics_undo">撤销</string>
+    <string name="metrics_ranges_note">读数因人而异，也因仪器而异。这里显示的任何范围都只是一般信息，不是建议。你的医生可以告诉你什么适合你。</string>
+    <string name="metrics_low_title">这次血糖读数偏低</string>
+    <string name="metrics_low_body">低于 70 mg/dL（3.9 mmol/L）的读数通常被视为偏低。现在适合用含糖的食物结束断食，并按照医生为你制定的方案处理。如果感到发抖、意识模糊或不适，请寻求医疗帮助。</string>
+    <string name="metrics_high_ketone_title">这次酮体读数偏高</string>
+    <string name="metrics_high_ketone_body">3.0 mmol/L 或以上的酮体高于断食时的常见水平。如果你患有糖尿病，或感到恶心、口渴或呼吸急促，请停止断食并联系你的医生。</string>
+</resources>

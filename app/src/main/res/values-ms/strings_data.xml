@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_title">Glukosa &amp; keton</string>
+    <string name="metrics_glucose">Glukosa</string>
+    <string name="metrics_ketones">Keton</string>
+    <string name="metrics_invalid">Masukkan bacaan antara %1$s dan %2$s %3$s.</string>
+    <string name="metrics_glucose_note">Pilihan. Catat bacaan daripada meter anda jika anda memantau glukosa.</string>
+    <string name="metrics_ketones_local">Bacaan keton kekal pada peranti ini. Health Connect tiada jenis data keton, jadi ia tidak dikongsi.</string>
+    <string name="metrics_empty">Belum ada bacaan</string>
+    <string name="metrics_deleted">%1$s dipadam</string>
+    <string name="metrics_undo">Buat asal</string>
+    <string name="metrics_ranges_note">Bacaan berbeza antara individu dan antara meter. Sebarang julat yang ditunjukkan di sini ialah maklumat umum, bukan nasihat. Doktor anda boleh memberitahu apa yang sesuai untuk anda.</string>
+    <string name="metrics_low_title">Bacaan glukosa ini rendah</string>
+    <string name="metrics_low_body">Bacaan di bawah 70 mg/dL (3.9 mmol/L) biasanya dianggap rendah. Ini masa yang sesuai untuk berbuka dengan sesuatu yang mengandungi gula dan mengikut pelan doktor anda. Jika anda berasa menggeletar, keliru atau tidak sihat, dapatkan bantuan perubatan.</string>
+    <string name="metrics_high_ketone_title">Bacaan keton ini tinggi</string>
+    <string name="metrics_high_ketone_body">Keton 3.0 mmol/L atau lebih adalah lebih tinggi daripada biasa semasa berpuasa. Jika anda menghidap diabetes, atau berasa loya, dahaga atau sesak nafas, hentikan puasa dan hubungi doktor anda.</string>
+</resources>

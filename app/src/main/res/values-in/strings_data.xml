@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_title">Glukosa &amp; keton</string>
+    <string name="metrics_glucose">Glukosa</string>
+    <string name="metrics_ketones">Keton</string>
+    <string name="metrics_invalid">Masukkan hasil antara %1$s dan %2$s %3$s.</string>
+    <string name="metrics_glucose_note">Opsional. Catat hasil dari alat ukur Anda jika Anda memantau glukosa.</string>
+    <string name="metrics_ketones_local">Hasil keton tetap di perangkat ini. Health Connect tidak memiliki jenis data keton, jadi tidak dibagikan.</string>
+    <string name="metrics_empty">Belum ada hasil</string>
+    <string name="metrics_deleted">%1$s dihapus</string>
+    <string name="metrics_undo">Urungkan</string>
+    <string name="metrics_ranges_note">Hasil berbeda pada tiap orang dan tiap alat ukur. Rentang apa pun yang ditampilkan di sini adalah informasi umum, bukan saran. Dokter Anda dapat memberi tahu apa yang tepat untuk Anda.</string>
+    <string name="metrics_low_title">Hasil glukosa ini rendah</string>
+    <string name="metrics_low_body">Hasil di bawah 70 mg/dL (3.9 mmol/L) umumnya dianggap rendah. Ini saat yang tepat untuk membatalkan puasa dengan sesuatu yang mengandung gula dan mengikuti rencana dokter Anda. Jika Anda merasa gemetar, bingung, atau tidak enak badan, segera cari bantuan medis.</string>
+    <string name="metrics_high_ketone_title">Hasil keton ini tinggi</string>
+    <string name="metrics_high_ketone_body">Keton 3.0 mmol/L atau lebih lebih tinggi dari biasanya saat berpuasa. Jika Anda memiliki diabetes, atau merasa mual, haus, atau sesak napas, hentikan puasa dan hubungi dokter Anda.</string>
+</resources>
