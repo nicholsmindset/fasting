@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -177,7 +178,7 @@ private fun PlanCard(offer: PlanOffer, selected: Boolean, onSelect: () -> Unit) 
                         period?.days?.takeIf { it > 0 }?.let { Measure(it, MeasureUnit.DAY) },
                     )
                     val trial = if (measures.isEmpty()) stringResource(R.string.program_trial_available) else {
-                        val locale = LocalContext.current.resources.configuration.locales[0]
+                        val locale = LocalConfiguration.current.locales[0]
                         val duration = MeasureFormat.getInstance(locale, MeasureFormat.FormatWidth.WIDE).formatMeasures(*measures.toTypedArray())
                         stringResource(R.string.program_trial_duration, duration)
                     }
