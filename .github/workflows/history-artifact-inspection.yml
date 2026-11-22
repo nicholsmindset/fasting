@@ -100,3 +100,18 @@ jobs:
           for i in range(0,len(enc),960):
               print("HISTORY_SHEET_DATA",enc[i:i+960])
           PY
+      - name: Prepare the byte-identical standalone APK
+        run: |
+          cp preview/app/build/outputs/apk/staging/app-staging.apk 'Fasting-Shift-staging-3f26c12c.apk'
+          echo '22cd307946bbfe6a9e634797a9790c00f0220b2e2340e48b6a5e90b0ea5fb958  Fasting-Shift-staging-3f26c12c.apk' | sha256sum -c -
+      - name: Upload installable staging APK
+        id: staging-file
+        uses: actions/upload-artifact@v7
+        with:
+          path: Fasting-Shift-staging-3f26c12c.apk
+          archive: false
+          if-no-files-found: error
+      - name: Confirm the standalone artifact digest
+        env:
+          ARTIFACT_DIGEST: ${{ steps.staging-file.outputs.artifact-digest }}
+        run: test "${ARTIFACT_DIGEST#sha256:}" = '22cd307946bbfe6a9e634797a9790c00f0220b2e2340e48b6a5e90b0ea5fb958'
