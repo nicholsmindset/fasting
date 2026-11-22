@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Muslim fasting hub: Hijri calendar, Sunnah fasts, qada. Wellness and calendar aid only, no rulings. -->
+    <string name="muslim_hub_title">Muslim fasting</string>
+    <string name="muslim_hub_entry">Sunnah &amp; qada fasts</string>
+    <string name="muslim_today">Today</string>
+    <string name="muslim_tomorrow">Tomorrow</string>
+    <string name="muslim_hijri_unavailable">The Hijri date isn\'t available for this day.</string>
+    <string name="muslim_hijri_adjusted">Adjusted by %1$s</string>
+    <string name="muslim_hijri_note">Hijri dates follow the Umm al-Qura calendar. Local moon sighting can differ by a day or two, so check with your local religious authority and adjust the date in Settings if needed.</string>
+    <string name="muslim_today_sunnah">A Sunnah fasting day</string>
+    <string name="muslim_today_none">No Sunnah fast today. You can still make up a qada day whenever suits you.</string>
+    <string name="muslim_no_fast_ramadan">It\'s Ramadan. Voluntary fasts aren\'t suggested this month.</string>
+    <string name="muslim_no_fast_eid_fitr">Eid al-Fitr. No fast today. Eid Mubarak!</string>
+    <string name="muslim_no_fast_eid_adha">Eid al-Adha. No fast today. Eid Mubarak!</string>
+    <string name="muslim_no_fast_tashreeq">Days of tashreeq. Fasts aren\'t suggested today.</string>
+    <string name="muslim_start_sunnah">Start Sunnah fast</string>
+    <string name="muslim_start_qada">Start qada fast</string>
+    <string name="muslim_start_ramadan">Start today\'s Ramadan fast</string>
+    <string name="muslim_until_maghrib">Until maghrib at %1$s · %2$s</string>
+    <string name="muslim_too_late">Maghrib is at %1$s, too close to start a fast today.</string>
+    <string name="muslim_fast_active">A fast is in progress</string>
+    <string name="muslim_fast_active_body">You can follow it on the Timer.</string>
+    <string name="muslim_choose_city_body">Choose your city first, so the fast ends at maghrib.</string>
+    <string name="muslim_upcoming">Next 30 days</string>
+    <string name="muslim_upcoming_none">No Sunnah fasting days in the next 30 days.</string>
+    <string name="muslim_upcoming_footer">A calendar guide only. Dates may differ where you live, so check with your local religious authority.</string>
+    <string name="muslim_open_timer">Go to Timer</string>
+    <string name="muslim_invalid_start">This fast can\'t start right now. Maghrib may be too close, or it overlaps a fast already recorded.</string>
+
+    <!-- Qada (making up missed Ramadan days). Gentle, never shaming. -->
+    <string name="qada_year">Ramadan %1$d AH</string>
+
+    <!-- Settings -->
+    <string name="muslim_offset_none">None</string>
+    <plurals name="muslim_offset_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+
+    <!-- Sunnah fast types -->
+    <string name="sunnah_type_mon_thu">Monday &amp; Thursday</string>
+    <string name="sunnah_type_mon_thu_desc">Every week</string>
+    <string name="sunnah_type_white_days">White days (Ayyam al-Bid)</string>
+    <string name="sunnah_type_white_days_desc">13th to 15th of each Hijri month</string>
+    <string name="sunnah_type_arafah">Day of Arafah</string>
+    <string name="sunnah_type_arafah_desc">9 Dhul Hijjah</string>
+    <string name="sunnah_type_ashura">Tasu\'a &amp; Ashura</string>
+    <string name="sunnah_type_ashura_desc">9 and 10 Muharram</string>
+    <string name="sunnah_type_shawwal">Six days of Shawwal</string>
+    <string name="sunnah_type_shawwal_desc">Any days after Eid al-Fitr</string>
+
+    <!-- Evening-before reminders, by type -->
+    <string name="notif_sunnah_body_mon_thu">Tomorrow is a Monday or Thursday Sunnah fast. Plan your suhoor tonight if you\'d like to fast.</string>
+    <string name="notif_sunnah_body_white_days">Tomorrow is one of the white days. Plan your suhoor tonight if you\'d like to fast.</string>
+    <string name="notif_sunnah_body_arafah">Tomorrow is the Day of Arafah. Plan your suhoor tonight if you\'d like to fast.</string>
+    <string name="notif_sunnah_body_ashura">Tomorrow is Tasu\'a or Ashura. Plan your suhoor tonight if you\'d like to fast.</string>
+    <string name="notif_sunnah_body_shawwal">Tomorrow you could fast one of the six days of Shawwal. Plan your suhoor tonight if you\'d like to.</string>
+
+    <!-- History labels -->
+    <string name="fast_kind_ramadan">Ramadan</string>
+    <string name="fast_kind_sunnah">Sunnah</string>
+    <string name="fast_kind_qada">Qada</string>
+
+    <!-- Hijri calendar -->
+    <string name="hijri_date">%1$d %2$s %3$d AH</string>
+    <string name="hijri_month_1">Muharram</string>
+    <string name="hijri_month_2">Safar</string>
+    <string name="hijri_month_3">Rabi al-Awwal</string>
+    <string name="hijri_month_4">Rabi al-Thani</string>
+    <string name="hijri_month_5">Jumada al-Ula</string>
+    <string name="hijri_month_6">Jumada al-Akhirah</string>
+    <string name="hijri_month_7">Rajab</string>
+    <string name="hijri_month_8">Sha\'ban</string>
+    <string name="hijri_month_9">Ramadan</string>
+    <string name="hijri_month_10">Shawwal</string>
+    <string name="hijri_month_11">Dhul Qa\'dah</string>
+    <string name="hijri_month_12">Dhul Hijjah</string>
+</resources>

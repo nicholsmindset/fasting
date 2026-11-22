@@ -112,7 +112,7 @@ class RamadanCardViewModel @Inject constructor(
  * while eating. Shows nothing when Ramadan mode is off.
  */
 @Composable
-fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
+fun RamadanCard(onOpenHub: () -> Unit = {}, vm: RamadanCardViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var picking by rememberSaveable { mutableStateOf(false) }
     when (val s = state) {
@@ -128,7 +128,10 @@ fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
         }
         is RamadanCardState.Active -> ActiveCard(s)
     }
-    if (state != RamadanCardState.Hidden) QadaLedgerCard()
+    if (state != RamadanCardState.Hidden) {
+        QadaLedgerCard()
+        com.fastingshift.app.ui.design.PlainButton(stringResource(R.string.muslim_hub_entry), onClick = onOpenHub)
+    }
     if (picking) {
         CityPickerSheet(selectedId = null, onPick = { vm.chooseCity(it); picking = false }, onDismiss = { picking = false })
     }

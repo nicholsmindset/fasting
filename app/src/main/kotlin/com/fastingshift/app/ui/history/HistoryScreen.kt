@@ -559,6 +559,7 @@ private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit)
                     Box(Modifier.size(10.dp).clip(CircleShape).background(color))
                 },
             ) {
+                com.fastingshift.app.ui.ramadan.FastKindChip(f.kind)
                 Text(
                     status,
                     style = MaterialTheme.typography.bodySmall,

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="muslim_hub_title">Puasa Muslim</string>
+    <string name="muslim_hub_entry">Puasa sunat &amp; qada</string>
+    <string name="muslim_today">Hari ini</string>
+    <string name="muslim_tomorrow">Esok</string>
+    <string name="muslim_hijri_unavailable">Tarikh Hijrah tidak tersedia untuk hari ini.</string>
+    <string name="muslim_hijri_adjusted">Dilaraskan %1$s</string>
+    <string name="muslim_hijri_note">Tarikh Hijrah mengikut kalendar Umm al-Qura. Rukyah tempatan mungkin berbeza sehari atau dua, jadi semak dengan pihak berkuasa agama tempatan anda dan laraskan tarikh dalam Tetapan jika perlu.</string>
+    <string name="muslim_today_sunnah">Hari puasa sunat</string>
+    <string name="muslim_today_none">Tiada puasa sunat hari ini. Anda masih boleh mengganti puasa qada bila-bila masa yang sesuai.</string>
+    <string name="muslim_no_fast_ramadan">Sekarang bulan Ramadan. Puasa sunat tidak dicadangkan bulan ini.</string>
+    <string name="muslim_no_fast_eid_fitr">Hari Raya Aidilfitri. Tiada puasa hari ini. Selamat Hari Raya!</string>
+    <string name="muslim_no_fast_eid_adha">Hari Raya Aidiladha. Tiada puasa hari ini. Selamat Hari Raya!</string>
+    <string name="muslim_no_fast_tashreeq">Hari-hari tasyrik. Puasa tidak dicadangkan hari ini.</string>
+    <string name="muslim_start_sunnah">Mula puasa sunat</string>
+    <string name="muslim_start_qada">Mula puasa qada</string>
+    <string name="muslim_start_ramadan">Mula puasa Ramadan hari ini</string>
+    <string name="muslim_until_maghrib">Hingga berbuka pada %1$s · %2$s</string>
+    <string name="muslim_too_late">Maghrib pada %1$s, terlalu dekat untuk mula berpuasa hari ini.</string>
+    <string name="muslim_fast_active">Puasa sedang berjalan</string>
+    <string name="muslim_fast_active_body">Anda boleh mengikutinya di Pemasa.</string>
+    <string name="muslim_choose_city_body">Pilih bandar anda dahulu supaya puasa tamat pada waktu maghrib.</string>
+    <string name="muslim_upcoming">30 hari akan datang</string>
+    <string name="muslim_upcoming_none">Tiada hari puasa sunat dalam 30 hari akan datang.</string>
+    <string name="muslim_upcoming_footer">Panduan kalendar sahaja. Tarikh mungkin berbeza di tempat anda, jadi semak dengan pihak berkuasa agama tempatan anda.</string>
+    <string name="muslim_open_timer">Pergi ke Pemasa</string>
+    <string name="muslim_invalid_start">Puasa ini tidak boleh dimulakan sekarang. Maghrib mungkin terlalu dekat, atau ia bertindih dengan puasa yang telah direkodkan.</string>
+    <string name="qada_year">Ramadan %1$d H</string>
+    <string name="muslim_offset_none">Tiada</string>
+    <plurals name="muslim_offset_days">
+        <item quantity="other">%d hari</item>
+    </plurals>
+
+    <string name="sunnah_type_mon_thu">Isnin &amp; Khamis</string>
+    <string name="sunnah_type_mon_thu_desc">Setiap minggu</string>
+    <string name="sunnah_type_white_days">Hari putih (Ayyamul Bidh)</string>
+    <string name="sunnah_type_white_days_desc">13 hingga 15 setiap bulan Hijrah</string>
+    <string name="sunnah_type_arafah">Hari Arafah</string>
+    <string name="sunnah_type_arafah_desc">9 Zulhijah</string>
+    <string name="sunnah_type_ashura">Tasua &amp; Asyura</string>
+    <string name="sunnah_type_ashura_desc">9 dan 10 Muharam</string>
+    <string name="sunnah_type_shawwal">Enam hari Syawal</string>
+    <string name="sunnah_type_shawwal_desc">Mana-mana hari selepas Aidilfitri</string>
+
+    <string name="notif_sunnah_body_mon_thu">Esok puasa sunat Isnin atau Khamis. Rancang sahur anda malam ini jika anda ingin berpuasa.</string>
+    <string name="notif_sunnah_body_white_days">Esok salah satu hari putih. Rancang sahur anda malam ini jika anda ingin berpuasa.</string>
+    <string name="notif_sunnah_body_arafah">Esok Hari Arafah. Rancang sahur anda malam ini jika anda ingin berpuasa.</string>
+    <string name="notif_sunnah_body_ashura">Esok hari Tasua atau Asyura. Rancang sahur anda malam ini jika anda ingin berpuasa.</string>
+    <string name="notif_sunnah_body_shawwal">Esok anda boleh berpuasa salah satu daripada enam hari Syawal. Rancang sahur anda malam ini jika anda mahu.</string>
+
+    <string name="fast_kind_ramadan">Ramadan</string>
+    <string name="fast_kind_sunnah">Sunat</string>
+    <string name="fast_kind_qada">Qada</string>
+
+    <string name="hijri_date">%1$d %2$s %3$d H</string>
+    <string name="hijri_month_1">Muharam</string>
+    <string name="hijri_month_2">Safar</string>
+    <string name="hijri_month_3">Rabiulawal</string>
+    <string name="hijri_month_4">Rabiulakhir</string>
+    <string name="hijri_month_5">Jamadilawal</string>
+    <string name="hijri_month_6">Jamadilakhir</string>
+    <string name="hijri_month_7">Rejab</string>
+    <string name="hijri_month_8">Syaaban</string>
+    <string name="hijri_month_9">Ramadan</string>
+    <string name="hijri_month_10">Syawal</string>
+    <string name="hijri_month_11">Zulkaedah</string>
+    <string name="hijri_month_12">Zulhijah</string>
+</resources>
