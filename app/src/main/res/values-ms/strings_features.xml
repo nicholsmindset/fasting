@@ -99,7 +99,7 @@
     <string name="timer_edit">Edit masa</string>
     <string name="timer_check_in">Buat semakan</string>
     <string name="timer_custom">Tempoh tersuai</string>
-    <string name="timer_program_target">Sasaran program hari ini: %1$dj</string>
+    <string name="timer_program_target">Sasaran program hari ini: %1$dh</string>
     <string name="timeline_title">Apa yang mungkin berlaku</string>
     <string name="timeline_note">Masa berbeza bagi setiap orang. Setiap baris menunjukkan sekuat mana buktinya.</string>
 
@@ -132,7 +132,7 @@
     <string name="history_ring_a11y">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</string>
     <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
     <string name="status_active">Sedang berjalan</string>
-    <string name="status_completed">Selesai seperti dirancang</string>
+    <string name="status_completed">Ikut rancangan</string>
     <string name="status_ended">Tamat</string>
 
     <!-- Log -->
@@ -318,7 +318,7 @@
     <string name="widget_elapsed">%1$s berpuasa</string>
     <string name="widget_remaining">%1$s lagi</string>
     <string name="widget_goal_reached">Sasaran dicapai</string>
-    <string name="widget_next_milestone">Seterusnya: %1$dj</string>
+    <string name="widget_next_milestone">Seterusnya: %1$dh</string>
 
     <!-- Accessibility (TalkBack) -->
     <string name="a11y_timer">Berpuasa %1$s daripada %2$s, %3$d peratus</string>

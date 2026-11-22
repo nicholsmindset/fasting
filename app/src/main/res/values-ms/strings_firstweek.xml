@@ -23,8 +23,8 @@
     <string name="onb_protocol_show_more">Tunjukkan puasa lebih panjang</string>
     <string name="onb_protocol_recommended">Dicadangkan untuk sasaran anda</string>
     <string name="onb_protocol_long_note">Kami mulakan anda dengan 16:8. Tingkatkan kepada puasa lebih panjang selepas beberapa minggu, apabila puasa harian terasa mudah.</string>
-    <string name="protocol_desc_window">%1$s · puasa %2$dj, makan dalam %3$dj</string>
-    <string name="protocol_desc_omad">%1$s · puasa 23j, satu hidangan sehari</string>
+    <string name="protocol_desc_window">%1$s · puasa %2$dh, makan dalam %3$dh</string>
+    <string name="protocol_desc_omad">%1$s · puasa 23h, satu hidangan sehari</string>
     <string name="protocol_desc_duration">%1$s · satu puasa %2$d jam</string>
     <string name="protocol_desc_five_two">%1$s · dua hari ringan seminggu</string>
     <string name="protocol_desc_adf">%1$s · puasa selang sehari</string>

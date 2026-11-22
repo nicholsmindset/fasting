@@ -8,7 +8,7 @@
     <string name="ramadan_iftar_at">Berbuka pada %1$s</string>
     <string name="ramadan_suhoor_ends">Sahur tamat %1$s</string>
     <string name="ramadan_in">dalam %1$s</string>
-    <string name="ramadan_hours_minutes">%1$dj %2$02dm</string>
+    <string name="ramadan_hours_minutes">%1$dh %2$02dm</string>
     <string name="ramadan_minutes">%1$d min</string>
     <string name="ramadan_fajr_at">Subuh %1$s</string>
     <string name="ramadan_maghrib_at">Maghrib %1$s</string>
@@ -40,8 +40,8 @@
     <string name="settings_title">Tetapan</string>
     <string name="settings_plan_row">Pelan</string>
     <string name="settings_reminders_footer">Jika peringatan tiba lewat, jalankan semakan kebolehpercayaan di bawah Puasa.</string>
-    <string name="settings_after_hours">Selepas %1$dj</string>
-    <string name="settings_hours_value">%1$dj</string>
+    <string name="settings_after_hours">Selepas %1$dh</string>
+    <string name="settings_hours_value">%1$dh</string>
     <string name="settings_milestones_footer">Terima pemberitahuan apabila puasa anda mencapai tempoh ini.</string>
     <string name="settings_forgot_title">\"Terlupa menamatkan puasa?\"</string>
     <string name="settings_forgot_footer">Peringatan lembut jika puasa berlanjutan selama ini melepasi sasarannya.</string>

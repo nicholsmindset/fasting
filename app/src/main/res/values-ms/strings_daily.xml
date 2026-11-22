@@ -10,8 +10,8 @@
     <string name="daily_started">Bermula</string>
     <string name="daily_goal">Sasaran</string>
     <string name="daily_yesterday_at">Semalam, %1$s</string>
-    <string name="daily_protocol_fast">Puasa %1$dj</string>
-    <string name="daily_protocol_eat">Makan %1$dj</string>
+    <string name="daily_protocol_fast">Puasa %1$dh</string>
+    <string name="daily_protocol_eat">Makan %1$dh</string>
     <plurals name="daily_streak_pill">
         <item quantity="other">Rentetan %1$d hari</item>
     </plurals>
@@ -19,7 +19,7 @@
     <!-- Today card -->
     <string name="daily_today_title">Hari ini</string>
     <string name="daily_next_fast">Puasa seterusnya</string>
-    <string name="daily_fasting_now">Sedang berpuasa</string>
+    <string name="daily_fasting_now">Berpuasa</string>
     <string name="daily_next_none">Belum dirancang</string>
     <string name="daily_water">Air</string>
     <string name="daily_water_of">%1$s / %2$s</string>
@@ -52,12 +52,12 @@
     <string name="recap_hours">Berpuasa</string>
     <string name="recap_to_plan">Puasa ikut rancangan</string>
     <string name="recap_water_days">Hari capai sasaran air</string>
-    <string name="recap_x_of_y">%1$d daripada %2$d</string>
+    <string name="recap_x_of_y">%1$d/%2$d</string>
     <!-- Each message gets (completed planned days, planned days); not all use them. -->
     <string name="recap_msg_empty">Minggu yang baharu. Berpuasalah bila sesuai dengan rancangan anda.</string>
     <string name="recap_msg_empty_last">Minggu yang tenang. Tidak mengapa. Sambung semula bila anda bersedia.</string>
-    <string name="recap_msg_all">%1$d daripada %2$d hari yang dirancang berjalan seperti dirancang. Yang penting ialah konsisten.</string>
-    <string name="recap_msg_some">%1$d daripada %2$d hari yang dirancang berjalan seperti dirancang. Konsisten lebih penting daripada tempoh.</string>
+    <string name="recap_msg_all">%1$d daripada %2$d hari yang dirancang berjalan mengikut rancangan. Yang penting ialah konsisten.</string>
+    <string name="recap_msg_some">%1$d daripada %2$d hari yang dirancang berjalan mengikut rancangan. Konsisten lebih penting daripada tempoh.</string>
     <string name="recap_msg_none">Belum ada hari yang dirancang selesai. Setiap hari ialah permulaan baharu.</string>
     <string name="log_trend_a11y">Trend berat, %1$d catatan dalam 90 hari lepas. Daripada %2$s kepada %3$s. Terendah %4$s, tertinggi %5$s.</string>
 </resources>
