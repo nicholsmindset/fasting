@@ -14,4 +14,7 @@
     <string name="metrics_low_body">Bacaan di bawah 70 mg/dL (3.9 mmol/L) biasanya dianggap rendah. Ini masa yang sesuai untuk berbuka dengan sesuatu yang mengandungi gula dan mengikut pelan doktor anda. Jika anda berasa menggeletar, keliru atau tidak sihat, dapatkan bantuan perubatan.</string>
     <string name="metrics_high_ketone_title">Bacaan keton ini tinggi</string>
     <string name="metrics_high_ketone_body">Keton 3.0 mmol/L atau lebih adalah lebih tinggi daripada biasa semasa berpuasa. Jika anda menghidap diabetes, atau berasa loya, dahaga atau sesak nafas, hentikan puasa dan hubungi doktor anda.</string>
+    <string name="metrics_glucose_syncing">Bacaan glukosa turut disimpan ke Health Connect.</string>
+    <string name="metrics_glucose_sync_offer">Simpan bacaan glukosa ke Health Connect juga?</string>
+    <string name="metrics_glucose_sync_allow">Benarkan</string>
 </resources>

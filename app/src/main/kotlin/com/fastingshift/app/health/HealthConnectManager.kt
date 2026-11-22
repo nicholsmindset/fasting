@@ -7,15 +7,24 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.Record
+import androidx.health.connect.client.records.RestingHeartRateRecord
+import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.connect.client.units.BloodGlucose
 import androidx.health.connect.client.units.Mass
 import androidx.health.connect.client.units.Volume
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.domain.insights.Insights
+import com.fastingshift.domain.insights.RestingHeartRateSample
+import com.fastingshift.domain.insights.SleepSession
+import com.fastingshift.domain.model.MetricLog
+import com.fastingshift.domain.model.MetricType
 import com.fastingshift.domain.model.RecordSource
 import com.fastingshift.domain.model.VolumeUnit
 import com.fastingshift.domain.model.WaterLog
@@ -28,6 +37,7 @@ import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.reflect.KClass
 import kotlin.math.roundToLong
 
 /** A weight read from Health Connect, reduced to what de-duplication needs. */
@@ -49,7 +59,11 @@ object WeightImport {
 
 /**
  * Optional Health Connect mirror (PRD F6). The local database stays the source of truth.
- * Writes WeightRecord and HydrationRecord; reads WeightRecord. Nothing else. Every call is
+ * Writes WeightRecord, HydrationRecord and BloodGlucoseRecord; reads WeightRecord, and (for
+ * Shift+ body signals, read-only) SleepSessionRecord and RestingHeartRateRecord. Ketones are
+ * local only: Health Connect has no ketone type. Permissions are requested incrementally: the
+ * core [permissions] on sync opt-in, [glucosePermissions] and [bodySignalPermissions] where
+ * those features are used. Every call is
  * guarded: Health Connect can throw SecurityException (permission revoked) or
  * RemoteException/IllegalStateException (provider restarting or updating) at any time.
  */
@@ -62,6 +76,15 @@ class HealthConnectManager @Inject constructor(
         HealthPermission.getWritePermission(WeightRecord::class),
         HealthPermission.getReadPermission(WeightRecord::class),
         HealthPermission.getWritePermission(HydrationRecord::class),
+    )
+
+    /** Asked for from the glucose log, on top of [permissions]. */
+    val glucosePermissions: Set<String> = setOf(HealthPermission.getWritePermission(BloodGlucoseRecord::class))
+
+    /** Read-only, asked for from Shift+ insights ("Body signals"). */
+    val bodySignalPermissions: Set<String> = setOf(
+        HealthPermission.getReadPermission(SleepSessionRecord::class),
+        HealthPermission.getReadPermission(RestingHeartRateRecord::class),
     )
 
     private fun sdkStatus(): Int = runCatching { HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE) }
@@ -87,6 +110,11 @@ class HealthConnectManager @Inject constructor(
 
     suspend fun hasAllPermissions(): Boolean = guarded(false) {
         client()?.permissionController?.getGrantedPermissions()?.containsAll(permissions) == true
+    }
+
+    /** Whether every permission in [wanted] is granted; false if Health Connect is unavailable. */
+    suspend fun hasPermissions(wanted: Set<String>): Boolean = guarded(false) {
+        client()?.permissionController?.getGrantedPermissions()?.containsAll(wanted) == true
     }
 
     suspend fun writeWeight(log: WeightLog): Result<Unit> = guardedResult {
@@ -119,6 +147,54 @@ class HealthConnectManager @Inject constructor(
                 ),
             ),
         )
+    }
+
+    /** Writes a glucose reading (never a ketone reading: Health Connect has no ketone type). */
+    suspend fun writeGlucose(log: MetricLog): Result<Unit> = guardedResult {
+        require(log.type == MetricType.GLUCOSE) { "only glucose readings go to Health Connect" }
+        val c = client() ?: return@guardedResult
+        c.insertRecords(
+            listOf(
+                BloodGlucoseRecord(
+                    time = log.at,
+                    zoneOffset = ZoneId.systemDefault().rules.getOffset(log.at),
+                    metadata = Metadata.manualEntry(clientRecordId = "glucose-${log.id}"),
+                    level = BloodGlucose.millimolesPerLiter(log.mmolPerL),
+                    specimenSource = BloodGlucoseRecord.SPECIMEN_SOURCE_UNKNOWN,
+                    relationToMeal = BloodGlucoseRecord.RELATION_TO_MEAL_GENERAL,
+                ),
+            ),
+        )
+    }
+
+    /** Removes a glucose reading this app wrote, when the user deletes it here. */
+    suspend fun deleteGlucose(id: Long): Result<Unit> = guardedResult {
+        val c = client() ?: return@guardedResult
+        c.deleteRecords(BloodGlucoseRecord::class, recordIdsList = emptyList(), clientRecordIdsList = listOf("glucose-$id"))
+    }
+
+    /** Sleep sessions since [since], from any app; empty if unavailable or not granted. */
+    suspend fun readSleep(since: Instant): List<SleepSession> = guarded(emptyList()) {
+        val c = client() ?: return@guarded emptyList()
+        readAll(c, SleepSessionRecord::class, since).filter { it.endTime.isAfter(it.startTime) }.map { SleepSession(it.startTime, it.endTime) }
+    }
+
+    /** Resting heart rate samples since [since]; empty if unavailable or not granted. */
+    suspend fun readRestingHeartRate(since: Instant): List<RestingHeartRateSample> = guarded(emptyList()) {
+        val c = client() ?: return@guarded emptyList()
+        readAll(c, RestingHeartRateRecord::class, since).map { RestingHeartRateSample(it.time, it.beatsPerMinute.toDouble()) }
+    }
+
+    private suspend fun <T : Record> readAll(c: HealthConnectClient, type: KClass<T>, since: Instant): List<T> {
+        val records = mutableListOf<T>()
+        var pageToken: String? = null
+        var pages = 0
+        do {
+            val response = c.readRecords(ReadRecordsRequest(type, TimeRangeFilter.after(since), pageSize = PAGE_SIZE, pageToken = pageToken))
+            records += response.records
+            pageToken = response.pageToken?.takeIf { it.isNotEmpty() }
+        } while (pageToken != null && ++pages < MAX_PAGES)
+        return records
     }
 
     /**

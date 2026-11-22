@@ -14,4 +14,7 @@
     <string name="metrics_low_body">低于 70 mg/dL（3.9 mmol/L）的读数通常被视为偏低。现在适合用含糖的食物结束断食，并按照医生为你制定的方案处理。如果感到发抖、意识模糊或不适，请寻求医疗帮助。</string>
     <string name="metrics_high_ketone_title">这次酮体读数偏高</string>
     <string name="metrics_high_ketone_body">3.0 mmol/L 或以上的酮体高于断食时的常见水平。如果你患有糖尿病，或感到恶心、口渴或呼吸急促，请停止断食并联系你的医生。</string>
+    <string name="metrics_glucose_syncing">血糖读数也会保存到 Health Connect。</string>
+    <string name="metrics_glucose_sync_offer">也将血糖读数保存到 Health Connect？</string>
+    <string name="metrics_glucose_sync_allow">允许</string>
 </resources>

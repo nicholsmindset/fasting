@@ -1,5 +1,6 @@
 package com.fastingshift.app.ui.log
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.GroupDivider
@@ -40,6 +42,7 @@ import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.SegmentedControl
 import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.data.repo.MetricRepository
+import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.insights.MetricReadings
 import com.fastingshift.domain.model.MetricLog
 import com.fastingshift.domain.model.MetricType
@@ -69,6 +72,10 @@ data class MetricsState(
     val highKetone: Boolean = false,
     /** Just deleted, can be put back. */
     val lastDeleted: MetricLog? = null,
+    /** Sync is on but glucose may not be written yet: offer the extra permission. */
+    val offerGlucoseSync: Boolean = false,
+    /** Sync is on and glucose readings are written to Health Connect. */
+    val glucoseSyncing: Boolean = false,
 )
 
 /** Everything the glucose & ketones section can ask for. */
@@ -77,18 +84,28 @@ class MetricActions(
     val setGlucoseUnit: (MetricUnit) -> Unit = {},
     val delete: (MetricLog) -> Unit = {},
     val undoDelete: () -> Unit = {},
+    val allowGlucoseSync: () -> Unit = {},
 )
 
 @HiltViewModel
 class MetricsViewModel @Inject constructor(
     private val metrics: MetricRepository,
+    private val settings: SettingsRepository,
+    val health: HealthConnectManager,
     private val clock: Clock,
 ) : ViewModel() {
     private val chosenUnit = MutableStateFlow<MetricUnit?>(null)
     private val lastDeleted = MutableStateFlow<MetricLog?>(null)
+    private val glucoseGranted = MutableStateFlow(false)
     private var undoTimeout: Job? = null
 
-    val state: StateFlow<MetricsState> = combine(metrics.observeAll(), chosenUnit, lastDeleted) { all, chosen, deleted ->
+    init {
+        refreshGlucosePermission()
+    }
+
+    val state: StateFlow<MetricsState> = combine(
+        metrics.observeAll(), chosenUnit, lastDeleted, settings.settings, glucoseGranted,
+    ) { all, chosen, deleted, s, granted ->
         val now = clock.instant()
         val latestGlucose = all.firstOrNull { it.type == MetricType.GLUCOSE }
         val latestKetone = all.firstOrNull { it.type == MetricType.KETONE }
@@ -100,6 +117,8 @@ class MetricsViewModel @Inject constructor(
             lowGlucose = recent(latestGlucose) && MetricReadings.isLowGlucose(latestGlucose!!),
             highKetone = recent(latestKetone) && MetricReadings.isHighKetone(latestKetone!!),
             lastDeleted = deleted,
+            offerGlucoseSync = s.healthConnectSync && !granted && health.isAvailable(),
+            glucoseSyncing = s.healthConnectSync && granted,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MetricsState(glucoseUnit = MetricReadings.defaultGlucoseUnit(null, Locale.getDefault().country)))
 
@@ -107,13 +126,22 @@ class MetricsViewModel @Inject constructor(
         val safeUnit = if (type == MetricType.KETONE) MetricUnit.MMOL_L else unit
         if (!MetricReadings.isValid(type, safeUnit, value)) return@launch
         clearUndo()
-        metrics.add(MetricLog(at = clock.instant(), type = type, value = value, unit = safeUnit))
+        save(MetricLog(at = clock.instant(), type = type, value = value, unit = safeUnit))
     }
+
+    /** Saves locally (the source of truth), then mirrors glucose to Health Connect if synced. */
+    private suspend fun save(log: MetricLog) {
+        val id = metrics.add(log)
+        if (log.type == MetricType.GLUCOSE && settings.current().healthConnectSync) health.writeGlucose(log.copy(id = id))
+    }
+
+    fun refreshGlucosePermission() = viewModelScope.launch { glucoseGranted.value = health.hasPermissions(health.glucosePermissions) }
 
     fun setGlucoseUnit(unit: MetricUnit) = chosenUnit.update { unit }
 
     fun delete(log: MetricLog) = viewModelScope.launch {
         metrics.delete(log.id)
+        if (log.type == MetricType.GLUCOSE && settings.current().healthConnectSync) health.deleteGlucose(log.id)
         lastDeleted.value = log
         undoTimeout?.cancel()
         undoTimeout = viewModelScope.launch { delay(UNDO_MS); lastDeleted.value = null }
@@ -122,7 +150,7 @@ class MetricsViewModel @Inject constructor(
     fun undoDelete() = viewModelScope.launch {
         val log = lastDeleted.value ?: return@launch
         clearUndo()
-        metrics.add(log)
+        save(log)
     }
 
     private fun clearUndo() {
@@ -140,6 +168,7 @@ class MetricsViewModel @Inject constructor(
 @Composable
 fun MetricsRoute(vm: MetricsViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
+    val hcLauncher = rememberLauncherForActivityResult(vm.health.permissionContract()) { vm.refreshGlucosePermission() }
     MetricsSection(
         st,
         MetricActions(
@@ -147,6 +176,7 @@ fun MetricsRoute(vm: MetricsViewModel = hiltViewModel()) {
             setGlucoseUnit = vm::setGlucoseUnit,
             delete = { vm.delete(it) },
             undoDelete = { vm.undoDelete() },
+            allowGlucoseSync = { hcLauncher.launch(vm.health.glucosePermissions) },
         ),
     )
 }
@@ -233,10 +263,22 @@ private fun MetricEntryCard(st: MetricsState, actions: MetricActions) {
             )
         }
         Text(
-            stringResource(if (type == MetricType.KETONE) R.string.metrics_ketones_local else R.string.metrics_glucose_note),
+            stringResource(
+                when {
+                    type == MetricType.KETONE -> R.string.metrics_ketones_local
+                    st.glucoseSyncing -> R.string.metrics_glucose_syncing
+                    else -> R.string.metrics_glucose_note
+                },
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (type == MetricType.GLUCOSE && st.offerGlucoseSync) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.metrics_glucose_sync_offer), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                PlainButton(stringResource(R.string.metrics_glucose_sync_allow), onClick = actions.allowGlucoseSync)
+            }
+        }
     }
 }
 

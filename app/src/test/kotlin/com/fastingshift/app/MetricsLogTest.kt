@@ -60,7 +60,7 @@ class MetricsLogTest {
     @After fun tearDown() = Locale.setDefault(savedLocale)
 
     @Test fun addingAGlucoseReadingListsIt() {
-        val vm = MetricsViewModel(metrics, clock)
+        val vm = MetricsViewModel(metrics, settings, health, clock)
         compose.setContent {
             FastingShiftTheme(darkTheme = false) { LogScreen(LogState(), LogActions(), metrics = { MetricsRoute(vm) }) }
         }
@@ -76,7 +76,7 @@ class MetricsLogTest {
     }
 
     @Test fun outOfRangeReadingIsNotSaved() {
-        val vm = MetricsViewModel(metrics, clock)
+        val vm = MetricsViewModel(metrics, settings, health, clock)
         compose.setContent {
             FastingShiftTheme(darkTheme = false) { LogScreen(LogState(), LogActions(), metrics = { MetricsRoute(vm) }) }
         }

@@ -14,4 +14,7 @@
     <string name="metrics_low_body">Hasil di bawah 70 mg/dL (3.9 mmol/L) umumnya dianggap rendah. Ini saat yang tepat untuk membatalkan puasa dengan sesuatu yang mengandung gula dan mengikuti rencana dokter Anda. Jika Anda merasa gemetar, bingung, atau tidak enak badan, segera cari bantuan medis.</string>
     <string name="metrics_high_ketone_title">Hasil keton ini tinggi</string>
     <string name="metrics_high_ketone_body">Keton 3.0 mmol/L atau lebih lebih tinggi dari biasanya saat berpuasa. Jika Anda memiliki diabetes, atau merasa mual, haus, atau sesak napas, hentikan puasa dan hubungi dokter Anda.</string>
+    <string name="metrics_glucose_syncing">Hasil glukosa juga disimpan ke Health Connect.</string>
+    <string name="metrics_glucose_sync_offer">Simpan hasil glukosa ke Health Connect juga?</string>
+    <string name="metrics_glucose_sync_allow">Izinkan</string>
 </resources>
