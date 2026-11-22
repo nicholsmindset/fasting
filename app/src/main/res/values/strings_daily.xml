@@ -42,6 +42,11 @@
     <string name="log_trend_low">Lowest</string>
     <string name="log_trend_latest">Latest</string>
     <string name="log_trend_high">Highest</string>
+    <!-- Shift+ -->
+    <string name="paywall_best_value">Best value</string>
+    <string name="paywall_continue">Continue</string>
+    <string name="paywall_start_trial">Start 7-day free trial</string>
+
     <!-- History -->
     <string name="history_title">History</string>
     <string name="recap_this_week">This week so far</string>

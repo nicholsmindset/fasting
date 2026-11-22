@@ -2,22 +2,35 @@ package com.fastingshift.app.ui.plus
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.semantics.Role
+import com.fastingshift.app.ui.design.AppCard
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.PlainButton
+import com.fastingshift.app.ui.design.PrimaryButton
+import com.fastingshift.app.ui.design.SecondaryButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,7 +55,6 @@ import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.billing.PlanOffer
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SecondaryScaffold
-import com.fastingshift.app.ui.components.SectionCard
 import com.fastingshift.app.ui.components.convertWeight
 import com.fastingshift.app.ui.components.weightText
 import com.fastingshift.domain.model.WeightUnit
@@ -92,32 +104,81 @@ fun PaywallRoute(onClose: () -> Unit, vm: PaywallViewModel = hiltViewModel()) {
     val ent by vm.billing.entitlement.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { offers = vm.billing.offers() }
 
+    var chosen by remember { mutableStateOf<PlanType?>(null) }
     SecondaryScaffold(title = stringResource(R.string.paywall_title), onBack = onClose) {
-        listOf(R.string.paywall_point_program, R.string.paywall_point_insights).forEach { Text("• " + stringResource(it)) }
-        Text(stringResource(R.string.paywall_free_forever), style = MaterialTheme.typography.bodySmall)
-        when {
-            ent.isShiftPlus -> Text(stringResource(R.string.paywall_already), color = MaterialTheme.colorScheme.primary)
-            !vm.billing.isConfigured -> Text(stringResource(R.string.paywall_unavailable))
-            offers == null -> Text(stringResource(R.string.loading))
-            offers!!.isEmpty() -> Text(stringResource(R.string.paywall_unavailable))
-            else -> offers!!.forEach { offer ->
-                val label = stringResource(
-                    when (offer.plan) {
-                        PlanType.ANNUAL -> R.string.plan_annual
-                        PlanType.MONTHLY -> R.string.plan_monthly
-                        PlanType.LIFETIME -> R.string.plan_lifetime
-                        PlanType.FREE -> R.string.plan_free
-                    },
+        InsetGroup(footer = stringResource(R.string.paywall_free_forever)) {
+            listOf(R.string.paywall_point_program, R.string.paywall_point_insights).forEachIndexed { i, point ->
+                if (i > 0) GroupDivider()
+                GroupRow(
+                    title = stringResource(point),
+                    leading = { Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                 )
-                Button(onClick = { scope.launch { error = vm.billing.purchase(activity, offer); if (error == null && vm.billing.entitlement.value.isShiftPlus) onClose() } }, modifier = Modifier.fillMaxWidth()) {
-                    Text("$label · ${offer.price}" + if (offer.hasTrial) " · " + stringResource(R.string.paywall_trial_note) else "")
-                }
             }
         }
-        Text(stringResource(R.string.paywall_terms), style = MaterialTheme.typography.bodySmall)
+        val list = offers
+        when {
+            ent.isShiftPlus -> AppCard { Text(stringResource(R.string.paywall_already), color = MaterialTheme.colorScheme.primary) }
+            !vm.billing.isConfigured -> AppCard { Text(stringResource(R.string.paywall_unavailable)) }
+            list == null -> LoadingBox()
+            list.isEmpty() -> AppCard { Text(stringResource(R.string.paywall_unavailable)) }
+            else -> {
+                // Annual is highlighted and preselected; every plan shows its full price.
+                val selected = chosen ?: list.firstOrNull { it.plan == PlanType.ANNUAL }?.plan ?: list.first().plan
+                Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    list.forEach { offer -> PlanCard(offer, offer.plan == selected) { chosen = offer.plan } }
+                }
+                val offer = list.first { it.plan == selected }
+                PrimaryButton(
+                    stringResource(if (offer.hasTrial) R.string.paywall_start_trial else R.string.paywall_continue),
+                    onClick = { scope.launch { error = vm.billing.purchase(activity, offer); if (error == null && vm.billing.entitlement.value.isShiftPlus) onClose() } },
+                    haptic = true,
+                )
+            }
+        }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         // Paywall rule 1: leaving is as easy as buying.
-        OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.onb_offer_free)) }
+        SecondaryButton(stringResource(R.string.onb_offer_free), onClick = onClose)
+        Text(stringResource(R.string.paywall_terms), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun PlanCard(offer: PlanOffer, selected: Boolean, onSelect: () -> Unit) {
+    val label = stringResource(
+        when (offer.plan) {
+            PlanType.ANNUAL -> R.string.plan_annual
+            PlanType.MONTHLY -> R.string.plan_monthly
+            PlanType.LIFETIME -> R.string.plan_lifetime
+            PlanType.FREE -> R.string.plan_free
+        },
+    )
+    val shape = MaterialTheme.shapes.large
+    Surface(
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
+            .border(if (selected) 2.dp else 0.5.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, shape)
+            .clip(shape)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+    ) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(label, style = MaterialTheme.typography.titleMedium)
+                    if (offer.plan == PlanType.ANNUAL) {
+                        Text(
+                            stringResource(R.string.paywall_best_value),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 8.dp, vertical = 3.dp),
+                        )
+                    }
+                }
+                if (offer.hasTrial) Text(stringResource(R.string.paywall_trial_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+            Text(offer.price, style = MaterialTheme.typography.titleMedium)
+            RadioButton(selected = selected, onClick = null)
+        }
     }
 }
 
@@ -163,26 +224,42 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
         if (st == null) {
             LoadingBox()
         } else if (!st.available) {
-            Text(stringResource(R.string.program_locked))
-            Button(onClick = onUpgrade) { Text(stringResource(R.string.plan_see_plus)) }
+            AppCard { Text(stringResource(R.string.program_locked), style = MaterialTheme.typography.bodyLarge) }
+            PrimaryButton(stringResource(R.string.plan_see_plus), onClick = onUpgrade)
         } else if (!st.started) {
-            Text(stringResource(R.string.program_intro))
-            Button(onClick = vm::start) { Text(stringResource(R.string.program_start)) }
+            AppCard { Text(stringResource(R.string.program_intro), style = MaterialTheme.typography.bodyLarge) }
+            PrimaryButton(stringResource(R.string.program_start), onClick = vm::start, haptic = true)
         } else {
+            // Progress through the 21 days as a calm bar, not a score.
+            AppCard {
+                Text(pluralStringResource(R.plurals.program_progress, vm.days.size, st.done.size, vm.days.size), style = MaterialTheme.typography.titleSmall)
+                LinearProgressIndicator(
+                    progress = { st.done.size / vm.days.size.toFloat().coerceAtLeast(1f) },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                    trackColor = MaterialTheme.colorScheme.primaryContainer,
+                    drawStopIndicator = {},
+                    gapSize = 0.dp,
+                )
+            }
             when {
-                st.finished -> Text(stringResource(R.string.program_finished))
-                st.today == null -> Text(stringResource(R.string.program_come_back))
+                st.finished -> AppCard { Text(stringResource(R.string.program_finished), style = MaterialTheme.typography.bodyLarge) }
+                st.today == null -> AppCard { Text(stringResource(R.string.program_come_back), style = MaterialTheme.typography.bodyLarge) }
                 else -> st.today?.let { day ->
-                    SectionCard(title = stringResource(R.string.program_day, day.day, day.title)) {
-                        Text(day.lesson)
-                        Text(pluralStringResource(R.plurals.program_target, day.targetHours, day.targetHours))
-                        day.chapter?.let { Text(stringResource(R.string.program_chapter, it), style = MaterialTheme.typography.bodySmall) }
-                        Button(onClick = { vm.complete(day.day) }) { Text(stringResource(R.string.program_complete)) }
+                    AppCard {
+                        Text(stringResource(R.string.program_day, day.day, day.title), style = MaterialTheme.typography.titleLarge)
+                        Text(day.lesson, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            pluralStringResource(R.plurals.program_target, day.targetHours, day.targetHours),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                        day.chapter?.let { Text(stringResource(R.string.program_chapter, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
+                    PrimaryButton(stringResource(R.string.program_complete), onClick = { vm.complete(day.day) }, haptic = true)
                 }
             }
-            Text(pluralStringResource(R.plurals.program_progress, vm.days.size, st.done.size, vm.days.size))
-            TextButton(onClick = vm::stop) { Text(stringResource(R.string.program_stop)) }
+            PlainButton(stringResource(R.string.program_stop), onClick = vm::stop, modifier = Modifier.align(Alignment.CenterHorizontally))
         }
     }
 }
@@ -228,28 +305,35 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
         if (st == null) {
             LoadingBox()
         } else if (!st.available) {
-            Text(stringResource(R.string.insights_locked))
-            Button(onClick = onUpgrade) { Text(stringResource(R.string.plan_see_plus)) }
+            AppCard { Text(stringResource(R.string.insights_locked), style = MaterialTheme.typography.bodyLarge) }
+            PrimaryButton(stringResource(R.string.plan_see_plus), onClick = onUpgrade)
         } else {
-            SectionCard(title = stringResource(R.string.insights_consistency)) {
+            AppCard {
+                Text(stringResource(R.string.insights_consistency), style = MaterialTheme.typography.titleMedium)
                 Bars(st.consistency.map { it.ratio })
-                Text(stringResource(R.string.insights_consistency_note), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.insights_consistency_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            SectionCard(title = stringResource(R.string.insights_weekday)) {
-                DayOfWeek.entries.forEach { d ->
+            InsetGroup(header = stringResource(R.string.insights_weekday)) {
+                DayOfWeek.entries.forEachIndexed { i, d ->
+                    if (i > 0) GroupDivider()
                     val avg = st.byWeekday[d]
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(d.getDisplayName(TextStyle.SHORT, Locale.getDefault()), Modifier.width(48.dp))
-                        Text(avg?.let { "${it.toHours()}h ${it.toMinutes() % 60}m" } ?: "—")
-                    }
+                    GroupRow(
+                        title = d.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+                        value = avg?.let { "${it.toHours()}h ${it.toMinutes() % 60}m" } ?: "—",
+                    )
                 }
             }
             if (!st.hideWeight) {
-                SectionCard(title = stringResource(R.string.insights_weight)) {
-                    st.weight.forEach { w ->
-                        Text(stringResource(R.string.insights_weight_row, w.weekStart.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)), w.fastingHours.toInt(), w.averageWeightKg?.let { kg -> weightText(convertWeight(kg, WeightUnit.KG, st.weightUnit), st.weightUnit) } ?: "—"))
+                val f = java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+                InsetGroup(header = stringResource(R.string.insights_weight), footer = stringResource(R.string.insights_weight_note)) {
+                    st.weight.forEachIndexed { i, w ->
+                        if (i > 0) GroupDivider()
+                        GroupRow(
+                            title = w.weekStart.format(f),
+                            subtitle = "${w.fastingHours.toInt()}h",
+                            value = w.averageWeightKg?.let { kg -> weightText(convertWeight(kg, WeightUnit.KG, st.weightUnit), st.weightUnit) } ?: "—",
+                        )
                     }
-                    Text(stringResource(R.string.insights_weight_note), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -260,15 +344,16 @@ fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: InsightsViewMod
 private fun Bars(values: List<Float>) {
     val color = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.colorScheme.surfaceVariant
-    Canvas(Modifier.fillMaxWidth().height(96.dp)) {
+    Canvas(Modifier.fillMaxWidth().height(110.dp)) {
         if (values.isEmpty()) return@Canvas
         val slot = size.width / values.size
-        val barW = slot * 0.6f
+        val barW = slot * 0.5f
+        val radius = CornerRadius(barW / 2, barW / 2)
         values.forEachIndexed { i, v ->
             val x = i * slot + (slot - barW) / 2
-            drawRect(track, Offset(x, 0f), Size(barW, size.height))
-            val h = size.height * v.coerceIn(0f, 1f)
-            drawRect(color, Offset(x, size.height - h), Size(barW, h))
+            drawRoundRect(track, Offset(x, 0f), Size(barW, size.height), radius)
+            val h = (size.height * v.coerceIn(0f, 1f)).let { if (it > 0f) it.coerceAtLeast(barW) else 0f }
+            if (h > 0f) drawRoundRect(color, Offset(x, size.height - h), Size(barW, h), radius)
         }
     }
 }
