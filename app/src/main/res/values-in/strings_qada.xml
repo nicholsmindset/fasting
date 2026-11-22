@@ -24,4 +24,17 @@
     <plurals name="qada_remaining">
         <item quantity="other">Tersisa %1$d hari</item>
     </plurals>
+    <string name="sunnah_title">Puasa sunah</string>
+    <string name="sunnah_when">Pengingat opsional dikirim pukul 20.00 pada malam sebelumnya menurut zona waktu kota pilihan atau perangkat Anda.</string>
+    <string name="sunnah_enable">Pengingat malam</string>
+    <string name="sunnah_days">Pilih jenis puasa</string>
+    <string name="sunnah_offset">Penyesuaian tanggal Hijriah setempat</string>
+    <string name="sunnah_offset_hint">Jika tanggal Hijriah setempat berbeda dari perhitungan, pilih jumlah hari yang perlu ditambah atau dikurangi.</string>
+    <string name="sunnah_offset_none">Tanggal perhitungan</string>
+    <string name="sunnah_offset_value">%1$+d hari</string>
+    <string name="sunnah_mon_thu">Senin dan Kamis</string>
+    <string name="sunnah_white">Ayyamul Bidh (tanggal 13–15)</string>
+    <string name="sunnah_arafah">Hari Arafah</string>
+    <string name="sunnah_ashura">Tasua dan Asyura</string>
+    <string name="sunnah_shawwal">Puasa enam hari Syawal (satu pengingat setelah Idulfitri)</string>
 </resources>

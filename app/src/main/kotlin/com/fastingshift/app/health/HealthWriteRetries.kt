@@ -6,6 +6,7 @@ import com.fastingshift.domain.model.WeightLog
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.Base64
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -42,7 +43,13 @@ internal class HealthWriteRetries(private val prefs: SharedPreferences) {
     val pendingCount = count.asStateFlow()
 
     suspend fun write(key: RetryKey, attempt: suspend () -> Result<Unit>): Result<Unit> = mutex.withLock {
-        val result = attempt()
+        val result = try {
+            attempt()
+        } catch (e: CancellationException) {
+            // The provider may have accepted the record. Its stable client ID makes a retry safe.
+            if (pending.add(key)) save()
+            throw e
+        }
         if (result.isFailure) {
             if (pending.add(key)) save()
         } else if (pending.remove(key)) save()
@@ -56,7 +63,7 @@ internal class HealthWriteRetries(private val prefs: SharedPreferences) {
         }
     }
 
-    suspend fun forget(key: RetryKey) = mutex.withLock {
+    suspend fun forget(key: RetryKey): Unit = mutex.withLock {
         if (pending.remove(key)) save()
     }
 

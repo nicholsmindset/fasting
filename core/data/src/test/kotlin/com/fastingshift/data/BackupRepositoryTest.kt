@@ -114,7 +114,9 @@ class BackupRepositoryTest {
         RoomScreeningRepository(db.screeningDao()).save(
             ScreeningRecord(t0, ScreeningAnswers(40, false, false, false, setOf(Medication.GLP1), 175.0, 75.0), GateResult.SOFT, true),
         )
-        ScheduleRepository(db.scheduleDao(), com.fastingshift.data.settings.SettingsRepository(ApplicationProvider.getApplicationContext()), java.time.Clock.fixed(t0, java.time.ZoneOffset.UTC)).save(Schedule(protocolId = "weekly_5_2", days = setOf(DayOfWeek.MONDAY), startTime = LocalTime.of(20, 30)))
+        val settings = com.fastingshift.data.settings.SettingsRepository(ApplicationProvider.getApplicationContext())
+        val schedules = ScheduleRepository(db.scheduleDao(), settings, java.time.Clock.fixed(t0, java.time.ZoneOffset.UTC))
+        schedules.save(Schedule(protocolId = "weekly_5_2", days = setOf(DayOfWeek.MONDAY), startTime = LocalTime.of(20, 30)))
         ProgramRepository(db.programProgressDao()).completeDay("fasting_shift_21", 1, t0)
         RoomStreakFreezeRepository(db.streakFreezeDao()).addFrozenDay(LocalDate.of(2026, 11, 19), LocalDate.of(2026, 11, 20))
         fasts.insert(

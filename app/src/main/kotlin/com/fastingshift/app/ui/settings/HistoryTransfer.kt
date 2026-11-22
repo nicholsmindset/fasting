@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.data.db.FastingDatabase
@@ -170,6 +171,15 @@ private fun HistoryTransferDetails(batch: HistoryBatch, preview: Boolean) {
         if (count > 0) {
             val dates = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
             Text(stringResource(R.string.history_transfer_range, dates.format(batch.fasts.first().startAt), dates.format(batch.fasts.last().endedAt)))
+        }
+        if (preview && count > 0) {
+            val starts = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault())
+            for (fast in batch.fasts.take(3)) {
+                Text(stringResource(
+                    R.string.history_transfer_sample, starts.format(fast.startAt),
+                    requireNotNull(fast.actualDuration).hoursMinutes(), fast.plannedDuration.hoursMinutes(),
+                ))
+            }
         }
         for ((reason, number) in batch.skipped) {
             val resource = when (reason) {

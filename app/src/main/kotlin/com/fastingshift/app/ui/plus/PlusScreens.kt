@@ -5,7 +5,6 @@ import android.icu.util.Measure
 import android.icu.util.MeasureUnit
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -143,7 +142,7 @@ fun PaywallRoute(onClose: () -> Unit, onOpenProgram: () -> Unit, vm: PaywallView
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         // Paywall rule 1: leaving is as easy as buying.
-        SecondaryButton(stringResource(R.string.onb_offer_free), onClick = onClose)
+        SecondaryButton(stringResource(if (ent.isShiftPlus) R.string.settings_done else R.string.onb_offer_free), onClick = onClose)
         Text(stringResource(R.string.program_purchase_terms), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

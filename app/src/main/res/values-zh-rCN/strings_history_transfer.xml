@@ -35,4 +35,5 @@
     <plurals name="history_transfer_invalid">
         <item quantity="other">已跳过 %d 条无效记录。请检查时间、UTC 偏移量和禁食类型。</item>
     </plurals>
+    <string name="history_transfer_sample">%1$s · 已禁食 %2$s（目标 %3$s）</string>
 </resources>

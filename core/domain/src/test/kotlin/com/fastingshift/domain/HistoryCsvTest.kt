@@ -74,6 +74,13 @@ class HistoryCsvTest {
         assertEquals(mapOf(HistorySkip.DUPLICATE to 2, HistorySkip.OVERLAP to 4), preview.skipped)
     }
 
+    @Test fun aFastEndedAtItsStartRoundTrips() {
+        val endedImmediately = fast(0, 0, 12)
+        val parsed = HistoryCsv.parse(HistoryCsv.export(listOf(endedImmediately)), now)
+        assertEquals(listOf(endedImmediately), parsed.fasts)
+        assertEquals(mapOf(HistorySkip.DUPLICATE to 1), parsed.against(listOf(endedImmediately)).skipped)
+    }
+
     @Test fun emptyFileWithRecognizedHeaderHasNoRows() {
         assertEquals(HistoryBatch(emptyList()), HistoryCsv.parse(header, now))
     }

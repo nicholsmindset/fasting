@@ -25,4 +25,17 @@
         <item quantity="one">%1$d day remaining</item>
         <item quantity="other">%1$d days remaining</item>
     </plurals>
+    <string name="sunnah_title">Sunnah fasts</string>
+    <string name="sunnah_when">Optional reminders arrive at 8 pm on the preceding evening, in your selected city’s time zone or your device’s time zone.</string>
+    <string name="sunnah_enable">Evening reminders</string>
+    <string name="sunnah_days">Choose observances</string>
+    <string name="sunnah_offset">Local Hijri date adjustment</string>
+    <string name="sunnah_offset_hint">If your local Hijri date differs from the calculated date, choose how many days to add or subtract.</string>
+    <string name="sunnah_offset_none">Calculated date</string>
+    <string name="sunnah_offset_value">%1$+d d</string>
+    <string name="sunnah_mon_thu">Mondays and Thursdays</string>
+    <string name="sunnah_white">White Days (13th–15th)</string>
+    <string name="sunnah_arafah">Day of Arafah</string>
+    <string name="sunnah_ashura">Tasu’a and Ashura</string>
+    <string name="sunnah_shawwal">Six days of Shawwal (one reminder after Eid)</string>
 </resources>

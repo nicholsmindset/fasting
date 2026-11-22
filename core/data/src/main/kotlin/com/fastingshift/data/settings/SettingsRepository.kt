@@ -74,6 +74,22 @@ private val Context.settingsStore: DataStore<Preferences> by preferencesDataStor
 /** User preferences. Health data never lives here; it is in the encrypted database. */
 class SettingsRepository(context: Context) {
     private val store = context.applicationContext.settingsStore
+    // Preserve the one-off reminder stored by earlier versions.
+    private val firstWeek = context.applicationContext.getSharedPreferences("first_week", Context.MODE_PRIVATE)
+
+    fun firstEvening(): Pair<Long, LocalDate>? {
+        val id = firstWeek.getLong("planned_schedule_id", -1L).takeIf { it > 0L } ?: return null
+        val day = firstWeek.getString("planned_date", null)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
+        return id to day
+    }
+
+    fun rememberFirstEvening(id: Long, day: LocalDate) {
+        firstWeek.edit().putLong("planned_schedule_id", id).putString("planned_date", day.toString()).apply()
+    }
+
+    fun clearFirstEvening() {
+        firstWeek.edit().remove("planned_schedule_id").remove("planned_date").apply()
+    }
 
     val settings: Flow<AppSettings> = store.data.map { p ->
         AppSettings(

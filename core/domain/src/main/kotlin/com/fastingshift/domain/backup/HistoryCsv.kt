@@ -52,7 +52,7 @@ object HistoryCsv {
                         val start = timestamp(field("start_at"))
                         val end = timestamp(field("ended_at"))
                         val target = timestamp(field("target_end_at"))
-                        require(start < end && end <= now)
+                        require(start <= end && end <= now)
                         Fast(
                             startAt = start,
                             targetEndAt = target,

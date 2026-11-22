@@ -261,6 +261,8 @@ fun SettingsRoute(
                 onMethod = { sheet = SettingsSheet.METHOD },
             )
 
+            SunnahSettingsGroup(s, vm)
+
             InsetGroup(header = stringResource(R.string.settings_fasting)) {
                 GroupRow(stringResource(R.string.settings_eating_window_title), subtitle = stringResource(R.string.settings_eating_window_subtitle), value = stringResource(R.string.settings_hours_value, s.eatingWindowHours)) {
                     StepperControl(

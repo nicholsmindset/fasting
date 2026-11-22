@@ -24,4 +24,17 @@
     <plurals name="qada_remaining">
         <item quantity="other">剩余 %1$d 天</item>
     </plurals>
+    <string name="sunnah_title">圣行斋</string>
+    <string name="sunnah_when">可选提醒会在前一天晚上 8 点发出，使用所选城市或设备的时区。</string>
+    <string name="sunnah_enable">前一晚提醒</string>
+    <string name="sunnah_days">选择斋戒日期</string>
+    <string name="sunnah_offset">本地伊历日期校正</string>
+    <string name="sunnah_offset_hint">如果本地伊历日期与计算日期不同，请选择需要加减的天数。</string>
+    <string name="sunnah_offset_none">按计算日期</string>
+    <string name="sunnah_offset_value">%1$+d 天</string>
+    <string name="sunnah_mon_thu">星期一和星期四</string>
+    <string name="sunnah_white">白日斋（伊历每月 13 至 15 日）</string>
+    <string name="sunnah_arafah">阿拉法日</string>
+    <string name="sunnah_ashura">塔苏阿日和阿舒拉日</string>
+    <string name="sunnah_shawwal">闪瓦鲁月六天斋（开斋节后提醒一次）</string>
 </resources>

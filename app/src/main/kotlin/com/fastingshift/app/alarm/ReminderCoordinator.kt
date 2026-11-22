@@ -17,6 +17,7 @@ import com.fastingshift.domain.coaching.CoachingPlanner
 import com.fastingshift.domain.history.WeeklyRecaps
 import com.fastingshift.domain.ramadan.Cities
 import com.fastingshift.domain.ramadan.RamadanPlanner
+import com.fastingshift.domain.ramadan.SunnahReminderPlanner
 import java.time.Instant
 import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.model.Fast
@@ -101,7 +102,12 @@ class ReminderCoordinator @Inject constructor(
         // Android alarms retain millisecond precision and may arrive late in Doze. Evaluate
         // at their scheduled time so a normal delivery delay does not discard a valid alarm.
         val beforeTrigger = reminder.triggerAt.minusMillis(1)
-        val plan = planAt(beforeTrigger, settings.current(), active, fasts.getAll())
+        val appSettings = settings.current()
+        if (reminder.kind == ReminderKind.SUNNAH_FAST) {
+            val zone = Cities.byId(appSettings.ramadanCityId)?.zone ?: ZoneId.systemDefault()
+            if (clock.instant().atZone(zone).toLocalDate() != reminder.triggerAt.atZone(zone).toLocalDate()) return false
+        }
+        val plan = planAt(beforeTrigger, appSettings, active, fasts.getAll())
         return plan.any { matchesBroadcast(it, reminder) }
     }
 
@@ -138,10 +144,16 @@ class ReminderCoordinator @Inject constructor(
         val ramadan = if (appSettings.ramadanEnabled && city != null && mayStart) {
             RamadanPlanner.reminders(city, appSettings.ramadanMethod ?: Cities.defaultMethod(city), now)
         } else emptyList()
+        val sunnah = if (mayStart && active == null && appSettings.sunnahReminders) {
+            SunnahReminderPlanner.next(
+                appSettings.sunnahTypes, appSettings.hijriOffsetDays, city?.zone ?: ZoneId.systemDefault(), now,
+                onBreak = appSettings.planHistory::isBreak,
+            )
+        } else null
         val recap = if (appSettings.weeklyRecapEnabled && all.isNotEmpty()) {
             listOf(Reminder(ReminderKind.WEEKLY_RECAP, WeeklyRecaps.nextRecapAt(now, ZoneId.systemDefault()), fastId = 0))
         } else emptyList()
-        return plan + ramadan + recap
+        return plan + ramadan + listOfNotNull(sunnah) + recap
     }
 
     /** Fetches customer info (cached when offline) and re-arms the billing reminder. */

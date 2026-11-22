@@ -43,4 +43,5 @@
         <item quantity="one">%d invalid row skipped. Check times, UTC offsets and fast type.</item>
         <item quantity="other">%d invalid rows skipped. Check times, UTC offsets and fast type.</item>
     </plurals>
+    <string name="history_transfer_sample">%1$s · %2$s fasted (goal %3$s)</string>
 </resources>

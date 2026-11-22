@@ -2,7 +2,14 @@ package com.fastingshift.app
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import com.fastingshift.app.ui.history.WeekPlanCard
+import com.fastingshift.domain.schedule.WeekChoice
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.history.RecapCopy
@@ -58,6 +65,23 @@ class WeeklyRecapCardTest {
         compose.onNodeWithText("44h").assertExists()
         compose.onNodeWithText(ctx.getString(R.string.recap_x_of_y, 2, 3)).assertExists()
         compose.onNodeWithText(ctx.getString(R.string.recap_x_of_y, 2, 4)).assertExists()
+    }
+
+    @Test fun canChooseAWeekOffChangeItBackAndOpenTheSchedule() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        var opened = false
+        compose.setContent {
+            var choice by remember { mutableStateOf<WeekChoice?>(null) }
+            FastingShiftTheme(darkTheme = false) {
+                WeekPlanCard(monday, choice, { choice = it }, { opened = true })
+            }
+        }
+        compose.onNodeWithText(ctx.getString(R.string.history_take_break)).performClick()
+        compose.onNodeWithText(ctx.getString(R.string.history_break_selected)).assertExists()
+        compose.onNodeWithText(ctx.getString(R.string.history_keep_plan)).performClick()
+        compose.onNodeWithText(ctx.getString(R.string.history_keep_selected)).assertExists()
+        compose.onNodeWithText(ctx.getString(R.string.history_edit_schedule)).performClick()
+        compose.runOnIdle { kotlin.test.assertTrue(opened) }
     }
 
     @Test fun theMessageNeverRewardsLength() {

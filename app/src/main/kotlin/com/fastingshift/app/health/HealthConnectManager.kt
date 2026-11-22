@@ -96,7 +96,9 @@ class HealthConnectManager @Inject constructor(
         client()?.permissionController?.getGrantedPermissions()?.containsAll(permissions) == true
     }
 
-    suspend fun writeWeight(log: WeightLog): Result<Unit> = retries.write(RetryKey.forWeight(log)) { insertWeight(log) }
+    suspend fun writeWeight(log: WeightLog): Result<Unit> = retries.write(RetryKey.forWeight(log)) {
+        if (settings.current().healthConnectSync) insertWeight(log) else Result.success(Unit)
+    }
 
     private suspend fun insertWeight(log: WeightLog): Result<Unit> = guardedResult {
         val c = checkNotNull(client()) { "Health Connect is unavailable" }
@@ -112,7 +114,9 @@ class HealthConnectManager @Inject constructor(
         )
     }
 
-    suspend fun writeWater(log: WaterLog): Result<Unit> = retries.write(RetryKey.forWater(log)) { insertWater(log) }
+    suspend fun writeWater(log: WaterLog): Result<Unit> = retries.write(RetryKey.forWater(log)) {
+        if (settings.current().healthConnectSync) insertWater(log) else Result.success(Unit)
+    }
 
     private suspend fun insertWater(log: WaterLog): Result<Unit> = guardedResult {
         val c = checkNotNull(client()) { "Health Connect is unavailable" }

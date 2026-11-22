@@ -9,12 +9,11 @@ import java.util.TreeMap
 enum class WeekChoice { KEEP, BREAK }
 
 /** Local civil dates match the calendar and schedule editor even across DST changes. */
-class PlanHistory(
-    revisions: Map<LocalDate, Int> = emptyMap(),
+data class PlanHistory(
+    val revisions: Map<LocalDate, Int> = emptyMap(),
     val choices: Map<LocalDate, WeekChoice> = emptyMap(),
 ) {
     private val masks = TreeMap(revisions)
-    val revisions: Map<LocalDate, Int> get() = masks.toMap()
     val trackedFrom: LocalDate? get() = masks.firstEntry()?.key
     val breakWeeks: Set<LocalDate> = choices.filterValues { it == WeekChoice.BREAK }.keys
 

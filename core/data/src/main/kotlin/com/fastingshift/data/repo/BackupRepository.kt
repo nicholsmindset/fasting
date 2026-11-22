@@ -63,13 +63,14 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
     suspend fun export(now: Instant): Backup {
         val b = db.backupDao()
         val ledger = db.qadaDao().ledgerSnapshot()
+        val firstEveningId = settings?.firstEvening()?.first
         return Backup(
             exportedAt = now.toEpochMilli(),
             fasts = db.fastDao().getAll().map {
                 FastRecord(it.id, it.startAt.ms, it.targetEndAt.ms, it.endedAt?.ms, it.protocolId, it.status.name, it.note, it.mood, it.kind.name)
             },
             protocols = db.protocolDao().getAll().map { ProtocolRecord(it.id, it.name, it.type.name, it.fastHours, it.eatHours, it.isCustom) },
-            schedules = db.scheduleDao().getAll().map { ScheduleRecord(it.id, it.protocolId, it.days.map { d -> d.name }.sorted(), it.startMinute, it.enabled) },
+            schedules = db.scheduleDao().getAll().filterNot { it.id == firstEveningId }.map { ScheduleRecord(it.id, it.protocolId, it.days.map { d -> d.name }.sorted(), it.startMinute, it.enabled) },
             weights = b.weights().map { WeightRecord(it.id, it.at.ms, it.value, it.unit.name, it.source.name) },
             water = b.water().map { WaterRecord(it.id, it.at.ms, it.value, it.unit.name, it.source.name) },
             electrolytes = b.electrolytes().map { ElectrolyteRecord(it.id, it.at.ms, it.electrolyte.name, it.value, it.source.name) },
@@ -127,6 +128,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             b.insertRepayments(mapped.repayments)
             b.insertChallenges(mapped.challenges)
         }
+        settings?.clearFirstEvening()
         backup.settings?.let { settings?.restore(it) }
         if (backup.settings == null) settings?.clearPlanHistory()
         // Fast ids may now point at different fasts: never show a stale refeeding prompt.
