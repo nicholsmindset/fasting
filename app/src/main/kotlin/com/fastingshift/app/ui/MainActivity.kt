@@ -18,6 +18,7 @@ import com.fastingshift.app.ui.theme.FastingShiftTheme
 import com.fastingshift.data.db.DatabaseKeyProvider
 import com.fastingshift.data.db.FastingDatabase
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.challenge.ChallengeLinks
 import dagger.Lazy
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -86,6 +87,13 @@ class MainActivity : ComponentActivity() {
         val fromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
         if (!fromHistory) intent.getStringExtra(Notifications.EXTRA_ROUTE)?.let { deepLink = it }
         intent.removeExtra(Notifications.EXTRA_ROUTE)
+        // Challenge invite links (https://fastingshift.com/c/...): opened once, never from Recents.
+        if (!fromHistory && intent.action == Intent.ACTION_VIEW) {
+            intent.dataString?.takeIf { it.contains("/c/") }?.let { url ->
+                deepLink = Routes.joinChallenge(ChallengeLinks.codeFrom(url) ?: "")
+            }
+            intent.data = null
+        }
     }
 
     /** Deletes the unreadable database and its key, then restarts the process cleanly. */

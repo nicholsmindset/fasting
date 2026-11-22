@@ -49,6 +49,11 @@ import com.fastingshift.app.ui.settings.SchedulesRoute
 import com.fastingshift.app.ui.settings.SettingsRoute
 import com.fastingshift.app.ui.timer.TimerRoute
 import com.fastingshift.app.ui.trust.TrustRoute
+import com.fastingshift.app.ui.challenge.ChallengeDetailRoute
+import com.fastingshift.app.ui.challenge.ChallengeListRoute
+import com.fastingshift.app.ui.challenge.CreateChallengeRoute
+import com.fastingshift.app.ui.challenge.JoinChallengeRoute
+import com.fastingshift.domain.challenge.ChallengeLinks
 import com.fastingshift.domain.safety.RefeedingTier
 
 object Routes {
@@ -68,6 +73,14 @@ object Routes {
     const val ADD_PAST_FAST = "addfast"
     const val TRUST = "trust"
     const val MUSLIM = "muslim"
+    const val CHALLENGES = "challenges"
+    const val CHALLENGE_NEW = "challenges/new"
+    const val CHALLENGE = "challenge/{challengeId}"
+    const val CHALLENGE_JOIN = "challenge/join/{code}"
+    fun challenge(id: Long) = "challenge/$id"
+
+    /** Invite codes are base64url, so they are safe in a route; anything else opens as invalid. */
+    fun joinChallenge(code: String) = "challenge/join/" + (code.takeIf(ChallengeLinks::looksLikeCode) ?: "invalid")
 
     /** Refeeding guidance. No tier shows every tier (from Settings); fastId offers Undo. */
     const val REFEEDING = "refeeding?tier={tier}&fastId={fastId}"
@@ -170,6 +183,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenInsights = { nav.navigate(Routes.INSIGHTS) },
                     onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
                     onAddPastFast = { nav.navigate(Routes.ADD_PAST_FAST) },
+                    onOpenChallenges = { nav.navigate(Routes.CHALLENGES) },
                 )
             }
             composable(Routes.LOG) { LogRoute() }
@@ -186,6 +200,27 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
             composable(Routes.TRUST) { TrustRoute(onBack = back) }
+            composable(Routes.CHALLENGES) {
+                ChallengeListRoute(
+                    onBack = back,
+                    onOpen = { nav.navigate(Routes.challenge(it)) },
+                    onNew = { nav.navigate(Routes.CHALLENGE_NEW) },
+                    onJoinCode = { nav.navigate(Routes.joinChallenge(it)) },
+                )
+            }
+            composable(Routes.CHALLENGE_NEW) {
+                CreateChallengeRoute(onBack = back, onCreated = { id ->
+                    nav.navigate(Routes.challenge(id)) { popUpTo(Routes.CHALLENGE_NEW) { inclusive = true } }
+                })
+            }
+            composable(Routes.CHALLENGE, arguments = listOf(navArgument("challengeId") { type = NavType.LongType })) {
+                ChallengeDetailRoute(onBack = back)
+            }
+            composable(Routes.CHALLENGE_JOIN, arguments = listOf(navArgument("code") { type = NavType.StringType })) {
+                JoinChallengeRoute(onBack = back, onJoined = { id ->
+                    nav.navigate(Routes.challenge(id)) { popUpTo(Routes.CHALLENGE_JOIN) { inclusive = true } }
+                })
+            }
             composable(Routes.SCHEDULES) { SchedulesRoute(onBack = back) }
             composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }

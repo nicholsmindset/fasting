@@ -109,4 +109,77 @@
     <string name="ramadan_safety_break_body">gemetar, berkeringat, bingung, atau sangat lemas, atau jika Anda merasa tidak enak badan.</string>
     <string name="ramadan_safety_allowed">Menjaga kesehatan adalah yang utama. Membatalkan puasa saat sakit diperbolehkan, dan puasanya dapat diganti nanti.</string>
     <string name="ramadan_safety_emergency">Dalam keadaan darurat, hubungi %1$s</string>
+
+    <!-- Challenges -->
+    <string name="history_challenges">Tantangan</string>
+    <string name="challenges_title">Tantangan</string>
+    <string name="challenges_intro">Berpuasa bersama teman dan keluarga, tanpa akun dan tanpa feed. Bagikan tautan, dan setiap orang mencatat kemajuannya sendiri di ponselnya masing-masing.</string>
+    <string name="challenges_current">Berjalan</string>
+    <string name="challenges_past">Sebelumnya</string>
+    <string name="challenges_empty">Belum ada tantangan.</string>
+    <string name="challenges_new">Tantangan baru</string>
+    <string name="challenges_have_link">Punya tautan undangan?</string>
+    <string name="challenges_link_label">Tautan</string>
+    <string name="challenges_link_hint">Tempel di sini</string>
+    <string name="challenges_open_link">Buka tautan</string>
+    <string name="challenges_link_invalid">Itu bukan tautan tantangan.</string>
+    <string name="challenges_not_allowed">Tantangan tersedia setelah pertanyaan keamanan menunjukkan puasa cocok untuk Anda.</string>
+    <string name="challenge_progress">%1$d dari %2$d hari</string>
+    <string name="challenge_dates">%1$s – %2$s</string>
+    <string name="challenge_status_upcoming">Mulai %1$s</string>
+    <string name="challenge_status_active">Berakhir %1$s</string>
+    <string name="challenge_status_finished">Selesai</string>
+    <string name="challenge_status_left">Sudah keluar</string>
+    <string name="challenge_daily_title">%1$s selama %2$d hari</string>
+    <string name="challenge_monthu_title">Puasa Senin dan Kamis</string>
+    <string name="challenge_white_title">Ayyamul Bidh (hari putih)</string>
+    <string name="challenge_tmpl_16_8">Puasa 16 jam sehari selama satu minggu.</string>
+    <string name="challenge_tmpl_18_6">Puasa 18 jam sehari selama dua minggu.</string>
+    <string name="challenge_tmpl_monthu">Puasa sunnah setiap Senin dan Kamis selama empat minggu.</string>
+    <string name="challenge_tmpl_white">Tanggal 13, 14, dan 15 setiap bulan Hijriah, selama tiga bulan.</string>
+    <string name="challenge_new_title">Tantangan baru</string>
+    <string name="challenge_choose">Pilih tantangan</string>
+    <string name="challenge_start">Mulai</string>
+    <string name="challenge_start_today">Hari ini</string>
+    <string name="challenge_start_tomorrow">Besok</string>
+    <string name="challenge_start_monday">Senin depan</string>
+    <string name="challenge_name">Nama (opsional)</string>
+    <string name="challenge_name_hint">mis. Keluarga</string>
+    <string name="challenge_create">Mulai tantangan</string>
+    <string name="challenge_create_note">Setelan keamanan Anda tetap berlaku untuk setiap puasa. Beristirahatlah kapan pun Anda perlu.</string>
+    <string name="challenge_how_daily">Satu hari dihitung jika puasa minimal %1$d jam dimulai pada hari itu.</string>
+    <string name="challenge_how_sunnah">Satu hari dihitung jika puasa minimal %1$d jam dimulai pada hari itu dan selesai sesuai rencana. Hari raya dan hari tasyrik bukan hari puasa.</string>
+    <string name="challenge_grid_a11y">%1$d dari %2$d hari puasa selesai</string>
+    <string name="challenge_legend_done">Selesai</string>
+    <string name="challenge_legend_ahead">Mendatang</string>
+    <string name="challenge_legend_rest">Bukan hari puasa</string>
+    <string name="challenge_invite">Undang dan bagikan kemajuan</string>
+    <string name="challenge_leave">Keluar dari tantangan</string>
+    <string name="challenge_leave_confirm_title">Keluar dari tantangan ini?</string>
+    <string name="challenge_leave_confirm_body">Puasa Anda tetap ada di riwayat. Anda bisa bergabung lagi dengan tautan kapan saja.</string>
+    <string name="challenge_leave_confirm">Keluar</string>
+    <string name="challenge_remove">Hapus dari ponsel ini</string>
+    <string name="challenge_join_title">Gabung tantangan</string>
+    <string name="challenge_join">Gabung</string>
+    <string name="challenge_join_invalid">Tautan tantangan ini tidak valid. Minta pengirimnya membagikannya lagi.</string>
+    <string name="challenge_join_newer">Tantangan ini dibuat dengan versi Fasting Shift yang lebih baru. Perbarui aplikasi untuk bergabung.</string>
+    <string name="challenge_join_already">Anda sudah bergabung dengan tantangan ini.</string>
+    <string name="challenge_open">Buka tantangan</string>
+    <string name="challenge_join_privacy">Bergabung tidak membagikan apa pun. Kemajuan Anda tetap di ponsel Anda kecuali Anda memilih untuk membagikannya.</string>
+
+    <!-- Share cards -->
+    <string name="share">Bagikan</string>
+    <string name="share_fast_kicker">Puasa selesai</string>
+    <string name="share_fast_protocol">Puasa %1$s</string>
+    <string name="share_fast_generic">Puasa</string>
+    <string name="share_week_kicker">Minggu puasa saya</string>
+    <plurals name="share_week_fasts">
+        <item quantity="other">%1$d puasa</item>
+    </plurals>
+    <string name="share_challenge_days">%1$d dari %2$d</string>
+    <string name="share_challenge_days_label">hari puasa</string>
+    <string name="share_challenge_join">Gabung bersama saya: %1$s</string>
+    <string name="share_fast_text">Menyelesaikan puasa %1$s (%2$s) dengan Fasting Shift.</string>
+    <string name="share_week_text">%1$s berpuasa minggu ini, dicatat secara pribadi dengan Fasting Shift.</string>
+    <string name="share_challenge_text">Gabung tantangan saya \"%1$s\" di Fasting Shift: %2$s</string>
 </resources>

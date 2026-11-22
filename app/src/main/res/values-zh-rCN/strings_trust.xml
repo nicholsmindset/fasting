@@ -109,4 +109,77 @@
     <string name="ramadan_safety_break_body">发抖、出汗、意识混乱或非常虚弱，或任何身体不适。</string>
     <string name="ramadan_safety_allowed">保护健康最重要。身体不适时开斋是允许的，之后可以补斋。</string>
     <string name="ramadan_safety_emergency">紧急情况请拨打 %1$s</string>
+
+    <!-- Challenges -->
+    <string name="history_challenges">挑战</string>
+    <string name="challenges_title">挑战</string>
+    <string name="challenges_intro">和朋友家人一起断食，无需账号，也没有动态流。分享一个链接，每个人在自己的手机上记录自己的进度。</string>
+    <string name="challenges_current">进行中</string>
+    <string name="challenges_past">已结束</string>
+    <string name="challenges_empty">还没有挑战。</string>
+    <string name="challenges_new">新建挑战</string>
+    <string name="challenges_have_link">有邀请链接？</string>
+    <string name="challenges_link_label">链接</string>
+    <string name="challenges_link_hint">粘贴到这里</string>
+    <string name="challenges_open_link">打开链接</string>
+    <string name="challenges_link_invalid">这看起来不是挑战链接。</string>
+    <string name="challenges_not_allowed">当安全问答显示断食适合你时，即可使用挑战。</string>
+    <string name="challenge_progress">%2$d 天中完成 %1$d 天</string>
+    <string name="challenge_dates">%1$s – %2$s</string>
+    <string name="challenge_status_upcoming">%1$s 开始</string>
+    <string name="challenge_status_active">%1$s 结束</string>
+    <string name="challenge_status_finished">已完成</string>
+    <string name="challenge_status_left">已退出</string>
+    <string name="challenge_daily_title">%1$s，持续 %2$d 天</string>
+    <string name="challenge_monthu_title">周一和周四斋戒</string>
+    <string name="challenge_white_title">白日斋（Ayyamul Bidh）</string>
+    <string name="challenge_tmpl_16_8">连续一周，每天断食 16 小时。</string>
+    <string name="challenge_tmpl_18_6">连续两周，每天断食 18 小时。</string>
+    <string name="challenge_tmpl_monthu">连续四周，每周一和周四进行圣行斋。</string>
+    <string name="challenge_tmpl_white">连续三个月，每个伊斯兰历月的 13、14、15 日。</string>
+    <string name="challenge_new_title">新建挑战</string>
+    <string name="challenge_choose">选择挑战</string>
+    <string name="challenge_start">开始日期</string>
+    <string name="challenge_start_today">今天</string>
+    <string name="challenge_start_tomorrow">明天</string>
+    <string name="challenge_start_monday">下周一</string>
+    <string name="challenge_name">名称（可选）</string>
+    <string name="challenge_name_hint">例如：家人</string>
+    <string name="challenge_create">开始挑战</string>
+    <string name="challenge_create_note">你的安全设置仍适用于每次断食。需要时随时休息。</string>
+    <string name="challenge_how_daily">当天开始的断食达到至少 %1$d 小时，这一天即算完成。</string>
+    <string name="challenge_how_sunnah">当天开始、至少 %1$d 小时并按计划完成的斋戒，这一天即算完成。开斋节和晒肉日不是斋戒日。</string>
+    <string name="challenge_grid_a11y">%2$d 个斋戒日中已完成 %1$d 个</string>
+    <string name="challenge_legend_done">已完成</string>
+    <string name="challenge_legend_ahead">未到</string>
+    <string name="challenge_legend_rest">非断食日</string>
+    <string name="challenge_invite">邀请并分享进度</string>
+    <string name="challenge_leave">退出挑战</string>
+    <string name="challenge_leave_confirm_title">退出这个挑战？</string>
+    <string name="challenge_leave_confirm_body">你的断食记录会保留在历史中。之后可随时通过链接重新加入。</string>
+    <string name="challenge_leave_confirm">退出</string>
+    <string name="challenge_remove">从这部手机移除</string>
+    <string name="challenge_join_title">加入挑战</string>
+    <string name="challenge_join">加入</string>
+    <string name="challenge_join_invalid">这个挑战链接无效。请让发送者重新分享。</string>
+    <string name="challenge_join_newer">这个挑战由更新版本的 Fasting Shift 创建。请更新应用后加入。</string>
+    <string name="challenge_join_already">你已经加入了这个挑战。</string>
+    <string name="challenge_open">打开挑战</string>
+    <string name="challenge_join_privacy">加入不会分享任何内容。除非你选择分享，进度只保存在你的手机上。</string>
+
+    <!-- Share cards -->
+    <string name="share">分享</string>
+    <string name="share_fast_kicker">断食完成</string>
+    <string name="share_fast_protocol">%1$s 断食</string>
+    <string name="share_fast_generic">断食</string>
+    <string name="share_week_kicker">我的断食周</string>
+    <plurals name="share_week_fasts">
+        <item quantity="other">%1$d 次断食</item>
+    </plurals>
+    <string name="share_challenge_days">%1$d / %2$d</string>
+    <string name="share_challenge_days_label">个斋戒日</string>
+    <string name="share_challenge_join">一起加入：%1$s</string>
+    <string name="share_fast_text">用 Fasting Shift 完成了一次 %1$s 断食（%2$s）。</string>
+    <string name="share_week_text">本周断食 %1$s，用 Fasting Shift 私密记录。</string>
+    <string name="share_challenge_text">在 Fasting Shift 加入我的挑战“%1$s”：%2$s</string>
 </resources>

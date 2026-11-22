@@ -210,7 +210,7 @@ class HistoryViewModel @Inject constructor(
 }
 
 @Composable
-fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, onOpenSchedules: () -> Unit, vm: HistoryViewModel = hiltViewModel()) {
+fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, onOpenSchedules: () -> Unit, onOpenChallenges: () -> Unit = {}, vm: HistoryViewModel = hiltViewModel()) {
     val loaded by vm.state.collectAsStateWithLifecycle()
     val st = loaded
     if (st == null) {
@@ -249,6 +249,8 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         section {
             InsetGroup {
                 GroupRow(stringResource(R.string.history_insights), showChevron = true, onClick = onOpenInsights)
+                GroupDivider()
+                GroupRow(stringResource(R.string.history_challenges), showChevron = true, onClick = onOpenChallenges)
             }
         }
         section {
