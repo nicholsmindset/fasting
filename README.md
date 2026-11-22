@@ -70,6 +70,12 @@ build environment has no emulator.
 For a quick sideload without Play, `./gradlew :app:assembleStaging` builds an installable APK
 (`com.fastingshift.app.staging`, debug-signed, never upload it).
 
+### Repeat tester updates
+
+Use the **Internal beta APK** workflow on the default branch to produce `com.fastingshift.app.beta`. It installs alongside the staging preview. For a first transfer, keep the old app installed, create a backup there, restore into the beta, and verify the history and timer. Later beta builds use the same certificate and an increasing version code.
+
+In the GitHub environment `internal-beta`, configure a dedicated test keystore as the secret `BETA_KEYSTORE_BASE64` with `BETA_KEY_ALIAS`, `BETA_STORE_PASSWORD` and `BETA_KEY_PASSWORD`. Set the environment variable `BETA_CERT_SHA256` to the expected public certificate fingerprint. Keep a recoverable copy of this key in your signing-key vault. The workflow checks the application ID and fingerprint before saving the installable artifact. It runs on manual dispatch. For a device upgrade test, install one beta, seed a past fast and start a timer, install the next beta over it, then verify both records and the original start time.
+
 ### Before launch (not code)
 
 - [ ] Clinician review of all safety copy (`strings*.xml`) and thresholds (`domain/safety`)
