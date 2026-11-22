@@ -1,17 +1,26 @@
 package com.fastingshift.app.ui.fast
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.PrimaryButton
+import com.fastingshift.app.ui.onboarding.protocolDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -94,24 +103,44 @@ class AddPastFastViewModel @Inject constructor(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddPastFastRoute(onDone: () -> Unit, vm: AddPastFastViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     SecondaryScaffold(title = stringResource(R.string.add_past_title), onBack = onDone) {
-        Text(stringResource(R.string.add_past_body))
-        Text(stringResource(R.string.add_past_protocol), style = MaterialTheme.typography.titleSmall)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Presets.all.forEach { p -> FilterChip(selected = p.id == st.protocol.id, onClick = { vm.select(p) }, label = { Text(p.name) }) }
+        var pickProtocol by remember { mutableStateOf(false) }
+        Text(stringResource(R.string.add_past_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        InsetGroup {
+            Box {
+                GroupRow(stringResource(R.string.add_past_protocol), value = st.protocol.name, showChevron = true, onClick = { pickProtocol = true })
+                DropdownMenu(expanded = pickProtocol, onDismissRequest = { pickProtocol = false }, modifier = Modifier.heightIn(max = 420.dp)) {
+                    Presets.all.forEach { p ->
+                        DropdownMenuItem(
+                            text = { Text(protocolDescription(p)) },
+                            onClick = { vm.select(p); pickProtocol = false },
+                            trailingIcon = if (p.id == st.protocol.id) {
+                                { Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                }
+            }
         }
-        Text(stringResource(R.string.edit_start))
-        OutlinedButton(onClick = { pickDateTime(context, st.start, vm::setStart) }, modifier = Modifier.fillMaxWidth()) { Text(st.start.formatDateTime()) }
-        Text(stringResource(R.string.edit_end))
-        OutlinedButton(onClick = { pickDateTime(context, st.end, vm::setEnd) }, modifier = Modifier.fillMaxWidth()) { Text(st.end.formatDateTime()) }
         val length = Duration.between(st.start, st.end)
-        if (!length.isNegative) Text(stringResource(R.string.refeed_your_fast, length.hoursMinutes()), style = MaterialTheme.typography.bodyMedium)
-        if (st.error) Text(stringResource(R.string.add_past_error), color = MaterialTheme.colorScheme.error)
-        Button(onClick = { vm.save(onDone) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
+        InsetGroup(header = stringResource(R.string.add_past_times)) {
+            GroupRow(stringResource(R.string.edit_start), value = st.start.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, st.start, vm::setStart) })
+            GroupDivider()
+            GroupRow(stringResource(R.string.edit_end), value = st.end.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, st.end, vm::setEnd) })
+            if (!length.isNegative) {
+                GroupDivider()
+                GroupRow(stringResource(R.string.add_past_length), value = length.hoursMinutes())
+            }
+        }
+        AnimatedVisibility(st.error) {
+            Text(stringResource(R.string.add_past_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
+        PrimaryButton(stringResource(R.string.save), onClick = { vm.save(onDone) }, haptic = true)
     }
 }

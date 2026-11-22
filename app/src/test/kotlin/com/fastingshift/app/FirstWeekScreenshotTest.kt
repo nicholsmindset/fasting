@@ -60,8 +60,14 @@ class FirstWeekScreenshotTest {
         outDir.mkdirs()
     }
 
+    /** DataStore is process-wide under Robolectric: leave it as the next test expects. */
     @After fun tearDown() {
-        runBlocking { settings.setOnboardingComplete(false) }
+        if (!::settings.isInitialized) return
+        runBlocking {
+            settings.setOnboardingComplete(false)
+            settings.setPendingRefeeding(null)
+            settings.setCoaching(true)
+        }
     }
 
     private fun s(id: Int) = compose.activity.getString(id)
@@ -170,6 +176,18 @@ class FirstWeekScreenshotTest {
         click(s(R.string.checkin_submit))
         waitFor(s(R.string.stop_title))
         shoot("22-stop")
+    }
+
+    @Test fun fastScreens() {
+        seedOk()
+        runBlocking {
+            val start = Instant.now().minus(Duration.ofHours(5))
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
+        }
+        waitFor(s(R.string.timer_edit))
+        click(s(R.string.timer_edit))
+        waitFor(s(R.string.edit_times))
+        shoot("24-edit")
     }
 
     @Test fun refeeding() {
