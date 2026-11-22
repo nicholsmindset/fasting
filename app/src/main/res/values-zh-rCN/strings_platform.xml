@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for platform integrations: widgets, notifications, reliability and recovery. -->
+<resources>
+    <!-- Widgets -->
+    <string name="widget_open_app">打开应用</string>
+
+    <!-- Reliability check: a single notification channel switched off -->
+    <string name="rel_channel_title">%1$s通知</string>
+    <string name="rel_channel_fix">前往设置开启</string>
+
+    <!-- Database key recovery (SR-9) -->
+    <string name="recovery_title">无法解锁你保存的数据</string>
+    <string name="recovery_body">Fasting Shift 使用保存在本机安全硬件中的密钥来加密你的数据。该密钥已被重置，这可能发生在安全设置更改之后，例如移除或更改屏幕锁定，或恢复手机。没有这个密钥，任何人（包括我们）都无法读取本机上保存的数据。</string>
+    <string name="recovery_fresh_body">“重新开始”会删除无法读取的数据，让你可以继续使用本应用。</string>
+    <string name="recovery_backup_note">如果你曾导出备份文件，之后可以在“设置”中恢复。</string>
+    <string name="recovery_start_fresh">重新开始</string>
+    <string name="recovery_cancel">取消</string>
+    <string name="recovery_confirm_title">删除无法读取的数据？</string>
+    <string name="recovery_confirm_body">没有密钥，本机上的数据将无法恢复。应用会以空白状态重新启动。</string>
+    <string name="settings_hc_update">更新 Health Connect 以同步</string>
+
+    <!-- Smart reminders -->
+    <string name="notif_near_goal_title">距离目标还有 1 小时</string>
+    <string name="notif_near_goal_body">你将在 %1$s 达到目标。</string>
+    <string name="notif_hydration_title">该喝点水了</string>
+    <string name="notif_hydration_body">长时间断食期间记得小口喝水。如有需要，可补充电解质。</string>
+    <string name="notif_window_closing_title">进食窗口将在 30 分钟后结束</string>
+    <string name="notif_window_closing_body">下一次断食前，现在正适合吃最后一餐或点心。</string>
+    <string name="notif_recap_title">你本周的断食回顾</string>
+    <string name="notif_recap_body">来看看你这一周过得怎么样。</string>
+    <string name="notif_suhoor_title">封斋饭（Sahur）将在 30 分钟后结束</string>
+    <string name="notif_suhoor_body">晨礼时间为 %1$s。</string>
+    <string name="notif_iftar_title">开斋时间到了</string>
+    <string name="notif_iftar_body">温和地开斋：先喝水，再吃点清淡的食物。</string>
+
+    <!-- First-week coaching (in-app tip card and notifications). Pending clinician review. -->
+    <string name="coach_hunger_title">饥饿感是一阵一阵的</string>
+    <string name="coach_hunger_body">通常 15 到 20 分钟就会过去。喝杯水或散散步会有帮助。</string>
+    <string name="coach_hydrate_title">记得持续喝水</string>
+    <string name="coach_hydrate_body">断食期间可以喝水、无糖茶和黑咖啡。</string>
+    <string name="coach_electrolytes_title">感觉无力或头痛？</string>
+    <string name="coach_electrolytes_body">在水里加一小撮盐通常会有帮助。如果感到头晕欲倒或身体不适，就结束断食，这永远没问题。</string>
+    <string name="coach_break_title">快完成了</string>
+    <string name="coach_break_body">计划一顿平和的第一餐：含蛋白质和蔬菜，慢慢吃。</string>
+</resources>
