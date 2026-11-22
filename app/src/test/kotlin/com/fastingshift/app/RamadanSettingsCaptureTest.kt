@@ -62,6 +62,7 @@ class RamadanSettingsCaptureTest {
     }
 
     @After fun tearDown() {
+        if (!::settings.isInitialized) return
         runBlocking {
             settings.setOnboardingComplete(false)
             settings.setRamadan(false)

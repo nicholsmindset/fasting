@@ -68,7 +68,6 @@
     <string name="settings_language_system">System default</string>
     <string name="settings_language_footer">Opens your phone\'s settings to choose Fasting Shift\'s language.</string>
     <string name="settings_language_note">Change the app\'s language in your phone\'s settings.</string>
-    <string name="settings_helplines">Helplines</string>
     <string name="settings_done">Done</string>
     <string name="settings_cancel">Cancel</string>
 
