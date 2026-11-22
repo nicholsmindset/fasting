@@ -245,17 +245,28 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
 }
 
 /** Compact header: today's date, a state title and the current streak. */
+/**
+ * The locale's full date pattern without the year: "EEEE, MMMM d" (en-US), "EEEE d MMMM" (en-GB),
+ * "M月d日EEEE" (zh), "EEEE, d MMMM" (ms/in). CJK patterns write the year as "y年"/"y년", so the
+ * year marker goes too.
+ */
+internal fun fullDateWithoutYearPattern(locale: Locale): String {
+    val full = java.time.format.DateTimeFormatterBuilder.getLocalizedDateTimePattern(
+        java.time.format.FormatStyle.FULL, null, java.time.chrono.IsoChronology.INSTANCE, locale,
+    )
+    return full
+        .replace(Regex("y+\\s*[年년]\\s*"), "")
+        .replace(Regex("[^A-Za-z'\\u4e00-\\u9fff]*y+[^A-Za-z'\\u4e00-\\u9fff]*$"), "")
+        .replace(Regex("[,\\s]*y+[,.\\s]*"), " ")
+        .trim()
+}
+
 @Composable
 private fun TimerHeader(state: TimerUiState) {
     val zone = ZoneId.systemDefault()
     val date = remember(state.now.atZone(zone).toLocalDate()) {
         val locale = Locale.getDefault()
-        // The locale's full date without the year: "Saturday, November 21" / "Saturday 21 November".
-        val full = java.time.format.DateTimeFormatterBuilder.getLocalizedDateTimePattern(
-            java.time.format.FormatStyle.FULL, null, java.time.chrono.IsoChronology.INSTANCE, locale,
-        )
-        val pattern = full.replace(Regex("[^A-Za-z']*y+[^A-Za-z']*$"), "").replace(Regex("[,\\s]*y+[,.\\s]*"), " ").trim()
-        DateTimeFormatter.ofPattern(pattern, locale).format(state.now.atZone(zone))
+        DateTimeFormatter.ofPattern(fullDateWithoutYearPattern(locale), locale).format(state.now.atZone(zone))
     }
     val title = when {
         state.active != null -> stringResource(R.string.daily_header_fasting)
