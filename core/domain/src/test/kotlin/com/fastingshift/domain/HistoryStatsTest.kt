@@ -52,6 +52,8 @@ class HistoryStatsTest {
         val s = HistoryStats.periodSummary(emptyList(), zone, Period.YEAR, fri, at(fri, 12))
         assertEquals(Duration.ZERO, s.totalFasting)
         assertEquals(0f, s.consistency)
+        assertNull(s.average)
+        assertNull(s.longest)
         assertEquals(LocalDate.of(2026, 1, 1), s.range.start)
     }
 

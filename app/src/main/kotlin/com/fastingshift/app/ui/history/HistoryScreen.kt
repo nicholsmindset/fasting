@@ -280,6 +280,11 @@ private fun SummaryCard(period: Period, s: PeriodSummary, onPeriod: (Period) -> 
                 Text(fastedLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        Text(
+            stringResource(R.string.history_stat_planned_days) + " · " + s.completedDays + "/" + s.plannedDays,
+            modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Row(Modifier.fillMaxWidth()) {
             Stat(stringResource(R.string.history_stat_fasts), s.fasts.toString(), Modifier.weight(1f))
             Stat(stringResource(R.string.history_stat_average), s.average?.hoursMinutes() ?: "—", Modifier.weight(1f))
