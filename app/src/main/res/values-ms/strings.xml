@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fasting Shift</string>
+
+    <!-- Notification channels -->
+    <string name="channel_fast_alerts">Makluman puasa</string>
+    <string name="channel_fast_alerts_desc">Apabila puasa anda mencapai sasaran atau satu pencapaian</string>
+    <string name="channel_check_ins">Semakan keselamatan</string>
+    <string name="channel_check_ins_desc">Semakan simptom semasa puasa 24 jam atau lebih</string>
+    <string name="channel_reminders">Peringatan</string>
+    <string name="channel_reminders_desc">Apabila tiba masa untuk memulakan puasa seterusnya</string>
+
+    <!-- Notifications. Neutral, never shaming. -->
+    <string name="notif_fast_end_title">Anda telah mencapai sasaran</string>
+    <string name="notif_fast_end_body">Puasa %1$s anda sudah selesai. Tamatkan bila-bila masa anda bersedia.</string>
+    <string name="notif_milestone_title">%1$s berpuasa</string>
+    <string name="notif_milestone_body">Teruskan, atau tamatkan puasa bila-bila masa anda perlu.</string>
+    <string name="notif_forgot_title">Masih berpuasa?</string>
+    <string name="notif_forgot_body">Puasa anda sudah melepasi sasaran sejak tadi. Ketik untuk menamatkannya atau melaraskan masa.</string>
+    <string name="notif_check_in_title">Semakan ringkas</string>
+    <string name="notif_check_in_body">Bagaimana perasaan anda? Jika anda rasa hendak pitam, sakit dada atau keliru, tamatkan puasa dan dapatkan rawatan perubatan.</string>
+    <string name="notif_start_title">Tempoh makan anda telah tamat</string>
+    <string name="notif_start_body">Ketik untuk memulakan puasa seterusnya.</string>
+    <string name="action_end_fast">Tamatkan puasa</string>
+
+    <!-- Timer screen -->
+    <string name="timer_pick_protocol">Pilih puasa</string>
+    <string name="timer_start">Mula puasa</string>
+    <string name="timer_end">Tamatkan puasa</string>
+    <string name="timer_remaining">%1$s lagi</string>
+    <string name="timer_goal_reached">Sasaran dicapai %1$s lalu</string>
+    <string name="timer_mode_elapsed">Berpuasa</string>
+    <string name="timer_mode_remaining">Baki</string>
+    <string name="timer_mode_past">Lepas sasaran</string>
+    <string name="timer_mode_break_at">Tamatkan puasa pada</string>
+    <string name="timer_goal_of">daripada sasaran %1$s</string>
+    <string name="timer_break_in">dalam %1$s</string>
+    <string name="timer_break_day_in">%1$s · dalam %2$s</string>
+    <string name="timer_tap_hint">Ketik untuk tukar</string>
+    <string name="a11y_timer_switch">Tukar paparan pemasa</string>
+    <string name="a11y_mode_elapsed">Memaparkan masa berpuasa</string>
+    <string name="a11y_mode_remaining">Memaparkan baki masa: %1$s</string>
+    <string name="a11y_mode_past">Memaparkan masa melepasi sasaran: %1$s</string>
+    <string name="a11y_mode_break_at">Memaparkan masa untuk menamatkan puasa: %1$s</string>
+    <string name="timer_locked_soft">Puasa melebihi 24 jam dikunci berdasarkan jawapan semasa anda</string>
+    <string name="timer_locked_doctor">Semua puasa dikunci sehingga anda mengesahkan semakan doktor.</string>
+    <string name="timer_education_only">Berdasarkan jawapan anda, protokol puasa tidak ditawarkan. Talian sokongan di bawah sedia membantu jika anda ingin bercakap dengan seseorang, dan anda masih boleh membaca bagaimana tubuh bertindak balas terhadap puasa. Anda boleh mengubah jawapan anda dalam Tetapan.</string>
+    <string name="timer_needs_clinician">Sila sahkan bahawa anda telah berbincang tentang puasa dengan doktor sebelum bermula.</string>
+    <string name="exact_alarm_banner">Makluman mungkin lewat sehingga 15 minit. Benarkan penggera tepat supaya makluman tamat puasa tiba tepat pada masanya.</string>
+    <string name="exact_alarm_allow">Benarkan</string>
+
+    <!-- Extended fast checklist (F7). Pending clinician review. -->
+    <string name="checklist_title">Sebelum puasa panjang</string>
+    <string name="checklist_hydration">Minum air sepanjang tempoh puasa.</string>
+    <string name="checklist_electrolytes">Rancang elektrolit anda (natrium, kalium, magnesium).</string>
+    <string name="checklist_medications">Jika anda mengambil sebarang ubat, rujuk doktor anda terlebih dahulu.</string>
+    <string name="checklist_contact">Beritahu seseorang bahawa anda sedang berpuasa panjang dan siapa yang perlu dihubungi jika anda tidak sihat.</string>
+    <string name="checklist_redflags">Berhenti dan dapatkan rawatan jika anda pitam, sakit dada, berdebar-debar, keliru atau sangat lemah.</string>
+    <string name="checklist_over72">Anda merancang puasa lebih daripada 72 jam. Puasa selama ini membawa risiko yang lebih tinggi. Sila sahkan bahawa anda memahaminya.</string>
+    <string name="disclaimer">Fasting Shift bukan nasihat perubatan dan tidak mendiagnosis atau merawat sebarang keadaan.</string>
+    <string name="checklist_confirm">Saya faham</string>
+    <string name="cancel">Batal</string>
+    <string name="ok">OK</string>
+
+    <!-- Refeeding guidance (F7, SR-5). Placeholder copy pending clinician review. -->
+    <string name="refeed_title">Menamatkan puasa panjang</string>
+    <string name="refeed_standard">Mulakan dengan hidangan kecil yang mudah dihadam seperti sup, telur atau yogurt. Makan perlahan-lahan dan tunggu sebelum hidangan yang lebih besar.</string>
+    <string name="refeed_extended">Selepas 3 hari atau lebih, makan dengan ringan pada hari pertama: hidangan kecil yang dijarakkan, rendah gula, bersama elektrolit.</string>
+    <string name="refeed_prolonged">Selepas puasa yang sangat panjang, makan semula perlu dilakukan dengan berhati-hati. Kekalkan hidangan kecil untuk beberapa hari pertama, dan hubungi doktor jika anda rasa lemah, keliru, sesak nafas atau mengalami bengkak.</string>
+</resources>

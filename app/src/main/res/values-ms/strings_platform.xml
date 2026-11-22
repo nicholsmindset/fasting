@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for platform integrations: widgets, notifications, reliability and recovery. -->
+<resources>
+    <!-- Widgets -->
+    <string name="widget_open_app">Buka apl</string>
+
+    <!-- Reliability check: a single notification channel switched off -->
+    <string name="rel_channel_title">Pemberitahuan %1$s</string>
+    <string name="rel_channel_fix">Hidupkan dalam tetapan</string>
+
+    <!-- Database key recovery (SR-9) -->
+    <string name="recovery_title">Data simpanan anda tidak dapat dibuka</string>
+    <string name="recovery_body">Fasting Shift menyulitkan data anda dengan kunci yang disimpan dalam perkakasan selamat telefon ini. Kunci itu telah ditetapkan semula, yang boleh berlaku selepas perubahan keselamatan seperti membuang atau menukar kunci skrin, atau memulihkan telefon. Tanpa kunci itu, data yang disimpan dalam telefon ini tidak boleh dibaca oleh sesiapa pun, termasuk kami.</string>
+    <string name="recovery_fresh_body">Mula semula akan memadamkan data yang tidak dapat dibaca supaya anda boleh terus menggunakan apl ini.</string>
+    <string name="recovery_backup_note">Jika anda pernah mengeksport fail sandaran, anda boleh memulihkannya kemudian dalam Tetapan.</string>
+    <string name="recovery_start_fresh">Mula semula</string>
+    <string name="recovery_cancel">Batal</string>
+    <string name="recovery_confirm_title">Padam data yang tidak dapat dibaca?</string>
+    <string name="recovery_confirm_body">Data dalam telefon ini tidak boleh dipulihkan tanpa kuncinya. Apl akan dimulakan semula dalam keadaan kosong.</string>
+    <string name="settings_hc_update">Kemas kini Health Connect untuk menyegerakkan</string>
+
+    <!-- Smart reminders -->
+    <string name="notif_near_goal_title">Satu jam lagi ke sasaran anda</string>
+    <string name="notif_near_goal_body">Anda akan mencapai sasaran pada %1$s.</string>
+    <string name="notif_hydration_title">Masa untuk minum air</string>
+    <string name="notif_hydration_body">Minum air sedikit demi sedikit sepanjang puasa panjang. Tambah elektrolit jika perlu.</string>
+    <string name="notif_window_closing_title">Tempoh makan tamat dalam 30 minit</string>
+    <string name="notif_window_closing_body">Masa yang sesuai untuk hidangan atau snek terakhir sebelum puasa seterusnya.</string>
+    <string name="notif_recap_title">Minggu puasa anda</string>
+    <string name="notif_recap_body">Lihat bagaimana minggu anda berlalu.</string>
+    <string name="notif_suhoor_title">Waktu sahur tamat dalam 30 minit</string>
+    <string name="notif_suhoor_body">Subuh pada %1$s.</string>
+    <string name="notif_iftar_title">Sudah tiba waktu berbuka</string>
+    <string name="notif_iftar_body">Berbukalah dengan perlahan, mulakan dengan air dan sesuatu yang ringan.</string>
+
+    <!-- First-week coaching (in-app tip card and notifications). Pending clinician review. -->
+    <string name="coach_hunger_title">Rasa lapar datang dan pergi</string>
+    <string name="coach_hunger_body">Biasanya ia hilang dalam 15 hingga 20 minit. Segelas air atau berjalan sebentar boleh membantu.</string>
+    <string name="coach_hydrate_title">Terus minum air</string>
+    <string name="coach_hydrate_body">Air, teh kosong dan kopi hitam tanpa gula boleh diminum semasa berpuasa.</string>
+    <string name="coach_electrolytes_title">Rasa lesu atau sakit kepala?</string>
+    <string name="coach_electrolytes_body">Air dengan secubit garam selalunya membantu. Jika anda rasa hendak pitam atau tidak sihat, tamatkan puasa. Itu sentiasa tidak mengapa.</string>
+    <string name="coach_break_title">Hampir sampai</string>
+    <string name="coach_break_body">Rancang hidangan pertama yang tenang: sesuatu yang mengandungi protein dan sayur-sayuran, dimakan perlahan-lahan.</string>
+</resources>
