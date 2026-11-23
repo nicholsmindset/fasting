@@ -87,6 +87,14 @@ class WeeklyRecapCardTest {
     @Test fun theMessageNeverRewardsLength() {
         val item = seededItem()
         // Two of four planned days kept: a calm consistency line, whatever the hours.
-        assertEquals(R.string.recap_msg_some, RecapCopy.message(item.recap, isLastWeek = false))
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        compose.setContent { FastingShiftTheme { WeeklyRecapCard(item) } }
+        compose.onNodeWithText(ctx.resources.getQuantityString(R.plurals.recap_msg_some, 4, 2, 4)).assertExists()
+    }
+
+    @Test @Config(qualifiers = "en-rUS") fun onePlannedDayUsesSingularCopy() {
+        val item = seededItem().let { it.copy(recap = it.recap.copy(plannedDays = 1, completedDays = 1)) }
+        compose.setContent { FastingShiftTheme { WeeklyRecapCard(item) } }
+        compose.onNodeWithText("1 of 1 planned day went to plan.", substring = true).assertExists()
     }
 }

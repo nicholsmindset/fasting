@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -37,12 +38,15 @@ object RecapCopy {
      * One calm line. It speaks to consistency (planned days kept), never to fast length, so a
      * longer fast is never praised.
      */
-    fun message(recap: WeeklyRecap, isLastWeek: Boolean): Int = when {
-        recap.isEmpty -> if (isLastWeek) R.string.recap_msg_empty_last else R.string.recap_msg_empty
-        recap.plannedDays > 0 && recap.completedDays >= recap.plannedDays -> R.string.recap_msg_all
-        recap.plannedDays == 0 -> R.string.history_no_planned_days
-        recap.completedDays > 0 -> R.string.recap_msg_some
-        else -> R.string.recap_msg_none
+    @Composable
+    fun message(recap: WeeklyRecap, isLastWeek: Boolean): String = when {
+        recap.isEmpty -> stringResource(if (isLastWeek) R.string.recap_msg_empty_last else R.string.recap_msg_empty)
+        recap.plannedDays == 0 -> stringResource(R.string.history_no_planned_days)
+        recap.completedDays == 0 -> stringResource(R.string.recap_msg_none)
+        else -> pluralStringResource(
+            if (recap.completedDays >= recap.plannedDays) R.plurals.recap_msg_all else R.plurals.recap_msg_some,
+            recap.plannedDays, recap.completedDays, recap.plannedDays,
+        )
     }
 
     /** Days of the week that count: all 7 for a past week, up to today for this one. */
@@ -72,7 +76,7 @@ fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier) {
             RecapStat(stringResource(R.string.recap_water_days), stringResource(R.string.recap_x_of_y, r.waterGoalDays, item.daysInWeek), Modifier.weight(1f))
         }
         Text(
-            stringResource(RecapCopy.message(r, item.isLastWeek), r.completedDays, r.plannedDays),
+            RecapCopy.message(r, item.isLastWeek),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

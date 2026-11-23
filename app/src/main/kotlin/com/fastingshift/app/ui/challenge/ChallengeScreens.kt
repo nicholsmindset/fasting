@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -68,7 +69,7 @@ private fun LocalDate.text(): String = dateFormat.format(this)
 /** "16:8 for 7 days", "Monday and Thursday fasts"… */
 @Composable
 fun challengeTypeTitle(type: ChallengeType, protocolId: String?, lengthDays: Int): String = when (type) {
-    ChallengeType.DAILY_PROTOCOL -> stringResource(R.string.challenge_daily_title, protocolId?.let(Presets::byId)?.name ?: "", lengthDays)
+    ChallengeType.DAILY_PROTOCOL -> pluralStringResource(R.plurals.challenge_daily_title, lengthDays, protocolId?.let(Presets::byId)?.name ?: "", lengthDays)
     ChallengeType.SUNNAH_MON_THU -> stringResource(R.string.challenge_monthu_title)
     ChallengeType.AYYAMUL_BIDH -> stringResource(R.string.challenge_white_title)
 }
@@ -150,7 +151,7 @@ private fun ChallengeGroup(header: String, items: List<ChallengeItem>, onOpen: (
             val c = item.challenge
             GroupRow(
                 c.name ?: challengeTypeTitle(c.type, c.protocolId, c.lengthDays),
-                subtitle = stringResource(R.string.challenge_progress, item.progress.doneDays, item.progress.requiredDays) + " · " + statusText(item),
+                subtitle = pluralStringResource(R.plurals.challenge_progress, item.progress.requiredDays, item.progress.doneDays, item.progress.requiredDays) + " · " + statusText(item),
                 leading = { ProgressRing(item.progress.fraction, Modifier.size(32.dp), stroke = 5.dp) },
                 showChevron = true,
                 onClick = { onOpen(c.id) },
@@ -251,7 +252,7 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ProgressRing(p.fraction, Modifier.size(64.dp), stroke = 8.dp)
                 Column {
-                    Text(stringResource(R.string.challenge_progress, p.doneDays, p.requiredDays), style = MaterialTheme.typography.titleLarge)
+                    Text(pluralStringResource(R.plurals.challenge_progress, p.requiredDays, p.doneDays, p.requiredDays), style = MaterialTheme.typography.titleLarge)
                     // The date range already says when it starts and ends; only "Finished"/"Left" add anything.
                     if (it.left || p.status == ChallengeStatus.FINISHED) {
                         Text(statusText(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -293,7 +294,7 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
 /** One square per day, a week to a row. Done is filled; missed days are only outlined (never red). */
 @Composable
 private fun ProgressGrid(days: List<ChallengeDay>, modifier: Modifier, done: Int, required: Int) {
-    val a11y = stringResource(R.string.challenge_grid_a11y, done, required)
+    val a11y = pluralStringResource(R.plurals.challenge_grid_a11y, required, done, required)
     Column(modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = a11y }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         days.chunked(7).forEach { week ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {

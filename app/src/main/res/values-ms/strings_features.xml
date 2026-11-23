@@ -128,8 +128,9 @@
     <string name="history_stat_average">Purata</string>
     <string name="history_stat_planned_days">Hari dirancang selesai</string>
     <string name="history_recent">Puasa terkini</string>
-    <string name="history_average">Purata %1$s · %2$d puasa terakhir</string>
-    <string name="history_ring_a11y">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</string>
+    <plurals name="history_ring_a11y">
+        <item quantity="other">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</item>
+    </plurals>
     <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
     <string name="status_active">Sedang berjalan</string>
     <string name="status_completed">Ikut rancangan</string>

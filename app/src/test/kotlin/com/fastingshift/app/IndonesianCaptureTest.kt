@@ -149,7 +149,7 @@ class IndonesianCaptureTest {
         compose.onNode(hasClickAction() and hasContentDescription("Berpuasa ", substring = true)).performClick()
         waitForDescription(s(R.string.a11y_mode_elapsed))
         compose.onNodeWithText(s(R.string.tab_history)).performClick()
-        val averagePrefix = compose.activity.getString(R.string.history_average, "", 0).substringBefore(" ")
+        val averagePrefix = compose.activity.getString(R.string.history_chart_average, "").trim()
         compose.waitUntil(15_000) { compose.onAllNodesWithText(averagePrefix, substring = true).fetchSemanticsNodes().isNotEmpty() }
         shoot("2-history", mode)
         compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(compose.activity.getString(R.string.history_streak_title)))

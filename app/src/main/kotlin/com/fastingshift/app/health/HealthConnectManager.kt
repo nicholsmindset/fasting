@@ -184,8 +184,7 @@ class HealthConnectManager @Inject constructor(
         if (water != null && RetryKey.forWater(water) == key) return@retry insertWater(water)
         val glucose = metrics.get(key.rowId)?.takeIf { it.type == MetricType.GLUCOSE }
         if (glucose != null && RetryKey.forGlucose(glucose) == key) {
-            // Permission withdrawn since: nothing to retry.
-            return@retry if (hasPermissions(glucosePermissions)) insertGlucose(glucose) else Result.success(Unit)
+            return@retry insertGlucose(glucose)
         }
         // Deleted, or a different row now occupies the ID after restoring a backup.
         Result.success(Unit)
@@ -201,24 +200,27 @@ class HealthConnectManager @Inject constructor(
      */
     suspend fun writeGlucose(log: MetricLog): Result<Unit> {
         require(log.type == MetricType.GLUCOSE) { "only glucose readings go to Health Connect" }
-        if (!settings.current().healthConnectSync || !hasPermissions(glucosePermissions)) return Result.success(Unit)
-        return retries.write(RetryKey.forGlucose(log)) { insertGlucose(log) }
+        return retries.write(RetryKey.forGlucose(log)) {
+            if (settings.current().healthConnectSync) insertGlucose(log) else Result.success(Unit)
+        }
     }
 
-    private suspend fun insertGlucose(log: MetricLog): Result<Unit> = guardedResult {
-        val c = checkNotNull(client()) { "Health Connect is unavailable" }
-        c.insertRecords(
-            listOf(
-                BloodGlucoseRecord(
-                    time = log.at,
-                    zoneOffset = ZoneId.systemDefault().rules.getOffset(log.at),
-                    metadata = Metadata.manualEntry(clientRecordId = clientId("glucose", log.id)),
-                    level = BloodGlucose.millimolesPerLiter(log.mmolPerL),
-                    specimenSource = BloodGlucoseRecord.SPECIMEN_SOURCE_UNKNOWN,
-                    relationToMeal = BloodGlucoseRecord.RELATION_TO_MEAL_GENERAL,
+    private suspend fun insertGlucose(log: MetricLog): Result<Unit> {
+        val c = client() ?: return Result.failure(IllegalStateException("Health Connect is unavailable"))
+        return writeGlucoseWhenGranted({ c.permissionController.getGrantedPermissions().containsAll(glucosePermissions) }) {
+            c.insertRecords(
+                listOf(
+                    BloodGlucoseRecord(
+                        time = log.at,
+                        zoneOffset = ZoneId.systemDefault().rules.getOffset(log.at),
+                        metadata = Metadata.manualEntry(clientRecordId = clientId("glucose", log.id)),
+                        level = BloodGlucose.millimolesPerLiter(log.mmolPerL),
+                        specimenSource = BloodGlucoseRecord.SPECIMEN_SOURCE_UNKNOWN,
+                        relationToMeal = BloodGlucoseRecord.RELATION_TO_MEAL_GENERAL,
+                    ),
                 ),
-            ),
-        )
+            )
+        }
     }
 
     /** Removes a glucose reading this app wrote, when the user deletes it here. */
@@ -284,14 +286,6 @@ class HealthConnectManager @Inject constructor(
         fallback
     }
 
-    private suspend fun guardedResult(block: suspend () -> Unit): Result<Unit> = try {
-        Result.success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
     companion object {
         /** Preferences file holding the per-install record-id tag. */
         const val ID_PREFS = "health_connect_ids"
@@ -300,4 +294,16 @@ class HealthConnectManager @Inject constructor(
         private const val PAGE_SIZE = 1000
         private const val MAX_PAGES = 50
     }
+}
+
+/** Only a successful permission lookup can omit a glucose write. Provider errors stay retryable. */
+internal suspend fun writeGlucoseWhenGranted(hasPermission: suspend () -> Boolean, insert: suspend () -> Unit): Result<Unit> =
+    guardedResult { if (hasPermission()) insert() }
+
+private suspend fun guardedResult(block: suspend () -> Unit): Result<Unit> = try {
+    Result.success(block())
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    Result.failure(e)
 }

@@ -124,13 +124,17 @@
     <string name="challenges_open_link">Buka pautan</string>
     <string name="challenges_link_invalid">Itu bukan pautan cabaran.</string>
     <string name="challenges_not_allowed">Cabaran tersedia apabila soalan keselamatan menunjukkan puasa sesuai untuk anda.</string>
-    <string name="challenge_progress">%1$d daripada %2$d hari</string>
+    <plurals name="challenge_progress">
+        <item quantity="other">%1$d daripada %2$d hari</item>
+    </plurals>
     <string name="challenge_dates">%1$s – %2$s</string>
     <string name="challenge_status_upcoming">Bermula %1$s</string>
     <string name="challenge_status_active">Berakhir %1$s</string>
     <string name="challenge_status_finished">Selesai</string>
     <string name="challenge_status_left">Telah keluar</string>
-    <string name="challenge_daily_title">%1$s selama %2$d hari</string>
+    <plurals name="challenge_daily_title">
+        <item quantity="other">%1$s selama %2$d hari</item>
+    </plurals>
     <string name="challenge_monthu_title">Puasa Isnin dan Khamis</string>
     <string name="challenge_white_title">Hari putih (Ayyamul Bidh)</string>
     <string name="challenge_tmpl_16_8">Berpuasa 16 jam sehari selama seminggu.</string>
@@ -148,8 +152,10 @@
     <string name="challenge_create">Mulakan cabaran</string>
     <string name="challenge_create_note">Tetapan keselamatan anda tetap terpakai untuk setiap puasa. Berehatlah bila-bila masa anda perlu.</string>
     <string name="challenge_how_daily">Sehari dikira apabila puasa sekurang-kurangnya %1$d jam bermula pada hari itu.</string>
-    <string name="challenge_how_sunnah">Sehari dikira apabila puasa sekurang-kurangnya %1$d jam bermula pada hari itu dan selesai seperti dirancang. Hari raya dan hari tasyrik bukan hari berpuasa.</string>
-    <string name="challenge_grid_a11y">%1$d daripada %2$d hari puasa selesai</string>
+    <string name="challenge_how_sunnah">Hari yang dijadualkan dikira apabila puasa Ramadan, qada atau sunat bermula pada hari itu dan selesai seperti dirancang. Puasa biasa juga dikira jika bermula pada hari itu dan selesai mengikut tempoh yang dirancang, iaitu sekurang-kurangnya %1$d jam. Hari raya dan hari tasyrik dikecualikan.</string>
+    <plurals name="challenge_grid_a11y">
+        <item quantity="other">%1$d daripada %2$d hari puasa selesai</item>
+    </plurals>
     <string name="challenge_legend_done">Selesai</string>
     <string name="challenge_legend_ahead">Akan datang</string>
     <string name="challenge_legend_rest">Bukan hari puasa</string>

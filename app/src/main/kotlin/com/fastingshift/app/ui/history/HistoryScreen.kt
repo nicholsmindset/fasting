@@ -283,7 +283,7 @@ private fun SummaryCard(period: Period, s: PeriodSummary, trackedFrom: LocalDate
         )
         val fastedLabel = stringResource(fastedIn(period))
         val ringA11y = if (s.plannedDays > 0) {
-            stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
+            pluralStringResource(R.plurals.history_ring_a11y, s.plannedDays, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
         } else {
             stringResource(R.string.history_ring_no_planned, s.totalFasting.hoursMinutes(), fastedLabel)
         }

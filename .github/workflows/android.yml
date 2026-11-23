@@ -43,13 +43,49 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug
 
-      - name: Lint and build the staging preview
+      - name: Lint and build staging and release
         if: github.event_name == 'pull_request'
         env:
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: |
-          ./gradlew :app:lintDebug :app:assembleStaging
-          ./gradlew :app:testDebugUnitTest --tests '*.StoreScreenshotTest' -Pscreenshots
+          ./gradlew :app:lintDebug :app:assembleStaging :app:bundleRelease
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          for module, variant in [('core/domain', 'test'), ('core/data', 'testDebugUnitTest'), ('app', 'testDebugUnitTest')]:
+              reports = list(Path(module, 'build/test-results', variant).glob('TEST-*.xml'))
+              assert reports, f'Missing {module} test reports'
+              totals = [sum(int(ET.parse(p).getroot().get(key, '0')) for p in reports)
+                        for key in ('tests', 'skipped', 'failures', 'errors')]
+              print(f'{module}: {totals[0] - totals[1]} executed, {totals[1]} skipped, {totals[2]} failures, {totals[3]} errors')
+          issues = ET.parse('app/build/reports/lint-results-debug.xml').getroot().findall('issue')
+          for severity in ('Fatal', 'Error', 'Warning'):
+              print(f'Android lint {severity}: {sum(i.get("severity") == severity for i in issues)}')
+          PYTHON
+
+      - name: Capture History and moats screens
+        if: github.event_name == 'pull_request'
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
+        run: |
+          ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.StoreScreenshotTest' --tests '*MoatsCaptureTest'
+
+      - name: Upload staging APK
+        if: success() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          path: app/build/outputs/apk/staging/app-staging.apk
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload moats screenshots
+        if: success() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fasting-shift-moats-screens
+          path: app/build/moats-captures/
+          if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         if: success() && github.event_name == 'pull_request'
