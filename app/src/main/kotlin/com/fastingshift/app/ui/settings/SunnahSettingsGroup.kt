@@ -23,7 +23,7 @@ import com.fastingshift.data.settings.AppSettings
 import com.fastingshift.domain.ramadan.SunnahType
 
 @Composable
-internal fun SunnahSettingsGroup(s: AppSettings, vm: SettingsViewModel) {
+internal fun SunnahSettingsGroup(s: AppSettings, vm: SettingsViewModel, onOpenHub: () -> Unit = {}) {
     var choosingDays by rememberSaveable { mutableStateOf(false) }
     var choosingOffset by rememberSaveable { mutableStateOf(false) }
     InsetGroup(
@@ -45,6 +45,8 @@ internal fun SunnahSettingsGroup(s: AppSettings, vm: SettingsViewModel) {
         GroupDivider()
         GroupRow(stringResource(R.string.sunnah_offset), value = offsetLabel(s.hijriOffsetDays),
             showChevron = true, onClick = { choosingOffset = true })
+        GroupDivider()
+        GroupRow(stringResource(R.string.muslim_hub_entry), showChevron = true, onClick = onOpenHub)
     }
     if (choosingDays) {
         var draft by rememberSaveable { mutableStateOf(ArrayList(s.sunnahTypes.map { it.name })) }

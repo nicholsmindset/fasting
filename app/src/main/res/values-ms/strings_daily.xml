@@ -41,9 +41,7 @@
     <string name="log_trend_latest">Terkini</string>
     <string name="log_trend_high">Tertinggi</string>
     <!-- Shift+ -->
-    <string name="paywall_best_value">Nilai terbaik</string>
     <string name="paywall_continue">Teruskan</string>
-    <string name="paywall_start_trial">Mula percubaan percuma 7 hari</string>
 
     <!-- History -->
     <string name="history_title">Sejarah</string>
@@ -56,8 +54,12 @@
     <!-- Each message gets (completed planned days, planned days); not all use them. -->
     <string name="recap_msg_empty">Minggu yang baharu. Berpuasalah bila sesuai dengan rancangan anda.</string>
     <string name="recap_msg_empty_last">Minggu yang tenang. Tidak mengapa. Sambung semula bila anda bersedia.</string>
-    <string name="recap_msg_all">%1$d daripada %2$d hari yang dirancang berjalan mengikut rancangan. Yang penting ialah konsisten.</string>
-    <string name="recap_msg_some">%1$d daripada %2$d hari yang dirancang berjalan mengikut rancangan. Konsisten lebih penting daripada tempoh.</string>
+    <plurals name="recap_msg_all">
+        <item quantity="other">%1$d daripada %2$d hari yang dirancang berjalan mengikut rancangan. Yang penting ialah konsisten.</item>
+    </plurals>
+    <plurals name="recap_msg_some">
+        <item quantity="other">%1$d daripada %2$d hari yang dirancang berjalan mengikut rancangan. Konsisten lebih penting daripada tempoh.</item>
+    </plurals>
     <string name="recap_msg_none">Belum ada hari yang dirancang selesai. Setiap hari ialah permulaan baharu.</string>
     <string name="log_trend_a11y">Trend berat, %1$d catatan dalam 90 hari lepas. Daripada %2$s kepada %3$s. Terendah %4$s, tertinggi %5$s.</string>
 </resources>

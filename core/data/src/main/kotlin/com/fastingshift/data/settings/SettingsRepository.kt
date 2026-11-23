@@ -130,6 +130,9 @@ class SettingsRepository(context: Context) {
 
     suspend fun current(): AppSettings = settings.first()
 
+    /** Removes every preference ("Delete all data"), through the live store so nothing writes it back. */
+    suspend fun clearAll() = store.edit { it.clear() }
+
     suspend fun setFastEndReminder(enabled: Boolean) = store.edit { it[FAST_END] = enabled }
     suspend fun setFastStartReminder(enabled: Boolean) = store.edit { it[FAST_START] = enabled }
     suspend fun setMilestoneHours(hours: Set<Int>) = store.edit { it[MILESTONES] = hours.map(Int::toString).toSet() }

@@ -1,10 +1,14 @@
 package com.fastingshift.app
 
 import android.os.Looper
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.ui.firstweek.FastSummaryViewModel
 import com.fastingshift.app.ui.firstweek.FirstFastPlanner
 import com.fastingshift.app.ui.firstweek.FirstWeekRules
+import com.fastingshift.app.ui.onboarding.afterNotifications
+import com.fastingshift.app.ui.onboarding.OnboardingViewModel
 import com.fastingshift.app.ui.onboarding.recommendedProtocol
 import com.fastingshift.app.ui.onboarding.Step
 import com.fastingshift.app.ui.onboarding.stepProgress
@@ -17,6 +21,7 @@ import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
+import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -53,6 +58,8 @@ class FirstWeekTest {
     @Inject lateinit var settings: com.fastingshift.data.settings.SettingsRepository
     @Inject lateinit var planner: FirstFastPlanner
     @Inject lateinit var clock: Clock
+    @Inject lateinit var billing: BillingManager
+    @Inject lateinit var screening: ScreeningRepository
 
     @Before fun setUp() = hilt.inject()
 
@@ -117,10 +124,33 @@ class FirstWeekTest {
         assertEquals(Presets.W16_8, recommendedProtocol(Goal.WEIGHT))
         assertEquals(Presets.W16_8, recommendedProtocol(Goal.METABOLIC_HEALTH))
         assertEquals(Presets.W16_8, recommendedProtocol(Goal.LONG_FASTS))
-        assertNull(stepProgress(Step.WELCOME, rerun = false))
-        assertEquals(1 to 7, stepProgress(Step.INTRO, rerun = false))
-        assertEquals(7 to 7, stepProgress(Step.OFFER, rerun = false))
-        assertEquals(1 to 3, stepProgress(Step.SCREENING, rerun = true))
+        assertNull(stepProgress(Step.WELCOME, rerun = false, offerAvailable = true))
+        assertEquals(1 to 7, stepProgress(Step.INTRO, rerun = false, offerAvailable = true))
+        assertEquals(7 to 7, stepProgress(Step.OFFER, rerun = false, offerAvailable = true))
+        assertEquals(1 to 3, stepProgress(Step.SCREENING, rerun = true, offerAvailable = true))
+    }
+
+    @Test fun notificationsAreTheLastVisibleStepWhenBillingIsUnavailable() {
+        assertEquals(Step.COMPLETE, afterNotifications(offerAvailable = false))
+        assertEquals(6 to 6, stepProgress(Step.NOTIFICATIONS, rerun = false, offerAvailable = false))
+        assertNull(stepProgress(Step.OFFER, rerun = false, offerAvailable = false))
+        assertNull(stepProgress(Step.COMPLETE, rerun = false, offerAvailable = false))
+        assertEquals(1 to 3, stepProgress(Step.SCREENING, rerun = true, offerAvailable = false))
+        assertEquals(Step.OFFER, afterNotifications(offerAvailable = true))
+        assertEquals(6 to 7, stepProgress(Step.NOTIFICATIONS, rerun = false, offerAvailable = true))
+    }
+
+    @Test fun restoredOfferAndNotificationResultReachTheSameDestination() {
+        fun restored(step: Step): OnboardingViewModel {
+            val handle = SavedStateHandle(mapOf("step" to step.name, "age" to "40", "height" to "175", "weight" to "70"))
+            return OnboardingViewModel(screening, settings, clock, handle, billing)
+        }
+        val expected = afterNotifications(billing.isConfigured)
+        assertEquals(expected, restored(Step.OFFER).state.value.step)
+        val notifications = restored(Step.NOTIFICATIONS)
+        notifications.completeNotifications()
+        notifications.completeNotifications()
+        assertEquals(expected, notifications.state.value.step)
     }
 
     @Test fun summarySavesMoodAndNote() {

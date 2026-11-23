@@ -12,7 +12,6 @@
     <string name="ramadan_minutes">%1$d min</string>
     <string name="ramadan_fajr_at">Fajr %1$s</string>
     <string name="ramadan_maghrib_at">Maghrib %1$s</string>
-    <string name="ramadan_times_method">Times: %1$s method</string>
     <string name="ramadan_choose_city_body">Choose your city to see today\'s suhoor and iftar times.</string>
     <string name="ramadan_choose_city">Choose city</string>
     <string name="a11y_ramadan_progress">Fasting day %1$d%% complete</string>

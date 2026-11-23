@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="helpline_extension">After dialing, choose extension %1$d.</string>
+    <string name="stop_local_emergency">Call the medical emergency number for your current location.</string>
+    <string name="stop_open_dialler">Open phone dialer</string>
+    <string name="helpline_open_all_day">24 hours</string>
+    <string name="helpline_call_text">Call or text, 24 hours</string>
+    <string name="helpline_hours_at">See %1$s for service hours.</string>
+</resources>

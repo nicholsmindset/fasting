@@ -12,7 +12,6 @@
     <string name="ramadan_minutes">%1$d min</string>
     <string name="ramadan_fajr_at">Subuh %1$s</string>
     <string name="ramadan_maghrib_at">Maghrib %1$s</string>
-    <string name="ramadan_times_method">Waktu: kaedah %1$s</string>
     <string name="ramadan_choose_city_body">Pilih bandar anda untuk melihat waktu sahur dan berbuka hari ini.</string>
     <string name="ramadan_choose_city">Pilih bandar</string>
     <string name="a11y_ramadan_progress">Hari puasa %1$d%% selesai</string>

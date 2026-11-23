@@ -124,12 +124,13 @@
     <string name="history_fasted_week">berpuasa minggu ini</string>
     <string name="history_fasted_month">berpuasa bulan ini</string>
     <string name="history_fasted_year">berpuasa tahun ini</string>
-    <string name="history_stat_fasts">Puasa</string>
+    <string name="history_stat_fasts">Puasa dimulakan</string>
     <string name="history_stat_average">Purata</string>
     <string name="history_stat_planned_days">Hari dirancang selesai</string>
     <string name="history_recent">Puasa terkini</string>
-    <string name="history_average">Purata %1$s · %2$d puasa terakhir</string>
-    <string name="history_ring_a11y">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</string>
+    <plurals name="history_ring_a11y">
+        <item quantity="other">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</item>
+    </plurals>
     <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
     <string name="status_active">Sedang berjalan</string>
     <string name="status_completed">Ikut rancangan</string>
@@ -191,9 +192,7 @@
     <string name="onb_notif_body">Kami hanya menghantar peringatan yang anda pilih: apabila puasa tamat, pencapaian, dan semakan keselamatan semasa puasa panjang.</string>
     <string name="onb_notif_allow">Benarkan pemberitahuan</string>
     <string name="onb_offer_title">Shift+ adalah pilihan</string>
-    <string name="onb_offer_body">Program berpandu 21 hari Fasting Shift dan cerapan mingguan. 7 hari percuma dengan pelan tahunan. Harga dipaparkan dalam Google Play sebelum anda membayar. Batalkan bila-bila masa dalam Google Play.</string>
     <string name="onb_offer_free_note">Pemasa, widget, semua protokol, sejarah, eksport dan semua ciri keselamatan adalah percuma selama-lamanya.</string>
-    <string name="onb_offer_trial">Mula percubaan percuma</string>
     <string name="onb_offer_free">Teruskan secara percuma</string>
 
     <!-- Safety -->
@@ -286,15 +285,11 @@
 
     <!-- Shift+ -->
     <string name="paywall_title">Shift+</string>
-    <string name="paywall_point_program">Program berpandu Fasting Shift: 21 hari, satu pelajaran ringkas dan satu sasaran puasa setiap hari.</string>
     <string name="paywall_point_insights">Cerapan: konsistensi mingguan, berat di samping jam puasa, dan purata puasa anda mengikut hari.</string>
     <string name="paywall_free_forever">Yang lain kekal percuma: pemasa, widget, semua protokol, sejarah, eksport dan semua ciri keselamatan.</string>
-    <string name="paywall_trial_note">7 hari percuma</string>
-    <string name="paywall_terms">Pelan tahunan termasuk percubaan percuma 7 hari. Kami akan mengingatkan anda 3 hari sebelum ia tamat. Langganan diperbaharui sehingga dibatalkan dalam Google Play. Pelan seumur hidup ialah pembelian sekali sahaja.</string>
     <string name="paywall_unavailable">Shift+ tidak tersedia pada peranti ini buat masa ini.</string>
     <string name="paywall_already">Anda mempunyai Shift+. Terima kasih.</string>
     <string name="program_locked">Program berpandu ialah sebahagian daripada Shift+.</string>
-    <string name="program_intro">21 hari, satu pelajaran ringkas dan satu sasaran puasa yang ringan setiap hari. Sasaran kekal pada 18 jam atau kurang.</string>
     <string name="program_start">Mulakan program</string>
     <string name="program_day">Hari %1$d · %2$s</string>
     <string name="program_chapter">Daripada buku: %1$s</string>

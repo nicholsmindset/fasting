@@ -37,9 +37,7 @@
     <string name="log_trend_latest">最新</string>
     <string name="log_trend_high">最高</string>
     <!-- Shift+ -->
-    <string name="paywall_best_value">最划算</string>
     <string name="paywall_continue">继续</string>
-    <string name="paywall_start_trial">开始 7 天免费试用</string>
 
     <!-- History -->
     <string name="history_title">历史</string>
@@ -52,8 +50,12 @@
     <!-- Each message gets (completed planned days, planned days); not all use them. -->
     <string name="recap_msg_empty">新的一周开始了。按你的计划，在合适的时候断食就好。</string>
     <string name="recap_msg_empty_last">这一周比较安静，没关系。准备好了随时再开始。</string>
-    <string name="recap_msg_all">%2$d 个计划日中有 %1$d 天按计划完成。稳定才是最重要的。</string>
-    <string name="recap_msg_some">%2$d 个计划日中有 %1$d 天按计划完成。坚持比时长更重要。</string>
+    <plurals name="recap_msg_all">
+        <item quantity="other">%2$d 个计划日中有 %1$d 天按计划完成。稳定才是最重要的。</item>
+    </plurals>
+    <plurals name="recap_msg_some">
+        <item quantity="other">%2$d 个计划日中有 %1$d 天按计划完成。坚持比时长更重要。</item>
+    </plurals>
     <string name="recap_msg_none">还没有完成的计划日。每一天都是新的开始。</string>
     <string name="log_trend_a11y">体重趋势，过去 90 天共 %1$d 条记录。从 %2$s 到 %3$s。最低 %4$s，最高 %5$s。</string>
 </resources>

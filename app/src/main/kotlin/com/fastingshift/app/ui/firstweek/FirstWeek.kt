@@ -1,5 +1,7 @@
 package com.fastingshift.app.ui.firstweek
 
+import com.fastingshift.app.share.ShareCards
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -250,6 +252,8 @@ fun FastSummarySheet(fast: Fast, onUndo: () -> Unit, onDismiss: () -> Unit, vm: 
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 PrimaryButton(stringResource(R.string.save), onClick = { vm.save { close(onDismiss) } }, haptic = true)
+                val shareContext = LocalContext.current
+                PlainButton(stringResource(R.string.share), onClick = { ShareCards.shareFast(shareContext, fast) })
                 AnimatedVisibility(ui.canUndo) {
                     PlainButton(stringResource(R.string.summary_undo), onClick = { onUndo(); close(onDismiss) })
                 }

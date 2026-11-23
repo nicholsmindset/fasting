@@ -1,6 +1,8 @@
 package com.fastingshift.app.health
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
+import com.fastingshift.domain.model.MetricLog
 import com.fastingshift.domain.model.WaterLog
 import com.fastingshift.domain.model.WeightLog
 import java.security.MessageDigest
@@ -19,6 +21,7 @@ internal data class RetryKey(val rowId: Long, val fingerprint: String) {
     companion object {
         fun forWeight(log: WeightLog) = create(log.id, "weight", log.at, log.value, log.unit.name, log.source.name)
         fun forWater(log: WaterLog) = create(log.id, "water", log.at, log.value, log.unit.name, log.source.name)
+        fun forGlucose(log: MetricLog) = create(log.id, "glucose", log.at, log.value, log.unit.name, log.source.name)
 
         fun decode(encoded: String): RetryKey? {
             val id = encoded.substringBefore(':').toLongOrNull() ?: return null
@@ -68,7 +71,7 @@ internal class HealthWriteRetries(private val prefs: SharedPreferences) {
     }
 
     private fun save() {
-        prefs.edit().putStringSet(PENDING, pending.mapTo(mutableSetOf()) { it.encode() }).apply()
+        prefs.edit { putStringSet(PENDING, pending.mapTo(mutableSetOf()) { it.encode() }) }
         count.value = pending.size
     }
 

@@ -26,12 +26,11 @@ object SymptomCheck {
  * Region codes are ISO 3166-1 alpha-2. Verify each number during clinician/legal review.
  */
 object EmergencyNumbers {
-    const val FALLBACK = "112"
-
     private val byRegion = mapOf(
         "SG" to "995",
         "MY" to "999",
-        "ID" to "112",
+        "ID" to "119",
+        "CN" to "120",
         "PH" to "911",
         "TH" to "1669",
         "VN" to "115",
@@ -43,6 +42,6 @@ object EmergencyNumbers {
         "IN" to "112",
     )
 
-    fun forRegion(regionCode: String?): String =
-        regionCode?.uppercase()?.let(byRegion::get) ?: FALLBACK
+    fun forRegion(regionCode: String?): String? =
+        regionCode?.uppercase()?.let(byRegion::get)
 }

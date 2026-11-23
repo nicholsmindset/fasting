@@ -85,6 +85,7 @@ import com.fastingshift.app.ui.firstweek.CoachingTipCard
 import com.fastingshift.app.ui.firstweek.FastSummarySheet
 import com.fastingshift.app.ui.firstweek.FirstFastCard
 import com.fastingshift.app.ui.ramadan.RamadanCard
+import com.fastingshift.app.ui.safety.RamadanSafetyCard
 import com.fastingshift.app.ui.safety.ChecklistDialog
 import com.fastingshift.app.ui.safety.HelplineList
 import com.fastingshift.domain.model.Electrolyte
@@ -109,6 +110,7 @@ fun TimerRoute(
     onOpenCheckIn: (Long) -> Unit,
     onOpenRefeeding: (RefeedingTier, Long) -> Unit,
     onOpenScreening: () -> Unit,
+    onOpenMuslimHub: () -> Unit = {},
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
     val loaded by viewModel.state.collectAsStateWithLifecycle()
@@ -139,6 +141,7 @@ fun TimerRoute(
                     onStartAt = viewModel::setStartAt, onWater = { viewModel.addWater() },
                     onWeight = { v, u -> viewModel.addWeight(v, u) }, onElectrolyte = { e, mg -> viewModel.addElectrolyte(e, mg) },
                     onTodayWater = { viewModel.addWaterQuietly() },
+                    onOpenMuslimHub = onOpenMuslimHub,
                 ),
             )
         }
@@ -192,6 +195,8 @@ class TimerActions(
     val onElectrolyte: (Electrolyte, Double) -> Unit = { _, _ -> },
     /** +250 ml from the Today card's water ring. */
     val onTodayWater: () -> Unit = onWater,
+    /** Sunnah & qada hub, from the Ramadan card. */
+    val onOpenMuslimHub: () -> Unit = {},
 )
 
 @Composable
@@ -206,7 +211,8 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
             val timer = state.timer
             val active = state.active
             TimerHeader(state)
-            RamadanCard()
+            RamadanCard(onOpenHub = actions.onOpenMuslimHub)
+            RamadanSafetyCard()
             // A gentle cross-fade between fasting and not fasting.
             AnimatedContent(
                 targetState = active != null && timer != null,

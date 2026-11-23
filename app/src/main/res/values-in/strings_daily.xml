@@ -37,9 +37,7 @@
     <string name="log_trend_latest">Terbaru</string>
     <string name="log_trend_high">Tertinggi</string>
     <!-- Shift+ -->
-    <string name="paywall_best_value">Paling hemat</string>
     <string name="paywall_continue">Lanjutkan</string>
-    <string name="paywall_start_trial">Mulai uji coba gratis 7 hari</string>
 
     <!-- History -->
     <string name="history_title">Riwayat</string>
@@ -51,8 +49,12 @@
     <string name="recap_x_of_y">%1$d dari %2$d</string>
     <string name="recap_msg_empty">Minggu yang baru. Berpuasalah saat sesuai rencana Anda.</string>
     <string name="recap_msg_empty_last">Minggu yang tenang. Tidak apa-apa. Lanjutkan kapan pun Anda siap.</string>
-    <string name="recap_msg_all">%1$d dari %2$d hari terencana berjalan sesuai rencana. Yang penting adalah konsisten.</string>
-    <string name="recap_msg_some">%1$d dari %2$d hari terencana berjalan sesuai rencana. Konsistensi lebih penting daripada durasi.</string>
+    <plurals name="recap_msg_all">
+        <item quantity="other">%1$d dari %2$d hari terencana berjalan sesuai rencana. Yang penting adalah konsisten.</item>
+    </plurals>
+    <plurals name="recap_msg_some">
+        <item quantity="other">%1$d dari %2$d hari terencana berjalan sesuai rencana. Konsistensi lebih penting daripada durasi.</item>
+    </plurals>
     <string name="recap_msg_none">Belum ada hari terencana yang selesai. Setiap hari adalah awal yang baru.</string>
     <string name="log_trend_a11y">Tren berat, %1$d catatan dalam 90 hari terakhir. Dari %2$s ke %3$s. Terendah %4$s, tertinggi %5$s.</string>
 </resources>

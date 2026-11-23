@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metrics_title">Glukosa &amp; keton</string>
+    <string name="metrics_glucose">Glukosa</string>
+    <string name="metrics_ketones">Keton</string>
+    <string name="metrics_invalid">Masukkan hasil antara %1$s dan %2$s %3$s.</string>
+    <string name="metrics_glucose_note">Opsional. Catat hasil dari alat ukur Anda jika Anda memantau glukosa.</string>
+    <string name="metrics_ketones_local">Hasil keton tetap di perangkat ini. Health Connect tidak memiliki jenis data keton, jadi tidak dibagikan.</string>
+    <string name="metrics_empty">Belum ada hasil</string>
+    <string name="metrics_deleted">%1$s dihapus</string>
+    <string name="metrics_undo">Urungkan</string>
+    <string name="metrics_ranges_note">Hasil berbeda pada tiap orang dan tiap alat ukur. Rentang apa pun yang ditampilkan di sini adalah informasi umum, bukan saran. Dokter Anda dapat memberi tahu apa yang tepat untuk Anda.</string>
+    <string name="metrics_low_title">Hasil glukosa ini rendah</string>
+    <string name="metrics_low_body">Hasil di bawah 70 mg/dL (3.9 mmol/L) umumnya dianggap rendah. Ini saat yang tepat untuk membatalkan puasa dengan sesuatu yang mengandung gula dan mengikuti rencana dokter Anda. Jika Anda merasa gemetar, bingung, atau tidak enak badan, segera cari bantuan medis.</string>
+    <string name="metrics_high_ketone_title">Hasil keton ini tinggi</string>
+    <string name="metrics_high_ketone_body">Keton 3.0 mmol/L atau lebih lebih tinggi dari biasanya saat berpuasa. Jika Anda memiliki diabetes, atau merasa mual, haus, atau sesak napas, hentikan puasa dan hubungi dokter Anda.</string>
+    <string name="metrics_glucose_syncing">Hasil glukosa juga disimpan ke Health Connect.</string>
+    <string name="metrics_glucose_sync_offer">Simpan hasil glukosa ke Health Connect juga?</string>
+    <string name="metrics_glucose_sync_allow">Izinkan</string>
+    <string name="body_title">Sinyal tubuh</string>
+    <string name="body_correlation_note">Korelasi, bukan sebab: tidur, detak jantung, dan glukosa berubah karena banyak hal. Perbandingan baru muncul jika data di kedua sisi sudah cukup. Informasi umum, bukan saran.</string>
+    <string name="body_vs">%1$s vs %2$s</string>
+    <string name="body_bpm_value">%1$s bpm</string>
+    <string name="body_sleep">Tidur setelah hari berpuasa</string>
+    <string name="body_sleep_counts">%1$d malam setelah hari berpuasa vs %2$d malam lain</string>
+    <string name="body_sleep_need">Perlu minimal %1$d malam untuk tiap jenis</string>
+    <string name="body_heart_rate">Detak jantung istirahat, minggu berpuasa</string>
+    <string name="body_heart_rate_counts">%1$d minggu berpuasa vs %2$d minggu lain</string>
+    <string name="body_heart_rate_need">Perlu minimal %1$d minggu untuk tiap jenis</string>
+    <string name="body_glucose">Glukosa saat berpuasa</string>
+    <string name="body_glucose_counts">%1$d hasil saat berpuasa vs %2$d di luar puasa</string>
+    <string name="body_glucose_need">Perlu minimal %1$d hasil saat dan di luar puasa</string>
+    <string name="body_trend_title">Detak jantung istirahat per minggu</string>
+    <string name="body_trend_legend">Batang yang disorot adalah minggu berpuasa (2 hari berpuasa atau lebih).</string>
+    <string name="body_trend_a11y">Detak jantung istirahat mingguan selama %1$d minggu</string>
+    <string name="body_connect_title">Lihat tidur dan detak jantung di samping puasa Anda</string>
+    <string name="body_connect_body">Izinkan Fasting Shift membaca Tidur dan Detak jantung istirahat dari Health Connect. Hanya dibaca: tidak ada yang diubah, disimpan, atau dibagikan. Glukosa memakai hasil yang Anda catat di aplikasi.</string>
+    <string name="body_connect_button">Izinkan di Health Connect</string>
+    <string name="body_unavailable">Health Connect tidak tersedia di perangkat ini.</string>
+</resources>

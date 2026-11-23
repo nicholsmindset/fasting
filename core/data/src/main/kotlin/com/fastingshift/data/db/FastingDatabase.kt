@@ -8,6 +8,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import java.io.File
+import java.nio.file.Files
 
 @Database(
     entities = [
@@ -66,7 +68,12 @@ abstract class FastingDatabase : RoomDatabase() {
 
         /** Deletes the database and its key: the user's last resort after the key is lost. */
         fun resetEncrypted(context: Context) {
+            val file = context.getDatabasePath(NAME)
             context.deleteDatabase(NAME)
+            // Some devices leave journal files after an interrupted deletion. Retry idempotently.
+            for (suffix in listOf("", "-wal", "-shm", "-journal")) {
+                Files.deleteIfExists(File(file.path + suffix).toPath())
+            }
             DatabaseKeyProvider(context).reset()
         }
     }

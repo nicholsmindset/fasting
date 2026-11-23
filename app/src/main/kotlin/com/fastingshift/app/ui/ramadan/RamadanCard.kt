@@ -22,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -112,7 +113,7 @@ class RamadanCardViewModel @Inject constructor(
  * while eating. Shows nothing when Ramadan mode is off.
  */
 @Composable
-fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
+fun RamadanCard(onOpenHub: () -> Unit = {}, vm: RamadanCardViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var picking by rememberSaveable { mutableStateOf(false) }
     when (val s = state) {
@@ -128,7 +129,10 @@ fun RamadanCard(vm: RamadanCardViewModel = hiltViewModel()) {
         }
         is RamadanCardState.Active -> ActiveCard(s)
     }
-    if (state != RamadanCardState.Hidden) QadaLedgerCard()
+    if (state != RamadanCardState.Hidden) {
+        QadaLedgerCard()
+        com.fastingshift.app.ui.design.PlainButton(stringResource(R.string.muslim_hub_entry), onClick = onOpenHub)
+    }
     if (picking) {
         CityPickerSheet(selectedId = null, onPick = { vm.chooseCity(it); picking = false }, onDismiss = { picking = false })
     }
@@ -213,4 +217,6 @@ fun countdownText(c: Countdown): String =
 private val timeFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 /** Clock time in the chosen city's zone (prayer times belong to the place, not the phone). */
-fun clockTime(at: Instant, zone: ZoneId): String = timeFormat.format(at.atZone(zone))
+@Composable
+fun clockTime(at: Instant, zone: ZoneId): String =
+    timeFormat.withLocale(LocalConfiguration.current.locales[0]).format(at.atZone(zone))

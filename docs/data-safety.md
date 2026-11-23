@@ -4,7 +4,7 @@ This worksheet describes the Android implementation. The publisher must check th
 
 | Data or flow | Implementation and proposed treatment |
 | --- | --- |
-| Fast history, notes, mood, screening, symptoms, weight, water, electrolytes, glucose and ketones | Processed on the device. The app has no endpoint for uploading these records. Optional Health Connect access reads weight and writes weight and hydration. |
+| Fast history, notes, mood, screening, symptoms, weight, water, electrolytes, glucose and ketones | Processed on the device. The app has no endpoint for uploading these records. Optional Health Connect access reads weight, sleep and resting heart rate (sleep and heart rate are not stored) and writes weight, hydration and glucose. |
 | Religious observance and city | Ramadan and Sunnah choices, fast types and qada repayments can reveal religious practice. The city is selected manually. The calendar uses bundled data and local calculations. It does not request location access or send these records to a service. |
 | User-directed files | A history CSV includes the fast type. Full JSON backups and ZIP exports also contain available health, screening and religious records. These are unencrypted files written to a destination the user selects. Assess this user-directed transfer separately from developer collection or sharing. |
 | Failed Health Connect writes | Private Android preferences store a local row ID and SHA-256 fingerprint to identify the entry on retry. Measurements and timestamps are read from the encrypted database. The retry list stays on the device and is excluded from exports. |
@@ -19,5 +19,5 @@ Google defines collection as transmission off the device and includes SDK transm
 
 - Confirm the legal publisher, a monitored privacy contact, effective date, and retention and deletion practices for billing and support. Test that support can locate and delete a test RevenueCat customer. Mark the data deletion option according to the process actually available. Clearing app storage handles only local copies.
 - Publish the final privacy policy at the URL linked by the app, verify it opens publicly without sign-in from Settings and Health Connect, and enter the same URL in Play Console.
-- Confirm billing uses encrypted transport, review SDK disclosure defaults and production integrations, then complete Data safety, the Health apps declaration and the three Health Connect permission justifications. Record the submitted settings and approval status.
+- Confirm billing uses encrypted transport, review SDK disclosure defaults and production integrations, then complete Data safety, the Health apps declaration and the [Health Connect justifications](health-connect-justifications.md) for reading weight, sleep and resting heart rate and writing weight, hydration and blood glucose. Record the submitted settings and approval status.
 - Confirm the adult audience and any security-review claims against the actual Play listing. [Google Play health content and services](https://support.google.com/googleplay/android-developer/answer/16679511)

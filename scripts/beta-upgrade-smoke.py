@@ -48,6 +48,21 @@ class Screen:
     def click(self, key, scroll=False):
         self.find(key, scroll).click()
 
+    def finish_free_onboarding(self):
+        # Older baselines present the optional offer. Billing-disabled builds open the timer directly.
+        offer = self.device(text=self.strings["onb_offer_free"], packageName=PACKAGE)
+        timer_tab = self.device(text=self.strings["tab_timer"], packageName=PACKAGE)
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            if timer_tab.exists:
+                return
+            if offer.exists:
+                offer.click()
+                self.find("tab_timer")
+                return
+            time.sleep(0.25)
+        raise AssertionError("Expected the free onboarding offer or the timer after notifications")
+
     def create_fasts(self):
         self.click("onb_get_started")
         self.click("onb_skip")
@@ -67,7 +82,7 @@ class Screen:
         self.click("onb_notif_allow")
         # Answer the runtime dialog now so it cannot cover the timer on its first start.
         self.device(resourceIdMatches=".*permissioncontroller:id/permission_allow_button").click(timeout=15)
-        self.click("onb_offer_free")
+        self.finish_free_onboarding()
         self.click("timer_start", scroll=True)
         self.click("timer_end", scroll=True)
         self.find("summary_title_early")
