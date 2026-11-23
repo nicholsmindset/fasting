@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
@@ -81,8 +82,11 @@ object MuslimText {
     private val shortDate: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
     private val fullDate: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
 
-    fun gregorian(date: LocalDate): String = shortDate.format(date)
-    fun gregorianFull(date: LocalDate): String = fullDate.format(date)
+    @Composable
+    fun gregorian(date: LocalDate): String = shortDate.withLocale(LocalConfiguration.current.locales[0]).format(date)
+
+    @Composable
+    fun gregorianFull(date: LocalDate): String = fullDate.withLocale(LocalConfiguration.current.locales[0]).format(date)
 }
 
 /** "12 Jumada al-Akhirah 1448 AH", in the app's language. */
