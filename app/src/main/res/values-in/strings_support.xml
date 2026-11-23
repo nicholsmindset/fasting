@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="helpline_extension">Setelah menelepon, pilih ekstensi %1$d.</string>
-    <string name="stop_local_emergency">Hubungi nomor darurat medis di lokasi Anda saat ini.</string>
-    <string name="stop_open_dialler">Buka papan tombol telepon</string>
-    <string name="helpline_open_all_day">24 jam</string>
-    <string name="helpline_call_text">Telepon atau kirim SMS, 24 jam</string>
-    <string name="helpline_hours_at">Lihat jam layanan di %1$s.</string>
-</resources>

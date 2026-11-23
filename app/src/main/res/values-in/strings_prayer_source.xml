@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="ramadan_source_muis_timetable">Subuh dan Magrib dari jadwal MUIS tahun %1$d</string>
-    <string name="ramadan_source_calculated">Perkiraan waktu dengan metode %1$s</string>
-    <string name="ramadan_footer_muis_timetable">Subuh mengakhiri waktu sahur dan Maghrib adalah waktu berbuka. Kedua waktu ini berasal dari jadwal MUIS tahun %1$d untuk Singapura. Jika Anda minum obat diabetes, bicarakan dengan dokter sebelum berpuasa.</string>
-</resources>

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="ramadan_local_timetable">Metode yang dipilih tidak dapat menghitung semua waktu puasa untuk tanggal ini. Periksa jadwal dari masjid setempat.</string>
-    <string name="ramadan_time_unavailable">Lihat jadwal setempat</string>
-</resources>

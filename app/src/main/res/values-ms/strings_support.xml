@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="helpline_extension">Selepas mendail, pilih sambungan %1$d.</string>
-    <string name="stop_local_emergency">Hubungi nombor kecemasan perubatan di lokasi semasa anda.</string>
-    <string name="stop_open_dialler">Buka pendail telefon</string>
-    <string name="helpline_open_all_day">24 jam</string>
-    <string name="helpline_call_text">Hubungi melalui panggilan atau SMS, 24 jam</string>
-    <string name="helpline_hours_at">Lihat %1$s untuk waktu perkhidmatan.</string>
-</resources>

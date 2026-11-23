@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <plurals name="health_sync_pending">
-        <item quantity="other">%d 条记录已保存在此设备上，等待同步到 Health Connect。</item>
-    </plurals>
-    <string name="health_sync_retry">重新同步</string>
-    <string name="health_sync_retrying">正在重新同步…</string>
-    <string name="health_sync_check_access">请确认 Health Connect 可用，并已允许 Fasting Shift 写入记录。</string>
-</resources>

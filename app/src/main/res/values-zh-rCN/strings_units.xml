@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Duration units, e.g. "16h 20m". -->
-    <string name="duration_hm">%1$d小时%2$d分</string>
-    <string name="duration_h">%1$d小时</string>
-    <string name="duration_m">%1$d分钟</string>
-</resources>

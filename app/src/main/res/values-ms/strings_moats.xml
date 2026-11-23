@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Shared strings for the moats foundation. Feature strings live in strings_<area>.xml. -->
-    <string name="notif_sunnah_title">Puasa sunat esok</string>
-    <string name="notif_sunnah_body">Esok hari puasa sunat. Rancang sahur anda malam ini jika anda ingin berpuasa.</string>
-</resources>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="helpline_extension">拨通后，请选择分机 %1$d。</string>
-    <string name="stop_local_emergency">请拨打您所在地的医疗急救电话。</string>
-    <string name="stop_open_dialler">打开拨号键盘</string>
-    <string name="helpline_open_all_day">全天 24 小时</string>
-    <string name="helpline_call_text">全天可致电或发送短信</string>
-    <string name="helpline_hours_at">服务时间请参阅 %1$s。</string>
-</resources>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Shared strings for the moats foundation. Feature strings live in strings_<area>.xml. -->
-    <string name="notif_sunnah_title">明天是圣行斋戒日</string>
-    <string name="notif_sunnah_body">明天是圣行（Sunnah）斋戒日。如果打算斋戒，今晚记得安排封斋饭（Suhoor）。</string>
-</resources>

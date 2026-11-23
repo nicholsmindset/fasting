@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="wipe_retry_error">Some data may remain on this phone. Try again. If deletion keeps failing, clear the app storage in Android settings.</string>
-</resources>

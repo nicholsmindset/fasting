@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="ramadan_source_muis_timetable">晨礼和昏礼时间来自 MUIS %1$d 年时间表</string>
-    <string name="ramadan_source_calculated">按 %1$s 方法推算的时间</string>
-    <string name="ramadan_footer_muis_timetable">晨礼时封斋饭截止，昏礼时开斋。这两个时间均来自 MUIS 发布的 %1$d 年新加坡礼拜时间表。如果你正在服用糖尿病药物，斋戒前请先咨询医生。</string>
-</resources>

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Same compact h/m as the other strings in this language. -->
-    <string name="duration_hm">%1$dh %2$dm</string>
-    <string name="duration_h">%1$dh</string>
-    <string name="duration_m">%1$dm</string>
-</resources>
