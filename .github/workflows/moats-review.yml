@@ -36,4 +36,4 @@ jobs:
           python -c 'import PIL' || python -m pip install Pillow
           args=()
           for image in $CAPTURE_GROUP; do args+=(--only "$image"); done
-          python -I inspect.py preview "${args[@]}"
+          python inspect.py preview "${args[@]}"
