@@ -31,8 +31,8 @@ Streaks count the days you completed your plan, never how long you fasted.
 SHIFT+ (OPTIONAL)
 See your weekly consistency, average fast by weekday, and optional weight entries alongside your fasting history. View available plans, prices and trial terms before purchase. Manage subscriptions through Google Play. You can also read a free reflection in the app.
 
-Fasting Shift is not medical advice and does not diagnose or treat any condition. Talk to your doctor before fasting, especially if you take medication.
+Fasting Shift is a wellness tracker. It is not a medical device and does not diagnose, treat, cure or prevent medical conditions. Talk to your doctor before fasting, especially if you take medication.
 
-**Screenshots:** generated from the real app at 1233×2466 (within Play's 2:1 limit) in `docs/screenshots/`, light and dark:
-`1-timer`, `2-history` (hours ring and recent fasts), `2b-calendar` (fasts drawn across days), `3-log`, `4-settings`, plus light-only `5-muslim-hub` (Hijri date, Sunnah days, start until maghrib), `6-challenge` (challenge progress) and `7-trust-center` (from `MoatsCaptureTest`, copied from /tmp/moats-captures). Regenerate after UI changes with
-`./gradlew :app:testDebugUnitTest -Pscreenshots`. Still to capture on a real phone: widgets on a home screen.
+The [store screenshots](screenshots/) show the timer, History summary and calendar, Log and Settings in light and dark modes. The light-mode set also includes the [Muslim fasting hub](screenshots/5-muslim-hub.png), [challenge progress](screenshots/6-challenge.png) and [trust center](screenshots/7-trust-center.png).
+
+To regenerate the images, run `./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.StoreScreenshotTest' --tests '*MoatsCaptureTest'`. The moats captures are in `app/build/moats-captures/` under `en/` and `ms/`. The home-screen widget screenshot still needs a phone.

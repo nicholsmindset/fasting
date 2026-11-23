@@ -103,11 +103,11 @@ class ComponentMoatsCaptureTest {
     }
 
     @Test fun shareImages() {
-        val invite = ChallengeInvite(ChallengeType.SUNNAH_MON_THU, null, monday, 28, "Community Mondays")
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", monday, 7, "A week with friends")
         val cards = mapOf(
             "share-fast" to ShareCards.forFast(res, finished(3, 16), moatsZone),
             "share-week" to ShareCard.Week(monday, Duration.ofHours(62), 4),
-            "share-challenge" to ShareCard.ChallengeProgress("Community Mondays", 5, 8, ChallengeLinks.link(invite)),
+            "share-challenge" to ShareCard.ChallengeProgress("A week with friends", 5, 7, ChallengeLinks.link(invite)),
         )
         cards.forEach { (name, card) ->
             val bitmap = ShareCards.render(res, card)

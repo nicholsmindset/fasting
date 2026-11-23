@@ -3,6 +3,7 @@ package com.fastingshift.app.health
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.content.edit
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -87,7 +88,7 @@ class HealthConnectManager @Inject constructor(
      */
     private val installTag by lazy {
         val prefs = context.getSharedPreferences(ID_PREFS, Context.MODE_PRIVATE)
-        prefs.getString("tag", null) ?: java.util.UUID.randomUUID().toString().take(8).also { prefs.edit().putString("tag", it).apply() }
+        prefs.getString("tag", null) ?: java.util.UUID.randomUUID().toString().take(8).also { tag -> prefs.edit { putString("tag", tag) } }
     }
 
     private fun clientId(type: String, id: Long) = "$type-$installTag-$id"

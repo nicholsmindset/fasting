@@ -206,11 +206,11 @@ class MoatsCaptureTest {
 
         // Launch a real join intent, independent of the seeded, already joined challenge.
         requireNotNull(scenario).close()
-        val invite = ChallengeInvite(ChallengeType.SUNNAH_MON_THU, null, today.plusDays(1), 28, "Community Mondays")
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", today.plusDays(1), 7, "A week with friends")
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(ChallengeLinks.link(invite))).setClass(app, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         scenario = ActivityScenario.launch(intent)
-        waitFor("Community Mondays")
+        waitFor("A week with friends")
         compose.onNodeWithTag("join_card").assertExists()
         shoot("challenge-join")
     }

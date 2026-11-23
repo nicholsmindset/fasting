@@ -1,6 +1,7 @@
 package com.fastingshift.app.health
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.fastingshift.domain.model.MetricLog
 import com.fastingshift.domain.model.WaterLog
 import com.fastingshift.domain.model.WeightLog
@@ -70,7 +71,7 @@ internal class HealthWriteRetries(private val prefs: SharedPreferences) {
     }
 
     private fun save() {
-        prefs.edit().putStringSet(PENDING, pending.mapTo(mutableSetOf()) { it.encode() }).apply()
+        prefs.edit { putStringSet(PENDING, pending.mapTo(mutableSetOf()) { it.encode() }) }
         count.value = pending.size
     }
 

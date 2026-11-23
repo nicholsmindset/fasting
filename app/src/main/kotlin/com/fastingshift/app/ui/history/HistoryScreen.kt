@@ -241,17 +241,17 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         }
         section { RecentFastsCard(st.recent, onEditFast) }
         section { CalendarCard(st, vm::shiftMonth, onEditFast) }
-        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
-        section {
-            val nextWeek = History.weekStart(st.today).plusWeeks(1)
-            WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
-        }
         section {
             InsetGroup {
                 GroupRow(stringResource(R.string.history_insights), showChevron = true, onClick = onOpenInsights)
                 GroupDivider()
                 GroupRow(stringResource(R.string.history_challenges), showChevron = true, onClick = onOpenChallenges)
             }
+        }
+        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
+        section {
+            val nextWeek = History.weekStart(st.today).plusWeeks(1)
+            WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
         }
         section {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {

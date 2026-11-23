@@ -5,7 +5,7 @@ long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
 
 ## Status
 
-Fasting Shift includes the Muslim fasting hub and qada ledger, local challenge invites, share cards, doctor reports, glucose and ketone logging, and optional Health Connect sleep and resting heart rate insights. Glucose writes use the same persistent retry queue as weight and water. Religious fast eligibility and Maghrib use the selected city's date.
+Fasting Shift is an everyday fasting tracker. Start or edit a fast, review your week, and share a challenge with a friend. Optional features include health logs, doctor reports, Health Connect insights, and a Ramadan and Sunnah hub. Glucose writes use the same persistent retry queue as weight and water. Religious fast eligibility and Maghrib use the selected city's date.
 
 Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The release bundle built in CI is unsigned unless a release upload key is configured.
 
