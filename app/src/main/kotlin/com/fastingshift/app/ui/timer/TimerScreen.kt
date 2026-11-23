@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.startReminderNotificationsEnabled
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.ProgressRing
 import com.fastingshift.app.ui.components.formatDateTime
@@ -99,6 +101,7 @@ import com.fastingshift.domain.timeline.BodyTimeline
 import com.fastingshift.domain.timeline.EvidenceLabel
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -112,6 +115,7 @@ fun TimerRoute(
     onOpenScreening: () -> Unit,
     onOpenMuslimHub: () -> Unit = {},
     viewModel: TimerViewModel = hiltViewModel(),
+    onOpenWeek: (LocalDate?) -> Unit = {},
 ) {
     val loaded by viewModel.state.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
@@ -142,6 +146,7 @@ fun TimerRoute(
                     onWeight = { v, u -> viewModel.addWeight(v, u) }, onElectrolyte = { e, mg -> viewModel.addElectrolyte(e, mg) },
                     onTodayWater = { viewModel.addWaterQuietly() },
                     onOpenMuslimHub = onOpenMuslimHub,
+                    onOpenWeek = onOpenWeek,
                 ),
             )
         }
@@ -197,6 +202,7 @@ class TimerActions(
     val onTodayWater: () -> Unit = onWater,
     /** Sunnah & qada hub, from the Ramadan card. */
     val onOpenMuslimHub: () -> Unit = {},
+    val onOpenWeek: (LocalDate?) -> Unit = {},
 )
 
 @Composable
@@ -324,6 +330,9 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             if (window != null) EatingWindowRing(window, state.now) else ReadyRing(state.selected)
         }
+        if (state.maxHours != null) {
+            WeekStartPreview(state, actions.onOpenWeek)
+        }
     }
     when {
         state.gate == GateResult.BLOCK -> {
@@ -357,6 +366,40 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
     }
     TodayCard(state.today, actions.onTodayWater)
     QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
+}
+
+@Composable
+private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Unit) {
+    val locale = LocalConfiguration.current.locales[0]
+    val planned = state.plannedStart
+    val reminder = state.startReminder
+    val notificationsEnabled = startReminderNotificationsEnabled()
+    val zone = ZoneId.systemDefault()
+    val day = planned?.atZone(zone)?.toLocalDate()
+    val today = state.now.atZone(zone).toLocalDate()
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (planned != null) {
+            Text(
+                stringResource(R.string.week_timer_planned, planned.formatDateTime(locale)),
+                style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center,
+            )
+        }
+        val reminderText = when {
+            reminder != null && reminder == planned && notificationsEnabled -> stringResource(R.string.week_timer_reminder_on)
+            reminder != null && notificationsEnabled -> stringResource(R.string.week_timer_reminder, reminder.formatDateTime(locale))
+            planned != null || reminder != null -> stringResource(R.string.week_timer_reminder_off)
+            else -> null
+        }
+        reminderText?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        val action = when (day) {
+            null -> R.string.week_timer_plan
+            today -> R.string.week_timer_change_today
+            else -> R.string.week_timer_change
+        }
+        PlainButton(stringResource(action), onClick = { onOpenWeek(day) })
+    }
 }
 
 /** Horizontally scrolling protocol cards, iOS style, then a custom-length stepper. */
@@ -414,7 +457,7 @@ private fun ReadyRing(selected: Protocol) {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(232.dp)) {
         ProgressRing(0f, Modifier.fillMaxSize(), stroke = 16.dp)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.daily_next_fast), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.week_timer_selected), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(selected.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Light, maxLines = 1)
             Text(stringResource(R.string.daily_protocol_fast, selected.fastHours), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -438,7 +481,7 @@ private fun StartTimeRow(state: TimerUiState, onStartAt: (java.time.Instant?) ->
     }
 }
 
-/** While the eating window is open: how long until the next fast, and at what time. */
+/** While the eating window is open: the remaining time is independent of the planned or rescheduled fasting start. */
 @Composable
 private fun EatingWindowRing(window: EatingWindow, now: java.time.Instant) {
     val total = Duration.between(window.startedAt, window.endsAt).toMillis().coerceAtLeast(1)

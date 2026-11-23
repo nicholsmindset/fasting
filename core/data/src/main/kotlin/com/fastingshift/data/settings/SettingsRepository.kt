@@ -18,6 +18,7 @@ import com.fastingshift.domain.ramadan.SunnahType
 import com.fastingshift.domain.reminders.ReminderSettings
 import com.fastingshift.domain.timer.TimerDisplayMode
 import com.fastingshift.domain.history.History
+import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.schedule.WeekChoice
 import java.time.Duration
@@ -199,9 +200,19 @@ class SettingsRepository(context: Context) {
         }
     }
 
+    /** A null override restores the recurring plan. Past civil dates are read-only. */
+    suspend fun setDayOverride(day: LocalDate, override: DayOverride?, today: LocalDate) = store.edit { p ->
+        if (day >= today) {
+            val overrides = p.planHistory().dayOverrides.toMutableMap()
+            if (override == null) overrides.remove(day) else overrides[day] = override
+            p[DAY_OVERRIDES] = overrides.entries.map { "${it.key}=${it.value.toRecord()}" }.toSet()
+        }
+    }
+
     suspend fun clearPlanHistory() = store.edit {
         it.remove(PLAN_REVISIONS)
         it.remove(WEEK_CHOICES)
+        it.remove(DAY_OVERRIDES)
         Unit
     }
 
@@ -210,7 +221,8 @@ class SettingsRepository(context: Context) {
             entry.substringAfter('=').toIntOrNull()?.let { entry.substringBefore('=') to it }
         }.toMap()
         val choices = this[WEEK_CHOICES].orEmpty().associate { it.substringBefore('=') to it.substringAfter('=') }
-        return PlanHistory.fromRecords(revisions, choices)
+        val dayOverrides = this[DAY_OVERRIDES].orEmpty().associate { it.substringBefore('=') to it.substringAfter('=') }
+        return PlanHistory.fromRecords(revisions, choices, dayOverrides)
     }
     suspend fun setRamadan(enabled: Boolean) = store.edit { it[RAMADAN] = enabled }
     suspend fun setRamadanCity(cityId: String, method: PrayerMethod) = store.edit {
@@ -229,6 +241,7 @@ class SettingsRepository(context: Context) {
         SettingsRecord(
             onboardingComplete = s.onboardingComplete,
             planRevisions = s.planHistory.revisions.mapKeys { it.key.toString() },
+            dayOverrides = s.planHistory.dayOverrides.entries.associate { it.key.toString() to it.value.toRecord() },
             weekChoices = s.planHistory.choices.entries.associate { it.key.toString() to it.value.name },
             goal = s.goal?.name,
             defaultProtocolId = s.defaultProtocolId,
@@ -259,8 +272,9 @@ class SettingsRepository(context: Context) {
 
     suspend fun restore(r: SettingsRecord) = store.edit {
         it[ONBOARDED] = r.onboardingComplete
-        val history = PlanHistory.fromRecords(r.planRevisions, r.weekChoices)
+        val history = PlanHistory.fromRecords(r.planRevisions, r.weekChoices, r.dayOverrides)
         it[PLAN_REVISIONS] = history.revisions.entries.map { entry -> "${entry.key}=${entry.value}" }.toSet()
+        it[DAY_OVERRIDES] = history.dayOverrides.entries.map { entry -> "${entry.key}=${entry.value.toRecord()}" }.toSet()
         it[WEEK_CHOICES] = history.choices.entries.map { entry -> "${entry.key}=${entry.value.name}" }.toSet()
         r.goal?.takeIf { g -> Goal.entries.any { e -> e.name == g } }?.let { g -> it[GOAL] = g } ?: it.remove(GOAL)
         r.defaultProtocolId?.let { d -> it[DEFAULT_PROTOCOL] = d } ?: it.remove(DEFAULT_PROTOCOL)
@@ -302,6 +316,7 @@ class SettingsRepository(context: Context) {
         val COACHING = booleanPreferencesKey("coaching")
         val PLAN_REVISIONS = stringSetPreferencesKey("plan_revisions")
         val WEEK_CHOICES = stringSetPreferencesKey("week_choices")
+        val DAY_OVERRIDES = stringSetPreferencesKey("day_overrides")
         val WEEKLY_RECAP = booleanPreferencesKey("weekly_recap")
         val ONBOARDED_AT = longPreferencesKey("onboarded_at")
         val RAMADAN = booleanPreferencesKey("ramadan_enabled")

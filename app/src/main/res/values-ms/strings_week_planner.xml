@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="week_title">Minggu saya</string>
+    <string name="week_edit_routine">Rutin mingguan</string>
+    <string name="week_routines">Rutin saya</string>
+    <string name="week_create">Rancang minggu %1$s saya</string>
+    <string name="week_weekdays">Isnin hingga Jumaat</string>
+    <string name="week_every_day">Setiap hari</string>
+    <string name="week_choose_days">Pilih hari</string>
+    <string name="week_repeat">Ulang</string>
+    <string name="week_save">Simpan rutin</string>
+    <string name="week_delete">Padam rutin</string>
+    <string name="week_preview">Tujuh hari akan datang</string>
+    <string name="week_alert_off">Peringatan untuk mula dimatikan.</string>
+    <string name="week_active">Peringatan untuk mula akan disambung selepas puasa semasa.</string>
+    <string name="week_next_reminder">Peringatan mula seterusnya · %1$s, %2$s</string>
+    <string name="week_no_reminder">Tiada waktu mula akan datang dalam rutin mingguan anda.</string>
+    <string name="week_skipped">Dilangkau</string>
+    <string name="week_rest">Tiada jadual</string>
+    <string name="week_paused">Dijeda</string>
+    <string name="week_changed">Diubah untuk tarikh ini</string>
+    <string name="week_date_hint">Ubah waktu mula pertama atau langkau semua waktu mula pada tarikh ini. Rutin mingguan anda kekal sama.</string>
+    <string name="week_change_time">Ubah waktu mula</string>
+    <string name="week_skip_day">Langkau hari ini</string>
+    <string name="week_restore_day">Guna jadual biasa</string>
+    <string name="week_future_time">Pilih masa yang lebih lewat hari ini.</string>
+    <string name="week_save_failed">Perubahan gagal disimpan. Semak pelan anda dan cuba lagi.</string>
+</resources>

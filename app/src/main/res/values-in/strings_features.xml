@@ -16,9 +16,9 @@
 
     <!-- Timer: eating window, quick add, start earlier, undo -->
     <string name="eating_title">Jendela makan</string>
-    <string name="eating_next_in">Puasa berikutnya dalam %1$s</string>
-    <string name="eating_next_at">Puasa berikutnya pukul %1$s</string>
-    <string name="eating_a11y">Jendela makan. Puasa berikutnya dalam %1$s, pukul %2$s</string>
+    <string name="eating_next_in">Tersisa %1$s</string>
+    <string name="eating_next_at">Berakhir pukul %1$s</string>
+    <string name="eating_a11y">Jendela makan berakhir dalam %1$s, pukul %2$s.</string>
     <string name="quick_add_title">Tambah cepat</string>
     <string name="quick_water">+250 ml air</string>
     <string name="quick_weight">Berat</string>

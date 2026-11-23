@@ -2,6 +2,8 @@ package com.fastingshift.app.ui.timer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.app.alarm.eligibleSchedules
+import com.fastingshift.app.alarm.idleReminders
 import com.fastingshift.app.R
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.health.HealthConnectManager
@@ -26,6 +28,8 @@ import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.program.GuidedPrograms
 import com.fastingshift.domain.program.ProgramProgress
 import com.fastingshift.domain.protocol.Presets
+import com.fastingshift.domain.reminders.ReminderKind
+import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.safety.BlockReason
 import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.safety.GateResult
@@ -87,6 +91,8 @@ data class TimerUiState(
     val weightUnit: WeightUnit = WeightUnit.KG,
     /** The "Today" card: next fast, water vs goal, streak. */
     val today: TodaySummary = TodaySummary(),
+    val plannedStart: Instant? = null,
+    val startReminder: Instant? = null,
 )
 
 private data class DailyInputs(
@@ -197,13 +203,32 @@ class TimerViewModel @Inject constructor(
         }
         val zone = ZoneId.systemDefault()
         val todayDate = s.now.atZone(zone).toLocalDate()
+        val eligible = eligibleSchedules(d.schedules, s.maxHours?.let { Duration.ofHours(it.toLong()) })
+        val plan = appSettings.planHistory
+        val firstEvening = settings.firstEvening()
+        val plannedStart = if (s.active == null) {
+            ScheduleCalculator.nextStart(eligible, zone, s.now, plan.breakWeeks, plan.dayOverrides, firstEvening)?.second
+        } else null
+        // A start can be shown even when the user has muted its notification.
+        val candidate = if (s.active == null && s.maxHours != null) {
+            val withStart = appSettings.copy(reminders = appSettings.reminders.copy(fastStartEnabled = true))
+            idleReminders(s.now, zone, withStart, eligible, last, firstEvening)
+                .firstOrNull { it.kind == ReminderKind.FAST_START }?.triggerAt
+        } else null
         val today = TodaySummary(
-            next = Today.nextFast(s.active != null, window, d.schedules, zone, s.now, appSettings.planHistory.breakWeeks),
+            next = when {
+                s.active != null -> NextFast.FastingNow
+                candidate != null -> NextFast.At(candidate)
+                else -> NextFast.None
+            },
             waterMl = d.waterMl,
             waterGoalMl = Today.waterGoalMl(appSettings.waterGoalMl, d.latestKg),
             streak = StreakCalculator.calculate(all, zone, todayDate, d.frozen, appSettings.planHistory::isPlanned).current,
         )
-        s.copy(programTargetHours = target, eatingWindow = window, today = today)
+        s.copy(
+            programTargetHours = target, eatingWindow = window, today = today,
+            plannedStart = plannedStart, startReminder = candidate.takeIf { appSettings.reminders.fastStartEnabled },
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {

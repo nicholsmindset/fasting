@@ -3,10 +3,14 @@ package com.fastingshift.data
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.backup.Backup
+import com.fastingshift.domain.backup.BackupCodec
 import com.fastingshift.domain.backup.SettingsRecord
+import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.schedule.WeekChoice
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -50,5 +54,31 @@ class PlanHistoryStorageTest {
         assertTrue(settings.current().planHistory.choices.isEmpty())
         settings.recordSchedule(nextWeek, PlanHistory.EVERY_DAY)
         assertFalse(settings.current().planHistory.isPlanned(wed))
+    }
+
+    @Test fun movedAndSkippedDatesSurviveBackupAndPastDatesCannotBeRewritten() = runBlocking {
+        val settings = SettingsRepository(ApplicationProvider.getApplicationContext())
+        val monday = LocalDate.of(2026, 11, 23)
+        val tuesday = monday.plusDays(1)
+        settings.restore(SettingsRecord(onboardingComplete = true))
+        settings.recordSchedule(monday, PlanHistory.EVERY_DAY)
+        val lateStart = DayOverride(LocalTime.of(21, 15))
+        settings.setDayOverride(monday, lateStart, monday)
+        settings.setDayOverride(tuesday, DayOverride(), monday)
+        settings.setDayOverride(monday, null, tuesday)
+        val encoded = BackupCodec.encode(Backup(exportedAt = 1L, settings = settings.toRecord()))
+        val backup = requireNotNull(BackupCodec.decode(encoded).settings)
+        assertEquals(mapOf(monday.toString() to "21:15", tuesday.toString() to "skip"), backup.dayOverrides)
+        settings.setDayOverride(tuesday, null, monday)
+        assertTrue(settings.current().planHistory.isPlanned(tuesday))
+        settings.restore(backup.copy(dayOverrides = backup.dayOverrides + mapOf("bad-date" to "skip", monday.plusDays(2).toString() to "25:00")))
+        val restored = settings.current().planHistory
+        assertEquals(mapOf(monday to lateStart, tuesday to DayOverride()), restored.dayOverrides)
+        assertFalse(restored.isPlanned(tuesday))
+        settings.clearPlanHistory()
+        assertTrue(settings.current().planHistory.dayOverrides.isEmpty())
+        settings.restore(backup)
+        settings.restore(SettingsRecord())
+        assertTrue(settings.current().planHistory.dayOverrides.isEmpty())
     }
 }

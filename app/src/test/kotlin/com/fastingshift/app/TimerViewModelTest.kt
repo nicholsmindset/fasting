@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.MainScope
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.Schedule
+import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.RefeedingTier
 import com.fastingshift.domain.safety.ScreeningAnswers
@@ -31,6 +33,9 @@ import dagger.hilt.android.testing.HiltTestApplication
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -154,6 +159,34 @@ class TimerViewModelTest {
         activeFast(hoursIn = 2)
         val vm = vm()
         awaitState(vm) { s -> s.today.next.takeIf { it == NextFast.FastingNow } }
+    }
+
+    @Test fun changingOneStartUpdatesTimerAndReminderAndPreservesTheRecurringTime() {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(clock.withZone(zone))
+        val tomorrow = today.plusDays(1)
+        val time = LocalTime.of(20, 0)
+        val moved = LocalTime.of(21, 15)
+        val original = tomorrow.atTime(time).atZone(zone).toInstant()
+        val changed = tomorrow.atTime(moved).atZone(zone).toInstant()
+        val oldSettings = runBlocking { settings.current() }
+        val id = runBlocking { schedules.save(Schedule(protocolId = "window_16_8", days = setOf(tomorrow.dayOfWeek), startTime = time)) }
+        try {
+            runBlocking { settings.setFastStartReminder(true) }
+            val vm = vm()
+            awaitState(vm) { it.takeIf { s -> s.plannedStart == original && s.startReminder == original } }
+            runBlocking { settings.setDayOverride(tomorrow, DayOverride(moved), today) }
+            awaitState(vm) { it.takeIf { s -> s.plannedStart == changed && s.startReminder == changed } }
+            runBlocking { settings.setFastStartReminder(false) }
+            awaitState(vm) { it.takeIf { s -> s.plannedStart == changed && s.startReminder == null } }
+            assertEquals(time, runBlocking { schedules.getAll().single { it.id == id }.startTime })
+        } finally {
+            runBlocking {
+                settings.setDayOverride(tomorrow, oldSettings.planHistory.dayOverrides[tomorrow], today)
+                settings.setFastStartReminder(oldSettings.reminders.fastStartEnabled)
+                schedules.delete(id)
+            }
+        }
     }
 
     @Test fun todayCardShowsTheEatingWindowEndAsTheNextFast() {

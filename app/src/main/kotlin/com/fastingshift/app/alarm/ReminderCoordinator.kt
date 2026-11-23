@@ -9,7 +9,6 @@ import com.fastingshift.app.widget.WidgetUpdater
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.AppSettings
 import com.fastingshift.data.settings.SettingsRepository
-import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.reminders.ReminderPlanner
@@ -19,7 +18,6 @@ import com.fastingshift.domain.ramadan.Cities
 import com.fastingshift.domain.ramadan.RamadanPlanner
 import com.fastingshift.domain.ramadan.SunnahReminderPlanner
 import java.time.Instant
-import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.service.ScreeningRecord
@@ -66,8 +64,8 @@ class ReminderCoordinator @Inject constructor(
     fun start() {
         if (!started.compareAndSet(false, true)) return
         scope.launch {
-            combine(fasts.observeActive(), settings.settings, schedules.observeAll(), screening.observeLatest()) { active, s, sch, scr ->
-                listOf(active, s, sch, eligibleToStart(scr))
+            combine(fasts.observeAll(), settings.settings, schedules.observeAll(), screening.observeLatest()) { all, s, sch, scr ->
+                listOf(all, s, sch, maximumScheduledDuration(scr))
             }
                 .distinctUntilChanged()
                 .collect { reschedule() }
@@ -113,7 +111,8 @@ class ReminderCoordinator @Inject constructor(
 
     private suspend fun planAt(now: Instant, appSettings: AppSettings, active: Fast?, all: List<Fast>): List<Reminder> {
         val reminderSettings = appSettings.reminders
-        val mayStart = eligibleToStart(screening.getLatest())
+        val maxDuration = maximumScheduledDuration(screening.getLatest())
+        val mayStart = maxDuration != null
         val plan: List<Reminder> = if (active != null) {
             val coaching = if (appSettings.coachingEnabled &&
                 CoachingPlanner.isCoaching(all.count { it.startAt.isBefore(active.startAt) }, appSettings.onboardedAt?.let(Instant::ofEpochMilli), now)
@@ -123,20 +122,9 @@ class ReminderCoordinator @Inject constructor(
             // Unscreened or education-only users are never nudged to start a fast (SR-1).
             emptyList()
         } else {
-            val last = all.firstOrNull { !it.isActive }
-            val eat = last?.let { Presets.byId(it.protocolId)?.eatHours ?: appSettings.eatingWindowHours }
-            val afterWindow = last?.let { ReminderPlanner.planNextStart(it, eat, reminderSettings, now) }
-            val closing = last?.let { ReminderPlanner.planWindowClosing(it, eat, reminderSettings, now) }
-            val scheduled = if (reminderSettings.fastStartEnabled) {
-                ScheduleCalculator.nextStart(schedules.getAll(), ZoneId.systemDefault(), now, appSettings.planHistory.breakWeeks)
-                    ?.let { (_, at) -> Reminder(ReminderKind.FAST_START, at, fastId = 0) }
-            } else null
-            val zone = ZoneId.systemDefault()
-            fun outsideBreak(reminder: Reminder): Boolean =
-                !appSettings.planHistory.isBreak(reminder.triggerAt.atZone(zone).toLocalDate())
-            listOfNotNull(
-                listOfNotNull(afterWindow, scheduled).filter(::outsideBreak).minByOrNull { it.triggerAt },
-                closing?.takeIf(::outsideBreak),
+            idleReminders(
+                now, ZoneId.systemDefault(), appSettings, eligibleSchedules(schedules.getAll(), maxDuration),
+                all.firstOrNull { !it.isActive }, schedules.firstEvening(),
             )
         }
         // Ramadan mode: suhoor and iftar reminders for the chosen city (only for people who may fast).
@@ -163,8 +151,8 @@ class ReminderCoordinator @Inject constructor(
     }
 }
 
-internal fun eligibleToStart(record: ScreeningRecord?): Boolean =
-    record != null && FastPolicy.maxAllowed(record.gateResult, record.clinicianAcknowledged) != null
+internal fun maximumScheduledDuration(record: ScreeningRecord?) =
+    FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true)
 
 internal fun matchesBroadcast(planned: Reminder, fired: Reminder): Boolean =
     planned.kind == fired.kind && planned.index == fired.index && planned.fastId == fired.fastId &&

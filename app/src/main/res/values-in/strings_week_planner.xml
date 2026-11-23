@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="week_title">Minggu saya</string>
+    <string name="week_edit_routine">Rutinitas mingguan</string>
+    <string name="week_routines">Rutinitas saya</string>
+    <string name="week_create">Atur jadwal mingguan %1$s</string>
+    <string name="week_weekdays">Senin sampai Jumat</string>
+    <string name="week_every_day">Setiap hari</string>
+    <string name="week_choose_days">Pilih hari</string>
+    <string name="week_repeat">Ulangi</string>
+    <string name="week_save">Simpan rutinitas</string>
+    <string name="week_delete">Hapus rutinitas</string>
+    <string name="week_preview">Tujuh hari ke depan</string>
+    <string name="week_alert_off">Pengingat untuk memulai dinonaktifkan.</string>
+    <string name="week_active">Pengingat untuk memulai akan dilanjutkan setelah puasa saat ini.</string>
+    <string name="week_next_reminder">Pengingat mulai berikutnya · %1$s, %2$s</string>
+    <string name="week_no_reminder">Tidak ada jadwal mulai berikutnya dalam rutinitas mingguan Anda.</string>
+    <string name="week_skipped">Dilewati</string>
+    <string name="week_rest">Tidak terjadwal</string>
+    <string name="week_paused">Dijeda</string>
+    <string name="week_changed">Diubah untuk tanggal ini</string>
+    <string name="week_date_hint">Ubah waktu mulai pertama atau lewati semua jadwal pada tanggal ini. Rutinitas mingguan Anda tetap sama.</string>
+    <string name="week_change_time">Ubah waktu mulai</string>
+    <string name="week_skip_day">Lewati hari ini</string>
+    <string name="week_restore_day">Gunakan jadwal biasa</string>
+    <string name="week_future_time">Pilih waktu yang lebih lambat hari ini.</string>
+    <string name="week_save_failed">Perubahan gagal disimpan. Periksa rencana Anda dan coba lagi.</string>
+</resources>

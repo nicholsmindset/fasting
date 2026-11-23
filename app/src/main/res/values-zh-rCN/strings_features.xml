@@ -20,9 +20,9 @@
 
     <!-- Timer: eating window, quick add, start earlier, undo -->
     <string name="eating_title">进食窗口</string>
-    <string name="eating_next_in">%1$s 后开始下次断食</string>
-    <string name="eating_next_at">下次断食：%1$s</string>
-    <string name="eating_a11y">进食窗口。%1$s 后开始下次断食，时间为 %2$s</string>
+    <string name="eating_next_in">还剩 %1$s</string>
+    <string name="eating_next_at">%1$s 结束</string>
+    <string name="eating_a11y">进食窗口还剩 %1$s，将于 %2$s 结束。</string>
     <string name="quick_add_title">快速添加</string>
     <string name="quick_water">+250 ml 水</string>
     <string name="quick_weight">体重</string>

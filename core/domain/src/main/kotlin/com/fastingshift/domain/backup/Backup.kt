@@ -68,6 +68,7 @@ data class Backup(
     @SerialName("sunnah_types") val sunnahTypes: List<String> = emptyList(),
     @SerialName("plan_revisions") val planRevisions: Map<String, Int> = emptyMap(),
     @SerialName("week_choices") val weekChoices: Map<String, String> = emptyMap(),
+    @SerialName("day_overrides") val dayOverrides: Map<String, String> = emptyMap(),
 )
 
 @Serializable data class FastRecord(
