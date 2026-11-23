@@ -59,8 +59,8 @@
     <string name="settings_fasting">断食</string>
     <string name="settings_eating_window_title">进食窗口</string>
     <string name="settings_eating_window_subtitle">长时间断食之后</string>
-    <string name="settings_schedules_title">每周计划</string>
-    <string name="settings_schedules_subtitle">5:2 与隔天断食</string>
+    <string name="settings_schedules_title">@string/week_title</string>
+    <string name="settings_schedules_subtitle">安排每周计划，或只调整某一天</string>
     <string name="settings_data_footer">恢复备份会替换现有记录。完整备份和导出的 ZIP 包含敏感记录，能打开文件的人就能读取。请选择可信的保存位置。</string>
     <string name="settings_language">语言</string>
     <string name="settings_app_language">应用语言</string>

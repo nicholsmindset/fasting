@@ -58,8 +58,8 @@
     <string name="settings_fasting">Puasa</string>
     <string name="settings_eating_window_title">Jendela makan</string>
     <string name="settings_eating_window_subtitle">Setelah puasa panjang</string>
-    <string name="settings_schedules_title">Jadwal mingguan</string>
-    <string name="settings_schedules_subtitle">5:2 dan selang-seling</string>
+    <string name="settings_schedules_title">@string/week_title</string>
+    <string name="settings_schedules_subtitle">Atur rutinitas mingguan atau ubah satu hari saja</string>
     <string name="settings_data_footer">Memulihkan cadangan akan mengganti catatan Anda saat ini. Cadangan lengkap dan ekspor ZIP berisi catatan sensitif dalam file yang dapat dibaca. Pilih lokasi penyimpanan tepercaya.</string>
     <string name="settings_language">Bahasa</string>
     <string name="settings_app_language">Bahasa aplikasi</string>

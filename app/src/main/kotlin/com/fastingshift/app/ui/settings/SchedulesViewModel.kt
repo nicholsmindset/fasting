@@ -2,15 +2,18 @@ package com.fastingshift.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.app.alarm.idleReminders
 import com.fastingshift.app.alarm.eligibleSchedules
 import com.fastingshift.app.ui.onboarding.recommendedProtocol
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.AppSettings
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.model.ProtocolType
 import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.protocol.Presets
+import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.schedule.ScheduleCalculator
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -43,6 +47,7 @@ internal data class PlannerState(
     val zone: ZoneId,
     val firstEvening: Pair<Long, LocalDate>?,
     val active: Boolean,
+    val lastFast: Fast?,
 ) {
     val today: LocalDate = now.atZone(zone).toLocalDate()
     val routines = schedules.filter { it.id != firstEvening?.first }
@@ -60,8 +65,8 @@ internal data class PlannerState(
         ScheduleCalculator.startsOn(eligible, day, zone, settings.planHistory.breakWeeks,
             if (original) emptyMap() else settings.planHistory.dayOverrides, firstEvening)
 
-    fun next() = ScheduleCalculator.nextStart(eligible, zone, now, settings.planHistory.breakWeeks,
-        settings.planHistory.dayOverrides, firstEvening)
+    fun nextStartAlert(): Instant? = idleReminders(now, zone, settings, eligible, lastFast, firstEvening)
+        .firstOrNull { it.kind == ReminderKind.FAST_START }?.triggerAt
 }
 
 @HiltViewModel
@@ -78,10 +83,11 @@ class SchedulesViewModel @Inject constructor(
             delay(30_000)
         }
     }
-    internal val state = combine(repo.observeAll(), settings.settings, screening.observeLatest(), fasts.observeActive(), tick) {
-        schedules, config, record, active, now ->
+    private val recentFasts = fasts.observeAll().map { all -> all.any { it.isActive } to all.firstOrNull { !it.isActive } }
+    internal val state = combine(repo.observeAll(), settings.settings, screening.observeLatest(), recentFasts, tick) {
+        schedules, config, record, recent, now ->
         PlannerState(schedules, config, FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true),
-            now, ZoneId.systemDefault(), repo.firstEvening(), active != null)
+            now, ZoneId.systemDefault(), repo.firstEvening(), recent.first, recent.second)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0), null)
 
     internal val busy = MutableStateFlow(false)

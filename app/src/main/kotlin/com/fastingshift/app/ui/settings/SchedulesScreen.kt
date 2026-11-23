@@ -30,7 +30,6 @@ import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.PrimaryButton
-import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.schedule.DayOverride
 import java.time.DayOfWeek
@@ -68,6 +67,7 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
 
     var editProtocol by rememberSaveable { mutableStateOf<String?>(null) }
     var editId by rememberSaveable { mutableStateOf(0L) }
+    var removeId by rememberSaveable { mutableStateOf<Long?>(null) }
     var dateText by rememberSaveable(initialDate) { mutableStateOf(initialDate?.toString()) }
     val closeEditor = { editProtocol = null }
     val editing = editProtocol
@@ -101,6 +101,9 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
                                 subtitle = if (routine.enabled) format.days(routine.days) else stringResource(R.string.week_paused),
                                 value = format.time.format(routine.startTime), showChevron = state.allows(routine.protocolId),
                                 onClick = if (state.allows(routine.protocolId)) ({ edit(routine.id, routine.protocolId) }) else null)
+                            if (!state.allows(routine.protocolId)) {
+                                GroupRow(stringResource(R.string.week_delete), onClick = { removeId = routine.id })
+                            }
                         }
                     }
                 }
@@ -108,16 +111,32 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
                     Text(stringResource(R.string.schedules_locked))
                 } else {
                     WeekPreview(state, format, notifications, onDate = { dateText = it.toString() })
-                    if (state.allows(Presets.FIVE_TWO.id)) {
+                    val anotherDaily = daily?.takeIf { state.routines.any { routine -> routine.protocolId == it.id } }
+                    val presets = listOf(
+                        Presets.FIVE_TWO to R.string.schedules_add_52,
+                        Presets.ADF to R.string.schedules_add_adf,
+                    ).filter { (preset, _) -> state.allows(preset.id) }
+                    if (anotherDaily != null || presets.isNotEmpty()) {
                         InsetGroup(header = stringResource(R.string.schedules_new)) {
-                            GroupRow(stringResource(R.string.schedules_add_52), showChevron = true, onClick = { edit(0, Presets.FIVE_TWO.id) })
-                            GroupDivider()
-                            GroupRow(stringResource(R.string.schedules_add_adf), showChevron = true, onClick = { edit(0, Presets.ADF.id) })
+                            if (anotherDaily != null) {
+                                GroupRow(stringResource(R.string.week_create, anotherDaily.name), showChevron = true,
+                                    onClick = { edit(0, anotherDaily.id) })
+                            }
+                            presets.forEachIndexed { index, (preset, label) ->
+                                if (index > 0 || anotherDaily != null) GroupDivider()
+                                GroupRow(stringResource(label), showChevron = true, onClick = { edit(0, preset.id) })
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    val idToRemove = removeId
+    if (idToRemove != null) {
+        AlertDialog(onDismissRequest = { removeId = null }, title = { Text(stringResource(R.string.week_delete)) },
+            confirmButton = { TextButton(enabled = !busy, onClick = { vm.delete(idToRemove) { removeId = null } }) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { removeId = null }) { Text(stringResource(android.R.string.cancel)) } })
     }
     val day = dateText?.let(LocalDate::parse)
     if (day != null && state != null) {
@@ -135,7 +154,7 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
 
 @Composable
 internal fun WeekPreview(state: PlannerState, format: WeekFormat, notifications: Boolean, onDate: ((LocalDate) -> Unit)? = null) {
-    val next = state.next()?.second?.atZone(state.zone)
+    val next = state.nextStartAlert()?.atZone(state.zone)
     val summary = when {
         !state.settings.reminders.fastStartEnabled || !notifications -> stringResource(R.string.week_alert_off)
         state.active -> stringResource(R.string.week_active)

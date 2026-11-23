@@ -7,7 +7,9 @@ import android.text.format.DateFormat
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ActivityScenario
@@ -88,8 +90,18 @@ class WeekPlannerMoatsCaptureTest {
 
     private fun label(id: Int, vararg args: Any) = hasText(app.getString(id, *args))
 
+    private fun waitFor(target: SemanticsMatcher) {
+        try {
+            compose.waitUntil(15_000) { compose.onAllNodes(target).fetchSemanticsNodes().size == 1 }
+        } catch (error: Throwable) {
+            val roots = compose.onAllNodes(isRoot())
+            for (index in roots.fetchSemanticsNodes().indices) println(roots[index].printToString())
+            throw AssertionError("Waiting for ${target.description}", error)
+        }
+    }
+
     private fun tap(target: SemanticsMatcher, scroll: Boolean = false) {
-        compose.waitUntil(15_000) { compose.onAllNodes(target).fetchSemanticsNodes().size == 1 }
+        waitFor(target)
         val node = compose.onNode(target)
         if (scroll) node.performScrollTo()
         node.performClick()
@@ -119,7 +131,8 @@ class WeekPlannerMoatsCaptureTest {
         tap(label(R.string.week_create, Presets.W16_8.name), scroll = true)
         compose.waitUntil(15_000) { compose.onAllNodes(label(R.string.week_weekdays)).fetchSemanticsNodes().isNotEmpty() }
         tap(label(R.string.week_save), scroll = true)
-        compose.waitUntil(15_000) { runBlocking { schedules.getAll().size == 1 } }
+        // Wait for the editor to close and the committed Room flow to render its routine.
+        waitFor(label(R.string.week_routines))
         val recurring = runBlocking { schedules.getAll().single() }
         assertEquals(Presets.W16_8.id, recurring.protocolId)
         assertEquals(DayOfWeek.entries.take(5).toSet(), recurring.days)
@@ -133,24 +146,24 @@ class WeekPlannerMoatsCaptureTest {
             picker.updateTime(moved.hour, moved.minute)
             picker.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
         }
-        compose.waitUntil(15_000) {
-            runBlocking { settings.current().planHistory.dayOverrides[tomorrow]?.startTime == moved }
-        }
+        val format = WeekFormat(app.resources.configuration.locales[0], DateFormat.is24HourFormat(app))
+        val changedRow = row and hasText(format.time.format(moved)) and label(R.string.week_changed)
+        waitFor(changedRow)
+        assertEquals(moved, runBlocking { settings.current().planHistory.dayOverrides[tomorrow]?.startTime })
         // Reopen through the public route so the new time must be read from persistence.
         requireNotNull(scenario).close()
         scenario = ActivityScenario.launch(MainActivity::class.java)
         tap(label(R.string.tab_settings))
         tap(label(R.string.settings_schedules_title), scroll = true)
-        val format = WeekFormat(app.resources.configuration.locales[0], DateFormat.is24HourFormat(app))
-        val restoredRow = row and hasText(format.time.format(moved)) and label(R.string.week_changed)
-        compose.waitUntil(15_000) { compose.onAllNodes(restoredRow).fetchSemanticsNodes().size == 1 }
+        waitFor(changedRow)
         capture("my-week")
 
         tap(row, scroll = true)
-        compose.waitUntil(15_000) { compose.onAllNodes(label(R.string.week_restore_day)).fetchSemanticsNodes().size == 1 }
+        waitFor(label(R.string.week_restore_day))
         capture("my-week-one-day")
         tap(label(R.string.week_restore_day))
-        compose.waitUntil(15_000) { runBlocking { tomorrow !in settings.current().planHistory.dayOverrides } }
+        waitFor(row and hasText(format.time.format(recurring.startTime)))
+        assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[tomorrow] })
         assertEquals(recurring, runBlocking { schedules.getAll().single() })
         assertEquals(running, runBlocking { fasts.getActive() })
     }
