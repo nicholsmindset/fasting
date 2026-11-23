@@ -19,11 +19,15 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], application = android.app.Application::class, qualifiers = "ms")
 class ChallengeInviteShareTest {
-    @Test fun inviteContainsOnlyLocalizedTextAndTheCompleteJoinableLink() {
+    @Test fun brandedInviteContainsOnlyLocalizedTextAndTheCompleteLink() = checkInvite(pilot = false)
+
+    @Test fun pilotInviteContainsOnlyLocalizedTextAndTheCompleteLink() = checkInvite(pilot = true)
+
+    private fun checkInvite(pilot: Boolean) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val title = "Seminggu bersama"
         val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.of(2026, 11, 23), 7, title)
-        val link = ChallengeLinks.link(invite)
+        val link = ChallengeLinks.link(invite, pilot = pilot)
         val send = challengeInviteIntent(context, title, link)
 
         assertEquals(Intent.ACTION_SEND, send.action)

@@ -231,6 +231,8 @@ sealed interface InviteResult {
  */
 object ChallengeLinks {
     const val HOST = "fastingshift.com"
+    const val PILOT_HOST = "nicholsmindset.github.io"
+    const val PILOT_PATH = "/fasting/c/"
     const val PATH_PREFIX = "/c/"
     const val VERSION = 1
     const val MAX_CODE_LENGTH = 300
@@ -249,7 +251,11 @@ object ChallengeLinks {
         ChallengeType.AYYAMUL_BIDH to "W",
     )
 
-    fun link(invite: ChallengeInvite): String = "https://$HOST$PATH_PREFIX${encode(invite)}"
+    fun link(invite: ChallengeInvite, pilot: Boolean = false): String {
+        val code = encode(invite)
+        // The fragment stays in the browser when the pilot page is requested.
+        return if (pilot) "https://$PILOT_HOST$PILOT_PATH#$code" else "https://$HOST$PATH_PREFIX$code"
+    }
 
     fun encode(invite: ChallengeInvite): String {
         val payload = listOf(
@@ -269,19 +275,23 @@ object ChallengeLinks {
     /** Parses a full link (or a bare code pasted in the app). */
     fun parse(text: String): InviteResult = codeFrom(text)?.let(::decode) ?: InviteResult.Invalid
 
-    /** The code from `https://fastingshift.com/c/<code>` (or a bare code), else null. */
+    /** Accepts bare codes, branded path links and fragment links on the exact pilot host. */
     fun codeFrom(text: String): String? {
         val t = text.trim()
         if (looksLikeCode(t)) return t
         val uri = runCatching { URI(t) }.getOrNull() ?: return null
         if (uri.scheme?.lowercase() != "https") return null
         val host = uri.host?.lowercase() ?: return null
+        if (uri.rawUserInfo != null || uri.rawQuery != null) return null
+        if (host == PILOT_HOST) {
+            if (!uri.rawAuthority.equals(PILOT_HOST, ignoreCase = true) || uri.rawPath != PILOT_PATH) return null
+            return uri.rawFragment?.takeIf(::looksLikeCode)
+        }
         if (host != HOST && host != "www.$HOST") return null
-        if (uri.rawUserInfo != null || (uri.port != -1 && uri.port != 443)) return null
+        if (uri.rawFragment != null || (uri.port != -1 && uri.port != 443)) return null
         val path = uri.rawPath ?: return null
         if (!path.startsWith(PATH_PREFIX)) return null
-        val code = path.removePrefix(PATH_PREFIX).removeSuffix("/")
-        return code.takeIf(::looksLikeCode)
+        return path.removePrefix(PATH_PREFIX).removeSuffix("/").takeIf(::looksLikeCode)
     }
 
     fun decode(code: String): InviteResult {

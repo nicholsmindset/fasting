@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fastingshift.app.BuildConfig
 import com.fastingshift.app.R
 import com.fastingshift.app.share.ShareCards
 import com.fastingshift.app.ui.components.LoadingBox
@@ -254,7 +255,7 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
         val c = it.challenge
         val p = it.progress
         val title = c.name ?: challengeTypeTitle(c.type, c.protocolId, c.lengthDays)
-        val link = ChallengeLinks.link(ChallengeInvite.of(c))
+        val link = ChallengeLinks.link(ChallengeInvite.of(c), pilot = BuildConfig.USE_PILOT_INVITES)
         AppCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ProgressRing(p.fraction, Modifier.size(64.dp), stroke = 8.dp)

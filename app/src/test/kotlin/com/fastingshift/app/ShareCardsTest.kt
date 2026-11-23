@@ -58,19 +58,20 @@ class ShareCardsTest {
         val names = listOf("A week with friends", "🌙".repeat(ChallengeNames.MAX))
         for (name in names) {
             val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.of(2026, 11, 16), 366, name)
-            val link = ChallengeLinks.link(invite)
-            assertEquals(InviteResult.Valid(invite), ChallengeLinks.parse(link))
-            for (language in listOf("en", "ms", "id", "zh")) {
-                val config = Configuration(app.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)) }
-                val res = app.createConfigurationContext(config).resources
-                val text = res.getString(R.string.share_challenge_join, link)
-                val footer = assertNotNull(ShareCards.inviteFooter(res, link))
-                assertEquals(text, footer.text.toString())
-                assertEquals(text.length, footer.getLineEnd(footer.lineCount - 1))
-                assertTrue(footer.height <= ShareCards.INVITE_FOOTER_HEIGHT)
-                for (line in 0 until footer.lineCount) {
-                    assertEquals(0, footer.getEllipsisCount(line))
-                    assertTrue(footer.getLineWidth(line) <= footer.width + 1)
+            for (link in listOf(ChallengeLinks.link(invite), ChallengeLinks.link(invite, pilot = true))) {
+                assertEquals(InviteResult.Valid(invite), ChallengeLinks.parse(link))
+                for (language in listOf("en", "ms", "id", "zh")) {
+                    val config = Configuration(app.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)) }
+                    val res = app.createConfigurationContext(config).resources
+                    val text = res.getString(R.string.share_challenge_join, link)
+                    val footer = assertNotNull(ShareCards.inviteFooter(res, link))
+                    assertEquals(text, footer.text.toString())
+                    assertEquals(text.length, footer.getLineEnd(footer.lineCount - 1))
+                    assertTrue(footer.height <= ShareCards.INVITE_FOOTER_HEIGHT)
+                    for (line in 0 until footer.lineCount) {
+                        assertEquals(0, footer.getEllipsisCount(line))
+                        assertTrue(footer.getLineWidth(line) <= footer.width + 1)
+                    }
                 }
             }
         }

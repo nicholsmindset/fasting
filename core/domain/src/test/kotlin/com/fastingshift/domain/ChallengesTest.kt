@@ -232,6 +232,33 @@ class ChallengesTest {
         assertEquals(InviteResult.Valid(invite), ChallengeLinks.parse(link.replace("https://", "https://www.")))
     }
 
+    @Test fun `pilot links carry only the code in the fragment and retain version handling`() {
+        val link = ChallengeLinks.link(invite, pilot = true)
+        val encoded = ChallengeLinks.encode(invite)
+        assertEquals("https://nicholsmindset.github.io/fasting/c/#$encoded", link)
+        assertEquals(encoded, ChallengeLinks.codeFrom("  $link  "))
+        assertEquals(InviteResult.Valid(invite), ChallengeLinks.parse(link))
+        assertIs<InviteResult.NewerVersion>(ChallengeLinks.parse(link.substringBefore('#') + "#" + code("2|D|window_16_8|20261123|7|")))
+    }
+
+    @Test fun `pilot and branded URL components cannot be mixed`() {
+        val c = ChallengeLinks.encode(invite)
+        val pilot = "https://${ChallengeLinks.PILOT_HOST}/fasting/c/"
+        listOf(
+            pilot, "$pilot#", "$pilot$c", "$pilot$c#$c", "$pilot?invite=$c#$c",
+            "$pilot#%41$c", "$pilot#$c/", "$pilot#$c#$c",
+            "https://${ChallengeLinks.PILOT_HOST}/fasting/c#$c",
+            "https://${ChallengeLinks.PILOT_HOST}/c/#$c", "https://${ChallengeLinks.PILOT_HOST}/other/c/#$c",
+            "https://www.${ChallengeLinks.PILOT_HOST}/fasting/c/#$c",
+            "https://${ChallengeLinks.PILOT_HOST}.example.org/fasting/c/#$c",
+            "https://user@${ChallengeLinks.PILOT_HOST}/fasting/c/#$c",
+            "https://${ChallengeLinks.PILOT_HOST}:8080/fasting/c/#$c",
+            "http://${ChallengeLinks.PILOT_HOST}/fasting/c/#$c",
+            "https://fastingshift.com/c/#$c", "https://fastingshift.com/c/$c#$c",
+            "https://fastingshift.com/c/$c?invite=$c",
+        ).forEach { assertEquals(InviteResult.Invalid, ChallengeLinks.parse(it), it) }
+    }
+
     @Test fun `bare codes work for in-app paste`() {
         assertEquals(InviteResult.Valid(invite), ChallengeLinks.parse(ChallengeLinks.encode(invite)))
     }
