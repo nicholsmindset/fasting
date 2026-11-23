@@ -252,7 +252,10 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
                 ProgressRing(p.fraction, Modifier.size(64.dp), stroke = 8.dp)
                 Column {
                     Text(stringResource(R.string.challenge_progress, p.doneDays, p.requiredDays), style = MaterialTheme.typography.titleLarge)
-                    Text(statusText(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // The date range already says when it starts and ends; only "Finished"/"Left" add anything.
+                    if (it.left || p.status == ChallengeStatus.FINISHED) {
+                        Text(statusText(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Text(
                         stringResource(R.string.challenge_dates, c.startDate.text(), c.endDate.text()),
                         style = MaterialTheme.typography.bodySmall,
