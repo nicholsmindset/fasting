@@ -23,7 +23,7 @@ HONEST ABOUT THE SCIENCE
 The body timeline labels every claim: Established, Emerging, Animal-only or Unknown.
 
 YOUR RECORDS
-Your fasting and health records are encrypted in the app database. Optional Health Connect sync reads weight and writes weight and water. You can export fasting history or save a full backup to a file you choose. No account is required.
+Your fasting and health records are encrypted in the app database. With your permission, Health Connect can import weight and save weight, water and glucose readings you log. In Shift+ Body signals, you can also allow read access to sleep and resting heart rate to compare trends. You can export fasting history or save a full backup to a file you choose. No account is required.
 
 BUILD A HABIT, NOT A RECORD
 Streaks count the days you completed your plan, never how long you fasted.
