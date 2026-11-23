@@ -1,0 +1,32 @@
+name: Check baseline Android lint
+on:
+  push:
+    branches: [codex/moats-capture-review]
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f73d8b40aa923a20a129d1bdacac7009abb957ee
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :app:lintDebug
+      - name: Count baseline findings
+        run: |
+          python - <<'PY'
+          import collections
+          import xml.etree.ElementTree as ET
+          issues = ET.parse("app/build/reports/lint-results-debug.xml").getroot().findall("issue")
+          print("BASELINE_COUNTS", dict(collections.Counter(i.get("severity") for i in issues)))
+          print("BASELINE_WARNINGS", dict(collections.Counter(i.get("id") for i in issues if i.get("severity") == "Warning")))
+          PY
