@@ -16,9 +16,9 @@
 
     <!-- Timer: eating window, quick add, start earlier, undo -->
     <string name="eating_title">Jendela makan</string>
-    <string name="eating_next_in">Puasa berikutnya dalam %1$s</string>
-    <string name="eating_next_at">Puasa berikutnya pukul %1$s</string>
-    <string name="eating_a11y">Jendela makan. Puasa berikutnya dalam %1$s, pukul %2$s</string>
+    <string name="eating_next_in">Tersisa %1$s</string>
+    <string name="eating_next_at">Berakhir pukul %1$s</string>
+    <string name="eating_a11y">Jendela makan berakhir dalam %1$s, pukul %2$s.</string>
     <string name="quick_add_title">Tambah cepat</string>
     <string name="quick_water">+250 ml air</string>
     <string name="quick_weight">Berat</string>
@@ -256,8 +256,6 @@
     <string name="settings_privacy_policy">Kebijakan privasi</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">Jadwal mingguan</string>
-    <string name="schedules_body">Pilih hari puasa Anda. Hari di luar jadwal tidak pernah memutus streak Anda.</string>
     <string name="schedules_add_52">Tambah jadwal 5:2</string>
     <string name="schedules_add_adf">Tambah jadwal selang-seling</string>
 

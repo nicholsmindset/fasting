@@ -20,9 +20,9 @@
 
     <!-- Timer: eating window, quick add, start earlier, undo -->
     <string name="eating_title">Eating window</string>
-    <string name="eating_next_in">Next fast in %1$s</string>
-    <string name="eating_next_at">Next fast at %1$s</string>
-    <string name="eating_a11y">Eating window. Next fast in %1$s, at %2$s</string>
+    <string name="eating_next_in">%1$s left</string>
+    <string name="eating_next_at">Ends at %1$s</string>
+    <string name="eating_a11y">Eating window ends in %1$s, at %2$s.</string>
     <string name="quick_add_title">Quick add</string>
     <string name="quick_water">+250 ml water</string>
     <string name="quick_weight">Weight</string>
@@ -262,8 +262,6 @@
     <string name="settings_privacy_policy">Privacy policy</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">Weekly schedules</string>
-    <string name="schedules_body">Pick your fasting days. Days off-schedule never break your streak.</string>
     <string name="schedules_add_52">Add 5:2 schedule</string>
     <string name="schedules_add_adf">Add alternate-day schedule</string>
 

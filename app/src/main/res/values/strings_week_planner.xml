@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="week_title">My week</string>
+    <string name="week_edit_routine">Weekly routine</string>
+    <string name="week_routines">My routines</string>
+    <string name="week_create">Plan my %1$s week</string>
+    <string name="week_weekdays">Weekdays</string>
+    <string name="week_every_day">Every day</string>
+    <string name="week_choose_days">Choose days</string>
+    <string name="week_repeat">Repeat</string>
+    <string name="week_save">Save routine</string>
+    <string name="week_delete">Delete routine</string>
+    <string name="week_preview">Next seven days</string>
+    <string name="week_alert_off">Start reminders are off.</string>
+    <string name="week_active">Start reminders resume after your current fast.</string>
+    <string name="week_next_reminder">Next start reminder · %1$s, %2$s</string>
+    <string name="week_no_reminder">No upcoming start in your weekly routine.</string>
+    <string name="week_skipped">Skipped</string>
+    <string name="week_rest">Unscheduled</string>
+    <string name="week_paused">Paused</string>
+    <string name="week_changed">Changed for this date</string>
+    <string name="week_date_hint">Change the first start time or skip all starts on this date. Your weekly routine stays the same.</string>
+    <string name="week_change_time">Change start time</string>
+    <string name="week_skip_day">Skip this day</string>
+    <string name="week_restore_day">Use usual schedule</string>
+    <string name="week_future_time">Choose a time later today.</string>
+    <string name="week_save_failed">Couldn’t save this change. Check your plan and try again.</string>
+</resources>

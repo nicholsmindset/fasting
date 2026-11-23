@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
+import java.time.LocalDate
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -185,6 +186,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenCheckIn = { nav.navigate(Routes.checkIn(it)) },
                     onOpenRefeeding = { tier, id -> nav.navigate(Routes.refeeding(tier, id)) { launchSingleTop = true } },
                     onOpenScreening = { nav.navigate(Routes.ONBOARDING) },
+                    onOpenWeek = { day -> nav.navigate(if (day == null) Routes.SCHEDULES else "${Routes.SCHEDULES}?date=$day") },
                     onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
                 )
             }
@@ -232,7 +234,13 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     nav.navigate(Routes.challenge(id)) { popUpTo(Routes.CHALLENGE_JOIN) { inclusive = true } }
                 })
             }
-            composable(Routes.SCHEDULES) { SchedulesRoute(onBack = back) }
+            composable(
+                "${Routes.SCHEDULES}?date={date}",
+                arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { destination ->
+                val day = destination.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                SchedulesRoute(onBack = back, initialDate = day)
+            }
             composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
             composable(Routes.INSIGHTS) { InsightsRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }

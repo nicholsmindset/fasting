@@ -4,7 +4,7 @@ A private Android fasting tracker from Nichols Mindset. Start a timer, review yo
 
 ## Status
 
-Settings starts with schedules and reminders. Health logs, doctor reports, Health Connect insights, and the Ramadan and Sunnah hub are optional. Glucose writes use the same persistent retry queue as weight and water. An invitation shares the challenge settings. Sharing a progress card is a separate action.
+My Week lets you schedule your usual fasting window, preview the next seven days and change a single date. Timer shows the next planned start. Settings also contains reminders. Health logs, doctor reports, Health Connect insights, and the Ramadan and Sunnah hub are optional. Glucose writes use the same persistent retry queue as weight and water. An invitation shares the challenge settings. Sharing a progress card is a separate action.
 
 Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The Android 15 upgrade check verifies that a completed fast and an active timer survive an update. It also opens a friend invite on a clean install, finishes screening, joins once and reopens the same challenge. The release bundle built in CI is unsigned unless a release upload key is configured.
 
@@ -23,6 +23,7 @@ The beta screenshot pack contains 28 captures, including light and dark History 
 
 ### Physical device checks
 
+- Plan weekday starts, move tomorrow only, restart, and check that Timer and the next reminder agree. Check the next weekday still has its usual time. Repeat after a time-zone change.
 - Open a doctor report in a PDF viewer and check that hidden weight stays hidden when sharing.
 - Delete all data, restart, and verify that records, reminders and cached reports are gone.
 - Grant and revoke Health Connect access, retry a failed glucose write, and check sleep and resting heart rate reads.
@@ -51,6 +52,8 @@ The beta screenshot pack contains 28 captures, including light and dark History 
   "Redeem" button opens Play's redeem page.
 
 ### Uploading to Play internal testing
+
+[Internal-track publishing workflow and setup](docs/play-internal-testing.md)
 
 1. Create an upload key once (keep it and its passwords safe, outside the repo):
    `keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`

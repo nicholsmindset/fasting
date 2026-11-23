@@ -1,0 +1,10 @@
+<resources>
+    <string name="week_timer_planned">下次计划开始时间 · %1$s</string>
+    <string name="week_timer_reminder">开始提醒 · %1$s</string>
+    <string name="week_timer_reminder_off">开始提醒已关闭</string>
+    <string name="week_timer_plan">安排本周计划</string>
+    <string name="week_timer_change">更改此次开始时间</string>
+    <string name="week_timer_change_today">更改今天的计划</string>
+    <string name="week_timer_reminder_on">已开启开始提醒</string>
+    <string name="week_timer_selected">已选断食计划</string>
+</resources>

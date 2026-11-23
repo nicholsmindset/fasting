@@ -35,12 +35,7 @@ import com.fastingshift.app.ui.components.waterLabel
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.domain.hydration.WaterGoal
-import com.fastingshift.domain.model.Schedule
-import com.fastingshift.domain.schedule.ScheduleCalculator
-import com.fastingshift.domain.history.History
-import java.time.LocalDate
 import java.time.Instant
-import java.time.ZoneId
 
 /** When the next fast begins, as shown on the Today card. */
 sealed interface NextFast {
@@ -62,24 +57,6 @@ data class TodaySummary(
 object Today {
     /** The user's goal if they set one, otherwise the wellness default from their latest weight. */
     fun waterGoalMl(settingMl: Int?, latestWeightKg: Double?): Int = settingMl ?: WaterGoal.defaultMl(latestWeightKg)
-
-    /**
-     * Fasting now; else when the open eating window closes; else the next scheduled start;
-     * else nothing planned.
-     */
-    fun nextFast(
-        fasting: Boolean,
-        eatingWindow: EatingWindow?,
-        schedules: List<Schedule>,
-        zone: ZoneId,
-        now: Instant,
-        breakWeeks: Set<LocalDate> = emptySet(),
-    ): NextFast = when {
-        fasting -> NextFast.FastingNow
-        eatingWindow != null && eatingWindow.endsAt.isAfter(now) &&
-            History.weekStart(eatingWindow.endsAt.atZone(zone).toLocalDate()) !in breakWeeks -> NextFast.At(eatingWindow.endsAt)
-        else -> ScheduleCalculator.nextStart(schedules, zone, now, breakWeeks)?.let { NextFast.At(it.second) } ?: NextFast.None
-    }
 }
 
 @Composable

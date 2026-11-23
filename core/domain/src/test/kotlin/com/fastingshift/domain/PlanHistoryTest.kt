@@ -5,6 +5,7 @@ import com.fastingshift.domain.history.Period
 import com.fastingshift.domain.insights.Insights
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.Schedule
+import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.schedule.WeekChoice
@@ -75,5 +76,67 @@ class PlanHistoryTest {
         assertTrue(restored.isPlanned(monday))
         assertFalse(restored.isPlanned(monday.plusWeeks(1)))
         assertFalse(restored.isPlanned(monday.minusWeeks(1)))
+    }
+
+    @Test fun movingOneStartPreservesOtherStartsAndWorksAcrossTravel() {
+        val early = schedule.copy(id = 3, startTime = LocalTime.of(18, 0))
+        val later = schedule.copy(id = 4)
+        val plans = listOf(later, early)
+        val moved = mapOf(monday to DayOverride(LocalTime.of(21, 30)))
+        val thursday = monday.plusDays(3)
+        for (localZone in listOf(zone, ZoneId.of("Asia/Singapore"))) {
+            val tonight = monday.atTime(21, 30).atZone(localZone).toInstant()
+            val next = ScheduleCalculator.nextStart(plans, localZone, tonight.minusSeconds(1), dayOverrides = moved)
+            assertEquals(early to tonight, next)
+            val originalLater = monday.atTime(20, 0).atZone(localZone).toInstant()
+            assertEquals(listOf(later to originalLater, early to tonight),
+                ScheduleCalculator.startsOn(plans, monday, localZone, dayOverrides = moved))
+            assertEquals(listOf(early to originalLater),
+                ScheduleCalculator.startsOn(plans, monday, localZone, dayOverrides = mapOf(monday to DayOverride(LocalTime.of(20, 0)))))
+            assertEquals(early to thursday.atTime(18, 0).atZone(localZone).toInstant(),
+                ScheduleCalculator.nextStart(plans, localZone, tonight, dayOverrides = moved))
+            assertEquals(2, ScheduleCalculator.startsOn(plans, thursday, localZone, dayOverrides = moved).size)
+        }
+    }
+
+    @Test fun oneOffSkipsRespectBreaksAndNeverInventUnscheduledDays() {
+        val thursday = monday.plusDays(3)
+        val tuesday = monday.plusDays(1)
+        val sunday = monday.plusDays(6)
+        val previous = PlanHistory().record(monday, PlanHistory.mask(listOf(schedule)))
+        val history = previous.copy(
+            choices = mapOf(monday.plusWeeks(1) to WeekChoice.BREAK),
+            dayOverrides = mapOf(thursday to DayOverride(), tuesday to DayOverride(LocalTime.NOON)),
+        ).record(monday.plusWeeks(1), PlanHistory.EVERY_DAY)
+        assertFalse(history.isPlanned(thursday))
+        assertFalse(history.isPlanned(tuesday))
+        assertTrue(history.isPlanned(monday))
+        assertFalse(history.isPlanned(sunday))
+        val next = ScheduleCalculator.nextStart(listOf(schedule), zone, monday.atTime(23, 0).atZone(zone).toInstant(),
+            history.breakWeeks, history.dayOverrides)
+        assertEquals(monday.plusWeeks(2).atTime(20, 0).atZone(zone).toInstant(), next?.second)
+        assertTrue(ScheduleCalculator.startsOn(listOf(schedule), tuesday, zone, dayOverrides = history.dayOverrides).isEmpty())
+    }
+
+    @Test fun dstGapMovesTheOverrideToTheNextValidLocalTime() {
+        val sunday = monday.plusDays(6) // New York springs forward on 8 March 2026.
+        val plan = schedule.copy(days = setOf(DayOfWeek.SUNDAY))
+        val moved = mapOf(sunday to DayOverride(LocalTime.of(2, 30)))
+        val expected = sunday.atTime(3, 30).atZone(zone).toInstant()
+        assertEquals(plan to expected, ScheduleCalculator.nextStart(listOf(plan), zone, sunday.atStartOfDay(zone).toInstant(), dayOverrides = moved))
+        assertTrue(ScheduleCalculator.startsOn(listOf(plan), sunday, zone, setOf(monday), moved).isEmpty())
+        assertNull(ScheduleCalculator.nextStart(listOf(plan.copy(enabled = false)), zone, expected, dayOverrides = moved))
+    }
+
+    @Test fun temporaryFirstEveningOccursOnlyOnceAndDoesNotSuppressOtherSchedules() {
+        val temporary = schedule.copy(id = 1, days = setOf(monday.dayOfWeek))
+        val marker = temporary.id to monday
+        val tonight = monday.atTime(20, 0).atZone(zone).toInstant()
+        assertEquals(temporary to tonight, ScheduleCalculator.nextStart(listOf(temporary), zone, tonight.minusSeconds(1), firstEvening = marker))
+        assertNull(ScheduleCalculator.nextStart(listOf(temporary), zone, tonight, firstEvening = marker))
+        assertTrue(ScheduleCalculator.startsOn(listOf(temporary), monday.plusWeeks(1), zone, firstEvening = marker).isEmpty())
+        val regular = schedule.copy(id = 2, days = setOf(DayOfWeek.FRIDAY))
+        val friday = monday.plusDays(4).atTime(20, 0).atZone(zone).toInstant()
+        assertEquals(regular to friday, ScheduleCalculator.nextStart(listOf(temporary, regular), zone, tonight, firstEvening = marker))
     }
 }

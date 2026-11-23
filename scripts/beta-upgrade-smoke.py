@@ -1,4 +1,4 @@
-"""Verify a signed in-place beta upgrade, then a fresh-data invite through Android onboarding."""
+"""Verify a signed upgrade, fresh invite onboarding, and persisted one-date planner changes."""
 from base64 import urlsafe_b64encode
 from datetime import date, timedelta
 import json
@@ -37,6 +37,9 @@ class Screen:
     def find(self, key, scroll=False):
         label = self.strings[key]
         node = self.device(text=label, packageName=PACKAGE)
+        return self.find_node(node, label, scroll)
+
+    def find_node(self, node, label, scroll=False):
         if node.wait(timeout=2 if scroll else 20):
             return node
         if scroll:
@@ -45,7 +48,7 @@ class Screen:
                     self.device.swipe_ext(direction, scale=0.65)
                     if node.wait(timeout=0.35):
                         return node
-        raise AssertionError(f"Missing {key} ({label})")
+        raise AssertionError(f"Missing {label}")
 
     def click(self, key, scroll=False):
         self.find(key, scroll).click()
@@ -172,6 +175,76 @@ class Screen:
         print("Verified fresh onboarding, explicit Join, and reopening the same local challenge.")
 
 
+    def verify_week_planner(self):
+        # The fresh invite test leaves the screened user in Settings. Reopen from launcher
+        # to test the same navigation that a returning tester uses.
+        def open_week():
+            self.device.app_stop(PACKAGE)
+            self.device.app_start(PACKAGE, activity=ACTIVITY)
+            self.click("tab_settings")
+            self.click("week_title", scroll=True)
+
+        def open_date(day):
+            # Android's English localized abbreviation and punctuation can vary by API.
+            # Match the date label without relying on a time or the position of a row.
+            pattern = rf"(?s).*\b{day:%a}\b.*\b{day:%b}\.?\s+{day.day}\b.*"
+            row = self.device(textMatches=pattern, packageName=PACKAGE)
+            self.find_node(row, day.isoformat(), scroll=True).click()
+            self.find("week_date_hint")
+
+        open_week()
+        create_pattern = re.escape(self.strings["week_create"]).replace(re.escape("%1$s"), r"\d+:\d+")
+        create = self.device(textMatches=create_pattern, packageName=PACKAGE)
+        self.find_node(create, "selected daily window", scroll=True).click()
+        self.find("week_weekdays", scroll=True)
+        self.click("week_save", scroll=True)
+        self.find("week_routines", scroll=True)
+
+        # Read the device's date rather than the runner's date (or a fixed day of week).
+        today = date.fromisoformat(adb("shell", "date", "+%F"))
+        future = [today + timedelta(days=i) for i in range(1, 7)]
+        moved, skipped, unchanged = [day for day in future if day.weekday() < 5][:3]
+
+        open_date(moved)
+        self.click("week_change_time")
+        # Native Android time picker: editing minutes alone preserves its local AM/PM
+        # or 24h selection. 20:00 becomes 20:15 under either system clock preference.
+        minute = self.device(resourceId="android:id/input_minute")
+        if not minute.exists:
+            self.device(resourceId="android:id/toggle_mode").click(timeout=8)
+        minute.set_text("15", timeout=8)
+        self.device(resourceId="android:id/button1").click(timeout=8)
+        self.find("week_changed", scroll=True)
+
+        open_date(skipped)
+        self.click("week_skip_day")
+        self.find("week_skipped", scroll=True)
+
+        open_week()
+        self.find("week_changed", scroll=True)
+        self.find("week_skipped", scroll=True)
+        open_date(unchanged)
+        if self.device(text=self.strings["week_restore_day"], packageName=PACKAGE).exists:
+            raise AssertionError("The following weekday unexpectedly acquired an override")
+        self.device.press("back")
+        if not self.device(text=self.strings["week_date_hint"], packageName=PACKAGE).wait_gone(timeout=8):
+            raise AssertionError("The one-date editor did not close")
+        self.device.press("back")
+        stored = self.export_backup("week-after.json")
+        days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"}
+        routines = stored["schedules"]
+        if len(routines) != 1:
+            raise AssertionError(f"Expected one weekday routine, found {routines}")
+        routine = routines[0]
+        if (routine["protocol_id"] != stored["settings"]["default_protocol"] or
+                not routine["enabled"] or set(routine["days"]) != days or routine["start_minute"] != 20 * 60):
+            raise AssertionError(f"The original weekday routine changed: {routine}")
+        expected = {moved.isoformat(): "20:15", skipped.isoformat(): "skip"}
+        if stored["settings"]["day_overrides"] != expected:
+            raise AssertionError(f"Unexpected planner overrides: {stored['settings']['day_overrides']}")
+        print("Verified a weekday plan, one moved start, one skipped date and an unchanged weekday after relaunch.")
+
+
 def fingerprint(fasts):
     keys = ("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status")
     if len(fasts) != 2 or {f["status"] for f in fasts} != {"ENDED_EARLY", "ACTIVE"}:
@@ -190,6 +263,15 @@ def main(device, old_apk, new_apk):
     assert installed_version() == 100, "Unexpected baseline version"
     device.app_start(PACKAGE, activity=ACTIVITY)
     base = Screen(device, Path("previous"))
+    # A slow emulator boot can leave the system launcher's ANR dialog over the test app.
+    # Only dismiss the launcher dialog. An ANR from Fasting Shift must still fail the test.
+    welcome = device(text=base.strings["onb_get_started"], packageName=PACKAGE)
+    deadline = time.monotonic() + 45
+    while time.monotonic() < deadline and not welcome.wait(timeout=1):
+        launcher_dialog = device(text="Pixel Launcher isn't responding", packageName="android")
+        if launcher_dialog.exists:
+            device(text="Close app", packageName="android").click(timeout=3)
+            device.app_start(PACKAGE, activity=ACTIVITY)
     base.create_fasts()
     before = fingerprint(base.export_backup("upgrade-before.json")["fasts"])
     device.app_stop(PACKAGE)
@@ -205,6 +287,7 @@ def main(device, old_apk, new_apk):
         raise AssertionError(f"Fast records changed on upgrade: {before} -> {after}")
     print("Verified both fasts, including the running timer's original start and target.")
     candidate.verify_fresh_invite()
+    candidate.verify_week_planner()
 
 
 if __name__ == "__main__":

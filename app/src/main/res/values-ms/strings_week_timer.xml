@@ -1,0 +1,10 @@
+<resources>
+    <string name="week_timer_planned">Waktu mula seterusnya · %1$s</string>
+    <string name="week_timer_reminder">Peringatan mula · %1$s</string>
+    <string name="week_timer_reminder_off">Peringatan mula dimatikan</string>
+    <string name="week_timer_plan">Rancang minggu saya</string>
+    <string name="week_timer_change">Ubah waktu mula ini</string>
+    <string name="week_timer_change_today">Ubah hari ini</string>
+    <string name="week_timer_reminder_on">Peringatan mula dihidupkan</string>
+    <string name="week_timer_selected">Puasa yang dipilih</string>
+</resources>
