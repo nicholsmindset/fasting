@@ -1,32 +1,39 @@
-name: Check baseline Android lint
+name: Inspect generated moats screenshots
 on:
   push:
     branches: [codex/moats-capture-review]
 permissions:
   contents: read
+  actions: read
 jobs:
-  lint:
+  inspect:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - "en/hub-1.png en/hub-2.png ms/hub-1.png"
+          - "en/challenge-detail.png en/challenges.png en/challenge-join.png"
+          - "en/trust-1.png en/trust-2.png en/settings-report.png"
+          - "en/settings-sunnah.png ms/settings-sunnah.png en/ramadan-safety.png"
+          - "en/history-challenges-row.png en/history-kinds.png en/log-metrics.png en/body-signals.png"
+          - "en/share-fast.png en/share-week.png en/share-challenge.png en/doctor-report-page-1.png"
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: f73d8b40aa923a20a129d1bdacac7009abb957ee
           persist-credentials: false
-      - uses: actions/setup-java@v4
+      - uses: actions/download-artifact@v4
         with:
-          distribution: temurin
-          java-version: "17"
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
-      - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :app:lintDebug
-      - name: Count baseline findings
+          name: fasting-shift-moats-screens
+          path: preview
+          github-token: ${{ github.token }}
+          run-id: 45166927997
+      - name: Verify and read synthetic captures
+        env:
+          CAPTURE_GROUP: ${{ matrix.group }}
         run: |
-          python - <<'PY'
-          import collections
-          import xml.etree.ElementTree as ET
-          issues = ET.parse("app/build/reports/lint-results-debug.xml").getroot().findall("issue")
-          print("BASELINE_COUNTS", dict(collections.Counter(i.get("severity") for i in issues)))
-          print("BASELINE_WARNINGS", dict(collections.Counter(i.get("id") for i in issues if i.get("severity") == "Warning")))
-          PY
+          python -c 'import PIL' || python -m pip install Pillow
+          args=()
+          for image in $CAPTURE_GROUP; do args+=(--only "$image"); done
+          python -I inspect.py preview "${args[@]}"
