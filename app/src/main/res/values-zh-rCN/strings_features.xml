@@ -260,8 +260,6 @@
     <string name="settings_privacy_policy">隐私政策</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">每周计划</string>
-    <string name="schedules_body">选择你的断食日。计划外的日子不会中断你的连续天数。</string>
     <string name="schedules_add_52">添加 5:2 计划</string>
     <string name="schedules_add_adf">添加隔天断食计划</string>
 

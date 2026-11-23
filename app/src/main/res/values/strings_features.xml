@@ -262,8 +262,6 @@
     <string name="settings_privacy_policy">Privacy policy</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">Weekly schedules</string>
-    <string name="schedules_body">Pick your fasting days. Days off-schedule never break your streak.</string>
     <string name="schedules_add_52">Add 5:2 schedule</string>
     <string name="schedules_add_adf">Add alternate-day schedule</string>
 

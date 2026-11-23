@@ -71,7 +71,6 @@
 
     <!-- Schedules and reliability -->
     <string name="schedules_enabled">Aktif</string>
-    <string name="schedules_days">Hari</string>
     <string name="schedules_start_time">Waktu mulai</string>
     <string name="schedules_new">Jadwal baru</string>
     <string name="rel_fix_footer">Ketuk item yang perlu perhatian untuk memperbaikinya.</string>

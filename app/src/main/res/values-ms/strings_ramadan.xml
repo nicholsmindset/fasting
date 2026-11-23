@@ -72,7 +72,6 @@
 
     <!-- Schedules and reliability -->
     <string name="schedules_enabled">Hidup</string>
-    <string name="schedules_days">Hari</string>
     <string name="schedules_start_time">Masa mula</string>
     <string name="schedules_new">Jadual baharu</string>
     <string name="rel_fix_footer">Ketik item yang perlu perhatian untuk membetulkannya.</string>

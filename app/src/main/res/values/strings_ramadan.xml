@@ -72,7 +72,6 @@
 
     <!-- Schedules and reliability -->
     <string name="schedules_enabled">On</string>
-    <string name="schedules_days">Days</string>
     <string name="schedules_start_time">Start time</string>
     <string name="schedules_new">New schedule</string>
     <string name="rel_fix_footer">Tap an item that needs attention to fix it.</string>

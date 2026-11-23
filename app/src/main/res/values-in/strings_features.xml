@@ -256,8 +256,6 @@
     <string name="settings_privacy_policy">Kebijakan privasi</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">Jadwal mingguan</string>
-    <string name="schedules_body">Pilih hari puasa Anda. Hari di luar jadwal tidak pernah memutus streak Anda.</string>
     <string name="schedules_add_52">Tambah jadwal 5:2</string>
     <string name="schedules_add_adf">Tambah jadwal selang-seling</string>
 
