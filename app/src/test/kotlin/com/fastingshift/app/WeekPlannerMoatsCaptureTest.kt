@@ -17,7 +17,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.di.ClockModule
 import com.fastingshift.app.ui.MainActivity
-import com.fastingshift.app.ui.settings.WeekFormat
+import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Fast

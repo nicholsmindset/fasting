@@ -16,13 +16,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.WeekFormat
+import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.startReminderNotificationsEnabled
@@ -32,19 +33,8 @@ import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.schedule.DayOverride
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
-
-/** Weekday names, dates and time format follow the app language and device's 12/24h preference. */
-internal class WeekFormat(val locale: Locale, use24h: Boolean) {
-    val date: DateTimeFormatter = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "EEE MMM d"), locale)
-    val time: DateTimeFormatter = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, if (use24h) "Hm" else "hm"), locale)
-    fun days(days: Set<DayOfWeek>) = days.sorted().joinToString(" · ") { it.getDisplayName(TextStyle.SHORT, locale) }
-}
 
 @Composable
 fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: SchedulesViewModel = hiltViewModel()) {
@@ -60,9 +50,7 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
             }
         }
     }
-    val locale = LocalConfiguration.current.locales[0]
-    val use24h = DateFormat.is24HourFormat(LocalContext.current)
-    val format = remember(locale, use24h) { WeekFormat(locale, use24h) }
+    val format = rememberWeekFormat()
     val notifications = startReminderNotificationsEnabled()
 
     var editProtocol by rememberSaveable { mutableStateOf<String?>(null) }

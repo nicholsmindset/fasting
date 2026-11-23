@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup

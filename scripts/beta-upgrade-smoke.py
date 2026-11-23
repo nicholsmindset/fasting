@@ -263,6 +263,15 @@ def main(device, old_apk, new_apk):
     assert installed_version() == 100, "Unexpected baseline version"
     device.app_start(PACKAGE, activity=ACTIVITY)
     base = Screen(device, Path("previous"))
+    # A slow emulator boot can leave the system launcher's ANR dialog over the test app.
+    # Only dismiss the launcher dialog. An ANR from Fasting Shift must still fail the test.
+    welcome = device(text=base.strings["onb_get_started"], packageName=PACKAGE)
+    deadline = time.monotonic() + 45
+    while time.monotonic() < deadline and not welcome.wait(timeout=1):
+        launcher_dialog = device(text="Pixel Launcher isn't responding", packageName="android")
+        if launcher_dialog.exists:
+            device(text="Close app", packageName="android").click(timeout=3)
+            device.app_start(PACKAGE, activity=ACTIVITY)
     base.create_fasts()
     before = fingerprint(base.export_backup("upgrade-before.json")["fasts"])
     device.app_stop(PACKAGE)

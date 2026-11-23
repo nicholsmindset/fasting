@@ -54,7 +54,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.startReminderNotificationsEnabled
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.ProgressRing
@@ -370,7 +370,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
 
 @Composable
 private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Unit) {
-    val locale = LocalConfiguration.current.locales[0]
+    val format = rememberWeekFormat()
     val planned = state.plannedStart
     val reminder = state.startReminder
     val notificationsEnabled = startReminderNotificationsEnabled()
@@ -380,13 +380,13 @@ private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Un
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (planned != null) {
             Text(
-                stringResource(R.string.week_timer_planned, planned.formatDateTime(locale)),
+                stringResource(R.string.week_timer_planned, format.dateTime.format(planned.atZone(zone))),
                 style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center,
             )
         }
         val reminderText = when {
             reminder != null && reminder == planned && notificationsEnabled -> stringResource(R.string.week_timer_reminder_on)
-            reminder != null && notificationsEnabled -> stringResource(R.string.week_timer_reminder, reminder.formatDateTime(locale))
+            reminder != null && notificationsEnabled -> stringResource(R.string.week_timer_reminder, format.dateTime.format(reminder.atZone(zone)))
             planned != null || reminder != null -> stringResource(R.string.week_timer_reminder_off)
             else -> null
         }
