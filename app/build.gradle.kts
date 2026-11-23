@@ -33,6 +33,7 @@ android {
         // with -P. When empty, billing is disabled and every Shift+ entry point says so.
         val revenueCatKey = (project.findProperty("revenuecat.apiKey") as String?).orEmpty()
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
+        buildConfigField("boolean", "USE_PILOT_INVITES", "false")
     }
 
     signingConfigs {
@@ -58,6 +59,7 @@ android {
         // app id and name so it can sit next to the Play build. Never upload this to Play.
         create("staging") {
             initWith(getByName("release"))
+            buildConfigField("boolean", "USE_PILOT_INVITES", "true")
             signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
@@ -66,6 +68,7 @@ android {
         // Signed after the build with the internal-testing certificate.
         create("internalBeta") {
             initWith(getByName("release"))
+            buildConfigField("boolean", "USE_PILOT_INVITES", "true")
             signingConfig = null
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-beta"
