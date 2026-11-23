@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -148,7 +151,12 @@ class MoatsCaptureTest {
     }
 
     private fun back() { requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() } }
-    private fun scroll(id: Int) = compose.onNodeWithText(s(id)).performScrollTo()
+    private fun scroll(id: Int) {
+        // The Qada ledger and other sections load independently of the screen's heading.
+        val target = hasText(s(id)) and hasAnyAncestor(hasScrollAction())
+        compose.waitUntil(20_000) { compose.onAllNodes(target).fetchSemanticsNodes().size == 1 }
+        compose.onNode(target).performScrollTo().assertIsDisplayed()
+    }
 
     private fun hub() {
         click(s(R.string.tab_settings))
