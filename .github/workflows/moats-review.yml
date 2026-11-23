@@ -13,6 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         group:
+          - "history/2-history-light.png history/2-history-dark.png"
+          - "history/2a-recent-light.png history/2a-recent-dark.png"
+          - "history/2b-calendar-light.png history/2b-calendar-dark.png"
+          - "settings/4-settings-light.png settings/4-settings-dark.png"
           - "en/hub-1.png en/hub-2.png ms/hub-1.png"
           - "en/challenge-detail.png en/challenges.png en/challenge-join.png"
           - "en/trust-1.png en/trust-2.png en/settings-report.png"
@@ -28,7 +32,7 @@ jobs:
           name: fasting-shift-moats-screens
           path: preview
           github-token: ${{ github.token }}
-          run-id: 45166927997
+          run-id: 45170260174
       - name: Verify and read synthetic captures
         env:
           CAPTURE_GROUP: ${{ matrix.group }}

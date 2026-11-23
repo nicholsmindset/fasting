@@ -23,8 +23,9 @@ ENGLISH = (
 MALAY = ("settings-sunnah", "hub-1")
 EXPECTED = [f"en/{name}.png" for name in ENGLISH] + [f"ms/{name}.png" for name in MALAY]
 SETTINGS = ["settings/4-settings-light.png", "settings/4-settings-dark.png"]
-
-ORIGINALS = {*SETTINGS, "en/hub-1.png", "en/challenge-detail.png", "en/trust-1.png"}
+HISTORY = [f"history/{screen}-{mode}.png" for screen in ("2-history", "2a-recent", "2b-calendar") for mode in ("light", "dark")]
+EXPECTED.extend(SETTINGS + HISTORY)
+ORIGINALS = {*SETTINGS, *HISTORY, "en/hub-1.png", "en/challenge-detail.png", "en/trust-1.png"}
 CHUNK_BYTES = 3072
 
 
