@@ -1,11 +1,10 @@
 # Fasting Shift for Android
 
-The honest fasting tracker: a timer that always works, free widgets, real safety guidance for
-long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
+A private Android fasting tracker from Nichols Mindset. Start a timer, review your fasting history, or invite a friend to follow a plan together. [Product requirements](docs/PRD.md) · [Competitor research and beta priorities](docs/moats.md).
 
 ## Status
 
-Fasting Shift is an everyday fasting tracker. Start or edit a fast, review your week, and share a challenge with a friend. Optional features include health logs, doctor reports, Health Connect insights, and a Ramadan and Sunnah hub. Glucose writes use the same persistent retry queue as weight and water. Religious fast eligibility and Maghrib use the selected city's date.
+Settings starts with schedules and reminders. Health logs, doctor reports, Health Connect insights, and the Ramadan and Sunnah hub are optional. Glucose writes use the same persistent retry queue as weight and water. An invitation shares the challenge settings. Sharing a progress card is a separate action.
 
 Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The release bundle built in CI is unsigned unless a release upload key is configured.
 

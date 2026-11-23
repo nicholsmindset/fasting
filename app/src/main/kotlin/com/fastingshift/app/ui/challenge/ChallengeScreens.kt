@@ -1,5 +1,7 @@
 package com.fastingshift.app.ui.challenge
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -230,6 +232,11 @@ private fun templateDescription(t: ChallengeTemplate) = when (t) {
 
 // ---------- detail ----------
 
+internal fun challengeInviteIntent(context: Context, title: String, link: String): Intent =
+    Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_challenge_text, title, link))
+
 @Composable
 fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hiltViewModel()) {
     val item by vm.item.collectAsStateWithLifecycle()
@@ -270,6 +277,10 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
         }
         if (!it.left) {
             PrimaryButton(stringResource(R.string.challenge_invite), onClick = {
+                val chooser = Intent.createChooser(challengeInviteIntent(context, title, link), null)
+                runCatching { context.startActivity(chooser) }
+            })
+            SecondaryButton(stringResource(R.string.challenge_share_progress), onClick = {
                 ShareCards.shareChallenge(context, title, p.doneDays, p.requiredDays, link)
             })
         }

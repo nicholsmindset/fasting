@@ -41,11 +41,19 @@ class RamadanSafetyCardTest {
         assertTrue(RamadanSafety.shouldShow(true, type1))
     }
 
+    @Config(qualifiers = "en-rSG")
     @Test fun contentNamesTheSymptomsAndAnEmergencyNumber() {
         compose.setContent { FastingShiftTheme(darkTheme = false) { RamadanSafetyContent() } }
         val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
         compose.onNodeWithText(ctx.getString(R.string.ramadan_safety_break_body)).assertExists()
         compose.onNodeWithText(ctx.getString(R.string.ramadan_safety_clinician)).assertExists()
-        compose.onNodeWithText(ctx.getString(R.string.ramadan_safety_emergency, "", ""), substring = true).assertExists()
+        compose.onNodeWithText(ctx.getString(R.string.ramadan_safety_emergency, "995")).assertExists()
+    }
+
+    @Config(qualifiers = "en-rBR")
+    @Test fun unsupportedCountryShowsLocalEmergencyGuidance() {
+        compose.setContent { FastingShiftTheme(darkTheme = false) { RamadanSafetyContent() } }
+        val ctx = ApplicationProvider.getApplicationContext<android.app.Application>()
+        compose.onNodeWithText(ctx.getString(R.string.stop_local_emergency)).assertExists()
     }
 }

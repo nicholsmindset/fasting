@@ -102,7 +102,10 @@ class SafetyTest {
     @Test fun `emergency numbers`() {
         assertEquals("995", EmergencyNumbers.forRegion("SG"))
         assertEquals("995", EmergencyNumbers.forRegion("sg"))
-        assertEquals("112", EmergencyNumbers.forRegion("ZZ"))
-        assertEquals("112", EmergencyNumbers.forRegion(null))
+        assertEquals("999", EmergencyNumbers.forRegion("MY"))
+        assertEquals("119", EmergencyNumbers.forRegion("ID"))
+        assertEquals("120", EmergencyNumbers.forRegion("CN"))
+        assertNull(EmergencyNumbers.forRegion("ZZ"))
+        assertNull(EmergencyNumbers.forRegion(null))
     }
 }

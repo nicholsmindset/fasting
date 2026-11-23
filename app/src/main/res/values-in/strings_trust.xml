@@ -159,7 +159,8 @@
     <string name="challenge_legend_done">Selesai</string>
     <string name="challenge_legend_ahead">Mendatang</string>
     <string name="challenge_legend_rest">Bukan hari puasa</string>
-    <string name="challenge_invite">Undang dan bagikan kemajuan</string>
+    <string name="challenge_invite">Undang seseorang</string>
+    <string name="challenge_share_progress">Bagikan progres saya</string>
     <string name="challenge_leave">Keluar dari tantangan</string>
     <string name="challenge_leave_confirm_title">Keluar dari tantangan ini?</string>
     <string name="challenge_leave_confirm_body">Puasa Anda tetap ada di riwayat. Anda bisa bergabung lagi dengan tautan kapan saja.</string>

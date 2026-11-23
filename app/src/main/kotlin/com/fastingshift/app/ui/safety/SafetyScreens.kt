@@ -62,6 +62,7 @@ import com.fastingshift.app.ui.onboarding.CheckGroupRow
 import com.fastingshift.app.ui.onboarding.HeroIcon
 import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.domain.safety.EmergencyNumbers
+import com.fastingshift.domain.safety.HelplineAvailability
 import com.fastingshift.domain.safety.Helplines
 import com.fastingshift.domain.safety.Symptom
 import com.fastingshift.domain.service.FastService
@@ -94,18 +95,21 @@ class SafetyViewModel @Inject constructor(
     }
 }
 
-/** The user's region for emergency numbers and helplines: SIM, then network, then locale. Works offline. */
+/** The user's region for emergency numbers and helplines: network, then SIM, then locale country. Works offline. */
 private fun emergencyRegion(context: Context): String? = RegionResolver.countryCode(context)
 
 /** Opens the dialler with [number]. Never crashes on devices without a phone app. */
-fun dial(context: Context, number: String) {
-    val digits = number.filter { it.isDigit() || it == '+' }
+fun dial(context: Context, number: String?) {
+    val intent = Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (number != null) intent.data = Uri.fromParts("tel", number.filter { it.isDigit() || it == '+' }, null)
+    val unavailable = if (number == null) context.getString(R.string.stop_local_emergency)
+        else context.getString(R.string.dial_unavailable, number)
     try {
-        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$digits")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
-        Toast.makeText(context, context.getString(R.string.dial_unavailable, number), Toast.LENGTH_LONG).show()
+        Toast.makeText(context, unavailable, Toast.LENGTH_LONG).show()
     } catch (e: SecurityException) {
-        Toast.makeText(context, context.getString(R.string.dial_unavailable, number), Toast.LENGTH_LONG).show()
+        Toast.makeText(context, unavailable, Toast.LENGTH_LONG).show()
     }
 }
 
@@ -161,7 +165,11 @@ fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(R.string.stop_number_label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(number, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                    if (number == null) {
+                        Text(stringResource(R.string.stop_local_emergency), style = MaterialTheme.typography.bodyLarge)
+                    } else {
+                        Text(number, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                    }
                     Button(
                         onClick = { haptics.confirm(); dial(context, number) },
                         shape = RoundedCornerShape(14.dp),
@@ -171,7 +179,7 @@ fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
                     ) {
                         Icon(Icons.Filled.Call, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.stop_call, number), style = MaterialTheme.typography.labelLarge)
+                        Text(if (number == null) stringResource(R.string.stop_open_dialler) else stringResource(R.string.stop_call, number), style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -188,11 +196,12 @@ fun StopFastRoute(onDone: () -> Unit, vm: SafetyViewModel = hiltViewModel()) {
     }
 }
 
-/** Support lines for the user's region, Singapore by default (SR-6). Tapping opens the dialler. */
+/** Support lines for the user's region (SR-6). Tapping opens the dialler. */
 @Composable
 fun HelplineList() {
     val context = LocalContext.current
     val lines = remember { Helplines.forRegion(emergencyRegion(context)) }
+    if (lines.isEmpty()) return
     InsetGroup(header = stringResource(R.string.helplines_title)) {
         lines.forEachIndexed { i, h ->
             if (i > 0) GroupDivider()
@@ -204,7 +213,16 @@ fun HelplineList() {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(h.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(h.phone, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Text(h.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val note = when {
+                        h.extension != null -> stringResource(R.string.helpline_extension, requireNotNull(h.extension))
+                        h.hoursWebsite != null -> stringResource(R.string.helpline_hours_at, requireNotNull(h.hoursWebsite))
+                        else -> when (h.availability) {
+                            HelplineAvailability.ALL_DAY -> stringResource(R.string.helpline_open_all_day)
+                            HelplineAvailability.CALL_OR_TEXT_ALL_DAY -> stringResource(R.string.helpline_call_text)
+                            null -> null
+                        }
+                    }
+                    if (note != null) Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.Filled.Call, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }

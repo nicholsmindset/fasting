@@ -165,7 +165,8 @@
     <string name="challenge_legend_done">Done</string>
     <string name="challenge_legend_ahead">Ahead</string>
     <string name="challenge_legend_rest">Not a fasting day</string>
-    <string name="challenge_invite">Invite and share progress</string>
+    <string name="challenge_invite">Invite someone</string>
+    <string name="challenge_share_progress">Share my progress</string>
     <string name="challenge_leave">Leave challenge</string>
     <string name="challenge_leave_confirm_title">Leave this challenge?</string>
     <string name="challenge_leave_confirm_body">Your fasts stay in your history. You can join again with the link anytime.</string>

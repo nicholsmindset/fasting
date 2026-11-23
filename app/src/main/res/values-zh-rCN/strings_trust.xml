@@ -159,7 +159,8 @@
     <string name="challenge_legend_done">已完成</string>
     <string name="challenge_legend_ahead">未到</string>
     <string name="challenge_legend_rest">非断食日</string>
-    <string name="challenge_invite">邀请并分享进度</string>
+    <string name="challenge_invite">邀请他人</string>
+    <string name="challenge_share_progress">分享我的进度</string>
     <string name="challenge_leave">退出挑战</string>
     <string name="challenge_leave_confirm_title">退出这个挑战？</string>
     <string name="challenge_leave_confirm_body">你的断食记录会保留在历史中。之后可随时通过链接重新加入。</string>

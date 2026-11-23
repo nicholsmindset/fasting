@@ -120,7 +120,7 @@
     <string name="history_fasted_week">berpuasa minggu ini</string>
     <string name="history_fasted_month">berpuasa bulan ini</string>
     <string name="history_fasted_year">berpuasa tahun ini</string>
-    <string name="history_stat_fasts">Puasa</string>
+    <string name="history_stat_fasts">Puasa dimulai</string>
     <string name="history_stat_average">Rata-rata</string>
     <string name="history_stat_planned_days">Hari terencana selesai</string>
     <string name="history_recent">Puasa terakhir</string>
