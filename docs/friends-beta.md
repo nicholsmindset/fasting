@@ -5,7 +5,7 @@ Staging and internal beta generate a link to the [beta invite page](https://nich
 ## Try it on two Android phones
 
 1. On the first phone, open **History → Challenges**, create a challenge and tap **Invite someone**. Send the link through your usual messaging app.
-2. On the second phone, open the link before installing the app. Check the name, dates and schedule. Copy the code, install the staging APK and complete onboarding. Return to the message, choose **Fasting Shift (staging)** and tap **Open in Fasting Shift**. You can also paste the code under **History → Challenges → Have an invite link?**
+2. On the second phone, open the link before installing the app. Check the name, dates and schedule. Install the staging APK, then return to the message. Choose **Fasting Shift (staging)** on the invite page and tap **Open in Fasting Shift**. Finish the usual screening. If your browser keeps the link open on the web, copy the code and paste it under **History → Challenges → Have an invite link?**
 3. Check that the intended plan appears and requires you to tap **Join**. Joining should keep both people’s progress private. Send a progress card only if you want to.
 4. Open the same invitation a second time. Check that your existing challenge and history are intact. Test declining an invitation as well as joining.
 

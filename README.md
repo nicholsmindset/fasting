@@ -6,7 +6,7 @@ A private Android fasting tracker from Nichols Mindset. Start a timer, review yo
 
 Settings starts with schedules and reminders. Health logs, doctor reports, Health Connect insights, and the Ramadan and Sunnah hub are optional. Glucose writes use the same persistent retry queue as weight and water. An invitation shares the challenge settings. Sharing a progress card is a separate action.
 
-Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The release bundle built in CI is unsigned unless a release upload key is configured.
+Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The Android 15 upgrade check verifies that a completed fast and an active timer survive an update. It also opens a friend invite on a clean install, finishes screening, joins once and reopens the same challenge. The release bundle built in CI is unsigned unless a release upload key is configured.
 
 Highlights beyond the PRD: tappable timer (fasted / time left / break-fast time), eating-window
 countdown, quick-add on the Timer, undo after ending, add a past fast, "started earlier",
@@ -19,7 +19,7 @@ Languages: English, Bahasa Melayu, Bahasa Indonesia, Simplified Chinese (per-app
 picker on Android 13+). The three translations are drafts and need a native-speaker review,
 especially the safety and refeeding copy.
 
-The beta screenshot pack contains 28 captures, including light and dark History and Settings, private challenges, health screens, share cards, a doctor-report page and Malay examples. [Reviewed store screenshots](docs/screenshots/) · [Beta build and CI checks](https://github.com/nicholsmindset/fasting/pull/8/checks).
+The beta screenshot pack contains 28 captures, including light and dark History and Settings, private challenges, health screens, share cards, a doctor-report page and Malay examples. [Reviewed store screenshots](docs/screenshots/) · [Two-phone beta guide](docs/friends-beta.md) · [Beta build and CI checks](https://github.com/nicholsmindset/fasting/pull/5/checks).
 
 ### Physical device checks
 
