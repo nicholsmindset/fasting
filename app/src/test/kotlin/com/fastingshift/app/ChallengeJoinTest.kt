@@ -96,6 +96,14 @@ class ChallengeJoinTest {
         assertEquals(ChallengeInvite.of(joined.single()), invite)
     }
 
+    @Test fun pilotInviteShowsJoinPreviewBeforeCreatingAnything() {
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.now().plusDays(1), 7, "Walking group")
+        open(ChallengeLinks.link(invite, pilot = true))
+        waitFor("Walking group")
+        compose.onNodeWithText(s(R.string.challenge_join)).assertExists()
+        assertEquals(0, runBlocking { challenges.observeAll().first() }.size)
+    }
+
     @Test fun malformedLinkIsRejectedCalmly() {
         open("https://fastingshift.com/c/not*a*code")
         waitFor(s(R.string.challenge_join_invalid))

@@ -55,6 +55,13 @@
                 <data android:host="www.fastingshift.com" />
                 <data android:pathPrefix="/c/" />
             </intent-filter>
+            <!-- Pilot invites carry the code after #, outside the web request. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="nicholsmindset.github.io" android:path="/fasting/c/" />
+            </intent-filter>
         </activity>
 
         <!-- Doctor reports and share cards, shared only when the user taps Share. -->
