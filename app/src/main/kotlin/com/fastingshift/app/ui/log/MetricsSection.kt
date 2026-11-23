@@ -103,10 +103,17 @@ class MetricsViewModel @Inject constructor(
         refreshGlucosePermission()
     }
 
+    /** Re-checks the 6-hour alert window every minute while the screen is open. */
+    private val minutes = kotlinx.coroutines.flow.flow {
+        while (true) {
+            emit(clock.instant())
+            delay(60_000)
+        }
+    }
+
     val state: StateFlow<MetricsState> = combine(
-        metrics.observeAll(), chosenUnit, lastDeleted, settings.settings, glucoseGranted,
-    ) { all, chosen, deleted, s, granted ->
-        val now = clock.instant()
+        metrics.observeAll(), chosenUnit, lastDeleted, settings.settings, combine(glucoseGranted, minutes) { g, now -> g to now },
+    ) { all, chosen, deleted, s, (granted, now) ->
         val latestGlucose = all.firstOrNull { it.type == MetricType.GLUCOSE }
         val latestKetone = all.firstOrNull { it.type == MetricType.KETONE }
         fun recent(log: MetricLog?) = log != null && Duration.between(log.at, now) <= ALERT_WINDOW
@@ -141,7 +148,11 @@ class MetricsViewModel @Inject constructor(
 
     fun delete(log: MetricLog) = viewModelScope.launch {
         metrics.delete(log.id)
-        if (log.type == MetricType.GLUCOSE && settings.current().healthConnectSync) health.deleteGlucose(log.id)
+        if (log.type == MetricType.GLUCOSE) {
+            health.forgetGlucose(log)
+            // Even with sync off now, remove the copy written while it was on (if still allowed).
+            if (health.hasPermissions(health.glucosePermissions)) health.deleteGlucose(log.id)
+        }
         lastDeleted.value = log
         undoTimeout?.cancel()
         undoTimeout = viewModelScope.launch { delay(UNDO_MS); lastDeleted.value = null }

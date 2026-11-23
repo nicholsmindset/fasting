@@ -29,7 +29,6 @@
     <string name="muslim_invalid_start">This fast can\'t start right now. Maghrib may be too close, or it overlaps a fast already recorded.</string>
 
     <!-- Qada (making up missed Ramadan days). Gentle, never shaming. -->
-    <string name="qada_year">Ramadan %1$d AH</string>
 
     <!-- Settings -->
     <string name="muslim_offset_none">None</string>

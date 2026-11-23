@@ -3,7 +3,7 @@
     User-facing copy for the MVP features. Tone rules (SR-6): plain, neutral, never shaming,
     no weight-loss promises, no disease claims. Safety copy is pending clinician review.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Common -->
     <string name="save">Save</string>
     <string name="delete">Delete</string>
@@ -38,7 +38,7 @@
     <string name="timer_start_now">Start now instead</string>
     <string name="timer_invalid_start">That start time isn\'t possible. Pick a time in the past, within the last 5 days.</string>
     <string name="timer_custom_hours">Hours</string>
-    <string name="timer_custom_range">1 to %1$d hours</string>
+    <string name="timer_custom_range" tools:ignore="PluralsCandidate">1 to %1$d hours</string>
     <string name="timer_needs_screening">Finish the safety questions to start fasting.</string>
     <string name="timer_finish_screening">Finish the safety questions</string>
     <string name="timer_confirm_doctor">Confirm the doctor check</string>
@@ -129,8 +129,8 @@
     <string name="history_stat_average">Average</string>
     <string name="history_stat_planned_days">Planned days done</string>
     <string name="history_recent">Recent fasts</string>
-    <string name="history_average">Average %1$s · last %2$d fasts</string>
-    <string name="history_ring_a11y">%1$s %2$s. %3$d of %4$d planned days completed.</string>
+    <string name="history_average" tools:ignore="PluralsCandidate">Average %1$s · last %2$d fasts</string>
+    <string name="history_ring_a11y" tools:ignore="PluralsCandidate">%1$s %2$s. %3$d of %4$d planned days completed.</string>
     <string name="a11y_fast_bar">Fast, %1$s, %2$s</string>
     <string name="status_active">In progress</string>
     <string name="status_completed">Completed as planned</string>
@@ -192,9 +192,7 @@
     <string name="onb_notif_body">We only send reminders you choose: when a fast ends, milestones, and safety check-ins on long fasts.</string>
     <string name="onb_notif_allow">Allow notifications</string>
     <string name="onb_offer_title">Shift+ is optional</string>
-    <string name="onb_offer_body">The guided 21-day Fasting Shift program and weekly insights. 7 days free on the annual plan. Prices are shown in Google Play before you pay. Cancel any time in Google Play.</string>
     <string name="onb_offer_free_note">The timer, widgets, every protocol, history, export and all safety features are free forever.</string>
-    <string name="onb_offer_trial">Start free trial</string>
     <string name="onb_offer_free">Continue free</string>
 
     <!-- Safety -->
@@ -287,15 +285,11 @@
 
     <!-- Shift+ -->
     <string name="paywall_title">Shift+</string>
-    <string name="paywall_point_program">The Fasting Shift guided program: 21 days, a short lesson and a fasting target each day.</string>
     <string name="paywall_point_insights">Insights: weekly consistency, weight next to fasting hours, and your average fast by weekday.</string>
     <string name="paywall_free_forever">Everything else stays free: timer, widgets, every protocol, history, export and all safety features.</string>
-    <string name="paywall_trial_note">7 days free</string>
-    <string name="paywall_terms">Annual includes a 7-day free trial. We remind you 3 days before it ends. Subscriptions renew until cancelled in Google Play. Lifetime is a one-time purchase.</string>
     <string name="paywall_unavailable">Shift+ isn\'t available on this device right now.</string>
     <string name="paywall_already">You have Shift+. Thank you.</string>
     <string name="program_locked">The guided program is part of Shift+.</string>
-    <string name="program_intro">21 days, one short lesson and a gentle fasting target each day. Targets stay at 18 hours or less.</string>
     <string name="program_start">Start the program</string>
     <string name="program_day">Day %1$d · %2$s</string>
     <string name="program_chapter">From the book: %1$s</string>
@@ -322,7 +316,7 @@
     <string name="widget_next_milestone">Next: %1$dh</string>
 
     <!-- Accessibility (TalkBack) -->
-    <string name="a11y_timer">Fasted %1$s of %2$s, %3$d percent</string>
+    <string name="a11y_timer" tools:ignore="PluralsCandidate">Fasted %1$s of %2$s, %3$d percent</string>
     <string name="a11y_decrease">Decrease</string>
     <string name="a11y_increase">Increase</string>
     <string name="a11y_prev_month">Previous month</string>

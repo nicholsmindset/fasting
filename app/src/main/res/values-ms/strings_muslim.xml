@@ -26,7 +26,6 @@
     <string name="muslim_upcoming_footer">Panduan kalendar sahaja. Tarikh mungkin berbeza di tempat anda, jadi semak dengan pihak berkuasa agama tempatan anda.</string>
     <string name="muslim_open_timer">Pergi ke Pemasa</string>
     <string name="muslim_invalid_start">Puasa ini tidak boleh dimulakan sekarang. Maghrib mungkin terlalu dekat, atau ia bertindih dengan puasa yang telah direkodkan.</string>
-    <string name="qada_year">Ramadan %1$d H</string>
     <string name="muslim_offset_none">Tiada</string>
     <plurals name="muslim_offset_days">
         <item quantity="other">%d hari</item>

@@ -3,6 +3,7 @@ package com.fastingshift.domain.challenge
 import com.fastingshift.domain.model.Challenge
 import com.fastingshift.domain.model.ChallengeType
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.FastKind
 import com.fastingshift.domain.model.FastStatus
 import com.fastingshift.domain.model.ProtocolType
 import com.fastingshift.domain.protocol.Presets
@@ -112,8 +113,11 @@ object Challenges {
             val length = fast.actualDuration ?: Duration.between(fast.startAt, now)
             length >= Duration.ofHours(hours.toLong())
         }
+        // A fast started as Sunnah, qada or Ramadan runs to maghrib, which can be under 10h in
+        // winter or far from the equator: completing it is what counts. Other fasts need 10h.
         ChallengeType.SUNNAH_MON_THU, ChallengeType.AYYAMUL_BIDH ->
-            fast.status == FastStatus.COMPLETED && fast.plannedDuration >= MIN_SUNNAH_FAST
+            fast.status == FastStatus.COMPLETED &&
+                (fast.kind != FastKind.REGULAR || fast.plannedDuration >= MIN_SUNNAH_FAST)
     }
 
     fun progress(challenge: Challenge, fasts: List<Fast>, zone: ZoneId, now: Instant, hijriOffsetDays: Int = 0): ChallengeProgress {
@@ -146,12 +150,30 @@ object ChallengeNames {
     const val MAX = 40
 
     fun clean(name: String?): String? =
-        name?.filterNot { Character.isISOControl(it) }?.trim()?.let { truncate(it) }?.takeIf { it.isNotEmpty() }
+        name?.let(::visibleOnly)?.trim()?.let { truncate(it) }?.takeIf { it.isNotEmpty() }
 
     private fun truncate(s: String): String =
         if (s.codePointCount(0, s.length) <= MAX) s else s.substring(0, s.offsetByCodePoints(0, MAX)).trim()
 
     fun isValid(name: String): Boolean = clean(name) == name
+
+    /** Line/paragraph separators and invisible format characters (bidi overrides, zero-width). */
+    private const val ZWJ = 0x200D
+    private val HIDDEN_OR_BREAKING = setOf(Character.LINE_SEPARATOR, Character.PARAGRAPH_SEPARATOR, Character.FORMAT)
+
+    /** Drops control, line-breaking and invisible format characters, and unpaired surrogates. */
+    private fun visibleOnly(s: String): String = buildString {
+        var i = 0
+        while (i < s.length) {
+            val cp = s.codePointAt(i)
+            val n = Character.charCount(cp)
+            val unpaired = n == 1 && Character.isSurrogate(s[i])
+            // The zero-width joiner stays: emoji sequences need it.
+            val hidden = cp != ZWJ && Character.getType(cp).toByte() in HIDDEN_OR_BREAKING
+            if (!unpaired && !Character.isISOControl(cp) && !hidden) appendCodePoint(cp)
+            i += n
+        }
+    }
 }
 
 /**

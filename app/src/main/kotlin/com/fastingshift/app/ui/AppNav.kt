@@ -106,7 +106,8 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
 
     LaunchedEffect(deepLink, onboarded) {
         if (deepLink != null && onboarded) {
-            nav.navigate(deepLink)
+            // A malformed route must never crash the app.
+            runCatching { nav.navigate(deepLink) }
             onDeepLinkHandled()
         }
     }

@@ -164,6 +164,27 @@ class ChallengesTest {
         assertTrue(Challenges.meets(c, fast(monday, 16), now))
     }
 
+    @Test fun `a completed winter sunnah fast to maghrib counts even under 10 hours`() {
+        val c = ChallengeTemplate.MON_THU_FOUR_WEEKS.create(monday, joined)
+        val now = at(monday, LocalTime.of(21, 0))
+        // Started from the hub at 8:00, ending at a 17:35 maghrib: 9h35m.
+        assertTrue(Challenges.meets(c, fast(monday, 9, startTime = LocalTime.of(8, 0), kind = FastKind.SUNNAH), now))
+        assertTrue(Challenges.meets(c, fast(monday, 8, startTime = LocalTime.of(8, 0), kind = FastKind.QADA), now))
+        // A regular fast still needs 10 hours, and a broken one never counts.
+        assertFalse(Challenges.meets(c, fast(monday, 9, startTime = LocalTime.of(8, 0)), now))
+        assertFalse(Challenges.meets(c, fast(monday, 9, actual = 5, startTime = LocalTime.of(8, 0), kind = FastKind.SUNNAH), now))
+    }
+
+    @Test fun `names drop line breaks, invisible format characters and half emoji`() {
+        assertEquals("Family fasts", ChallengeNames.clean("Family\u2028 fasts"))
+        assertEquals("abc", ChallengeNames.clean("a\u202Eb\u200Bc"))
+        assertFalse(ChallengeNames.isValid("evil\u2066name"))
+        // A cut emoji (lone high surrogate) is dropped; a whole emoji and a ZWJ sequence stay.
+        assertEquals("hi", ChallengeNames.clean("hi\uD83D"))
+        val family = "\uD83D\uDC68\u200D\uD83D\uDC69"
+        assertEquals(family, ChallengeNames.clean(family))
+    }
+
     @Test fun `white days follow the Hijri calendar`() {
         // 23–25 Nov 2026 are 13–15 Jumada al-Akhirah 1448; 22–24 Dec 2026 are 13–15 Rajab.
         val c = ChallengeTemplate.WHITE_DAYS_THREE_MONTHS.create(monday.minusDays(2), joined)

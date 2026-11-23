@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Moat B: doctor report, trust center, Ramadan safety, challenges and share cards. -->
 
     <!-- Doctor report (Settings row and PDF) -->
@@ -14,7 +14,7 @@
     <string name="report_days_90">90 days</string>
     <string name="report_create">Create and share</string>
     <string name="report_title">Fasting report</string>
-    <string name="report_period">Period: %1$s – %2$s (%3$d days)</string>
+    <string name="report_period" tools:ignore="PluralsCandidate">Period: %1$s – %2$s (%3$d days)</string>
     <string name="report_generated">Generated %1$s by the Fasting Shift app on the user\'s phone</string>
     <string name="report_summary">Summary</string>
     <string name="report_fasts_count">Fasts</string>
@@ -42,7 +42,7 @@
     <string name="report_weight">Weight trend</string>
     <string name="report_no_weights">No weights logged in this period.</string>
     <string name="report_weight_range">From %1$s (%2$s) to %3$s (%4$s)</string>
-    <string name="report_weight_change">Change: %1$s over %2$d entries</string>
+    <string name="report_weight_change" tools:ignore="PluralsCandidate">Change: %1$s over %2$d entries</string>
     <string name="report_screening">Safety screening (latest answers)</string>
     <string name="report_no_screening">The safety questions have not been answered.</string>
     <string name="report_screening_date">Answered %1$s</string>
@@ -127,13 +127,13 @@
     <string name="challenges_open_link">Open link</string>
     <string name="challenges_link_invalid">That doesn\'t look like a challenge link.</string>
     <string name="challenges_not_allowed">Challenges are available once the safety questions show fasting is suitable for you.</string>
-    <string name="challenge_progress">%1$d of %2$d days</string>
+    <string name="challenge_progress" tools:ignore="PluralsCandidate">%1$d of %2$d days</string>
     <string name="challenge_dates">%1$s – %2$s</string>
     <string name="challenge_status_upcoming">Starts %1$s</string>
     <string name="challenge_status_active">Ends %1$s</string>
     <string name="challenge_status_finished">Finished</string>
     <string name="challenge_status_left">Left</string>
-    <string name="challenge_daily_title">%1$s for %2$d days</string>
+    <string name="challenge_daily_title" tools:ignore="PluralsCandidate">%1$s for %2$d days</string>
     <string name="challenge_monthu_title">Monday and Thursday fasts</string>
     <string name="challenge_white_title">White days (Ayyamul Bidh)</string>
     <string name="challenge_tmpl_16_8">Fast 16 hours a day for one week.</string>
@@ -150,9 +150,9 @@
     <string name="challenge_name_hint">e.g. Family</string>
     <string name="challenge_create">Start challenge</string>
     <string name="challenge_create_note">Your safety settings still apply to every fast. Rest whenever you need to.</string>
-    <string name="challenge_how_daily">A day counts when a fast of at least %1$d hours starts that day.</string>
-    <string name="challenge_how_sunnah">A day counts when a fast of at least %1$d hours starts that day and is completed as planned. Eid and the days of tashreeq are never fasting days.</string>
-    <string name="challenge_grid_a11y">%1$d of %2$d fasting days done</string>
+    <string name="challenge_how_daily" tools:ignore="PluralsCandidate">A day counts when a fast of at least %1$d hours starts that day.</string>
+    <string name="challenge_how_sunnah" tools:ignore="PluralsCandidate">A day counts when a fast of at least %1$d hours starts that day and is completed as planned. Eid and the days of tashreeq are never fasting days.</string>
+    <string name="challenge_grid_a11y" tools:ignore="PluralsCandidate">%1$d of %2$d fasting days done</string>
     <string name="challenge_legend_done">Done</string>
     <string name="challenge_legend_ahead">Ahead</string>
     <string name="challenge_legend_rest">Not a fasting day</string>

@@ -37,9 +37,7 @@
     <string name="log_trend_latest">Terbaru</string>
     <string name="log_trend_high">Tertinggi</string>
     <!-- Shift+ -->
-    <string name="paywall_best_value">Paling hemat</string>
     <string name="paywall_continue">Lanjutkan</string>
-    <string name="paywall_start_trial">Mulai uji coba gratis 7 hari</string>
 
     <!-- History -->
     <string name="history_title">Riwayat</string>

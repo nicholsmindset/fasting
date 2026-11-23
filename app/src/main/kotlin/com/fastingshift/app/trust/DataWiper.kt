@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.WorkManager
+import androidx.work.await
 import com.fastingshift.app.alarm.AlarmGateway
 import com.fastingshift.app.alarm.AlarmScheduler
 import com.fastingshift.app.share.FileSharing
@@ -27,11 +28,17 @@ class DataWiper @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: FastingDatabase,
     private val alarms: AlarmGateway,
+    private val settings: com.fastingshift.data.settings.SettingsRepository,
+    private val billingReminders: com.fastingshift.app.billing.BillingReminderScheduler,
 ) {
     suspend fun wipeAndRestart() {
         withContext(Dispatchers.IO) {
-            runCatching { WorkManager.getInstance(context).cancelAllWork() }
+            // Wait for the cancellation to be saved: the process exits right after.
+            runCatching { WorkManager.getInstance(context).cancelAllWork().await() }
             runCatching { AlarmScheduler(alarms).apply(emptyList()) }
+            runCatching { billingReminders.apply(com.fastingshift.app.billing.BillingReminderAction.Cancel) }
+            // Clear through the live DataStore first, so a pending write can't bring settings back.
+            runCatching { settings.clearAll() }
             runCatching { NotificationManagerCompat.from(context).cancelAll() }
             runCatching { db.close() }
             FastingDatabase.resetEncrypted(context)

@@ -25,6 +25,7 @@ class FastingApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Notifications.createChannels(this)
+        scope.launch(Dispatchers.IO) { com.fastingshift.app.share.FileSharing.purgeOld(this@FastingApp) }
         billing.configure()
         scope.launch(Dispatchers.Default) {
             // A lost key means the data can't be read; MainActivity shows the recovery screen.

@@ -148,7 +148,8 @@ object DoctorReports {
                 ReportScreening(
                     answeredAt = r.answeredAt,
                     gate = r.gateResult,
-                    reasons = ScreeningEvaluator.evaluate(a).reasons.sortedBy { it.ordinal },
+                    // Hide weight also hides what it implies: no "BMI under 18.5" either.
+                    reasons = ScreeningEvaluator.evaluate(a).reasons.filterNot { hideWeight && it == GateReason.LOW_BMI }.sortedBy { it.ordinal },
                     medications = a.medications.sortedBy { it.ordinal },
                     ageYears = a.ageYears,
                     pregnantOrBreastfeeding = a.pregnantOrBreastfeeding,
@@ -200,7 +201,7 @@ class DoctorReportExporter @Inject constructor(private val builder: DoctorReport
     suspend fun write(context: Context, period: ReportPeriod): File {
         val data = builder.build(period)
         return withContext(Dispatchers.IO) {
-            val file = FileSharing.newFile(context, "fasting-shift-report-${data.to}.pdf")
+            val file = FileSharing.newFile(context, "fasting-shift-report-${period.days}d-${data.to}-${System.currentTimeMillis()}.pdf")
             file.outputStream().use { DoctorReportPdf.render(context.resources, data, it) }
             file
         }

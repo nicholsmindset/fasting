@@ -26,7 +26,6 @@
     <string name="muslim_upcoming_footer">仅供日历参考。各地日期可能不同，请以当地宗教机构的公告为准。</string>
     <string name="muslim_open_timer">前往计时</string>
     <string name="muslim_invalid_start">现在无法开始这次斋戒。可能距离昏礼太近，或与已记录的斋戒时间重叠。</string>
-    <string name="qada_year">伊斯兰历 %1$d 年斋月</string>
     <string name="muslim_offset_none">无</string>
     <plurals name="muslim_offset_days">
         <item quantity="other">%d 天</item>

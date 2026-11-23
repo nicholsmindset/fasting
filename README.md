@@ -12,7 +12,10 @@ Moats (see `docs/moats.md`): Muslim fasting hub (Hijri date, Sunnah calendar, qa
 fast until maghrib), doctor report PDF, trust center with delete-all, Ramadan safety card,
 serverless challenges with invite links, share cards, glucose/ketone logging and Body signals
 (sleep and resting heart rate from Health Connect). Needs device checks: PDF output, delete-all
-restart, Health Connect reads/writes, invite links opening the app.
+restart, Health Connect reads/writes, invite links opening the app. A review pass fixed: winter Sunnah
+fasts counting, notification-route allow-list, Ramadan safety card for type 1 diabetes, per-install
+Health Connect record ids, wipe ordering, hidden-weight BMI in the report, unique report files,
+hidden characters in challenge names, glucose retries.
 
 Earlier test breakdown:
 

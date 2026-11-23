@@ -187,9 +187,7 @@
     <string name="onb_notif_body">Kami hanya mengirim pengingat yang Anda pilih: saat puasa berakhir, tonggak, dan cek keselamatan pada puasa panjang.</string>
     <string name="onb_notif_allow">Izinkan notifikasi</string>
     <string name="onb_offer_title">Shift+ bersifat opsional</string>
-    <string name="onb_offer_body">Program terpandu Fasting Shift 21 hari dan wawasan mingguan. Gratis 7 hari untuk paket tahunan. Harga ditampilkan di Google Play sebelum Anda membayar. Batalkan kapan saja di Google Play.</string>
     <string name="onb_offer_free_note">Timer, widget, semua protokol, riwayat, ekspor, dan semua fitur keselamatan gratis selamanya.</string>
-    <string name="onb_offer_trial">Mulai uji coba gratis</string>
     <string name="onb_offer_free">Lanjut gratis</string>
 
     <!-- Safety -->
@@ -282,15 +280,11 @@
 
     <!-- Shift+ -->
     <string name="paywall_title">Shift+</string>
-    <string name="paywall_point_program">Program terpandu Fasting Shift: 21 hari, dengan pelajaran singkat dan target puasa setiap hari.</string>
     <string name="paywall_point_insights">Wawasan: konsistensi mingguan, berat di samping jam puasa, dan rata-rata puasa Anda per hari dalam seminggu.</string>
     <string name="paywall_free_forever">Semua yang lain tetap gratis: timer, widget, semua protokol, riwayat, ekspor, dan semua fitur keselamatan.</string>
-    <string name="paywall_trial_note">Gratis 7 hari</string>
-    <string name="paywall_terms">Paket tahunan termasuk uji coba gratis 7 hari. Kami mengingatkan Anda 3 hari sebelum berakhir. Langganan diperpanjang sampai dibatalkan di Google Play. Seumur hidup adalah pembelian satu kali.</string>
     <string name="paywall_unavailable">Shift+ saat ini tidak tersedia di perangkat ini.</string>
     <string name="paywall_already">Anda sudah memiliki Shift+. Terima kasih.</string>
     <string name="program_locked">Program terpandu adalah bagian dari Shift+.</string>
-    <string name="program_intro">21 hari, satu pelajaran singkat, dan target puasa yang ringan setiap hari. Target tetap 18 jam atau kurang.</string>
     <string name="program_start">Mulai program</string>
     <string name="program_day">Hari %1$d · %2$s</string>
     <string name="program_chapter">Dari buku: %1$s</string>

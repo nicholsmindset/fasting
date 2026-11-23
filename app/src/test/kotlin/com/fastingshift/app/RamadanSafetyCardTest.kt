@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The Ramadan safety card shows only for glucose-lowering medication in Ramadan mode. */
+/** The Ramadan safety card shows for glucose-lowering medication or type 1 diabetes in Ramadan mode. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], application = android.app.Application::class)
 class RamadanSafetyCardTest {
@@ -35,8 +35,10 @@ class RamadanSafetyCardTest {
         assertFalse(RamadanSafety.shouldShow(true, record(Medication.GLP1)))
         assertFalse(RamadanSafety.shouldShow(true, record()))
         assertFalse(RamadanSafety.shouldShow(true, null))
-        // Education-only users never see fasting guidance.
-        assertFalse(RamadanSafety.shouldShow(true, record(Medication.INSULIN, gate = GateResult.BLOCK)))
+        // Highest risk: blocked from fasting in the app, but they may still fast Ramadan.
+        assertTrue(RamadanSafety.shouldShow(true, record(Medication.INSULIN, gate = GateResult.BLOCK)))
+        val type1 = ScreeningRecord(Instant.EPOCH, ScreeningAnswers(30, false, false, true, emptySet(), 170.0, 70.0), GateResult.BLOCK, false)
+        assertTrue(RamadanSafety.shouldShow(true, type1))
     }
 
     @Test fun contentNamesTheSymptomsAndAnEmergencyNumber() {

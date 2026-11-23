@@ -191,9 +191,7 @@
     <string name="onb_notif_body">我们只发送你选择的提醒：断食结束、里程碑，以及长时间断食期间的安全问候。</string>
     <string name="onb_notif_allow">允许通知</string>
     <string name="onb_offer_title">Shift+ 是可选的</string>
-    <string name="onb_offer_body">21 天 Fasting Shift 引导课程和每周洞察。年度方案可免费试用 7 天。付款前会在 Google Play 中显示价格。可随时在 Google Play 中取消。</string>
     <string name="onb_offer_free_note">计时器、小组件、所有断食方案、历史记录、导出以及所有安全功能永久免费。</string>
-    <string name="onb_offer_trial">开始免费试用</string>
     <string name="onb_offer_free">继续免费使用</string>
 
     <!-- Safety -->
@@ -286,15 +284,11 @@
 
     <!-- Shift+ -->
     <string name="paywall_title">Shift+</string>
-    <string name="paywall_point_program">Fasting Shift 引导课程：共 21 天，每天一节简短课程和一个断食目标。</string>
     <string name="paywall_point_insights">洞察：每周坚持情况、体重与断食时长对照，以及按星期统计的平均断食时长。</string>
     <string name="paywall_free_forever">其他功能依然免费：计时器、小组件、所有断食方案、历史记录、导出以及所有安全功能。</string>
-    <string name="paywall_trial_note">免费 7 天</string>
-    <string name="paywall_terms">年度方案包含 7 天免费试用，我们会在试用结束前 3 天提醒你。订阅会自动续订，直到你在 Google Play 中取消。终身方案为一次性购买。</string>
     <string name="paywall_unavailable">此设备目前无法使用 Shift+。</string>
     <string name="paywall_already">你已拥有 Shift+，谢谢你的支持。</string>
     <string name="program_locked">引导课程是 Shift+ 的一部分。</string>
-    <string name="program_intro">共 21 天，每天一节简短课程和一个温和的断食目标。目标时长均不超过 18 小时。</string>
     <string name="program_start">开始课程</string>
     <string name="program_day">第 %1$d 天 · %2$s</string>
     <string name="program_chapter">摘自《The Fasting Shift》：%1$s</string>

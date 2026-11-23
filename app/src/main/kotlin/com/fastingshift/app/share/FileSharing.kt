@@ -18,10 +18,14 @@ object FileSharing {
 
     /** A file in the shareable cache folder. Shared files older than a day are cleared first. */
     fun newFile(context: Context, name: String): File {
-        val dir = File(context.cacheDir, DIR).apply { mkdirs() }
+        purgeOld(context)
+        return File(File(context.cacheDir, DIR).apply { mkdirs() }, name)
+    }
+
+    /** Deletes shared files older than a day; also run at app start so reports don't linger. */
+    fun purgeOld(context: Context) {
         val cutoff = System.currentTimeMillis() - KEEP_MS
-        dir.listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.delete() }
-        return File(dir, name)
+        File(context.cacheDir, DIR).listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.delete() }
     }
 
     /** Removes every shared file (used when deleting all data). */

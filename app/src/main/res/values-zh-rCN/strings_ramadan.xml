@@ -12,7 +12,6 @@
     <string name="ramadan_minutes">%1$d 分钟</string>
     <string name="ramadan_fajr_at">晨礼 %1$s</string>
     <string name="ramadan_maghrib_at">昏礼 %1$s</string>
-    <string name="ramadan_times_method">时间：%1$s 计算法</string>
     <string name="ramadan_choose_city_body">选择你所在的城市，查看今天的封斋饭和开斋时间。</string>
     <string name="ramadan_choose_city">选择城市</string>
     <string name="a11y_ramadan_progress">今日斋戒已完成 %1$d%%</string>

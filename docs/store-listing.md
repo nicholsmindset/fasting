@@ -34,5 +34,5 @@ See your weekly consistency, average fast by weekday, and optional weight entrie
 Fasting Shift is not medical advice and does not diagnose or treat any condition. Talk to your doctor before fasting, especially if you take medication.
 
 **Screenshots:** generated from the real app at 1233×2466 (within Play's 2:1 limit) in `docs/screenshots/`, light and dark:
-`1-timer`, `2-history` (hours ring and recent fasts), `2b-calendar` (fasts drawn across days), `3-log`, `4-settings`. Regenerate after UI changes with
+`1-timer`, `2-history` (hours ring and recent fasts), `2b-calendar` (fasts drawn across days), `3-log`, `4-settings`, plus light-only `5-muslim-hub` (Hijri date, Sunnah days, start until maghrib), `6-challenge` (challenge progress) and `7-trust-center` (from `MoatsCaptureTest`, copied from /tmp/moats-captures). Regenerate after UI changes with
 `./gradlew :app:testDebugUnitTest -Pscreenshots`. Still to capture on a real phone: widgets on a home screen.

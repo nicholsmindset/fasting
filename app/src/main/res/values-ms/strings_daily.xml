@@ -41,9 +41,7 @@
     <string name="log_trend_latest">Terkini</string>
     <string name="log_trend_high">Tertinggi</string>
     <!-- Shift+ -->
-    <string name="paywall_best_value">Nilai terbaik</string>
     <string name="paywall_continue">Teruskan</string>
-    <string name="paywall_start_trial">Mula percubaan percuma 7 hari</string>
 
     <!-- History -->
     <string name="history_title">Sejarah</string>

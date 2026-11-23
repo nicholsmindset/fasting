@@ -74,4 +74,21 @@ class HealthWriteRetriesTest {
         assertNotEquals(key, RetryKey.forWeight(weight.copy(value = 75.0)))
         assertNotEquals(key, RetryKey.forWeight(weight.copy(at = at.plusSeconds(1))))
     }
+
+    @Test fun glucoseHasItsOwnFingerprintAndSurvivesRecreation() = runBlocking {
+        val glucose = com.fastingshift.domain.model.MetricLog(
+            id = weight.id, at = at, type = com.fastingshift.domain.model.MetricType.GLUCOSE,
+            value = 92.0, unit = com.fastingshift.domain.model.MetricUnit.MG_DL,
+        )
+        val key = RetryKey.forGlucose(glucose)
+        // Same row id in another table never matches.
+        assertNotEquals(RetryKey.forWeight(weight), key)
+        assertNotEquals(key, RetryKey.forGlucose(glucose.copy(value = 93.0)))
+        val prefs = preferences("glucose")
+        HealthWriteRetries(prefs).write(key) { Result.failure(IllegalStateException("offline")) }
+        val again = HealthWriteRetries(prefs)
+        assertEquals(1, again.pendingCount.value)
+        again.forget(key)
+        assertEquals(0, again.pendingCount.value)
+    }
 }

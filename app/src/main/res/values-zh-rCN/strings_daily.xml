@@ -37,9 +37,7 @@
     <string name="log_trend_latest">最新</string>
     <string name="log_trend_high">最高</string>
     <!-- Shift+ -->
-    <string name="paywall_best_value">最划算</string>
     <string name="paywall_continue">继续</string>
-    <string name="paywall_start_trial">开始 7 天免费试用</string>
 
     <!-- History -->
     <string name="history_title">历史</string>

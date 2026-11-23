@@ -102,9 +102,20 @@ class CreateChallengeViewModel @Inject constructor(
 
     fun today(): LocalDate = clock.instant().atZone(ZoneId.systemDefault()).toLocalDate()
 
-    fun create(template: ChallengeTemplate, start: StartOption, name: String, onCreated: (Long) -> Unit) = viewModelScope.launch {
-        val id = challenges.join(template.create(start.date(today()), clock.instant(), name))
-        onCreated(id)
+    private var creating = false
+
+    /** One challenge per tap: a quick double tap must not create two. */
+    fun create(template: ChallengeTemplate, start: StartOption, name: String, onCreated: (Long) -> Unit) {
+        if (creating || allowed.value != true) return
+        creating = true
+        viewModelScope.launch {
+            try {
+                val id = challenges.join(template.create(start.date(today()), clock.instant(), name))
+                onCreated(id)
+            } finally {
+                creating = false
+            }
+        }
     }
 }
 

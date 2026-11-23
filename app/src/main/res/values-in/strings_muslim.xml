@@ -26,7 +26,6 @@
     <string name="muslim_upcoming_footer">Hanya panduan kalender. Tanggal bisa berbeda di tempat Anda, jadi periksa dengan otoritas keagamaan setempat.</string>
     <string name="muslim_open_timer">Buka Timer</string>
     <string name="muslim_invalid_start">Puasa ini tidak bisa dimulai sekarang. Magrib mungkin terlalu dekat, atau waktunya bertumpang tindih dengan puasa yang sudah tercatat.</string>
-    <string name="qada_year">Ramadan %1$d H</string>
     <string name="muslim_offset_none">Tidak ada</string>
     <plurals name="muslim_offset_days">
         <item quantity="other">%d hari</item>

@@ -172,6 +172,10 @@ fun CreateChallengeRoute(onBack: () -> Unit, onCreated: (Long) -> Unit, vm: Crea
             AppCard { Text(stringResource(R.string.challenges_not_allowed), style = MaterialTheme.typography.bodyMedium) }
             return@SecondaryScaffold
         }
+        if (allowed == null) {
+            LoadingBox()
+            return@SecondaryScaffold
+        }
         InsetGroup(header = stringResource(R.string.challenge_choose)) {
             ChallengeTemplate.entries.forEachIndexed { i, t ->
                 if (i > 0) GroupDivider()
@@ -206,7 +210,7 @@ fun CreateChallengeRoute(onBack: () -> Unit, onCreated: (Long) -> Unit, vm: Crea
             TextFieldGroupRow(
                 stringResource(R.string.challenge_name),
                 name,
-                { name = it.take(40) },
+                { name = if (it.codePointCount(0, it.length) <= 40) it else it.substring(0, it.offsetByCodePoints(0, 40)) },
                 placeholder = stringResource(R.string.challenge_name_hint),
                 keyboardType = KeyboardType.Text,
                 valueWidth = 180.dp,

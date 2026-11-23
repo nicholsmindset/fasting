@@ -73,11 +73,24 @@ class HealthConnectManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val logs: LogRepository,
     private val settings: SettingsRepository,
+    private val metrics: com.fastingshift.data.repo.MetricRepository,
 ) {
     private val retries by lazy {
         HealthWriteRetries(context.getSharedPreferences("health_connect_retries", Context.MODE_PRIVATE))
     }
     val pendingWriteCount get() = retries.pendingCount
+
+    /**
+     * Health Connect treats a repeated clientRecordId as an update. Room ids restart at 1 after
+     * "Delete all data" or a key reset, so ids carry a random per-install tag: new readings never
+     * overwrite records written before. The tag lives in app prefs, which both resets clear.
+     */
+    private val installTag by lazy {
+        val prefs = context.getSharedPreferences(ID_PREFS, Context.MODE_PRIVATE)
+        prefs.getString("tag", null) ?: java.util.UUID.randomUUID().toString().take(8).also { prefs.edit().putString("tag", it).apply() }
+    }
+
+    private fun clientId(type: String, id: Long) = "$type-$installTag-$id"
 
     val permissions: Set<String> = setOf(
         HealthPermission.getWritePermission(WeightRecord::class),
@@ -136,7 +149,7 @@ class HealthConnectManager @Inject constructor(
                     time = log.at,
                     zoneOffset = ZoneId.systemDefault().rules.getOffset(log.at),
                     weight = Mass.kilograms(Insights.toKg(log.value, log.unit)),
-                    metadata = Metadata.manualEntry(clientRecordId = "weight-${log.id}"),
+                    metadata = Metadata.manualEntry(clientRecordId = clientId("weight", log.id)),
                 ),
             ),
         )
@@ -158,7 +171,7 @@ class HealthConnectManager @Inject constructor(
                     endTime = log.at.plus(Duration.ofMinutes(1)),
                     endZoneOffset = offset,
                     volume = Volume.milliliters(ml),
-                    metadata = Metadata.manualEntry(clientRecordId = "water-${log.id}"),
+                    metadata = Metadata.manualEntry(clientRecordId = clientId("water", log.id)),
                 ),
             ),
         )
@@ -169,23 +182,37 @@ class HealthConnectManager @Inject constructor(
         if (weight != null && RetryKey.forWeight(weight) == key) return@retry insertWeight(weight)
         val water = logs.getWater(key.rowId)
         if (water != null && RetryKey.forWater(water) == key) return@retry insertWater(water)
+        val glucose = metrics.get(key.rowId)?.takeIf { it.type == MetricType.GLUCOSE }
+        if (glucose != null && RetryKey.forGlucose(glucose) == key) {
+            // Permission withdrawn since: nothing to retry.
+            return@retry if (hasPermissions(glucosePermissions)) insertGlucose(glucose) else Result.success(Unit)
+        }
         // Deleted, or a different row now occupies the ID after restoring a backup.
         Result.success(Unit)
     }
 
     suspend fun forgetWeight(log: WeightLog) = retries.forget(RetryKey.forWeight(log))
     suspend fun forgetWater(log: WaterLog) = retries.forget(RetryKey.forWater(log))
+    suspend fun forgetGlucose(log: MetricLog) = retries.forget(RetryKey.forGlucose(log))
 
-    /** Writes a glucose reading (never a ketone reading: Health Connect has no ketone type). */
-    suspend fun writeGlucose(log: MetricLog): Result<Unit> = guardedResult {
+    /**
+     * Writes a glucose reading (never a ketone reading: Health Connect has no ketone type) when
+     * sync is on and glucose access was granted. A failed write is queued for retry like weight.
+     */
+    suspend fun writeGlucose(log: MetricLog): Result<Unit> {
         require(log.type == MetricType.GLUCOSE) { "only glucose readings go to Health Connect" }
-        val c = client() ?: return@guardedResult
+        if (!settings.current().healthConnectSync || !hasPermissions(glucosePermissions)) return Result.success(Unit)
+        return retries.write(RetryKey.forGlucose(log)) { insertGlucose(log) }
+    }
+
+    private suspend fun insertGlucose(log: MetricLog): Result<Unit> = guardedResult {
+        val c = checkNotNull(client()) { "Health Connect is unavailable" }
         c.insertRecords(
             listOf(
                 BloodGlucoseRecord(
                     time = log.at,
                     zoneOffset = ZoneId.systemDefault().rules.getOffset(log.at),
-                    metadata = Metadata.manualEntry(clientRecordId = "glucose-${log.id}"),
+                    metadata = Metadata.manualEntry(clientRecordId = clientId("glucose", log.id)),
                     level = BloodGlucose.millimolesPerLiter(log.mmolPerL),
                     specimenSource = BloodGlucoseRecord.SPECIMEN_SOURCE_UNKNOWN,
                     relationToMeal = BloodGlucoseRecord.RELATION_TO_MEAL_GENERAL,
@@ -197,7 +224,7 @@ class HealthConnectManager @Inject constructor(
     /** Removes a glucose reading this app wrote, when the user deletes it here. */
     suspend fun deleteGlucose(id: Long): Result<Unit> = guardedResult {
         val c = client() ?: return@guardedResult
-        c.deleteRecords(BloodGlucoseRecord::class, recordIdsList = emptyList(), clientRecordIdsList = listOf("glucose-$id"))
+        c.deleteRecords(BloodGlucoseRecord::class, recordIdsList = emptyList(), clientRecordIdsList = listOf(clientId("glucose", id)))
     }
 
     /** Sleep sessions since [since], from any app; empty if unavailable or not granted. */
@@ -265,10 +292,12 @@ class HealthConnectManager @Inject constructor(
         Result.failure(e)
     }
 
-    private companion object {
-        const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"
-        const val PLAY_STORE_URI = "market://details?id=$PROVIDER_PACKAGE&url=healthconnect%3A%2F%2Fonboarding"
-        const val PAGE_SIZE = 1000
-        const val MAX_PAGES = 50
+    companion object {
+        /** Preferences file holding the per-install record-id tag. */
+        const val ID_PREFS = "health_connect_ids"
+        private const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"
+        private const val PLAY_STORE_URI = "market://details?id=$PROVIDER_PACKAGE&url=healthconnect%3A%2F%2Fonboarding"
+        private const val PAGE_SIZE = 1000
+        private const val MAX_PAGES = 50
     }
 }

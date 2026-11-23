@@ -81,11 +81,14 @@ class MainActivity : ComponentActivity() {
         consumeRoute(intent)
     }
 
+    private fun isNotificationRoute(route: String): Boolean = route == "history" || route == "settings" || Regex("checkin/\\d{1,18}").matches(route)
+
     /** Reads the notification route once, then removes it so it can't open the screen again. */
     private fun consumeRoute(intent: Intent?) {
         if (intent == null) return
         val fromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
-        if (!fromHistory) intent.getStringExtra(Notifications.EXTRA_ROUTE)?.let { deepLink = it }
+        // Any app can start this activity: accept only the routes our own notifications send.
+        if (!fromHistory) intent.getStringExtra(Notifications.EXTRA_ROUTE)?.takeIf(::isNotificationRoute)?.let { deepLink = it }
         intent.removeExtra(Notifications.EXTRA_ROUTE)
         // Challenge invite links (https://fastingshift.com/c/...): opened once, never from Recents.
         if (!fromHistory && intent.action == Intent.ACTION_VIEW) {
@@ -101,7 +104,11 @@ class MainActivity : ComponentActivity() {
         if (resetting) return
         resetting = true
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) { FastingDatabase.resetEncrypted(applicationContext) }
+            withContext(Dispatchers.IO) {
+                FastingDatabase.resetEncrypted(applicationContext)
+                // Row ids restart: new Health Connect ids must not overwrite earlier records.
+                applicationContext.deleteSharedPreferences(com.fastingshift.app.health.HealthConnectManager.ID_PREFS)
+            }
             // The safety screening was in the lost database: ask the questions again (SR-1).
             settings.setOnboardingComplete(false)
             startActivity(

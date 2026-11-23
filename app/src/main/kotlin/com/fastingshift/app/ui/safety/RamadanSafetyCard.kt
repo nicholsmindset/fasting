@@ -46,12 +46,15 @@ import kotlinx.coroutines.flow.stateIn
 
 object RamadanSafety {
     /**
-     * Show the card when Ramadan mode is on and the latest screening is SOFT because of
-     * glucose-lowering medication (insulin or a sulfonylurea), which can cause low blood sugar.
+     * Show the card when Ramadan mode is on and the latest screening shows a risk of low blood
+     * sugar: glucose-lowering medication (insulin or a sulfonylurea) or type 1 diabetes. Type 1
+     * blocks fasting in the app, but someone may still fast Ramadan, so they see it too.
      */
-    fun shouldShow(ramadanEnabled: Boolean, screening: ScreeningRecord?): Boolean =
-        ramadanEnabled && screening != null && screening.gateResult == GateResult.SOFT &&
-            GateReason.GLUCOSE_LOWERING_MEDICATION in ScreeningEvaluator.evaluate(screening.answers).reasons
+    fun shouldShow(ramadanEnabled: Boolean, screening: ScreeningRecord?): Boolean {
+        if (!ramadanEnabled || screening == null) return false
+        val reasons = ScreeningEvaluator.evaluate(screening.answers).reasons
+        return GateReason.GLUCOSE_LOWERING_MEDICATION in reasons || GateReason.TYPE_1_DIABETES in reasons
+    }
 }
 
 @HiltViewModel
