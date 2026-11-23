@@ -1,6 +1,7 @@
 package com.fastingshift.app.ui.trust
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,7 @@ import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -64,7 +66,17 @@ class TrustViewModel @Inject constructor(
     fun deleteEverything() {
         if (deleting.value) return
         deleting.value = true
-        viewModelScope.launch { wiper.wipeAndRestart() }
+        viewModelScope.launch {
+            try {
+                wiper.wipeAndRestart()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                message.value = R.string.wipe_retry_error
+            } finally {
+                deleting.value = false
+            }
+        }
     }
 }
 
@@ -128,7 +140,8 @@ fun TrustScreen(
     deleting: Boolean = false,
 ) {
     var confirm by rememberSaveable { mutableStateOf(false) }
-    SecondaryScaffold(title = stringResource(R.string.trust_title), onBack = onBack, snackbarHostState = snackbar) {
+    BackHandler(enabled = deleting) {}
+    SecondaryScaffold(title = stringResource(R.string.trust_title), onBack = { if (!deleting) onBack() }, snackbarHostState = snackbar) {
         Text(stringResource(R.string.trust_intro), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         AppCard {
             promises.forEach { p -> PromiseRow(p) }
@@ -146,7 +159,7 @@ fun TrustScreen(
                 stringResource(R.string.trust_export),
                 subtitle = stringResource(R.string.trust_export_subtitle),
                 titleColor = MaterialTheme.colorScheme.primary,
-                onClick = onExport,
+                onClick = { if (!deleting) onExport() },
             )
             GroupDivider()
             GroupRow(

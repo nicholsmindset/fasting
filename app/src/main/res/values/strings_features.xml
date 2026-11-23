@@ -125,12 +125,14 @@
     <string name="history_fasted_week">fasted this week</string>
     <string name="history_fasted_month">fasted this month</string>
     <string name="history_fasted_year">fasted this year</string>
-    <string name="history_stat_fasts">Fasts</string>
+    <string name="history_stat_fasts">Fasts started</string>
     <string name="history_stat_average">Average</string>
     <string name="history_stat_planned_days">Planned days done</string>
     <string name="history_recent">Recent fasts</string>
-    <string name="history_average" tools:ignore="PluralsCandidate">Average %1$s · last %2$d fasts</string>
-    <string name="history_ring_a11y" tools:ignore="PluralsCandidate">%1$s %2$s. %3$d of %4$d planned days completed.</string>
+    <plurals name="history_ring_a11y">
+        <item quantity="one">%1$s %2$s. %3$d of %4$d planned day completed.</item>
+        <item quantity="other">%1$s %2$s. %3$d of %4$d planned days completed.</item>
+    </plurals>
     <string name="a11y_fast_bar">Fast, %1$s, %2$s</string>
     <string name="status_active">In progress</string>
     <string name="status_completed">Completed as planned</string>

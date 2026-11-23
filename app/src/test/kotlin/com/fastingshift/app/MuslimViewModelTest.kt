@@ -86,6 +86,28 @@ class MuslimViewModelTest {
         }
     }
 
+    @Test fun hubUsesSelectedCityDateAcrossMidnight() {
+        val original = java.util.TimeZone.getDefault()
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
+            val state = awaitState(vm(Instant.parse("2026-11-22T22:00:00Z")))
+            assertEquals(LocalDate.of(2026, 11, 23), state.today)
+            assertTrue(FastKind.SUNNAH in state.startKinds)
+            val expected = RamadanPlanner.day(city, PrayerMethod.MUIS, state.today).maghrib
+            assertEquals(expected, (state.todayFast as TodayFast.Ready).maghrib)
+        } finally {
+            java.util.TimeZone.setDefault(original)
+        }
+    }
+
+    @Test fun rejectsKindThatIsIneligibleAtStartTime() {
+        screen(GateResult.OK)
+        val vm = vm(morning)
+        vm.start(FastKind.RAMADAN)
+        await { vm.events.value.invalidStart.takeIf { it } }
+        assertNull(runBlocking { fasts.getActive() })
+    }
+
     @Test fun startsAQadaFastThatEndsAtMaghrib() {
         screen(GateResult.OK)
         val vm = vm(morning)

@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -241,17 +243,17 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         }
         section { RecentFastsCard(st.recent, onEditFast) }
         section { CalendarCard(st, vm::shiftMonth, onEditFast) }
-        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
-        section {
-            val nextWeek = History.weekStart(st.today).plusWeeks(1)
-            WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
-        }
         section {
             InsetGroup {
                 GroupRow(stringResource(R.string.history_insights), showChevron = true, onClick = onOpenInsights)
                 GroupDivider()
                 GroupRow(stringResource(R.string.history_challenges), showChevron = true, onClick = onOpenChallenges)
             }
+        }
+        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
+        section {
+            val nextWeek = History.weekStart(st.today).plusWeeks(1)
+            WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
         }
         section {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
@@ -283,7 +285,7 @@ private fun SummaryCard(period: Period, s: PeriodSummary, trackedFrom: LocalDate
         )
         val fastedLabel = stringResource(fastedIn(period))
         val ringA11y = if (s.plannedDays > 0) {
-            stringResource(R.string.history_ring_a11y, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
+            pluralStringResource(R.plurals.history_ring_a11y, s.plannedDays, s.totalFasting.hoursMinutes(), fastedLabel, s.completedDays, s.plannedDays)
         } else {
             stringResource(R.string.history_ring_no_planned, s.totalFasting.hoursMinutes(), fastedLabel)
         }
@@ -305,7 +307,7 @@ private fun SummaryCard(period: Period, s: PeriodSummary, trackedFrom: LocalDate
         )
         if (trackedFrom != null && trackedFrom > s.range.start) {
             Text(
-                stringResource(R.string.history_tracking_since, trackedFrom.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))),
+                stringResource(R.string.history_tracking_since, trackedFrom.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(LocalConfiguration.current.locales[0]))),
                 modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -344,16 +346,14 @@ internal fun totalLabel(d: Duration): String = if (d.toHours() >= 10) hoursLabel
 // ---------- Recent fasts chart ----------
 
 /** Day and month in the order the user's locale expects (19/11 or 11/19). */
-private val shortDate: DateTimeFormatter
-    get() {
-        val locale = Locale.getDefault()
-        val full = java.time.format.DateTimeFormatterBuilder.getLocalizedDateTimePattern(
-            FormatStyle.SHORT, null, java.time.chrono.IsoChronology.INSTANCE, locale,
-        )
-        // Drop the year and the separator next to it: "M/d/yy" -> "M/d", "dd.MM.yy" -> "dd.MM".
-        val dayMonth = full.replace(Regex("[^dM]*y+[^dM]*"), "").ifBlank { "d/M" }
-        return DateTimeFormatter.ofPattern(dayMonth, locale)
-    }
+private fun shortDateFormat(locale: Locale): DateTimeFormatter {
+    val full = java.time.format.DateTimeFormatterBuilder.getLocalizedDateTimePattern(
+        FormatStyle.SHORT, null, java.time.chrono.IsoChronology.INSTANCE, locale,
+    )
+    // Drop the year and the separator next to it: "M/d/yy" -> "M/d", "dd.MM.yy" -> "dd.MM".
+    val dayMonth = full.replace(Regex("[^dM]*y+[^dM]*"), "").ifBlank { "d/M" }
+    return DateTimeFormatter.ofPattern(dayMonth, locale)
+}
 
 @Composable
 private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
@@ -366,7 +366,9 @@ private fun RecentFastsCard(recent: RecentFasts, onEditFast: (Long) -> Unit) {
             Text(stringResource(R.string.history_chart_average, it.hoursMinutes()), style = MaterialTheme.typography.headlineSmall)
         }
         val zone = ZoneId.systemDefault()
-        val dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        val locale = LocalConfiguration.current.locales[0]
+        val shortDate = remember(locale) { shortDateFormat(locale) }
+        val dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
         val first = recent.bars.first().fast.startAt.atZone(zone).format(dateFormat)
         val last = recent.bars.last().fast.startAt.atZone(zone).format(dateFormat)
         Text(stringResource(R.string.history_chart_range, first, last), style = MaterialTheme.typography.bodySmall)
@@ -430,14 +432,16 @@ private fun Legend(color: androidx.compose.ui.graphics.Color, label: String) {
 // ---------- Calendar with fasts drawn across days ----------
 
 @Composable
-private fun CalendarCard(st: HistoryState, onShift: (Long) -> Unit, onEditFast: (Long) -> Unit) {
+internal fun CalendarCard(st: HistoryState, onShift: (Long) -> Unit, onEditFast: (Long) -> Unit) {
+    val locale = LocalConfiguration.current.locales[0]
+    val dayFormat = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale) }
     SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val prev = stringResource(R.string.a11y_prev_month)
             val next = stringResource(R.string.a11y_next_month)
             TextButton(onClick = { onShift(-1) }) { Text("‹", Modifier.semantics { contentDescription = prev }) }
             Text(
-                "${st.month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${st.month.year}",
+                "${st.month.month.getDisplayName(TextStyle.FULL, locale)} ${st.month.year}",
                 style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
             )
             Text(
@@ -450,20 +454,18 @@ private fun CalendarCard(st: HistoryState, onShift: (Long) -> Unit, onEditFast: 
         Row(Modifier.fillMaxWidth()) {
             java.time.DayOfWeek.entries.forEach { d ->
                 Text(
-                    d.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                    d.getDisplayName(TextStyle.NARROW, locale),
                     Modifier.weight(1f), textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        st.weeks.forEach { row -> WeekRowView(row, st.month, st.today, onEditFast) }
+        st.weeks.forEach { row -> WeekRowView(row, st.month, st.today, dayFormat, onEditFast) }
     }
 }
 
-private val longDate = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-
 @Composable
-private fun WeekRowView(row: WeekRow, month: YearMonth, today: LocalDate, onEditFast: (Long) -> Unit) {
+private fun WeekRowView(row: WeekRow, month: YearMonth, today: LocalDate, dayFormat: DateTimeFormatter, onEditFast: (Long) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(Modifier.fillMaxWidth()) {
             (0L until 7L).map { row.weekStart.plusDays(it) }.forEach { day ->
@@ -471,7 +473,7 @@ private fun WeekRowView(row: WeekRow, month: YearMonth, today: LocalDate, onEdit
                 val isToday = day == today
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (inMonth) {
-                        val label = day.format(longDate)
+                        val label = day.format(dayFormat)
                         Box(
                             Modifier.size(28.dp).clip(CircleShape)
                                 .background(if (isToday) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent)
@@ -549,7 +551,7 @@ private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit)
             if (!first) GroupDivider()
             GroupRow(
                 title = "${Presets.byId(f.protocolId)?.name ?: f.protocolId} · ${length.hoursMinutes()}",
-                subtitle = listOfNotNull(f.startAt.formatDateTime(), f.note).joinToString(" · "),
+                subtitle = listOfNotNull(f.startAt.formatDateTime(LocalConfiguration.current.locales[0]), f.note).joinToString(" · "),
                 showChevron = true,
                 onClick = onClick,
                 leading = {

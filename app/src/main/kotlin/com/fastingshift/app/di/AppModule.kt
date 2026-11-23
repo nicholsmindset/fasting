@@ -44,6 +44,14 @@ object DatabaseModule {
 
 @Module
 @InstallIn(SingletonComponent::class)
+object ClockModule {
+    /** UTC clock. Display code converts to the device's current zone at render time. */
+    @Provides @Singleton
+    fun clock(): Clock = Clock.systemUTC()
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
 object AppModule {
     @Provides @Singleton
     fun fastRepository(db: FastingDatabase): FastRepository = RoomFastRepository(db.fastDao())
@@ -81,10 +89,6 @@ object AppModule {
 
     @Provides @Singleton
     fun challengeRepository(db: FastingDatabase): com.fastingshift.data.repo.ChallengeRepository = com.fastingshift.data.repo.ChallengeRepository(db.challengeDao())
-
-    /** UTC clock. Display code converts to the device's current zone at render time. */
-    @Provides @Singleton
-    fun clock(): Clock = Clock.systemUTC()
 
     @Provides @Singleton
     fun fastService(fasts: FastRepository, screening: ScreeningRepository, clock: Clock): FastService =

@@ -157,8 +157,19 @@ class FeatureLogicTest {
         assertNotNull(CsvExport.files(b)["symptom_checkins.csv"])
     }
 
-    @Test fun `helplines default to Singapore`() {
-        assertEquals("1767", Helplines.forRegion(null).first().phone)
+    @Test fun `support numbers belong to the selected country`() {
+        assertEquals(listOf("1767", "1771"), Helplines.forRegion("sg").map { it.phone })
+        assertEquals("+60 3-7627 2929", Helplines.forRegion("MY").single().phone)
+        val indonesia = Helplines.forRegion("ID").single()
+        assertEquals("119", indonesia.phone)
+        assertEquals(8, indonesia.extension)
+        assertEquals("12356", Helplines.forRegion("cn").single().phone)
+        assertTrue(Helplines.forRegion("ZZ").isEmpty())
+        assertTrue(Helplines.forRegion(null).isEmpty())
         assertEquals("988", Helplines.forRegion("us").first().phone)
+        assertEquals(
+            listOf("0808 801 0677", "0808 801 0432", "0808 801 0433", "0808 801 0434"),
+            Helplines.forRegion("GB").map { it.phone },
+        )
     }
 }

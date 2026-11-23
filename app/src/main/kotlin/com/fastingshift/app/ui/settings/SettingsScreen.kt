@@ -209,7 +209,25 @@ fun SettingsRoute(
         ) {
             LargeTitle(stringResource(R.string.settings_title), Modifier.padding(horizontal = 4.dp))
 
-            PlanGroup(ent, vm, onOpenPaywall, onBookCode = { sheet = SettingsSheet.BOOK_CODE })
+            InsetGroup(header = stringResource(R.string.settings_fasting)) {
+                GroupRow(stringResource(R.string.settings_eating_window_title), subtitle = stringResource(R.string.settings_eating_window_subtitle), value = stringResource(R.string.settings_hours_value, s.eatingWindowHours)) {
+                    StepperControl(
+                        onDecrease = { vm.set { setEatingWindowHours(s.eatingWindowHours - 1) } },
+                        onIncrease = { vm.set { setEatingWindowHours(s.eatingWindowHours + 1) } },
+                        canDecrease = s.eatingWindowHours > 1,
+                        canIncrease = s.eatingWindowHours < 23,
+                    )
+                }
+                GroupDivider()
+                GroupRow(
+                    stringResource(R.string.settings_schedules_title),
+                    subtitle = stringResource(R.string.settings_schedules_subtitle),
+                    showChevron = true,
+                    onClick = onOpenSchedules,
+                )
+                GroupDivider()
+                GroupRow(stringResource(R.string.settings_reliability), showChevron = true, onClick = onOpenReliability)
+            }
 
             InsetGroup(header = stringResource(R.string.settings_reminders), footer = stringResource(R.string.settings_reminders_footer)) {
                 SwitchGroupRow(stringResource(R.string.settings_end_alert), s.reminders.fastEndEnabled, { v -> vm.set { setFastEndReminder(v) } })
@@ -250,39 +268,6 @@ fun SettingsRoute(
                     showChevron = true,
                     onClick = { sheet = SettingsSheet.WATER },
                 )
-            }
-
-            RamadanGroup(
-                s = s,
-                preview = ramadan,
-                onToggle = { on ->
-                    vm.set { setRamadan(on) }
-                    if (on && ramadan == null) sheet = SettingsSheet.CITY
-                },
-                onCity = { sheet = SettingsSheet.CITY },
-                onMethod = { sheet = SettingsSheet.METHOD },
-            )
-
-            SunnahSettingsGroup(s, vm, onOpenMuslimHub)
-
-            InsetGroup(header = stringResource(R.string.settings_fasting)) {
-                GroupRow(stringResource(R.string.settings_eating_window_title), subtitle = stringResource(R.string.settings_eating_window_subtitle), value = stringResource(R.string.settings_hours_value, s.eatingWindowHours)) {
-                    StepperControl(
-                        onDecrease = { vm.set { setEatingWindowHours(s.eatingWindowHours - 1) } },
-                        onIncrease = { vm.set { setEatingWindowHours(s.eatingWindowHours + 1) } },
-                        canDecrease = s.eatingWindowHours > 1,
-                        canIncrease = s.eatingWindowHours < 23,
-                    )
-                }
-                GroupDivider()
-                GroupRow(
-                    stringResource(R.string.settings_schedules_title),
-                    subtitle = stringResource(R.string.settings_schedules_subtitle),
-                    showChevron = true,
-                    onClick = onOpenSchedules,
-                )
-                GroupDivider()
-                GroupRow(stringResource(R.string.settings_reliability), showChevron = true, onClick = onOpenReliability)
             }
 
             InsetGroup(header = stringResource(R.string.settings_privacy), footer = stringResource(R.string.settings_data_footer)) {
@@ -345,6 +330,21 @@ fun SettingsRoute(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
+            RamadanGroup(
+                s = s,
+                preview = ramadan,
+                onToggle = { on ->
+                    vm.set { setRamadan(on) }
+                    if (on && ramadan == null) sheet = SettingsSheet.CITY
+                },
+                onCity = { sheet = SettingsSheet.CITY },
+                onMethod = { sheet = SettingsSheet.METHOD },
+            )
+
+            SunnahSettingsGroup(s, vm, onOpenMuslimHub)
+
+            PlanGroup(ent, vm, onOpenPaywall, onBookCode = { sheet = SettingsSheet.BOOK_CODE })
+
             Spacer(Modifier.height(24.dp))
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))

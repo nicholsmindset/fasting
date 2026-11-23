@@ -127,13 +127,19 @@
     <string name="challenges_open_link">Open link</string>
     <string name="challenges_link_invalid">That doesn\'t look like a challenge link.</string>
     <string name="challenges_not_allowed">Challenges are available once the safety questions show fasting is suitable for you.</string>
-    <string name="challenge_progress" tools:ignore="PluralsCandidate">%1$d of %2$d days</string>
+    <plurals name="challenge_progress">
+        <item quantity="one">%1$d of %2$d day</item>
+        <item quantity="other">%1$d of %2$d days</item>
+    </plurals>
     <string name="challenge_dates">%1$s – %2$s</string>
     <string name="challenge_status_upcoming">Starts %1$s</string>
     <string name="challenge_status_active">Ends %1$s</string>
     <string name="challenge_status_finished">Finished</string>
     <string name="challenge_status_left">Left</string>
-    <string name="challenge_daily_title" tools:ignore="PluralsCandidate">%1$s for %2$d days</string>
+    <plurals name="challenge_daily_title">
+        <item quantity="one">%1$s for %2$d day</item>
+        <item quantity="other">%1$s for %2$d days</item>
+    </plurals>
     <string name="challenge_monthu_title">Monday and Thursday fasts</string>
     <string name="challenge_white_title">White days (Ayyamul Bidh)</string>
     <string name="challenge_tmpl_16_8">Fast 16 hours a day for one week.</string>
@@ -151,12 +157,16 @@
     <string name="challenge_create">Start challenge</string>
     <string name="challenge_create_note">Your safety settings still apply to every fast. Rest whenever you need to.</string>
     <string name="challenge_how_daily" tools:ignore="PluralsCandidate">A day counts when a fast of at least %1$d hours starts that day.</string>
-    <string name="challenge_how_sunnah" tools:ignore="PluralsCandidate">A day counts when a fast of at least %1$d hours starts that day and is completed as planned. Eid and the days of tashreeq are never fasting days.</string>
-    <string name="challenge_grid_a11y" tools:ignore="PluralsCandidate">%1$d of %2$d fasting days done</string>
+    <string name="challenge_how_sunnah" tools:ignore="PluralsCandidate">On a scheduled day, a Ramadan, qada or Sunnah fast counts when it starts that day and finishes as planned. A regular fast that starts that day also counts if its plan is at least %1$d hours and it finishes as planned. Eid and the days of tashreeq are excluded.</string>
+    <plurals name="challenge_grid_a11y">
+        <item quantity="one">%1$d of %2$d fasting day done</item>
+        <item quantity="other">%1$d of %2$d fasting days done</item>
+    </plurals>
     <string name="challenge_legend_done">Done</string>
     <string name="challenge_legend_ahead">Ahead</string>
     <string name="challenge_legend_rest">Not a fasting day</string>
-    <string name="challenge_invite">Invite and share progress</string>
+    <string name="challenge_invite">Invite someone</string>
+    <string name="challenge_share_progress">Share my progress</string>
     <string name="challenge_leave">Leave challenge</string>
     <string name="challenge_leave_confirm_title">Leave this challenge?</string>
     <string name="challenge_leave_confirm_body">Your fasts stay in your history. You can join again with the link anytime.</string>

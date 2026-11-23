@@ -124,13 +124,17 @@
     <string name="challenges_open_link">打开链接</string>
     <string name="challenges_link_invalid">这看起来不是挑战链接。</string>
     <string name="challenges_not_allowed">当安全问答显示断食适合你时，即可使用挑战。</string>
-    <string name="challenge_progress">%2$d 天中完成 %1$d 天</string>
+    <plurals name="challenge_progress">
+        <item quantity="other">%2$d 天中完成 %1$d 天</item>
+    </plurals>
     <string name="challenge_dates">%1$s – %2$s</string>
     <string name="challenge_status_upcoming">%1$s 开始</string>
     <string name="challenge_status_active">%1$s 结束</string>
     <string name="challenge_status_finished">已完成</string>
     <string name="challenge_status_left">已退出</string>
-    <string name="challenge_daily_title">%1$s，持续 %2$d 天</string>
+    <plurals name="challenge_daily_title">
+        <item quantity="other">%1$s，持续 %2$d 天</item>
+    </plurals>
     <string name="challenge_monthu_title">周一和周四斋戒</string>
     <string name="challenge_white_title">白日斋（Ayyamul Bidh）</string>
     <string name="challenge_tmpl_16_8">连续一周，每天断食 16 小时。</string>
@@ -148,12 +152,15 @@
     <string name="challenge_create">开始挑战</string>
     <string name="challenge_create_note">你的安全设置仍适用于每次断食。需要时随时休息。</string>
     <string name="challenge_how_daily">当天开始的断食达到至少 %1$d 小时，这一天即算完成。</string>
-    <string name="challenge_how_sunnah">当天开始、至少 %1$d 小时并按计划完成的斋戒，这一天即算完成。开斋节和晒肉日不是斋戒日。</string>
-    <string name="challenge_grid_a11y">%2$d 个斋戒日中已完成 %1$d 个</string>
+    <string name="challenge_how_sunnah">在计划日开始并按计划完成的斋月斋戒、补斋或圣行斋戒均计入。当日开始的普通禁食若计划时长至少为 %1$d 小时且按计划完成，也计入。开斋节、宰牲节和晒肉日除外。</string>
+    <plurals name="challenge_grid_a11y">
+        <item quantity="other">%2$d 个斋戒日中已完成 %1$d 个</item>
+    </plurals>
     <string name="challenge_legend_done">已完成</string>
     <string name="challenge_legend_ahead">未到</string>
     <string name="challenge_legend_rest">非断食日</string>
-    <string name="challenge_invite">邀请并分享进度</string>
+    <string name="challenge_invite">邀请他人</string>
+    <string name="challenge_share_progress">分享我的进度</string>
     <string name="challenge_leave">退出挑战</string>
     <string name="challenge_leave_confirm_title">退出这个挑战？</string>
     <string name="challenge_leave_confirm_body">你的断食记录会保留在历史中。之后可随时通过链接重新加入。</string>

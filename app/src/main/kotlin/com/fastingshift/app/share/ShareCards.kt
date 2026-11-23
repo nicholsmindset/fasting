@@ -46,6 +46,9 @@ object ShareCards {
     const val WIDTH = 1080
     const val HEIGHT = 1350
     private const val PAD = 96f
+    private const val TRACK_TOP = HEIGHT - 360f
+    private const val TRACK_HEIGHT = 28f
+    internal const val INVITE_FOOTER_HEIGHT = HEIGHT - PAD - (TRACK_TOP + TRACK_HEIGHT + 24f)
 
     private val bgTop = Color.rgb(9, 79, 73)
     private val bgBottom = Color.rgb(16, 122, 112)
@@ -92,7 +95,7 @@ object ShareCards {
             is ShareCard.ChallengeProgress -> {
                 hero(c, card.title, res.getString(R.string.share_challenge_days, card.done, card.required), res.getString(R.string.share_challenge_days_label))
                 progressBar(c, if (card.required == 0) 0f else card.done.toFloat() / card.required)
-                footerLine(c, res.getString(R.string.share_challenge_join, card.link))
+                inviteFooter(res, card.link)?.let { footer -> draw(c, footer, PAD, HEIGHT - PAD - footer.height) }
             }
         }
         return bmp
@@ -176,13 +179,26 @@ object ShareCards {
     }
 
     private fun progressBar(c: Canvas, fraction: Float) {
-        val top = HEIGHT - 360f
-        val track = RectF(PAD, top, WIDTH - PAD, top + 28f)
+        val track = RectF(PAD, TRACK_TOP, WIDTH - PAD, TRACK_TOP + TRACK_HEIGHT)
         c.drawRoundRect(track, 14f, 14f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = faint })
         if (fraction > 0f) {
-            val fill = RectF(PAD, top, PAD + (WIDTH - 2 * PAD) * fraction.coerceIn(0f, 1f), top + 28f)
+            val fill = RectF(track.left, track.top, PAD + track.width() * fraction.coerceIn(0f, 1f), track.bottom)
             c.drawRoundRect(fill, 14f, 14f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = white })
         }
+    }
+
+    /** Fit the complete invite below the progress bar. An ellipsis or a hyphen changes the code. */
+    internal fun inviteFooter(res: Resources, link: String): StaticLayout? {
+        val text = res.getString(R.string.share_challenge_join, link)
+        val width = (WIDTH - 2 * PAD).toInt()
+        for (size in 40 downTo 16 step 2) {
+            val footer = StaticLayout.Builder.obtain(text, 0, text.length, paint(size.toFloat(), soft), width)
+                .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
+                .build()
+            if (footer.height <= INVITE_FOOTER_HEIGHT) return footer
+        }
+        // The localized, generated links fit. The share text still carries any oversized input.
+        return null
     }
 
     private fun footerLine(c: Canvas, text: String) {

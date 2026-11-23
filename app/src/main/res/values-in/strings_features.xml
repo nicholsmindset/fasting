@@ -120,12 +120,13 @@
     <string name="history_fasted_week">berpuasa minggu ini</string>
     <string name="history_fasted_month">berpuasa bulan ini</string>
     <string name="history_fasted_year">berpuasa tahun ini</string>
-    <string name="history_stat_fasts">Puasa</string>
+    <string name="history_stat_fasts">Puasa dimulai</string>
     <string name="history_stat_average">Rata-rata</string>
     <string name="history_stat_planned_days">Hari terencana selesai</string>
     <string name="history_recent">Puasa terakhir</string>
-    <string name="history_average">Rata-rata %1$s · %2$d puasa terakhir</string>
-    <string name="history_ring_a11y">%1$s %2$s. %3$d dari %4$d hari terencana selesai.</string>
+    <plurals name="history_ring_a11y">
+        <item quantity="other">%1$s %2$s. %3$d dari %4$d hari terencana selesai.</item>
+    </plurals>
     <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
     <string name="status_active">Berlangsung</string>
     <string name="status_completed">Selesai sesuai rencana</string>
