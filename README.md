@@ -19,6 +19,8 @@ Languages: English, Bahasa Melayu, Bahasa Indonesia, Simplified Chinese (per-app
 picker on Android 13+). The three translations are drafts and need a native-speaker review,
 especially the safety and refeeding copy.
 
+The beta screenshot pack contains 28 captures, including light and dark History and Settings, private challenges, health screens, share cards, a doctor-report page and Malay examples. [Reviewed store screenshots](docs/screenshots/) · [Beta build and CI checks](https://github.com/nicholsmindset/fasting/pull/8/checks).
+
 ### Physical device checks
 
 - Open a doctor report in a PDF viewer and check that hidden weight stays hidden when sharing.

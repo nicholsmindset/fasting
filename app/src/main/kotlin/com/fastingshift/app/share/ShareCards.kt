@@ -193,7 +193,6 @@ object ShareCards {
         val width = (WIDTH - 2 * PAD).toInt()
         for (size in 40 downTo 16 step 2) {
             val footer = StaticLayout.Builder.obtain(text, 0, text.length, paint(size.toFloat(), soft), width)
-                .setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE)
                 .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE)
                 .build()
             if (footer.height <= INVITE_FOOTER_HEIGHT) return footer
