@@ -32,7 +32,7 @@ import com.fastingshift.app.R
  * followed by restoring an exported backup file.
  */
 @Composable
-fun KeyLostScreen(resetting: Boolean, onStartFresh: () -> Unit) {
+fun KeyLostScreen(resetting: Boolean, onStartFresh: () -> Unit, resetFailed: Boolean = false) {
     var confirm by rememberSaveable { mutableStateOf(false) }
     Surface(Modifier.fillMaxSize()) {
         Column(
@@ -47,6 +47,7 @@ fun KeyLostScreen(resetting: Boolean, onStartFresh: () -> Unit) {
             Text(stringResource(R.string.recovery_body))
             Text(stringResource(R.string.recovery_fresh_body))
             Text(stringResource(R.string.recovery_backup_note), style = MaterialTheme.typography.bodyMedium)
+            if (resetFailed) Text(stringResource(R.string.wipe_retry_error), color = MaterialTheme.colorScheme.error)
             Button(onClick = { confirm = true }, enabled = !resetting, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.recovery_start_fresh))
             }

@@ -28,11 +28,6 @@ object FileSharing {
         File(context.cacheDir, DIR).listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.delete() }
     }
 
-    /** Removes every shared file (used when deleting all data). */
-    fun clear(context: Context) {
-        File(context.cacheDir, DIR).deleteRecursively()
-    }
-
     private const val KEEP_MS = 24L * 60 * 60 * 1000
 
     fun intent(context: Context, file: File, mime: String, text: String? = null, subject: String? = null): Intent {

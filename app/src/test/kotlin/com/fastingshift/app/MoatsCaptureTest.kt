@@ -3,6 +3,7 @@ package com.fastingshift.app
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -69,6 +70,7 @@ internal val moatsZone: ZoneId = ZoneId.of("Asia/Singapore")
 internal val moatsNow: Instant = Instant.parse("2026-11-23T06:00:00Z")
 
 /** Real navigation and Room-backed screens, with a fixed clock and a synthetic local history. */
+@OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
 @UninstallModules(ClockModule::class)
 @RunWith(AndroidJUnit4::class)
@@ -206,6 +208,7 @@ class MoatsCaptureTest {
         requireNotNull(scenario).close()
         val invite = ChallengeInvite(ChallengeType.SUNNAH_MON_THU, null, today.plusDays(1), 28, "Community Mondays")
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(ChallengeLinks.link(invite))).setClass(app, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         scenario = ActivityScenario.launch(intent)
         waitFor("Community Mondays")
         compose.onNodeWithTag("join_card").assertExists()
