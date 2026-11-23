@@ -1,4 +1,4 @@
-name: Inspect generated moats screenshots
+name: Inspect synthetic screenshot assertion
 on:
   push:
     branches: [codex/moats-capture-review]
@@ -8,36 +8,20 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        group:
-          - "history/2-history-light.png history/2-history-dark.png"
-          - "history/2a-recent-light.png history/2a-recent-dark.png"
-          - "history/2b-calendar-light.png history/2b-calendar-dark.png"
-          - "settings/4-settings-light.png settings/4-settings-dark.png"
-          - "en/hub-1.png en/hub-2.png ms/hub-1.png"
-          - "en/challenge-detail.png en/challenges.png en/challenge-join.png"
-          - "en/trust-1.png en/trust-2.png en/settings-report.png"
-          - "en/settings-sunnah.png ms/settings-sunnah.png en/ramadan-safety.png"
-          - "en/history-challenges-row.png en/history-kinds.png en/log-metrics.png en/body-signals.png"
-          - "en/share-fast.png en/share-week.png en/share-challenge.png en/doctor-report-page-1.png"
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: fasting-shift-moats-screens
-          path: preview
+          name: reports
           github-token: ${{ github.token }}
-          run-id: 45174016545
-      - name: Verify and read synthetic captures
-        env:
-          CAPTURE_GROUP: ${{ matrix.group }}
+          run-id: 45177706090
+          path: reports
+      - shell: python
         run: |
-          python -c 'import PIL' || python -m pip install Pillow
-          args=()
-          for image in $CAPTURE_GROUP; do args+=(--only "$image"); done
-          python inspect.py preview "${args[@]}"
+          from pathlib import Path
+          from html import unescape
+          import re
+          for p in Path('reports').rglob('*MoatsCaptureTest*.html'):
+              s = p.read_text()
+              for block in re.findall(r'<pre[^>]*>(.*?)</pre>', s, re.S):
+                  text = unescape(re.sub('<[^>]*>', '', block))
+                  print(text[:4200])
