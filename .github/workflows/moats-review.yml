@@ -1,27 +1,36 @@
-name: Inspect synthetic screenshot assertion
+name: Inspect My Week captures
 on:
   push:
     branches: [codex/moats-capture-review]
 permissions:
-  contents: read
   actions: read
+  contents: read
 jobs:
-  inspect:
+  review:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: reports
+          name: fasting-shift-moats-screens
           github-token: ${{ github.token }}
-          run-id: 45177706090
-          path: reports
-      - shell: python
+          run-id: 45189751094
+          path: screens
+      - name: Render synthetic planner captures
         run: |
+          python -c 'import PIL' || python -m pip install Pillow
+          python - <<'PY'
           from pathlib import Path
-          from html import unescape
-          import re
-          for p in Path('reports').rglob('*MoatsCaptureTest*.html'):
-              s = p.read_text()
-              for block in re.findall(r'<pre[^>]*>(.*?)</pre>', s, re.S):
-                  text = unescape(re.sub('<[^>]*>', '', block))
-                  print(text[:4200])
+          from PIL import Image
+          import io, base64
+          imgs=[]
+          for name in ('my-week','my-week-one-day'):
+              im=Image.open(Path('screens/en') / (name+'.png')).convert('RGB')
+              im.thumbnail((390,820))
+              imgs.append(im)
+          out=Image.new('RGB',(sum(im.width for im in imgs),max(im.height for im in imgs)),'white')
+          out.paste(imgs[0],(0,0));out.paste(imgs[1],(imgs[0].width,0))
+          buffer=io.BytesIO();out.save(buffer,'JPEG',quality=81)
+          data=buffer.getvalue()
+          for i in range(0,len(data),1800):
+              print('WKPIX|'+base64.b64encode(data[i:i+1800]).decode())
+          PY
