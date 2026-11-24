@@ -1,14 +1,7 @@
-name: Locked-screen start reminder
+name: Inspect locked reminder on Android 15
 on:
-  pull_request:
-    paths:
-      - 'app/**'
-      - 'core/**'
-      - 'scripts/beta-upgrade-smoke.py'
-      - 'scripts/locked-start-reminder.py'
-      - '.github/workflows/locked-start-reminder.yml'
-  workflow_dispatch:
-
+  push:
+    branches: [codex/fasting-locked-delivery-qa]
 permissions:
   contents: read
 
@@ -32,8 +25,19 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache/restore@v4
+        id: staged
+        with:
+          path: app/build/outputs/apk/staging/app-staging.apk
+          key: locked-check-staging-5372d1547f12d4d26ef175d5eaf554bae2e845d4
       - name: Build the installable staging app
+        if: steps.staged.outputs.cache-hit != 'true'
         run: ./gradlew :app:assembleStaging
+      - uses: actions/cache/save@v4
+        if: steps.staged.outputs.cache-hit != 'true'
+        with:
+          path: app/build/outputs/apk/staging/app-staging.apk
+          key: locked-check-staging-5372d1547f12d4d26ef175d5eaf554bae2e845d4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
