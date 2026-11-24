@@ -2,6 +2,8 @@
 
 The question for this beta is whether people can manage a real change of plan on their phone, then find enough value in the four-week review to choose Shift+. Use fictional fasting records for observed sessions. Testers can use the timer, edit history, adjust My week and export records for free.
 
+[Product roadmap and latest verified build](product-roadmap.md)
+
 ## Ready to try in the candidate
 
 | Area | What to look for |
