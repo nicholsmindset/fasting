@@ -25,15 +25,22 @@ import com.fastingshift.domain.history.ScheduleFit
 import com.fastingshift.domain.insights.PlanCoverage
 import com.fastingshift.domain.insights.ReviewWeek
 import com.fastingshift.domain.insights.WeeklyConsistency
+import com.fastingshift.app.ui.design.AppCard
+import com.fastingshift.domain.insights.ScheduleReview
+import com.fastingshift.domain.schedule.DayOverride
+import java.time.LocalTime
+import java.time.format.TextStyle
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /** Fixed fictional records; the preview never reads a person's history, schedule or reflections. */
 internal val reviewExample = listOf(
     ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 22), 3, 4), PlanCoverage.PLANNED,
-        movedDates = 1, skippedDates = 1, reflection = ScheduleFit.PARTLY),
+        changes = mapOf(LocalDate.of(2026, 6, 23) to DayOverride(LocalTime.of(21, 30)),
+            LocalDate.of(2026, 6, 26) to DayOverride()), reflection = ScheduleFit.PARTLY),
     ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 15), 0, 0), PlanCoverage.WEEK_OFF),
-    ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 8), 4, 4), PlanCoverage.PLANNED, reflection = ScheduleFit.YES),
+    ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 8), 4, 4), PlanCoverage.PLANNED,
+        changes = mapOf(LocalDate.of(2026, 6, 9) to DayOverride(LocalTime.of(21, 0))), reflection = ScheduleFit.YES),
     ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 1), 2, 3), PlanCoverage.PLANNED),
 )
 
@@ -48,6 +55,27 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
         Text(stringResource(R.string.review_title), Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(if (example) R.string.review_example_label else R.string.review_period),
             style = MaterialTheme.typography.bodyMedium, color = if (example) MaterialTheme.colorScheme.primary else secondary)
+        val completed = weeks.sumOf { it.consistency.completedDays }
+        val planned = weeks.sumOf { it.consistency.plannedDays }
+        AppCard {
+            if (planned > 0) {
+                Text(pluralStringResource(R.plurals.review_days_done, planned, completed, planned),
+                    style = MaterialTheme.typography.headlineSmall.merge(TabularNumbers))
+            } else {
+                Text(stringResource(R.string.plan_review_empty), style = MaterialTheme.typography.titleMedium)
+            }
+            val repeated = remember(weeks) { ScheduleReview.repeatedChanges(weeks) }
+            if (repeated.isNotEmpty()) {
+                Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.plan_repeat_heading), style = MaterialTheme.typography.labelLarge, color = secondary)
+                    repeated.forEach { (weekday, count) ->
+                        Text(stringResource(R.string.plan_repeat_count, weekday.getDisplayName(TextStyle.FULL, locale), count),
+                            style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+            SecondaryButton(stringResource(R.string.review_open_week), onClick = onOpenWeek)
+        }
         weeks.forEach { week ->
             val counts = week.consistency
             val monday = counts.weekStart
@@ -82,6 +110,5 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
                 }
             }
         }
-        SecondaryButton(stringResource(R.string.review_open_week), onClick = onOpenWeek)
     }
 }

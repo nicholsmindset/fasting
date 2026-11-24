@@ -335,9 +335,15 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
     if (window != null) {
         EatingWindowReadout(window, state.now)
     }
+    val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
     SelectedFast(state.selected, onChoose = { choosing = true })
+    if (selectedEnabled) {
+        val format = rememberWeekFormat()
+        val target = (state.startAt ?: state.now).plus(Duration.ofHours(state.selected.fastHours.toLong()))
+        Text(stringResource(R.string.plan_target_time, format.dateTime.format(target.atZone(ZoneId.systemDefault()))),
+            style = MaterialTheme.typography.titleMedium.merge(TabularNumbers))
+    }
     Column(Modifier.fillMaxWidth()) {
-        val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
         PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
         StartTimeRow(state, actions.onStartAt)
     }

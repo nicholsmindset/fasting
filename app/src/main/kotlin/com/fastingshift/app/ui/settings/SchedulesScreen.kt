@@ -3,7 +3,11 @@ package com.fastingshift.app.ui.settings
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.unit.dp
+import com.fastingshift.app.ui.ramadan.GroupedSheet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -133,9 +137,10 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
         if (day < state.today || original.isEmpty()) {
             LaunchedEffect(day, state.today) { dateText = null }
         } else {
-            DateEditor(day, state.settings.planHistory.dayOverrides[day]?.startTime
-                ?: original.first().second.atZone(state.zone).toLocalTime(), state.today, state.now.atZone(state.zone).toLocalTime(),
-                state.settings.planHistory.dayOverrides.containsKey(day), format, busy,
+            val override = state.settings.planHistory.dayOverrides[day]
+            val usualTimes = original.map { it.second.atZone(state.zone).toLocalTime() }
+            val currentTimes = state.starts(day).map { it.second.atZone(state.zone).toLocalTime() }
+            DateEditor(day, usualTimes, currentTimes, override, state.today, state.now.atZone(state.zone).toLocalTime(), format, busy,
                 onChange = { vm.changeDate(day, it) { dateText = null } }, onClose = { dateText = null })
         }
     }
@@ -171,26 +176,37 @@ internal fun WeekPreview(state: PlannerState, format: WeekFormat, notifications:
 }
 
 @Composable
-private fun DateEditor(day: LocalDate, time: LocalTime, today: LocalDate, now: LocalTime, changed: Boolean,
-    format: WeekFormat, busy: Boolean, onChange: (DayOverride?) -> Unit, onClose: () -> Unit) {
+private fun DateEditor(day: LocalDate, usualTimes: List<LocalTime>, currentTimes: List<LocalTime>, override: DayOverride?,
+    today: LocalDate, now: LocalTime, format: WeekFormat, busy: Boolean, onChange: (DayOverride?) -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     val pickerTheme = pickerDialogTheme()
     var invalid by rememberSaveable(day) { mutableStateOf(false) }
-    AlertDialog(onDismissRequest = onClose, title = { Text(format.date.format(day)) },
-        text = {
-            Column {
-                Text(stringResource(R.string.week_date_hint))
-                TextButton(enabled = !busy, onClick = {
-                    TimePickerDialog(context, pickerTheme, { _, hour, minute ->
-                        val selected = LocalTime.of(hour, minute)
-                        invalid = day == today && !selected.isAfter(now)
-                        if (!invalid) onChange(DayOverride(selected))
-                    }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
-                }) { Text(stringResource(R.string.week_change_time)) }
-                TextButton(enabled = !busy, onClick = { onChange(DayOverride()) }) { Text(stringResource(R.string.week_skip_day)) }
-                if (changed) TextButton(enabled = !busy, onClick = { onChange(null) }) { Text(stringResource(R.string.week_restore_day)) }
-                if (invalid) Text(stringResource(R.string.week_future_time))
+    val time = override?.startTime ?: usualTimes.first()
+    GroupedSheet(format.date.format(day), onDismiss = { if (!busy) onClose() }) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.plan_this_date), style = MaterialTheme.typography.labelLarge)
+            val value = if (currentTimes.isEmpty()) stringResource(R.string.week_skipped)
+                else currentTimes.joinToString(" · ") { format.time.format(it) }
+            Text(value, style = MaterialTheme.typography.headlineMedium)
+            if (override != null) {
+                Text(stringResource(R.string.plan_usual_times, usualTimes.joinToString(" · ") { format.time.format(it) }),
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        },
-        confirmButton = { TextButton(onClick = onClose) { Text(stringResource(android.R.string.cancel)) } })
+        }
+        Text(stringResource(R.string.week_date_hint), style = MaterialTheme.typography.bodyMedium)
+        PrimaryButton(stringResource(R.string.week_change_time), enabled = !busy, onClick = {
+            TimePickerDialog(context, pickerTheme, { _, hour, minute ->
+                val selected = LocalTime.of(hour, minute)
+                invalid = day == today && !selected.isAfter(now)
+                if (!invalid) onChange(if (selected == usualTimes.first()) null else DayOverride(selected))
+            }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
+        })
+        if (invalid) Text(stringResource(R.string.week_future_time), color = MaterialTheme.colorScheme.error)
+        if (override?.isSkipped != true) {
+            TextButton(enabled = !busy, onClick = { onChange(DayOverride()) }) { Text(stringResource(R.string.week_skip_day)) }
+        }
+        if (override != null) {
+            TextButton(enabled = !busy, onClick = { onChange(null) }) { Text(stringResource(R.string.week_restore_day)) }
+        }
+    }
 }
