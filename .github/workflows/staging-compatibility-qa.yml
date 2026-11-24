@@ -20,7 +20,7 @@ jobs:
             artifact="${pair#*:}"
             mkdir "$folder"
             curl --fail --silent --show-error --location --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Cache-Control: no-cache" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip?nonce=$GITHUB_RUN_ID" -o "$folder.zip"
-            unzip -q "$folder.zip" -d "$folder"
+            if unzip -Z1 "$folder.zip" AndroidManifest.xml > /dev/null 2>&1; then mv "$folder.zip" "$folder/app-staging.apk"; else unzip -q "$folder.zip" -d "$folder"; fi
           done
       - name: Inspect the release manifests and public signers
         shell: bash
