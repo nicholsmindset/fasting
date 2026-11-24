@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.theme.pickerDialogTheme
 import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.LoadingBox
@@ -173,13 +174,14 @@ internal fun WeekPreview(state: PlannerState, format: WeekFormat, notifications:
 private fun DateEditor(day: LocalDate, time: LocalTime, today: LocalDate, now: LocalTime, changed: Boolean,
     format: WeekFormat, busy: Boolean, onChange: (DayOverride?) -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
+    val pickerTheme = pickerDialogTheme()
     var invalid by rememberSaveable(day) { mutableStateOf(false) }
     AlertDialog(onDismissRequest = onClose, title = { Text(format.date.format(day)) },
         text = {
             Column {
                 Text(stringResource(R.string.week_date_hint))
                 TextButton(enabled = !busy, onClick = {
-                    TimePickerDialog(context, { _, hour, minute ->
+                    TimePickerDialog(context, pickerTheme, { _, hour, minute ->
                         val selected = LocalTime.of(hour, minute)
                         invalid = day == today && !selected.isAfter(now)
                         if (!invalid) onChange(DayOverride(selected))

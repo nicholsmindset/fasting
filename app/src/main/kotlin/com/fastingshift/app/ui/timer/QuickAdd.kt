@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.theme.pickerDialogTheme
 import com.fastingshift.app.ui.components.weightUnitLabel
 import com.fastingshift.domain.model.Electrolyte
 import com.fastingshift.domain.model.WeightUnit
@@ -176,6 +177,7 @@ fun electrolyteLabel(e: Electrolyte) = when (e) {
 @Composable
 fun StartEarlierDialog(initial: Instant?, onDismiss: () -> Unit, onPick: (Instant) -> Unit) {
     val context = LocalContext.current
+    val pickerTheme = pickerDialogTheme()
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
     val start = initial?.atZone(zone)
@@ -198,7 +200,7 @@ fun StartEarlierDialog(initial: Instant?, onDismiss: () -> Unit, onPick: (Instan
                 SecondaryButton(
                     java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(time),
                     onClick = {
-                        TimePickerDialog(context, { _, h, m -> minutes = h * 60 + m }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
+                        TimePickerDialog(context, pickerTheme, { _, h, m -> minutes = h * 60 + m }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
                     },
                 )
             }

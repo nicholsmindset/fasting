@@ -148,7 +148,7 @@ class SettingsViewModel @Inject constructor(
 }
 
 /** Which bottom sheet or dialog is open. */
-private enum class SettingsSheet { MILESTONES, FORGOT, WATER, CITY, METHOD, BOOK_CODE }
+private enum class SettingsSheet { APPEARANCE, MILESTONES, FORGOT, WATER, CITY, METHOD, BOOK_CODE }
 
 @Composable
 fun SettingsRoute(
@@ -208,6 +208,15 @@ fun SettingsRoute(
             verticalArrangement = Arrangement.spacedBy(28.dp),
         ) {
             LargeTitle(stringResource(R.string.settings_title), Modifier.padding(horizontal = 4.dp))
+
+            InsetGroup {
+                GroupRow(
+                    stringResource(R.string.appearance_title),
+                    value = stringResource(appearanceLabel(s.appearance)),
+                    showChevron = true,
+                    onClick = { sheet = SettingsSheet.APPEARANCE },
+                )
+            }
 
             InsetGroup(header = stringResource(R.string.settings_fasting)) {
                 GroupRow(stringResource(R.string.settings_eating_window_title), subtitle = stringResource(R.string.settings_eating_window_subtitle), value = stringResource(R.string.settings_hours_value, s.eatingWindowHours)) {
@@ -351,6 +360,11 @@ fun SettingsRoute(
     }
 
     when (sheet) {
+        SettingsSheet.APPEARANCE -> AppearanceSheet(
+            selected = s.appearance,
+            onPick = { mode -> vm.set { setAppearance(mode) }; sheet = null },
+            onDismiss = { sheet = null },
+        )
         SettingsSheet.MILESTONES -> MilestonesSheet(
             chosen = s.reminders.milestones.map { it.toHours().toInt() }.toSet(),
             onToggle = vm::toggleMilestone,

@@ -30,6 +30,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+enum class AppAppearance {
+    SYSTEM, LIGHT, DARK;
+
+    fun usesDarkPalette(systemDark: Boolean): Boolean = when (this) {
+        SYSTEM -> systemDark
+        LIGHT -> false
+        DARK -> true
+    }
+
+    companion object {
+        fun fromRecord(value: String?): AppAppearance? = entries.firstOrNull { it.name == value }
+    }
+}
+
 data class AppSettings(
     val reminders: ReminderSettings = ReminderSettings(),
     /** Removes weight from every screen (SR-6). */
@@ -70,6 +84,7 @@ data class AppSettings(
     val sunnahTypes: Set<SunnahType> = emptySet(),
     val planHistory: PlanHistory = PlanHistory(),
     val weekReflections: Map<LocalDate, ScheduleFit> = emptyMap(),
+    val appearance: AppAppearance = AppAppearance.SYSTEM,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -96,6 +111,7 @@ class SettingsRepository(context: Context) {
 
     val settings: Flow<AppSettings> = store.data.map { p ->
         AppSettings(
+            appearance = AppAppearance.fromRecord(p[APPEARANCE]) ?: AppAppearance.SYSTEM,
             reminders = ReminderSettings(
                 fastEndEnabled = p[FAST_END] ?: true,
                 milestones = (p[MILESTONES] ?: emptySet()).mapNotNull { it.toLongOrNull() }.sorted().map(Duration::ofHours),
@@ -162,6 +178,7 @@ class SettingsRepository(context: Context) {
     }
 
     suspend fun setTimerMode(mode: TimerDisplayMode) = store.edit { it[TIMER_MODE] = mode.name }
+    suspend fun setAppearance(mode: AppAppearance) = store.edit { it[APPEARANCE] = mode.name }
     suspend fun setWeightUnit(unit: WeightUnit) = store.edit { it[WEIGHT_UNIT] = unit.name }
     suspend fun setPendingRefeeding(fastId: Long?) = store.edit {
         if (fastId == null) {
@@ -260,6 +277,7 @@ class SettingsRepository(context: Context) {
     suspend fun toRecord(): SettingsRecord = current().let { s ->
         SettingsRecord(
             onboardingComplete = s.onboardingComplete,
+            appearance = s.appearance.name,
             planRevisions = s.planHistory.revisions.mapKeys { it.key.toString() },
             dayOverrides = s.planHistory.dayOverrides.entries.associate { it.key.toString() to it.value.toRecord() },
             weekChoices = s.planHistory.choices.entries.associate { it.key.toString() to it.value.name },
@@ -293,6 +311,8 @@ class SettingsRepository(context: Context) {
 
     suspend fun restore(r: SettingsRecord) = store.edit {
         it[ONBOARDED] = r.onboardingComplete
+        // Backups made before the picker carried no preference for appearance.
+        AppAppearance.fromRecord(r.appearance)?.let { mode -> it[APPEARANCE] = mode.name }
         val history = PlanHistory.fromRecords(r.planRevisions, r.weekChoices, r.dayOverrides)
         it[PLAN_REVISIONS] = history.revisions.entries.map { entry -> "${entry.key}=${entry.value}" }.toSet()
         it[DAY_OVERRIDES] = history.dayOverrides.entries.map { entry -> "${entry.key}=${entry.value.toRecord()}" }.toSet()
@@ -328,6 +348,7 @@ class SettingsRepository(context: Context) {
     private companion object {
         const val DEFAULT_FORGOT_HOURS = 4
         val TIMER_MODE = stringPreferencesKey("timer_mode")
+        val APPEARANCE = stringPreferencesKey("appearance")
         val PENDING_REFEED = longPreferencesKey("pending_refeeding_fast")
         val WEIGHT_UNIT = stringPreferencesKey("weight_unit")
         val BILLING_REMINDED = longPreferencesKey("billing_reminded_for")

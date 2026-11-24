@@ -149,7 +149,12 @@ object ShareCards {
     }
 
     private fun brand(c: Canvas, res: Resources) {
-        c.drawText(res.getString(R.string.app_name), PAD, PAD + 40f, paint(44f, white, bold = true))
+        val mark = res.getDrawable(R.drawable.nichols_n_badge, null)
+        val x = PAD.toInt()
+        val y = x - 8
+        mark.setBounds(x, y, x + 64, y + 64)
+        mark.draw(c)
+        c.drawText(res.getString(R.string.app_name), PAD + 84f, PAD + 40f, paint(44f, white, bold = true))
     }
 
     private fun layout(text: String, p: TextPaint, width: Int, maxLines: Int = 4): StaticLayout =

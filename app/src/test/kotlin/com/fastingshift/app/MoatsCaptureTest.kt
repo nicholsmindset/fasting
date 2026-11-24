@@ -2,13 +2,20 @@ package com.fastingshift.app
 
 import android.app.Application
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.net.Uri
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelected
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -125,7 +132,7 @@ class MoatsCaptureTest {
     @After fun tearDown() {
         scenario?.close()
         try {
-            if (::settings.isInitialized) runBlocking { settings.setOnboardingComplete(false) }
+            if (::settings.isInitialized) runBlocking { settings.clearAll() }
         } finally {
             TimeZone.setDefault(oldZone)
         }
@@ -141,13 +148,57 @@ class MoatsCaptureTest {
         compose.onNodeWithText(text).performClick()
     }
 
-    private fun shoot(name: String) {
+    private fun shoot(name: String): File {
         compose.waitForIdle()
         val file = output.resolve("$name.png")
         // A stale successful run must never mask a skipped capture.
         if (file.exists()) check(file.delete())
         captureScreenRoboImage(file.absolutePath)
         check(file.length() > 0) { "Missing screenshot: $file" }
+        return file
+    }
+
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
+    @Test fun chooseDarkOnALightDevice() = verifyAppearance(R.string.appearance_dark, "dark", expectLight = false)
+
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-night-xxhdpi")
+    @Test fun chooseLightOnADarkDevice() = verifyAppearance(R.string.appearance_light, "light", expectLight = true)
+
+    private fun verifyAppearance(choice: Int, name: String, expectLight: Boolean) {
+        fun waitForOne(target: SemanticsMatcher) = compose.waitUntil(20_000) {
+            compose.onAllNodes(target).fetchSemanticsNodes().size == 1
+        }
+        click(s(R.string.tab_settings))
+        val appearance = hasText(s(R.string.appearance_title)) and hasClickAction()
+        waitForOne(appearance)
+        compose.onNode(appearance).performScrollTo().performClick()
+        val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+        waitForOne(radio and hasText(s(R.string.appearance_system)) and isSelected())
+        val option = radio and hasText(s(choice))
+        compose.onNode(option).performClick()
+        val updatedRow = appearance and hasText(s(choice))
+        waitForOne(updatedRow)
+        compose.onNode(updatedRow).performClick()
+        waitForOne(option and isSelected())
+        shoot("appearance-$name")
+
+        // Open the actual first-run Welcome screen with the saved override still in place.
+        scenario?.close()
+        runBlocking { settings.setOnboardingComplete(false) }
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        waitFor(s(R.string.onb_get_started))
+        val welcome = shoot("welcome-$name")
+        val options = BitmapFactory.Options().apply { inSampleSize = 16 }
+        val bitmap = requireNotNull(BitmapFactory.decodeFile(welcome.absolutePath, options))
+        try {
+            // A downsample of the whole welcome screen avoids depending on one text or logo pixel.
+            val pixels = IntArray(bitmap.width * bitmap.height)
+            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+            val lightPixels = pixels.count { Color.luminance(it) > 0.5f }
+            check((lightPixels > pixels.size / 2) == expectLight) { "Welcome did not render in $name mode" }
+        } finally {
+            bitmap.recycle()
+        }
     }
 
     private fun back() { requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() } }

@@ -1,10 +1,14 @@
 package com.fastingshift.app.ui
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -25,6 +29,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -44,8 +49,9 @@ class MainActivity : ComponentActivity() {
     private var resetting by mutableStateOf(false)
     private var resetFailed by mutableStateOf(false)
 
-    /** null until settings load, so onboarding never flashes for returning users. */
-    private val onboardedFlow by lazy { settings.settings.map<_, Boolean?> { it.onboardingComplete } }
+    private val displaySettings by lazy {
+        settings.settings.map { it.onboardingComplete to it.appearance }.distinctUntilChanged()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,14 +62,20 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { keyStatus = withContext(Dispatchers.IO) { FastingDatabase.keyStatus(applicationContext) } }
         lifecycleScope.launch { billing.refresh() }
         setContent {
-            FastingShiftTheme {
+            // Load both values before drawing the first screen on a fresh process.
+            val display by displaySettings.collectAsStateWithLifecycle(initialValue = null)
+            val (onboarded, appearance) = display ?: return@setContent
+            val darkTheme = appearance.usesDarkPalette(isSystemInDarkTheme())
+            LaunchedEffect(darkTheme) {
+                val bars = if (darkTheme) SystemBarStyle.dark(Color.TRANSPARENT)
+                    else SystemBarStyle.light(Color.TRANSPARENT, Color.BLACK)
+                enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
+            }
+            FastingShiftTheme(darkTheme = darkTheme) {
                 when (keyStatus) {
                     null -> Unit
                     DatabaseKeyProvider.Status.LOST -> KeyLostScreen(resetting = resetting, onStartFresh = ::startFresh, resetFailed = resetFailed)
-                    else -> {
-                        val onboarded by onboardedFlow.collectAsStateWithLifecycle(initialValue = null)
-                        onboarded?.let { AppNav(onboarded = it, deepLink = deepLink, onDeepLinkHandled = { deepLink = null }) }
-                    }
+                    else -> AppNav(onboarded = onboarded, deepLink = deepLink, onDeepLinkHandled = { deepLink = null })
                 }
             }
         }

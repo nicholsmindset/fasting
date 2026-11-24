@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nichols Mindset master artwork: Logos/reversed/nm-symbol.svg -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp" android:height="96dp"
+    android:viewportWidth="100" android:viewportHeight="100">
+    <path android:fillColor="#F2EDE4" android:pathData="M14 83V16L32 9V77Z" />
+    <path android:fillColor="#007A56" android:pathData="M14 16L32 9 85 80 67 89Z" />
+    <path android:fillColor="#F2EDE4" android:pathData="M67 89V23L85 13V80Z" />
+</vector>

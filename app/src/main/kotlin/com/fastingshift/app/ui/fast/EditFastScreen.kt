@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.text.format.DateFormat
+import androidx.annotation.StyleRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.theme.pickerDialogTheme
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.formatDateTime
@@ -121,6 +123,7 @@ fun EditFastRoute(fastId: Long, onDone: () -> Unit, vm: EditFastViewModel = hilt
     LaunchedEffect(fastId) { vm.load(fastId) }
     val st by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val pickerTheme = pickerDialogTheme()
     if (st.missing) {
         LaunchedEffect(Unit) { onDone() }
         return
@@ -133,18 +136,18 @@ fun EditFastRoute(fastId: Long, onDone: () -> Unit, vm: EditFastViewModel = hilt
         }
         InsetGroup(header = stringResource(R.string.edit_times)) {
             st.start?.let { s ->
-                GroupRow(stringResource(R.string.edit_start), value = s.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, s, vm::setStart) })
+                GroupRow(stringResource(R.string.edit_start), value = s.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, pickerTheme, s, vm::setStart) })
             }
             st.targetEnd?.let { t ->
                 GroupDivider()
                 GroupRow(
                     stringResource(R.string.edit_goal_label), subtitle = Duration.between(st.start, t).hoursMinutes(),
-                    value = t.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, t, vm::setTargetEnd) },
+                    value = t.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, pickerTheme, t, vm::setTargetEnd) },
                 )
             }
             st.end?.let { e ->
                 GroupDivider()
-                GroupRow(stringResource(R.string.edit_end), value = e.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, e, vm::setEnd) })
+                GroupRow(stringResource(R.string.edit_end), value = e.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, pickerTheme, e, vm::setEnd) })
             }
         }
         InsetGroup(header = stringResource(R.string.edit_note)) {
@@ -164,11 +167,16 @@ fun EditFastRoute(fastId: Long, onDone: () -> Unit, vm: EditFastViewModel = hilt
 }
 
 /** Date then time, in the device's zone. */
-fun pickDateTime(context: Context, initial: Instant, onPicked: (Instant) -> Unit) {
+internal fun pickDateTime(
+    context: Context,
+    @StyleRes pickerTheme: Int,
+    initial: Instant,
+    onPicked: (Instant) -> Unit,
+) {
     val zone = ZoneId.systemDefault()
     val z = initial.atZone(zone)
-    DatePickerDialog(context, { _, y, m, d ->
-        TimePickerDialog(context, { _, h, min ->
+    DatePickerDialog(context, pickerTheme, { _, y, m, d ->
+        TimePickerDialog(context, pickerTheme, { _, h, min ->
             val local = LocalDateTime.of(y, m + 1, d, h, min)
             // Preserve the original occurrence when the selected clock time happens twice.
             onPicked(ZonedDateTime.ofLocal(local, zone, z.offset).toInstant())

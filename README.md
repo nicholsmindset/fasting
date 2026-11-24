@@ -4,6 +4,8 @@ A private Android fasting tracker from Nichols Mindset. Start a timer, review yo
 
 ## Status
 
+Open **Settings → Appearance** to choose **System default**, **Light**, or **Dark**. The choice is saved on the phone. The app icon and welcome screen use the Nichols Mindset N.
+
 Tap a date in History to see how much of each fast fell on that day. Open a record to correct it, or use **Add a past fast** to enter a missing fast ending on the selected date.
 
 History also offers a private weekly reflection. Answer “Did this schedule fit your week?” or skip it. Under **History → Challenges**, turn on **Follow my own plan** to use your own scheduled days with a friend. **Send encouragement** opens a message you can review before sharing.
@@ -96,7 +98,6 @@ Step-by-step browser prompts for Vercel, Play Console, RevenueCat, GitHub and Go
 - [ ] Rewrite body-timeline and program lesson copy in Robert's voice; map book chapters
 - [ ] Verify every helpline and emergency number
 - [ ] Complete the physical device checks above
-- [ ] Replace the placeholder launcher icon
 - [ ] Native-speaker review of `values-ms`, `values-in`, `values-zh-rCN` (safety copy first)
 
 ## Modules

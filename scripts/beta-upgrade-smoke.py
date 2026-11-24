@@ -125,6 +125,54 @@ class Screen:
             time.sleep(0.5)
         raise AssertionError(f"The app did not write {name}")
 
+    def verify_appearance(self, original_fasts):
+        def choose(key):
+            self.device(resourceId="tab_settings", packageName=PACKAGE).click(timeout=15)
+            title = self.strings["appearance_title"]
+            self.find_node(self.device(textContains=title, packageName=PACKAGE), title, scroll=True).click()
+            self.click(key)
+
+        def expect_palette(dark):
+            # Sample the app content, excluding system bars. Both Timer and Settings
+            # have predominantly neutral surfaces, even with the timer running.
+            matching_frames = 0
+            for _ in range(20):
+                frame = self.device.screenshot().convert("L")
+                w, h = frame.size
+                histogram = frame.crop((w // 10, h // 5, w * 9 // 10, h * 4 // 5)).histogram()
+                matching = sum(histogram[:96]) if dark else sum(histogram[175:])
+                nav_visible = self.device(resourceId="tab_settings", packageName=PACKAGE).exists
+                if nav_visible and matching > sum(histogram) * 0.60:
+                    matching_frames += 1
+                    if matching_frames >= 3:
+                        return
+                else:
+                    matching_frames = 0
+                time.sleep(0.4)
+            raise AssertionError(f"Expected {'dark' if dark else 'light'} app surfaces")
+
+        adb("shell", "cmd", "uimode", "night", "no")
+        choose("appearance_dark")
+        expect_palette(dark=True)
+        self.device.app_stop(PACKAGE)
+        self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+        self.find("timer_end", scroll=True)
+        expect_palette(dark=True)
+        try:
+            # Explicit Light must override a dark device. Switching back to System
+            # should restore the dark device palette without relaunching.
+            adb("shell", "cmd", "uimode", "night", "yes")
+            choose("appearance_light")
+            expect_palette(dark=False)
+            choose("appearance_system")
+            expect_palette(dark=True)
+        finally:
+            adb("shell", "cmd", "uimode", "night", "no")
+        self.find("tab_timer")
+        expect_palette(dark=False)
+        if fingerprint(self.export_backup("appearance-after.json")["fasts"]) != original_fasts:
+            raise AssertionError("Changing appearance changed the fasting records")
+        print("Verified light, dark, system changes and a cold launch with the original active timer.")
 
     def verify_fresh_invite(self):
         # Only run after all upgrade assertions. Reset this dedicated emulator app's data so
@@ -341,6 +389,7 @@ def main(device, old_apk, new_apk):
     if before != after:
         raise AssertionError(f"Fast records changed on upgrade: {before} -> {after}")
     print("Verified both fasts, including the running timer's original start and target.")
+    candidate.verify_appearance(before)
     candidate.verify_fresh_invite()
     candidate.verify_week_planner()
     candidate.verify_history_day()

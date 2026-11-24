@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.theme.pickerDialogTheme
 import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
@@ -40,6 +41,7 @@ private enum class Repeat(val label: Int) {
 internal fun RoutineEditor(state: PlannerState, original: Schedule?, protocol: String, format: WeekFormat,
     notifications: Boolean, busy: Boolean, onSave: (Schedule) -> Unit, onDelete: () -> Unit) {
     val context = LocalContext.current
+    val pickerTheme = pickerDialogTheme()
     val initial = original ?: Schedule(
         protocolId = protocol, days = when (protocol) {
             Presets.FIVE_TWO.id -> setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)
@@ -88,7 +90,7 @@ internal fun RoutineEditor(state: PlannerState, original: Schedule?, protocol: S
         GroupDivider()
         GroupRow(stringResource(R.string.schedules_start_time), value = format.time.format(time), showChevron = true,
             onClick = {
-                TimePickerDialog(context, { _, hour, minute -> minutes = hour * 60 + minute },
+                TimePickerDialog(context, pickerTheme, { _, hour, minute -> minutes = hour * 60 + minute },
                     time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
             })
         if (original != null) {

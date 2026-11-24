@@ -110,7 +110,7 @@ Phase 2: Google Play Console for com.fastingshift.app.
    when to upload app-release.aab (I'll pick the file); later releases go through the GitHub
    workflow. Don't roll out until I confirm.
 4. Main store listing: copy title, short description and full description exactly from
-   docs/store-listing.md. App icon and feature graphic: add to "Needs Robert" (placeholder icon).
+   docs/store-listing.md. Use the 512px Nichols Mindset N from the final brand kit for the store icon. Ask Robert for the feature graphic.
    Phone screenshots (max 8): upload docs/screenshots/1-timer-light.png, 1b-timer-left-light.png,
    2-history-light.png, 2b-calendar-light.png, 3-log-light.png, 5-muslim-hub.png,
    6-challenge.png, 7-trust-center.png. Category: Health & Fitness. Contact email: ask me.
