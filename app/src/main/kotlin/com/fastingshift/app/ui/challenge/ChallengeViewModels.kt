@@ -62,7 +62,7 @@ private fun itemsFlow(
     clock: Clock,
 ): Flow<List<ChallengeItem>> = combine(challenges, fasts.observeAll(), settings.settings, minutes(clock)) { list, all, s, now ->
     val zone = ZoneId.systemDefault()
-    list.map { c -> ChallengeItem(c, Challenges.progress(c, all, zone, now, s.hijriOffsetDays)) }
+    list.map { c -> ChallengeItem(c, Challenges.progress(c, all, zone, now, s.hijriOffsetDays, s.planHistory)) }
 }
 
 data class ChallengeListState(val current: List<ChallengeItem>, val past: List<ChallengeItem>, val allowed: Boolean)
@@ -107,12 +107,13 @@ class CreateChallengeViewModel @Inject constructor(
     private var creating = false
 
     /** One challenge per tap: a quick double tap must not create two. */
-    fun create(template: ChallengeTemplate, start: StartOption, name: String, onCreated: (Long) -> Unit) {
+    fun create(template: ChallengeTemplate, start: StartOption, name: String, followsOwnPlan: Boolean, onCreated: (Long) -> Unit) {
         if (creating || allowed.value != true) return
         creating = true
         viewModelScope.launch {
             try {
-                val id = challenges.join(template.create(start.date(today()), clock.instant(), name))
+                val enrollment = template.create(start.date(today()), clock.instant(), name).copy(followsOwnPlan = followsOwnPlan)
+                val id = challenges.join(enrollment)
                 if (id != null) onCreated(id)
             } finally {
                 creating = false
@@ -137,9 +138,9 @@ class ChallengeDetailViewModel @Inject constructor(
             .map { it.firstOrNull() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun leave() = viewModelScope.launch {
-        challenges.get(id)?.let { challenges.update(it.copy(leftAt = clock.instant())) }
-    }
+    fun setOwnPlan(enabled: Boolean) = viewModelScope.launch { challenges.setOwnPlan(id, enabled) }
+
+    fun leave() = viewModelScope.launch { challenges.leave(id, clock.instant()) }
 
     fun remove(then: () -> Unit) = viewModelScope.launch {
         challenges.delete(id)
@@ -178,12 +179,13 @@ class JoinChallengeViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), JoinState.Loading)
 
-    fun join(onJoined: (Long) -> Unit) {
+    fun join(followsOwnPlan: Boolean, onJoined: (Long) -> Unit) {
         val invite = (decoded as? InviteResult.Valid)?.invite ?: return
         if (!joining.compareAndSet(false, true)) return
         viewModelScope.launch {
             try {
-                challenges.join(invite.toChallenge(clock.instant()))?.let(onJoined)
+                val enrollment = invite.toChallenge(clock.instant()).copy(followsOwnPlan = followsOwnPlan)
+                challenges.join(enrollment)?.let(onJoined)
             } finally {
                 joining.value = false
             }

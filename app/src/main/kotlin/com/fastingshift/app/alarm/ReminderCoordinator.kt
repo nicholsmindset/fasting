@@ -65,7 +65,8 @@ class ReminderCoordinator @Inject constructor(
         if (!started.compareAndSet(false, true)) return
         scope.launch {
             combine(fasts.observeAll(), settings.settings, schedules.observeAll(), screening.observeLatest()) { all, s, sch, scr ->
-                listOf(all, s, sch, maximumScheduledDuration(scr))
+                // Answering the weekly recap changes no alarms.
+                listOf(all, s.copy(weekReflections = emptyMap()), sch, maximumScheduledDuration(scr))
             }
                 .distinctUntilChanged()
                 .collect { reschedule() }

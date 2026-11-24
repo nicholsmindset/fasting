@@ -69,6 +69,7 @@ data class Backup(
     @SerialName("plan_revisions") val planRevisions: Map<String, Int> = emptyMap(),
     @SerialName("week_choices") val weekChoices: Map<String, String> = emptyMap(),
     @SerialName("day_overrides") val dayOverrides: Map<String, String> = emptyMap(),
+    @SerialName("week_reflections") val weekReflections: Map<String, String> = emptyMap(),
 )
 
 @Serializable data class FastRecord(
@@ -93,6 +94,7 @@ data class Backup(
     val id: Long, val type: String, @SerialName("protocol_id") val protocolId: String? = null,
     @SerialName("start_date") val startDate: String, @SerialName("length_days") val lengthDays: Int,
     val name: String? = null, @SerialName("joined_at") val joinedAt: Long, @SerialName("left_at") val leftAt: Long? = null,
+    @SerialName("follows_own_plan") val followsOwnPlan: Boolean = false,
 )
 
 @Serializable data class ProtocolRecord(

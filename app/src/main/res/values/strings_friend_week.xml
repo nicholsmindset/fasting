@@ -1,0 +1,16 @@
+<resources>
+    <string name="recap_fit_question">Did this schedule fit your week?</string>
+    <string name="recap_fit_yes">Yes</string>
+    <string name="recap_fit_partly">Partly</string>
+    <string name="recap_fit_no">No</string>
+    <string name="recap_fit_skip">Skip this week</string>
+    <string name="recap_change_answer">Change answer</string>
+    <string name="recap_add_reflection">Add a reflection</string>
+    <string name="friend_own_plan">Follow my own plan</string>
+    <string name="friend_own_plan_hint">Use my planned days to track my progress. My friend keeps their own routine.</string>
+    <string name="friend_no_planned_days">No days planned for this period</string>
+    <string name="friend_personal_count">A finished fast counts once on the planned day it started, even if you ended early.</string>
+    <string name="friend_personal_days">my planned days</string>
+    <string name="friend_send_encouragement">Send encouragement</string>
+    <string name="friend_encouragement_message">Cheering you on this week!</string>
+</resources>

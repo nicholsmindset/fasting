@@ -129,7 +129,7 @@ class BackupRepositoryTest {
         qada.setOwed(QadaDebt(1447, 6))
         assertTrue(qada.record(LocalDate.of(2026, 11, 17), 1447))
         ChallengeRepository(db).join(
-            Challenge(type = ChallengeType.SUNNAH_MON_THU, startDate = LocalDate.of(2026, 11, 23), lengthDays = 28, name = "Family", joinedAt = t0),
+            Challenge(type = ChallengeType.SUNNAH_MON_THU, startDate = LocalDate.of(2026, 11, 23), lengthDays = 28, name = "Family", joinedAt = t0, followsOwnPlan = true),
         )
 
         val transferTime = t0.plus(Duration.ofHours(49))
@@ -147,7 +147,11 @@ class BackupRepositoryTest {
         assertEquals(2, again.metrics.size)
         assertEquals(listOf(com.fastingshift.domain.backup.QadaDebtRecord(1447, 6)), again.qadaDebts)
         assertEquals(listOf(QadaRepaymentRecord("2026-11-17", 1447)), again.qadaRepayments)
-        assertEquals(1, again.challenges.size)
+        assertTrue(again.challenges.single().followsOwnPlan)
+        val legacy = BackupCodec.decode(
+            """{"version":4,"exported_at":1000,"challenges":[{"id":1,"type":"SUNNAH_MON_THU","start_date":"2026-11-23","length_days":28,"joined_at":1000}]}""",
+        )
+        assertEquals(false, legacy.challenges.single().followsOwnPlan)
         assertEquals(1, RoomFastRepository(fresh.fastDao()).getAll().count { it.isActive })
         fresh.close()
     }

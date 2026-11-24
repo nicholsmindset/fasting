@@ -149,6 +149,18 @@ class ChallengeJoinTest {
         waitFor("Walking group")
         compose.onNodeWithText(s(R.string.challenge_join)).assertExists()
         assertEquals(0, runBlocking { challenges.observeAll().first() }.size)
+        compose.onNodeWithText(s(R.string.friend_own_plan)).performScrollTo().performClick()
+        compose.onNodeWithText(s(R.string.challenge_join)).performScrollTo().performClick()
+        waitFor(s(R.string.friend_personal_count))
+        val enrollment = runBlocking { challenges.observeAll().first().single() }
+        assertEquals(true, enrollment.followsOwnPlan)
+        assertEquals(invite, ChallengeInvite.of(enrollment))
+        runBlocking {
+            assertEquals(enrollment.id, challenges.join(invite.toChallenge(Instant.now())))
+            assertEquals(true, challenges.observeAll().first().single().followsOwnPlan)
+        }
+        compose.onNodeWithText(s(R.string.friend_own_plan)).performScrollTo().performClick()
+        compose.waitUntil(10_000) { !runBlocking { challenges.observeAll().first().single().followsOwnPlan } }
     }
 
     @Test fun changedScreeningClosesTheInviteAndBlocksAStaleEnrollment() {

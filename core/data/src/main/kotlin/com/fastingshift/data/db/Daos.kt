@@ -3,6 +3,7 @@ package com.fastingshift.data.db
 import androidx.room.Embedded
 import androidx.room.Relation
 import androidx.room.Upsert
+import java.time.Instant
 import java.time.LocalDate
 import androidx.room.Dao
 import androidx.room.Insert
@@ -233,5 +234,9 @@ interface ChallengeDao {
     @Query("SELECT * FROM challenge WHERE id = :id") suspend fun get(id: Long): ChallengeEntity?
     @Insert suspend fun insert(entity: ChallengeEntity): Long
     @Update suspend fun update(entity: ChallengeEntity)
+    @Query("UPDATE challenge SET follows_own_plan = :enabled WHERE id = :id AND left_at IS NULL")
+    suspend fun setOwnPlan(id: Long, enabled: Boolean)
+    @Query("UPDATE challenge SET left_at = :at WHERE id = :id AND left_at IS NULL")
+    suspend fun leave(id: Long, at: Instant)
     @Query("DELETE FROM challenge WHERE id = :id") suspend fun delete(id: Long)
 }

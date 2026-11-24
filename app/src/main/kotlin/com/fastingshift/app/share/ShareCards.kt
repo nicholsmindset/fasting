@@ -39,7 +39,7 @@ import java.util.Locale
 sealed interface ShareCard {
     data class FinishedFast(val length: Duration, val label: String, val date: LocalDate) : ShareCard
     data class Week(val weekStart: LocalDate, val fastingTime: Duration, val fasts: Int) : ShareCard
-    data class ChallengeProgress(val title: String, val done: Int, val required: Int, val link: String) : ShareCard
+    data class ChallengeProgress(val title: String, val done: Int, val required: Int, val link: String, val followsOwnPlan: Boolean = false) : ShareCard
 }
 
 object ShareCards {
@@ -93,7 +93,8 @@ object ShareCards {
                 footerLine(c, range)
             }
             is ShareCard.ChallengeProgress -> {
-                hero(c, card.title, res.getString(R.string.share_challenge_days, card.done, card.required), res.getString(R.string.share_challenge_days_label))
+                val label = if (card.followsOwnPlan) R.string.friend_personal_days else R.string.share_challenge_days_label
+                hero(c, card.title, res.getString(R.string.share_challenge_days, card.done, card.required), res.getString(label))
                 progressBar(c, if (card.required == 0) 0f else card.done.toFloat() / card.required)
                 inviteFooter(res, card.link)?.let { footer -> draw(c, footer, PAD, HEIGHT - PAD - footer.height) }
             }
@@ -113,8 +114,8 @@ object ShareCards {
         share(context, card, "week", context.getString(R.string.share_week_text, lengthText(context.resources, card.fastingTime)))
     }
 
-    fun shareChallenge(context: Context, title: String, done: Int, required: Int, link: String) {
-        val card = ShareCard.ChallengeProgress(title, done, required, link)
+    fun shareChallenge(context: Context, title: String, done: Int, required: Int, link: String, followsOwnPlan: Boolean = false) {
+        val card = ShareCard.ChallengeProgress(title, done, required, link, followsOwnPlan)
         share(context, card, "challenge", context.getString(R.string.share_challenge_text, title, link))
     }
 

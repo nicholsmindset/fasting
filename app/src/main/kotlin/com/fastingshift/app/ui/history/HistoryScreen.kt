@@ -65,6 +65,7 @@ import java.time.Instant
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.history.WeeklyRecaps
+import com.fastingshift.domain.history.ScheduleFit
 import java.time.DayOfWeek
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -180,11 +181,11 @@ class HistoryViewModel @Inject constructor(
 
     private val plans = combine(settings.settings, schedules.observeAll(), screening.observeLatest()) { settings, rows, record ->
         val max = FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true)
-        CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening())
+        CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening()) to settings.weekReflections
     }
 
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */
-    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), plans, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, calendarPlan, (m, p), timedHydration ->
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), plans, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, (calendarPlan, reflections), (m, p), timedHydration ->
         val (hydrationValues, now) = timedHydration
         val (water, goal) = hydrationValues
         val zone = ZoneId.systemDefault()
@@ -224,15 +225,19 @@ class HistoryViewModel @Inject constructor(
                 // Early in the week, last week's full picture leads; this week is just starting.
                 if (today.dayOfWeek == DayOfWeek.MONDAY || today.dayOfWeek == DayOfWeek.TUESDAY) {
                     val last = thisWeek.minusWeeks(1)
-                    add(RecapItem(WeeklyRecaps.compute(all, water, zone, last, now, goal, planned), true, 7))
+                    add(RecapItem(WeeklyRecaps.compute(all, water, zone, last, now, goal, planned), true, 7, reflections[last]))
                 }
-                add(RecapItem(WeeklyRecaps.compute(all, water, zone, thisWeek, now, goal, planned), false, RecapCopy.daysInWeek(thisWeek, today)))
+                add(RecapItem(WeeklyRecaps.compute(all, water, zone, thisWeek, now, goal, planned), false, RecapCopy.daysInWeek(thisWeek, today), reflections[thisWeek]))
             },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun chooseWeek(week: LocalDate, choice: WeekChoice) = viewModelScope.launch {
         settings.setNextWeekChoice(week, choice, LocalDate.now(clock.withZone(ZoneId.systemDefault())))
+    }
+
+    fun reflect(week: LocalDate, fit: ScheduleFit) = viewModelScope.launch {
+        settings.setWeekReflection(week, fit, LocalDate.now(clock.withZone(ZoneId.systemDefault())))
     }
 
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
@@ -288,7 +293,14 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
                 GroupRow(stringResource(R.string.history_challenges), showChevron = true, onClick = onOpenChallenges)
             }
         }
-        st.recaps.forEach { r -> section { WeeklyRecapCard(r) } }
+        val review = st.recaps.firstOrNull { !it.recap.isEmpty || it.recap.plannedDays > 0 } ?: st.recaps.lastOrNull()
+        st.recaps.forEach { item ->
+            section(key = "recap-${item.recap.weekStart}") {
+                WeeklyRecapCard(item, onReflect = if (item == review || item.fit != null) {
+                    { fit -> vm.reflect(item.recap.weekStart, fit) }
+                } else null)
+            }
+        }
         section {
             val nextWeek = History.weekStart(st.today).plusWeeks(1)
             WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)

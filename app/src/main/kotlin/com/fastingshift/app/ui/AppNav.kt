@@ -235,7 +235,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 })
             }
             composable(Routes.CHALLENGE, arguments = listOf(navArgument("challengeId") { type = NavType.LongType })) {
-                ChallengeDetailRoute(onBack = back)
+                ChallengeDetailRoute(onBack = back, onOpenWeek = { nav.navigate(Routes.SCHEDULES) })
             }
             composable(Routes.CHALLENGE_JOIN, arguments = listOf(navArgument("code") { type = NavType.StringType })) {
                 JoinChallengeRoute(onBack = back, onJoined = { id ->

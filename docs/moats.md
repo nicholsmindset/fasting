@@ -7,9 +7,9 @@ These comparisons use the publishers' descriptions, checked on 23 November 2026.
 | Product | What the publisher describes | Decision for Fasting Shift |
 | --- | --- | --- |
 | [Zero](https://zerofasting.zendesk.com/hc/en-us/articles/55193563343003-Is-Zero-still-free-Understanding-the-free-experience-and-Zero-Plus) | Free timer and editing, one rolling week in the free in-app view, longer-range statistics in Plus. | Show people how to find unlimited History and correct yesterday's fast. Use Shift+ for interpretation and optional programs. |
-| [Fastic](https://play.google.com/store/apps/details?id=de.fastic.app) | Its Play listing places fasting buddies and progress sharing in Plus. | Test a free invitation between two existing friends before charging for group features. |
+| [Fastic](https://play.google.com/store/apps/details?id=de.fastic.app) | Its Play listing places fasting buddies and progress sharing in Plus. | Keep a free invitation between friends and test whether pairs choose to use it again. |
 | [Easy Fast](https://easyfastapp.com/) | Accountless timer, optional cloud sync, and widgets in Pro. | Lead with free widgets and local history. Demonstrate the timer across a restart and the backup before promising reliability. |
-| [BodyFast](https://help.bodyfast.app/hc/en-001/articles/34673414292242-How-does-the-BodyFast-Coach-work) | Adjustable weekly schedules, challenges and a weekly break day in Coach. | Help people adjust their next week from History. Measure whether they use the existing planner before building adaptive coaching. |
+| [BodyFast](https://help.bodyfast.app/hc/en-001/articles/34673414292242-How-does-the-BodyFast-Coach-work) | Adjustable weekly schedules, challenges and a weekly break day in Coach. | Help people adjust their next week from History. Check whether the revised plan matches the start they see on Timer. |
 
 ## 2. The first week
 
@@ -32,14 +32,14 @@ Keep four familiar destinations. Use **Timer** for today, **History** for review
 | Decision | Product scope | Evidence to collect |
 | --- | --- | --- |
 | Keep the free daily experience | Timer, editable history, My Week, reminders, CSV history transfer and local backup. Show one everyday example in the store listing: a late dinner changes Wednesday, the user corrects the time, and Thursday keeps its usual plan. | Ask new users to complete screening, find their first action, correct yesterday and move one planned start unaided. Record where they pause. |
-| Extend the existing weekly recap | Ask one optional question, “Did this schedule fit your week?” Offer Keep, Adjust or Take a break using the existing week controls. Start with an on-device choice. | Observe whether people take the action they intended and voluntarily use the recap again the following week. A skipped question should leave the schedule untouched. |
-| Pilot a private week with a friend | The existing invitation gives both people the same challenge. Test a second option for friends, partners or coworkers with different schedules. A person can choose their own plan and send encouragement through their usual chat. Apply the same screening rules on every entry path. | Try with pairs on two phones for two weeks. Ask each person what the other can see and whether they would do another week. Record confusion and pressure to disclose. |
+| Extend the existing weekly recap | Ask one optional question, “Did this schedule fit your week?” Save the answer on the phone. Keep, Adjust and Take a break are separate choices for next week. | Observe whether people take the action they intended and voluntarily use the recap again the following week. A skipped question should leave the schedule untouched. |
+| Pilot a private week with a friend | Each participant can keep the invitation's routine or follow their own planned days. A person can send encouragement through their usual chat. Apply the same screening rules on every entry path. | Try with pairs on two phones for two weeks. Ask each person what the other can see and whether they would do another week. Record confusion and pressure to disclose. |
 | Give Shift+ a distinct reason to exist | Test interest in Robert’s book companion and descriptive personal insights. The build offers a sample of the program. Release full lessons after the author approves completed copy and test purchase restoration on Play. | Ask sample readers what they used and whether the complete program would be worth buying. Confirm access after reinstall with a license tester. |
 | Keep optional features easy to find | The four main destinations are Timer, History, Log and Settings. Health Connect measurements, doctor reports and seasonal observances belong behind an explicit choice. Use everyday fasting for default onboarding, groups and the first store screenshots. | Check that a first-time user can reach Timer without configuring a health integration or seasonal mode. Test those optional paths separately. |
 
 **Design and competitive evidence.** Simple documents adding a past fast from its calendar and requires a running fast to finish before its times can be edited. Give a tester an incorrect start time while their timer is running and observe whether they find the correction. The Ritmo design study offers a reference for clear timer hierarchy and consistent icons. Keep our teal, text labels, neutral early endings and a consistency-based ring. [Simple help](https://help.simple.life/en/articles/9887903-how-to-log-and-edit-fasts) · [Ritmo design study](https://dribbble.com/shots/27884137-Ritmo-Intermittent-Fasting-App)
 
-**Scope decisions.** A public feed, hours leaderboard and competitive streak rewards work against the private, pressure-free product. Defer AI meal recognition, a coaching chatbot, a dedicated watch app and synced groups until the beta identifies a recurring need. The current product is ad-free. Google Ads acquisition is a separate launch decision. Confirm that people can install, start and return before budgeting for it.
+**Android beta scope.** Focus on the timer, flexible planning, weekly review and private invitations. Keep sharing voluntary and the app ad-free. Google Ads acquisition is a separate launch decision. Confirm that people can install, start and return before budgeting for it.
 
 ### Reliability, safety and trust
 
@@ -56,10 +56,9 @@ Two friends can want accountability while following different schedules. The str
 | Priority | Next improvement | How to test it |
 | --- | --- | --- |
 | First beta | Let a friend or partner invite someone to a shared week from Challenges. Preview the dates and explain what others see. Give recipients without the app a web preview, install link and reusable invitation. | Send a real invite to two Android phones, including one fresh install. Both should reach the intended plan and understand that progress is private. |
-| Pilot | Test a “Follow my own plan” week. Each person chooses their own schedule. Offer a voluntary “Joining tomorrow” or “Cheering you on” message through an existing chat. | Ask friends, partners and coworkers to try it for two weeks. Record whether anyone returns the second week, whether the host needs to chase replies and whether anyone feels pressure to explain an absence. |
-| After the pilot | If participants want to see who joined, prototype an invite-only group with a nickname, voluntary check-in, one encouragement reaction, mute, leave and expiring invites. | On two devices confirm that only explicitly shared check-ins appear, revoked links cannot join and removing a check-in removes it from the other member's view. |
+| Pilot | Test a “Follow my own plan” week. Each person chooses their own schedule. Offer an optional “Cheering you on this week!” message through an existing chat. | Ask friends, partners and coworkers to try it for two weeks. Record whether anyone returns the second week, whether the host needs to chase replies and whether anyone feels pressure to explain an absence. |
 
-A synced group would introduce off-device membership and check-in data. Explain this before joining and give members control over removal. Fast length, exact times, health readings, weight and reasons for skipping stay private. A group invite must preserve the same personal safety gates as a solo fast. Group success is measured by voluntary participation and repeat use.
+Joining uses the same screening rules as a solo fast. The invitation opens the original challenge on each phone. Personal schedules, weekly reflections and individual fasts stay on the participant’s phone unless they explicitly export a backup. The encouragement message contains only its text.
 
 ### Optional fasting modes
 
@@ -69,10 +68,9 @@ People who opt in to Ramadan and Sunnah can use a local prayer timetable, Hijri 
 - Glucose (Health Connect) and ketone (local) logging.
 - Sleep and resting heart rate from Health Connect, shown on fasting vs non-fasting days, with
   an honest "correlation, not cause" note.
-- The ongoing notification already mirrors to watches. Revisit a dedicated Wear OS tile after testing on a watch.
 
 ## Scope for the first release
-- Use private invites and the share sheet for accountability. A public feed would require moderation and new privacy controls.
+- Use private invitations and Android’s share sheet for encouragement.
 - Keep the log focused on fasting and optional measurements.
 - Present fasting information as wellness education and have a clinician review the safety wording before launch.
 
@@ -82,4 +80,4 @@ People who opt in to Ramadan and Sunnah can use a local prayer timetable, Hijri 
 
 **Public release.** Verify the public privacy URL, named publisher and monitored contact. Reconcile the release manifest and billing SDK with the Health apps declaration, Health Connect justifications and Data safety form. Have the appropriate reviewers sign off on clinical copy and localized safety wording. Test purchases, cancellations, restoration and expiration using a Play license tester. Confirm any testing requirements that apply to the actual developer account. [Google Play Health apps declaration](https://support.google.com/googleplay/android-developer/answer/14738291) · [Google Play health policy](https://support.google.com/googleplay/android-developer/answer/16679511) · [RevenueCat testing](https://www.revenuecat.com/docs/test-and-launch/sandbox/google-play-store)
 
-**After launch.** Use consented beta feedback and aggregate Play vitals to prioritize fixes. In the pilot, record task completion and obstacles without collecting fasting times or health logs. Only expand group functionality if people voluntarily return for a second week and identify a need that the simple invite cannot meet.
+**After launch.** Use consented beta feedback and aggregate Play vitals to prioritize fixes. In the pilot, record task completion and obstacles without collecting fasting times or health logs. Use the second week of testing to identify confusing steps in the invitation and schedule choices.

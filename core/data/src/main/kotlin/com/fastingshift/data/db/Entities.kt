@@ -172,4 +172,5 @@ data class ChallengeEntity(
     val name: String?,
     @ColumnInfo(name = "joined_at") val joinedAt: Instant,
     @ColumnInfo(name = "left_at") val leftAt: Instant?,
+    @ColumnInfo(name = "follows_own_plan", defaultValue = "0") val followsOwnPlan: Boolean = false,
 )

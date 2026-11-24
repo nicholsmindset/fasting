@@ -16,6 +16,22 @@ import org.robolectric.annotation.Config
 class MigrationTest {
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), FastingDatabase::class.java)
 
+    @Test fun v4ToV5KeepsAnExistingEnrollmentOnItsOriginalSchedule() {
+        helper.createDatabase("friend-plan-migration", 4).use { db ->
+            db.execSQL(
+                "INSERT INTO challenge(id,type,protocol_id,start_date,length_days,name,joined_at) " +
+                    "VALUES (7,'DAILY_PROTOCOL','window_16_8','2026-11-23',7,'My family',1000)",
+            )
+        }
+        helper.runMigrationsAndValidate("friend-plan-migration", 5, true).use { db ->
+            db.query("SELECT name, follows_own_plan FROM challenge WHERE id = 7").use { c ->
+                assertEquals(true, c.moveToFirst())
+                assertEquals("My family", c.getString(0))
+                assertEquals(0, c.getInt(1))
+            }
+        }
+    }
+
     @Test fun v1ToV2KeepsFastsAndAddsMood() {
         helper.createDatabase("migration-test", 1).use { db ->
             db.execSQL(

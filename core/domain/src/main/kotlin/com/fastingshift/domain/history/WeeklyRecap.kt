@@ -13,6 +13,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
+enum class ScheduleFit { YES, PARTLY, NO, SKIPPED }
+
 /** A calm look back at one week (Monday–Sunday). Free; no rewards for longer fasts. */
 data class WeeklyRecap(
     val weekStart: LocalDate,
