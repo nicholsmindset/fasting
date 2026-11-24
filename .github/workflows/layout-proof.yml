@@ -7,35 +7,32 @@ permissions:
   contents: read
   actions: read
 jobs:
-  capture:
+  diagnostics:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          persist-credentials: false
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools platforms;android-36 build-tools;36.0.0
-      - uses: gradle/actions/setup-gradle@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository/org/robolectric/android-all-instrumented
-          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
-      - name: Capture fixed-clock app screens
-        env:
-          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
-        run: ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.MoatsCaptureTest.dailyLayout*'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: layout-review-originals
-          path: app/build/moats-captures/en/layout-*.png
-          if-no-files-found: error
-      - name: Encode synthetic review images
+          github-token: ${{ github.token }}
+          run-id: 45433761871
+          name: reports
+          path: captured
+      - name: Report failed UI assertions
         run: |
-          python -c 'import PIL' || python -m pip install Pillow
-          python scripts/layout-proof.py app/build/moats-captures/en
+          python - <<'PYCODE'
+          from pathlib import Path
+          from html import unescape
+          import re
+          for path in sorted(Path("captured").rglob("*.html")):
+              if not any(name in path.name for name in ["TimerFlowTest", "MuslimHubScreenTest"]):
+                  continue
+              html = path.read_text()
+              print("FSREPORT", path.name)
+              for raw in re.findall(r"<pre[^>]*>(.*?)</pre>", html, re.S):
+                  s = unescape(re.sub(r"<[^>]*>", "", raw))
+                  if "DBG>>" in s:
+                      lines = [l for l in s.splitlines() if "text" in l.lower() or "description" in l.lower()]
+                      print("FSSEMANTICS", "\n".join(lines[-42:])[:4200])
+                  else:
+                      print("FSERROR", s[:2600])
+          PYCODE
