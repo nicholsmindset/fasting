@@ -1,0 +1,43 @@
+name: Review Settings fixtures
+on:
+  push:
+    branches: [codex/settings-review-fixtures]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    strategy:
+      matrix:
+        theme: [light, dark]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 45510098748
+          name: fasting-shift-moats-screens
+          path: captured
+      - name: Read synthetic screenshots
+        env:
+          THEME: ${{ matrix.theme }}
+        run: |
+          python -c 'import PIL' || python -m pip install Pillow
+          python - <<'PY'
+          import base64, hashlib, io, os
+          from PIL import Image
+          from pathlib import Path
+          for name in ("4-settings", "4a-reminders", "4b-milestone-picker"):
+              key = name + "-" + os.environ["THEME"]
+              with Image.open(Path("captured/settings") / (key + ".png")) as im:
+                  im = im.convert("RGB")
+                  im.thumbnail((480, 960), Image.Resampling.LANCZOS)
+                  out = io.BytesIO()
+                  im.save(out, format="JPEG", quality=92, optimize=True, subsampling=0)
+              raw = out.getvalue()
+              print(f"FSQA|BEGIN|{key}|{len(raw)}|{hashlib.sha256(raw).hexdigest()}")
+              for offset in range(0, len(raw), 1800):
+                  print(f"FSQA|PART|{key}|{offset//1800}|{base64.b64encode(raw[offset:offset+1800]).decode()}")
+              print(f"FSQA|END|{key}")
+          PY
