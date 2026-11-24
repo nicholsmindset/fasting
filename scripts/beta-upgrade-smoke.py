@@ -135,13 +135,19 @@ class Screen:
         def expect_palette(dark):
             # Sample the app content, excluding system bars. Both Timer and Settings
             # have predominantly neutral surfaces, even with the timer running.
-            for _ in range(10):
+            matching_frames = 0
+            for _ in range(20):
                 frame = self.device.screenshot().convert("L")
                 w, h = frame.size
                 histogram = frame.crop((w // 10, h // 5, w * 9 // 10, h * 4 // 5)).histogram()
                 matching = sum(histogram[:96]) if dark else sum(histogram[175:])
-                if matching > sum(histogram) * 0.60:
-                    return
+                nav_visible = self.device(resourceId="tab_settings", packageName=PACKAGE).exists
+                if nav_visible and matching > sum(histogram) * 0.60:
+                    matching_frames += 1
+                    if matching_frames >= 3:
+                        return
+                else:
+                    matching_frames = 0
                 time.sleep(0.4)
             raise AssertionError(f"Expected {'dark' if dark else 'light'} app surfaces")
 
@@ -152,12 +158,13 @@ class Screen:
         self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
         self.find("timer_end", scroll=True)
         expect_palette(dark=True)
-        choose("appearance_light")
-        expect_palette(dark=False)
-        choose("appearance_system")
         try:
+            # Explicit Light must override a dark device. Switching back to System
+            # should restore the dark device palette without relaunching.
             adb("shell", "cmd", "uimode", "night", "yes")
-            self.find("tab_timer")
+            choose("appearance_light")
+            expect_palette(dark=False)
+            choose("appearance_system")
             expect_palette(dark=True)
         finally:
             adb("shell", "cmd", "uimode", "night", "no")
