@@ -2,13 +2,14 @@ package com.fastingshift.app.ui.timer
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,7 +28,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.R
-import com.fastingshift.app.ui.components.ProgressRing
+import androidx.compose.material3.LinearProgressIndicator
 import com.fastingshift.app.ui.components.formatTime
 import com.fastingshift.app.ui.components.waterLabel
 import com.fastingshift.app.ui.design.rememberHaptics
@@ -80,11 +81,20 @@ fun TodayCard(today: TodaySummary, onAddWater: () -> Unit, modifier: Modifier = 
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.daily_water), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(waterValue, style = MaterialTheme.typography.titleMedium)
+                LinearProgressIndicator(
+                    progress = { today.waterProgress },
+                    modifier = Modifier.padding(top = 4.dp).fillMaxWidth().height(3.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
             }
-            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                ProgressRing(today.waterProgress, Modifier.size(40.dp), stroke = 3.dp, color = WaterBlue)
-                Text("+", style = MaterialTheme.typography.titleMedium, color = WaterBlue)
-            }
+            Text(
+                stringResource(R.string.log_add_water, 250),
+                modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         val next = when (val n = today.next) {
@@ -99,13 +109,6 @@ fun TodayCard(today: TodaySummary, onAddWater: () -> Unit, modifier: Modifier = 
         }
     }
 }
-
-/** Water's own calm blue, used for every hydration ring. */
-val WaterBlue: androidx.compose.ui.graphics.Color
-    @Composable get() = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) androidx.compose.ui.graphics.Color(0xFF64B5F6)
-    else androidx.compose.ui.graphics.Color(0xFF2F7DD1)
-
-private fun androidx.compose.ui.graphics.Color.luminance(): Float = 0.2126f * red + 0.7152f * green + 0.0722f * blue
 
 @Composable
 private fun TodayStat(label: String, value: String, modifier: Modifier) {

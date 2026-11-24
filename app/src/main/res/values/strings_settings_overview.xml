@@ -10,4 +10,13 @@
     <string name="settings_delivery">Notification delivery</string>
     <string name="settings_routine_reminders">Routine reminders</string>
     <string name="settings_files">Backups and transfers</string>
+    <string name="settings_group_routine">Your routine</string>
+    <string name="settings_group_app">Appearance and language</string>
+    <string name="settings_group_account">Safety, data and membership</string>
+    <string name="settings_no_starts_this_week">No upcoming starts in the next seven days.</string>
+    <string name="settings_planned_dates">Planned dates: %1$s</string>
+    <string name="settings_adjust_timing">Timing options</string>
+    <string name="settings_alerts_enabled">%1$d on</string>
+    <string name="settings_expanded">Expanded</string>
+    <string name="settings_collapsed">Collapsed</string>
 </resources>

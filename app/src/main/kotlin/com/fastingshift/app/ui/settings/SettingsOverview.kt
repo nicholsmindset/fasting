@@ -2,6 +2,29 @@ package com.fastingshift.app.ui.settings
 
 import android.content.Intent
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.fastingshift.app.ui.components.rememberWeekFormat
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +65,7 @@ internal enum class SettingsSection(@StringRes val title: Int, @StringRes val su
 @Composable
 internal fun SettingsOverview(
     appearance: AppAppearance,
+    planner: PlannerState?,
     entitlement: Entitlement,
     onOpenWeek: () -> Unit,
     onAppearance: () -> Unit,
@@ -53,45 +77,98 @@ internal fun SettingsOverview(
         verticalArrangement = Arrangement.spacedBy(Spacing.section),
     ) {
         LargeTitle(stringResource(R.string.settings_title))
-        InsetGroup {
-            GroupRow(
-                stringResource(R.string.settings_schedules_title),
-                subtitle = stringResource(R.string.settings_schedules_subtitle),
-                showChevron = true,
-                onClick = onOpenWeek,
-            )
+        WeekShortcut(planner, onOpenWeek)
+        InsetGroup(header = stringResource(R.string.settings_group_routine)) {
+            SectionRow(SettingsSection.REMINDERS, onSection)
             GroupDivider()
+            SectionRow(SettingsSection.FASTING, onSection)
+        }
+        InsetGroup(header = stringResource(R.string.settings_group_app)) {
             GroupRow(
-                stringResource(R.string.appearance_title),
-                value = stringResource(appearanceLabel(appearance)),
+                stringResource(R.string.appearance_title), value = stringResource(appearanceLabel(appearance)),
                 showChevron = true, opensPicker = true, onClick = onAppearance,
             )
+            GroupDivider()
+            LanguageRow()
         }
-        InsetGroup {
-            SettingsSection.entries.forEachIndexed { index, section ->
-                if (index > 0) GroupDivider()
-                val summary = section.summary
-                val plan = section == SettingsSection.PLAN
-                GroupRow(
-                    stringResource(section.title),
-                    modifier = Modifier.testTag(section.overviewTag),
-                    subtitle = if (summary != null) stringResource(summary) else entitlement.expiresAt?.let {
-                        stringResource(if (entitlement.willRenew) R.string.plan_renews else R.string.plan_ends, it.formatDate())
-                    },
-                    value = if (plan) {
-                        val tier = stringResource(planLabel(entitlement.plan))
-                        if (entitlement.inTrial) "$tier · " + stringResource(R.string.plan_trial) else tier
-                    } else null,
-                    showChevron = true,
-                    onClick = { onSection(section) },
-                )
-            }
+        InsetGroup(header = stringResource(R.string.settings_group_account)) {
+            SectionRow(SettingsSection.SAFETY, onSection)
+            GroupDivider()
+            SectionRow(SettingsSection.PRIVACY, onSection)
+            GroupDivider()
+            val tier = stringResource(planLabel(entitlement.plan))
+            GroupRow(stringResource(SettingsSection.PLAN.title),
+                modifier = Modifier.testTag(SettingsSection.PLAN.overviewTag),
+                subtitle = entitlement.expiresAt?.let {
+                    stringResource(if (entitlement.willRenew) R.string.plan_renews else R.string.plan_ends, it.formatDate())
+                },
+                value = if (entitlement.inTrial) "$tier · " + stringResource(R.string.plan_trial) else tier,
+                showChevron = true, onClick = { onSection(SettingsSection.PLAN) })
             if (entitlement.plan == PlanType.MONTHLY || entitlement.plan == PlanType.ANNUAL) {
                 GroupDivider()
                 ManagePlanRow()
             }
-            GroupDivider()
-            LanguageRow()
+        }
+    }
+}
+
+@Composable
+private fun SectionRow(section: SettingsSection, onSection: (SettingsSection) -> Unit) {
+    GroupRow(stringResource(section.title), modifier = Modifier.testTag(section.overviewTag),
+        subtitle = section.summary?.let { stringResource(it) }, showChevron = true, onClick = { onSection(section) })
+}
+
+@Composable
+private fun WeekShortcut(planner: PlannerState?, onClick: () -> Unit) {
+    val format = rememberWeekFormat()
+    val days = planner?.let { state -> (0L..6L).map { offset ->
+        val date = state.today.plusDays(offset)
+        date to state.starts(date).map { it.second }
+    } }.orEmpty()
+    val next = planner?.let { state -> days.asSequence().flatMap { it.second.asSequence() }.firstOrNull { it > state.now }
+        ?.atZone(state.zone) }
+    val colors = MaterialTheme.colorScheme
+    Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = colors.primaryContainer) {
+        Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.settings_schedules_title), Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge, color = colors.onPrimaryContainer)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = colors.onPrimaryContainer)
+            }
+            if (next != null) {
+                Text(stringResource(R.string.week_timer_planned, format.dateTime.format(next)),
+                    style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
+            } else {
+                val description = if (planner != null && planner.routines.any { it.enabled }) R.string.settings_no_starts_this_week
+                    else R.string.settings_schedules_subtitle
+                Text(stringResource(description), style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
+            }
+            BoxWithConstraints {
+                if (days.isNotEmpty() && maxWidth >= 280.dp && LocalDensity.current.fontScale <= 1.3f) {
+                    val scheduled = days.filter { it.second.isNotEmpty() }.joinToString(", ") { it.first.format(format.date) }
+                    val description = if (scheduled.isEmpty()) stringResource(R.string.settings_no_starts_this_week)
+                        else stringResource(R.string.settings_planned_dates, scheduled)
+                    Row(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val dayNumber = DateTimeFormatter.ofPattern("d", format.locale)
+                        days.forEachIndexed { index, (date, starts) ->
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(date.dayOfWeek.getDisplayName(TextStyle.NARROW_STANDALONE, format.locale),
+                                    style = MaterialTheme.typography.labelSmall, color = colors.onPrimaryContainer)
+                                Box(Modifier.size(30.dp).then(if (index == 0) Modifier.background(colors.onPrimaryContainer, CircleShape)
+                                    else Modifier), contentAlignment = Alignment.Center) {
+                                    Text(dayNumber.format(date), style = MaterialTheme.typography.labelLarge,
+                                        color = if (index == 0) colors.primaryContainer else colors.onPrimaryContainer)
+                                }
+                                Box(Modifier.fillMaxWidth(0.55f).height(3.dp).background(
+                                    if (starts.isNotEmpty()) colors.onPrimaryContainer else colors.onPrimaryContainer.copy(alpha = 0.14f),
+                                    CircleShape))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

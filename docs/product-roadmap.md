@@ -29,6 +29,17 @@ The first customer to test is someone who already fasts, but whose dinner times 
 
 The [facilitator guide and blank pilot scorecards](pilot-session.md) are ready for the five-person round and follow-up.
 
+## Visual design and controls
+
+Start with Settings and the daily logging flow. Compare matched Android screenshots before and after each change using the same data, device width, locale and appearance. The [screen audit and reference studies](design-direction.md) record the findings for Timer, History, Log and Settings.
+
+| Priority | Design work | How to judge the result |
+| --- | --- | --- |
+| First | Organize Settings by what someone wants to do. Put the current routine and frequently changed preferences within easy reach. Move detailed alarm options into their own context. | A first-time tester can change Tuesday, choose dark mode, and locate the next reminder without having to inspect each switch. |
+| First | Give primary actions, navigation rows, switches and choice lists a consistent visual treatment. Expose the current value wherever it helps predict what will happen on tap. | A tester can tell whether tapping changes a setting immediately, opens choices or navigates elsewhere. Checked, disabled and pressed states are legible in both appearances. |
+| Next | Reduce repeated actions and equally weighted groups on the daily tabs. Preserve direct access to starting a fast, correcting a record and logging a portion. | In screenshots and observed use, the immediate task is easy to locate. A single tap logs exactly one entry. |
+| Verify | Exercise long translated labels, 320dp screens, doubled text, back navigation and screen-reader semantics. Compare the release candidate with the baseline. | Primary actions remain reachable, values do not overlap, and a screen reader can identify each control and its state. Run a physical TalkBack session before wider release. |
+
 ## The usability session
 
 Use fictional schedules and records. Let the participant act before giving a hint.

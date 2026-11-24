@@ -79,6 +79,34 @@ class AppFlowTest {
         throw e
     }
 
+    @Test fun routineReminderDisclosureReflectsTogglesAndKeepsItsStateWhileOpen() {
+        val original = runBlocking { settings.current() }
+        runBlocking { settings.setOnboardingComplete(true) }
+        try {
+            waitFor(s(R.string.tab_settings))
+            click(s(R.string.tab_settings))
+            compose.onNodeWithTag("settings_open_reminders").performScrollTo().performClick()
+            val disclosure = s(R.string.settings_routine_reminders)
+            val water = s(R.string.settings_hydration)
+            waitFor(disclosure)
+            compose.onNodeWithText(water).assertDoesNotExist()
+            click(disclosure)
+            click(water)
+            val previous = original.reminders.hydrationEnabled
+            val count = listOf(!previous, original.coachingEnabled, original.weeklyRecapEnabled).count { it }
+            val updated = hasText(disclosure) and hasText(s(R.string.settings_alerts_enabled, count))
+            compose.waitUntil(5_000) { compose.onAllNodes(updated).fetchSemanticsNodes().size == 1 }
+            click(disclosure)
+            compose.onNodeWithText(water).assertDoesNotExist()
+            assertEquals(!previous, runBlocking { settings.current().reminders.hydrationEnabled })
+        } finally {
+            runBlocking {
+                settings.setHydrationNudges(original.reminders.hydrationEnabled)
+                settings.setOnboardingComplete(original.onboardingComplete)
+            }
+        }
+    }
+
     @Test fun reminderPreferencesOfferAndroidSettingsWhenDeliveryIsBlocked() {
         val application = compose.activity.application
         val systemNotifications = shadowOf(application.getSystemService(NotificationManager::class.java))

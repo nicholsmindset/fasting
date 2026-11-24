@@ -3,6 +3,7 @@ package com.fastingshift.app.ui.design
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -147,6 +148,7 @@ fun GroupRow(
     BoxWithConstraints(modifier.fillMaxWidth().then(
         if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier,
     )) {
+        val picker = opensPicker && showChevron && value != null
         val valueBelow = value != null && (LocalDensity.current.fontScale > 1.25f || maxWidth < 310.dp)
         val valueWidth = maxWidth * 0.40f
         Row(
@@ -158,22 +160,40 @@ fun GroupRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor)
                 if (valueBelow && value != null) {
-                    Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (picker) PickerValue(value)
+                    else Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (subtitle != null) {
                     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             if (value != null && !valueBelow) {
-                Text(value, modifier = Modifier.widthIn(max = valueWidth), style = MaterialTheme.typography.bodyMedium,
+                if (picker) PickerValue(value, Modifier.widthIn(max = valueWidth))
+                else Text(value, modifier = Modifier.widthIn(max = valueWidth), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
             }
             trailing?.invoke(this)
-            if (showChevron) {
+            if (showChevron && !picker) {
                 val icon = if (opensPicker) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight
                 Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+    }
+}
+
+/** The parent row owns the action. Keep its selected value and disclosure together when text wraps. */
+@Composable
+private fun PickerValue(value: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
+            .padding(start = 9.dp, end = 6.dp, top = 5.dp, bottom = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(value, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface)
+        Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -204,7 +224,7 @@ private fun PreferenceSwitchMark(checked: Boolean) {
     val outline by animateColorAsState(if (checked) colors.primary else colors.outline, label = "switchOutline")
     val thumb by animateColorAsState(if (checked) colors.onPrimary else colors.onSurfaceVariant, label = "switchKnob")
 
-    Canvas(Modifier.padding(start = 10.dp).size(width = 46.dp, height = 28.dp)) {
+    Canvas(Modifier.padding(start = 10.dp).size(width = 42.dp, height = 24.dp)) {
         val border = 1.5.dp.toPx()
         val radius = size.height / 2f
         drawRoundRect(track, cornerRadius = CornerRadius(radius))
@@ -212,7 +232,7 @@ private fun PreferenceSwitchMark(checked: Boolean) {
             CornerRadius(radius - border / 2), style = Stroke(border))
         val fraction = if (layoutDirection == LayoutDirection.Rtl) 1f - progress else progress
         val center = Offset(radius + (size.width - 2 * radius) * fraction, radius)
-        drawCircle(thumb, radius = (7.5f + 2.5f * progress).dp.toPx(), center = center)
+        drawCircle(thumb, radius = (7f + 2f * progress).dp.toPx(), center = center)
         if (checked) {
             val bend = center + Offset(-1.dp.toPx(), 2.5.dp.toPx())
             drawLine(track, center + Offset(-4.dp.toPx(), 0f), bend, 1.7.dp.toPx(), StrokeCap.Round)
@@ -221,9 +241,9 @@ private fun PreferenceSwitchMark(checked: Boolean) {
     }
 }
 
-private val ButtonShape = RoundedCornerShape(12.dp)
+private val ButtonShape = RoundedCornerShape(9.dp)
 
-/** Main call to action: full width, 52dp, rounded rectangle (iOS filled button). */
+/** Full-width primary action with room for a wrapped label. */
 @Composable
 fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, haptic: Boolean = false) {
     val haptics = rememberHaptics()
@@ -233,23 +253,23 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
         shape = ButtonShape,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) { Text(text, style = MaterialTheme.typography.labelLarge) }
+    ) { Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center) }
 }
 
-/** Secondary action: tinted background, accent text (iOS tinted button). */
+/** An outlined secondary action leaves the filled treatment for the main decision. */
 @Composable
 fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Button(
         onClick = onClick,
         enabled = enabled,
         shape = ButtonShape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.primary,
+        border = BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) { Text(text, style = MaterialTheme.typography.labelLarge) }
+    ) { Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center) }
 }
 
 /** Text-only action in the accent colour (iOS plain button). */

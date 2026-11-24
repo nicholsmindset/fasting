@@ -128,7 +128,6 @@ fun TimerRoute(
                     onOpenProgram = onOpenProgram, onSetMode = viewModel::setMode, onOpenScreening = onOpenScreening,
                     onStartAt = viewModel::setStartAt, onWater = { viewModel.addWater() },
                     onWeight = { v, u -> viewModel.addWeight(v, u) }, onElectrolyte = { e, mg -> viewModel.addElectrolyte(e, mg) },
-                    onTodayWater = { viewModel.addWaterQuietly() },
                     onOpenMuslimHub = onOpenMuslimHub,
                     onOpenWeek = onOpenWeek,
                 ),
@@ -182,8 +181,6 @@ class TimerActions(
     val onWater: () -> Unit = {},
     val onWeight: (Double, WeightUnit) -> Unit = { _, _ -> },
     val onElectrolyte: (Electrolyte, Double) -> Unit = { _, _ -> },
-    /** +250 ml from the Today card's water ring. */
-    val onTodayWater: () -> Unit = onWater,
     /** Sunnah & qada hub, from the Ramadan card. */
     val onOpenMuslimHub: () -> Unit = {},
     val onOpenWeek: (LocalDate?) -> Unit = {},
@@ -226,8 +223,8 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
                             ExactAlarmBanner()
                             RamadanCard(onOpenHub = actions.onOpenMuslimHub)
                             CoachingTipCard(active)
-                            TodayCard(state.today, actions.onTodayWater)
-                            QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
+                            TodayCard(state.today, actions.onWater)
+                            QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)
                             BodyTimelineCard(timer.elapsed)
                         } else {
                             NotFasting(state, actions)
@@ -352,8 +349,8 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
         SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
     }
     if (choosing) ProtocolPicker(state, actions) { choosing = false }
-    TodayCard(state.today, actions.onTodayWater)
-    QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
+    TodayCard(state.today, actions.onWater)
+    QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)
 }
 
 @Composable

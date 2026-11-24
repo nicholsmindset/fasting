@@ -10,4 +10,13 @@
     <string name="settings_delivery">Pengiriman notifikasi</string>
     <string name="settings_routine_reminders">Pengingat rutin</string>
     <string name="settings_files">Cadangan dan transfer</string>
+    <string name="settings_group_routine">Rutinitas Anda</string>
+    <string name="settings_group_app">Tampilan dan bahasa</string>
+    <string name="settings_group_account">Keamanan, data, dan keanggotaan</string>
+    <string name="settings_no_starts_this_week">Tidak ada jadwal mulai dalam tujuh hari ke depan.</string>
+    <string name="settings_planned_dates">Tanggal terjadwal: %1$s</string>
+    <string name="settings_adjust_timing">Opsi waktu</string>
+    <string name="settings_alerts_enabled">%1$d aktif</string>
+    <string name="settings_expanded">Diperluas</string>
+    <string name="settings_collapsed">Diciutkan</string>
 </resources>

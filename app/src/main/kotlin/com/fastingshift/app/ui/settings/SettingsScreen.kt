@@ -3,6 +3,13 @@ package com.fastingshift.app.ui.settings
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -224,7 +231,10 @@ internal fun SettingsRoute(
 
     if (section == null) {
         Box(Modifier.fillMaxSize()) {
+            val planner: SchedulesViewModel = hiltViewModel()
+            val week by planner.state.collectAsStateWithLifecycle()
             SettingsOverview(
+                planner = week,
                 appearance = s.appearance,
                 entitlement = ent,
                 onOpenWeek = onOpenSchedules,
@@ -406,13 +416,15 @@ private fun ReminderGroups(
         GroupDivider()
         SwitchGroupRow(stringResource(R.string.settings_end_alert), reminders.fastEndEnabled, { v -> vm.set { setFastEndReminder(v) } })
         GroupDivider()
-        SwitchGroupRow(stringResource(R.string.settings_near_goal), reminders.nearGoalEnabled, { v -> vm.set { setNearGoalReminder(v) } })
-        GroupDivider()
         GroupRow(
             stringResource(R.string.settings_milestones),
             value = milestonesValue(reminders.milestones.map { it.toHours().toInt() }),
             showChevron = true, opensPicker = true, onClick = onMilestones,
         )
+    }
+    ReminderDisclosure(R.string.settings_adjust_timing,
+        listOf(reminders.nearGoalEnabled, reminders.forgotToEndAfter != null, reminders.windowClosingEnabled).count { it }) {
+        SwitchGroupRow(stringResource(R.string.settings_near_goal), reminders.nearGoalEnabled, { v -> vm.set { setNearGoalReminder(v) } })
         GroupDivider()
         GroupRow(
             stringResource(R.string.settings_forgot_title),
@@ -421,6 +433,14 @@ private fun ReminderGroups(
         )
         GroupDivider()
         SwitchGroupRow(stringResource(R.string.settings_window_closing), reminders.windowClosingEnabled, { v -> vm.set { setWindowClosingReminder(v) } })
+    }
+    ReminderDisclosure(R.string.settings_routine_reminders,
+        listOf(reminders.hydrationEnabled, settings.coachingEnabled, settings.weeklyRecapEnabled).count { it }) {
+        SwitchGroupRow(stringResource(R.string.settings_hydration), reminders.hydrationEnabled, { v -> vm.set { setHydrationNudges(v) } })
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_coaching), settings.coachingEnabled, { v -> vm.set { setCoaching(v) } })
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_weekly_recap), settings.weeklyRecapEnabled, { v -> vm.set { setWeeklyRecap(v) } })
     }
     InsetGroup(header = stringResource(R.string.settings_delivery)) {
         GroupRow(
@@ -431,12 +451,23 @@ private fun ReminderGroups(
         GroupDivider()
         SwitchGroupRow(stringResource(R.string.settings_ongoing), settings.ongoingNotification, { v -> vm.set { setOngoingNotification(v) } })
     }
-    InsetGroup(header = stringResource(R.string.settings_routine_reminders)) {
-        SwitchGroupRow(stringResource(R.string.settings_hydration), reminders.hydrationEnabled, { v -> vm.set { setHydrationNudges(v) } })
-        GroupDivider()
-        SwitchGroupRow(stringResource(R.string.settings_coaching), settings.coachingEnabled, { v -> vm.set { setCoaching(v) } })
-        GroupDivider()
-        SwitchGroupRow(stringResource(R.string.settings_weekly_recap), settings.weeklyRecapEnabled, { v -> vm.set { setWeeklyRecap(v) } })
+}
+
+@Composable
+private fun ReminderDisclosure(title: Int, enabledCount: Int, content: @Composable ColumnScope.() -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val status = stringResource(if (expanded) R.string.settings_expanded else R.string.settings_collapsed)
+    InsetGroup {
+        GroupRow(stringResource(title), modifier = Modifier.semantics { stateDescription = status },
+            value = stringResource(R.string.settings_alerts_enabled, enabledCount), onClick = { expanded = !expanded },
+            trailing = {
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null,
+                    modifier = Modifier.rotate(if (expanded) 180f else 0f))
+            })
+        if (expanded) {
+            GroupDivider()
+            content()
+        }
     }
 }
 

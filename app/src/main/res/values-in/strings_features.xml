@@ -21,8 +21,8 @@
     <string name="eating_a11y">Jendela makan berakhir dalam %1$s, pukul %2$s.</string>
     <string name="quick_add_title">Tambah cepat</string>
     <string name="quick_water">+250 ml air</string>
-    <string name="quick_weight">Berat</string>
-    <string name="quick_electrolytes">Elektrolit</string>
+    <string name="quick_weight">Catat berat badan</string>
+    <string name="quick_electrolytes">Catat elektrolit</string>
     <string name="quick_water_added">250 ml air ditambahkan</string>
     <string name="quick_weight_added">Berat disimpan</string>
     <string name="quick_electrolyte_added">Elektrolit disimpan</string>
@@ -344,4 +344,5 @@
     <string name="history_keep_plan">Lanjutkan rencana saya</string>
     <string name="history_edit_schedule">Ubah jadwal rutin</string>
     <string name="history_take_break">Istirahat pekan depan</string>
+    <string name="log_water_entries">Catatan air (%1$d)</string>
 </resources>

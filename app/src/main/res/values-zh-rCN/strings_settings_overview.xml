@@ -10,4 +10,13 @@
     <string name="settings_delivery">通知送达</string>
     <string name="settings_routine_reminders">日常提醒</string>
     <string name="settings_files">备份与传输</string>
+    <string name="settings_group_routine">你的日常安排</string>
+    <string name="settings_group_app">外观与语言</string>
+    <string name="settings_group_account">安全、数据与会员</string>
+    <string name="settings_no_starts_this_week">未来七天内没有待开始的计划。</string>
+    <string name="settings_planned_dates">计划日期：%1$s</string>
+    <string name="settings_adjust_timing">提醒时间选项</string>
+    <string name="settings_alerts_enabled">已开启 %1$d 项</string>
+    <string name="settings_expanded">已展开</string>
+    <string name="settings_collapsed">已收起</string>
 </resources>

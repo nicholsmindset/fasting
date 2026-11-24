@@ -25,8 +25,8 @@
     <string name="eating_a11y">进食窗口还剩 %1$s，将于 %2$s 结束。</string>
     <string name="quick_add_title">快速添加</string>
     <string name="quick_water">+250 ml 水</string>
-    <string name="quick_weight">体重</string>
-    <string name="quick_electrolytes">电解质</string>
+    <string name="quick_weight">记录体重</string>
+    <string name="quick_electrolytes">记录电解质</string>
     <string name="quick_water_added">已添加 250 ml 饮水</string>
     <string name="quick_weight_added">体重已保存</string>
     <string name="quick_electrolyte_added">电解质已保存</string>
@@ -348,4 +348,5 @@
     <string name="history_keep_plan">保持原计划</string>
     <string name="history_edit_schedule">调整常规安排</string>
     <string name="history_take_break">下周休息</string>
+    <string name="log_water_entries">饮水记录（%1$d）</string>
 </resources>

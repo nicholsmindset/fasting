@@ -21,6 +21,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.domain.model.Schedule
+import java.time.DayOfWeek
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Electrolyte
@@ -75,6 +78,7 @@ class StoreScreenshotTest {
     @Inject lateinit var fasts: FastRepository
     @Inject lateinit var screening: ScreeningRepository
     @Inject lateinit var settings: SettingsRepository
+    @Inject lateinit var schedules: ScheduleRepository
     @Inject lateinit var logs: LogRepository
 
     private val outDir: String? = System.getProperty("fastingshift.screenshotDir")
@@ -178,8 +182,14 @@ class StoreScreenshotTest {
         shoot("3-log", mode)
         compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("weight_chart"))
         shoot("3b-log-trend", mode)
+        runBlocking {
+            schedules.save(Schedule(protocolId = "window_16_8",
+                days = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                startTime = LocalTime.of(20, 0)))
+        }
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
-        waitFor(s(R.string.appearance_title))
+        val nextStartLabel = compose.activity.getString(R.string.week_timer_planned, "").trimEnd()
+        compose.waitUntil(15_000) { compose.onAllNodesWithText(nextStartLabel, substring = true).fetchSemanticsNodes().isNotEmpty() }
         shoot("4-settings", mode)
         val reminders = hasTestTag("settings_open_reminders")
         val endReminder = hasText(s(R.string.settings_end_alert)) and
