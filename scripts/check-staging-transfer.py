@@ -35,10 +35,9 @@ def save_copy(screen, name):
     downloads(device)
     field.set_text(name, timeout=10)
     save = device(packageNameMatches=documents, textMatches="(?i)save")
-    for attempt in range(3):
-        save.click(timeout=10)
-        if device(packageName=package).wait(timeout=3):
-            break
+    # A return to Settings can race UiAutomator's app-window selector;
+    # use the actual shared document as the success condition.
+    save.click_exists(timeout=5)
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
         result = subprocess.run(["adb", "exec-out", "cat", "/sdcard/Download/"+name], capture_output=True, text=True)
@@ -47,7 +46,10 @@ def save_copy(screen, name):
                 return json.loads(result.stdout)
             except json.JSONDecodeError:
                 pass
+        if save.exists:
+            save.click_exists(timeout=0.2)
         time.sleep(0.5)
+    print(ui.adb("shell", "ls", "-l", "/sdcard/Download"), flush=True)
     raise AssertionError("Full backup did not reach Downloads: "+name)
 
 def main(d):
