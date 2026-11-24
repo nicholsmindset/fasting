@@ -27,6 +27,8 @@ The first customer to test is someone who already fasts, but whose dinner times 
 | P1 · Billing and store readiness | On Play internal testing, verify purchase, checkout dismissal, renewal, cancellation, expiry, reinstall, restore and restore with no entitlement. Review store disclosures, safety guidance and language. | Entitlement follows the Play purchase throughout its term. Restore works on reinstall, expiry returns the app to free, and no purchase flow interrupts the timer. Physical reminders work on Pixel and Samsung with normal battery settings. | Configured Play and billing accounts, devices and reviewers. |
 | P2 · Expand the paid product | Finish one book lesson in Robert’s voice and test it with readers. Consider reusable weekly templates if participants repeatedly rebuild the same schedule. | A reader finishes the lesson and describes its practical use, or a tester demonstrates a recurring planning task a template would save. Build the feature supported by that evidence first. | Editorial review and actual pilot observations. |
 
+The [facilitator guide and blank pilot scorecards](pilot-session.md) are ready for the five-person round and follow-up.
+
 ## The usability session
 
 Use fictional schedules and records. Let the participant act before giving a hint.

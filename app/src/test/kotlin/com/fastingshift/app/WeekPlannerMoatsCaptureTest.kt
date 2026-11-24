@@ -4,7 +4,10 @@ import android.app.Application
 import android.app.TimePickerDialog
 import android.content.DialogInterface
 import android.text.format.DateFormat
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -21,6 +24,7 @@ import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.ScreeningAnswers
@@ -47,6 +51,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowDialog
@@ -114,6 +119,53 @@ class WeekPlannerMoatsCaptureTest {
         if (shot.exists()) check(shot.delete())
         captureScreenRoboImage(shot.absolutePath)
         check(shot.length() > 0)
+    }
+
+    @Test
+    @Config(qualifiers = "ms-rMY-w320dp-h640dp-night-xxhdpi")
+    fun compactMalayDateEditorGroupsTimesAnnouncesErrorsAndRestoresASkip() {
+        val originalScale = RuntimeEnvironment.getFontScale()
+        val day = LocalDate.now(clock)
+        val usual = LocalTime.of(20, 0)
+        try {
+            RuntimeEnvironment.setFontScale(2f)
+            runBlocking {
+                schedules.save(Schedule(protocolId = Presets.W16_8.id, days = setOf(day.dayOfWeek), startTime = usual))
+            }
+            scenario = ActivityScenario.launch(MainActivity::class.java)
+            val config = app.resources.configuration
+            assertEquals(320, config.screenWidthDp)
+            assertEquals(2f, config.fontScale)
+            assertEquals("ms", config.locales[0].language)
+            val time = WeekFormat(config.locales[0], DateFormat.is24HourFormat(app)).time.format(usual)
+            tap(hasTestTag("tab_settings"))
+            tap(label(R.string.settings_schedules_title), scroll = true)
+            val row = hasTestTag("week-day-$day")
+            tap(row, scroll = true)
+            val starts = label(R.string.plan_this_date)
+            compose.onNode(starts and hasText(time)).performScrollTo().assertIsDisplayed()
+
+            tap(label(R.string.week_change_time), scroll = true)
+            requireNotNull(scenario).onActivity {
+                val picker = ShadowDialog.getLatestDialog() as TimePickerDialog
+                picker.updateTime(13, 0) // The fixture clock is 14:00 in Singapore.
+                picker.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            }
+            val announcement = SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)
+            compose.onNode(label(R.string.week_future_time) and announcement).performScrollTo().assertIsDisplayed()
+            tap(label(R.string.week_skip_day), scroll = true)
+            waitFor(row and label(R.string.week_skipped))
+            tap(row, scroll = true)
+            compose.onNode(starts and label(R.string.week_skipped) and label(R.string.plan_usual_times, time))
+                .performScrollTo().assertIsDisplayed()
+            tap(label(R.string.week_restore_day), scroll = true)
+            waitFor(row and hasText(time))
+            assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[day] })
+        } finally {
+            scenario?.close()
+            scenario = null
+            RuntimeEnvironment.setFontScale(originalScale)
+        }
     }
 
     @Test fun weekdayRoutineCanMoveOneDayWhileAFastIsRunning() {

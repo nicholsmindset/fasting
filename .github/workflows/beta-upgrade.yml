@@ -29,7 +29,7 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build and sign both versions with one disposable key
+      - name: Sign both upgrade versions and a fresh-install recovery fixture
         env:
           BETA_KEY_ALIAS: upgrade-test
           BETA_STORE_PASSWORD: emulator-only
@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           export BETA_KEYSTORE="$RUNNER_TEMP/upgrade-test.p12"
-          trap 'rm -f "$BETA_KEYSTORE"' EXIT
+          trap 'rm -f "$RUNNER_TEMP/upgrade-test.p12" "$RUNNER_TEMP/recovery-test.p12"' EXIT
           keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$BETA_KEYSTORE" \
             -storepass:env BETA_STORE_PASSWORD -keypass:env BETA_KEY_PASSWORD -alias "$BETA_KEY_ALIAS" \
             -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Emulator upgrade test'
@@ -60,6 +60,13 @@ jobs:
           rm -rf previous/app/build previous/core/data/build previous/core/domain/build
           ./gradlew :app:assembleInternalBeta -Pfastingshift.versionCode=101
           bash scripts/sign-internal-beta.sh app/build/outputs/apk/internalBeta/*-unsigned.apk "$RUNNER_TEMP/beta-after.apk"
+          # A different signer reproduces the Android install conflict between staging builds.
+          export BETA_KEYSTORE="$RUNNER_TEMP/recovery-test.p12"
+          keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$BETA_KEYSTORE" \
+            -storepass:env BETA_STORE_PASSWORD -keypass:env BETA_STORE_PASSWORD -alias "$BETA_KEY_ALIAS" \
+            -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=Emulator recovery test'
+          export BETA_CERT_SHA256="$(keytool -exportcert -keystore "$BETA_KEYSTORE" -alias "$BETA_KEY_ALIAS" -storepass:env BETA_STORE_PASSWORD | sha256sum | cut -d' ' -f1)"
+          bash scripts/sign-internal-beta.sh app/build/outputs/apk/internalBeta/*-unsigned.apk "$RUNNER_TEMP/beta-recovery.apk"
           ./gradlew --stop
           rm -rf app/build core/data/build core/domain/build
       - uses: actions/setup-python@v5
@@ -71,7 +78,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Create fasts, update and verify both records
+      - name: Verify upgrades and recover a backup after a signing change
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -79,7 +86,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: python scripts/beta-upgrade-smoke.py "$RUNNER_TEMP/beta-before.apk" "$RUNNER_TEMP/beta-after.apk"
+          script: python scripts/beta-upgrade-smoke.py "$RUNNER_TEMP/beta-before.apk" "$RUNNER_TEMP/beta-after.apk" "$RUNNER_TEMP/beta-recovery.apk"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

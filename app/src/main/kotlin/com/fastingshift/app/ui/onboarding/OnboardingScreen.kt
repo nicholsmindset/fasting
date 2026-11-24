@@ -6,16 +6,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -70,6 +67,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -322,7 +321,21 @@ private fun GoalStep(st: OnboardingState, vm: OnboardingViewModel) {
 private fun ScreeningForm(st: OnboardingState, vm: OnboardingViewModel) {
     val f = st.form
     val required = stringResource(R.string.onb_field_hint)
-    StepPage(actions = { PrimaryButton(stringResource(R.string.onb_next), onClick = vm::submitScreening) }) {
+    StepPage(actions = {
+        if (st.formError) {
+            f.invalidNumber?.let { number ->
+                val label = when (number) {
+                    ScreeningNumber.AGE -> R.string.onb_age
+                    ScreeningNumber.HEIGHT -> R.string.onb_height
+                    ScreeningNumber.WEIGHT -> R.string.onb_weight
+                }
+                Text(stringResource(R.string.onb_form_error, stringResource(label), number.bounds.first, number.bounds.last),
+                    modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+                    color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        PrimaryButton(stringResource(R.string.onb_next), onClick = vm::submitScreening)
+    }) {
         StepTitle(R.string.onb_screen_title, R.string.onb_screen_body)
         InsetGroup(header = stringResource(R.string.onb_screen_about)) {
             TextFieldGroupRow(stringResource(R.string.onb_age), f.age, { v -> vm.updateForm { it.copy(age = v) } }, placeholder = required)
@@ -345,9 +358,6 @@ private fun ScreeningForm(st: OnboardingState, vm: OnboardingViewModel) {
                     vm.updateForm { it.copy(medications = if (on) it.medications + m else it.medications - m) }
                 })
             }
-        }
-        AnimatedVisibility(st.formError, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-            Text(stringResource(R.string.onb_form_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

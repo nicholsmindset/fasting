@@ -23,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
@@ -183,7 +186,7 @@ private fun DateEditor(day: LocalDate, usualTimes: List<LocalTime>, currentTimes
     var invalid by rememberSaveable(day) { mutableStateOf(false) }
     val time = override?.startTime ?: usualTimes.first()
     GroupedSheet(format.date.format(day), onDismiss = { if (!busy) onClose() }) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.plan_this_date), style = MaterialTheme.typography.labelLarge)
             val value = if (currentTimes.isEmpty()) stringResource(R.string.week_skipped)
                 else currentTimes.joinToString(" · ") { format.time.format(it) }
@@ -201,7 +204,8 @@ private fun DateEditor(day: LocalDate, usualTimes: List<LocalTime>, currentTimes
                 if (!invalid) onChange(if (selected == usualTimes.first()) null else DayOverride(selected))
             }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
         })
-        if (invalid) Text(stringResource(R.string.week_future_time), color = MaterialTheme.colorScheme.error)
+        if (invalid) Text(stringResource(R.string.week_future_time),
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }, color = MaterialTheme.colorScheme.error)
         if (override?.isSkipped != true) {
             TextButton(enabled = !busy, onClick = { onChange(DayOverride()) }) { Text(stringResource(R.string.week_skip_day)) }
         }

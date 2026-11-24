@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { appIntent, codeFromLocation, decodeChallenge, inviteAddress } from "../web/c/invite.mjs";
@@ -79,3 +80,12 @@ for (const base of ["https://fastingshift.com/c/", "https://nicholsmindset.githu
     assert.throws(() => appIntent(code, "unknown", root));
   });
 }
+
+test("the Android install link leads to the maintained tested build and its APK", () => {
+  const html = readFileSync(new URL("../web/c/index.html", import.meta.url), "utf8");
+  const link = html.match(/id="staging-download" href="([^"]+)"/)?.[1];
+  assert.equal(link, "https://github.com/nicholsmindset/fasting/blob/HEAD/docs/product-roadmap.md#candidate-evidence");
+  const roadmap = readFileSync(new URL("../docs/product-roadmap.md", import.meta.url), "utf8");
+  const candidate = roadmap.split("## Candidate evidence")[1]?.split(/\n## /)[0];
+  assert.match(candidate ?? "", /\[Staging APK\]\(https:\/\/github\.com\/nicholsmindset\/fasting\/actions\/runs\/\d+\/artifacts\/\d+\)/);
+});

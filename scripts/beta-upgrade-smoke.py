@@ -1,4 +1,4 @@
-"""Verify a signed upgrade, fresh invite onboarding, and persisted planner and history edits."""
+"""Exercise upgrade and backup recovery on a fresh disposable Android 15 emulator."""
 from base64 import urlsafe_b64encode
 from datetime import date, timedelta
 import json
@@ -136,7 +136,27 @@ class Screen:
         if not self.settings_overview().wait(timeout=10):
             raise AssertionError("Back from the settings category did not return to the overview")
 
-    def export_backup(self, name):
+    def open_downloads_folder(self):
+        picker = {"packageNameMatches": ".*documentsui"}
+        # On a fresh install OpenDocument often starts in Recent. Select the same
+        # Downloads root explicitly in both CreateDocument and OpenDocument.
+        files = self.device(text="Files in Downloads", **picker)
+        drawer = self.device(textMatches="(?i)Open from|Save to", **picker)
+        if not drawer.exists:
+            if files.exists or self.device(text="Downloads", resourceIdMatches=".*:id/toolbar_title", **picker).exists:
+                return
+            self.device(descriptionMatches="(?i)(show roots|open navigation drawer|show navigation drawer)", **picker).click(timeout=10)
+        # The drawer is drawn after the toolbar and breadcrumb. Both can have
+        # the same Downloads label behind it, especially on a fresh install.
+        choices = self.device(text="Downloads", **picker)
+        if not choices.wait(timeout=10):
+            raise AssertionError("Downloads root missing from the Android picker")
+        choices[choices.count - 1].click()
+        if not drawer.wait_gone(timeout=10):
+            raise AssertionError("Android picker navigation drawer remained open")
+
+
+    def export_backup(self, name, downloads=False):
         self.open_settings()
         # The two signed APKs are built from different checkouts. The older flat
         # screen has its backup action inline; the new overview links to Privacy.
@@ -149,6 +169,8 @@ class Screen:
         field = self.device(className="android.widget.EditText", packageNameMatches=".*documentsui")
         if not field.wait(timeout=15):
             raise AssertionError("The Android document picker did not open")
+        if downloads:
+            self.open_downloads_folder()
         field.set_text(name)
         self.device(packageNameMatches=".*documentsui", textMatches="(?i)save").click(timeout=10)
         if not self.device(packageName=PACKAGE).wait(timeout=15):
@@ -158,6 +180,8 @@ class Screen:
             lookup = self.device.shell(["find", "/sdcard/", "-type", "f", "-name", name]).output
             matches = [line for line in lookup.splitlines() if line.endswith("/" + name)]
             if matches:
+                if downloads and matches != ["/sdcard/Download/" + name]:
+                    raise AssertionError(f"Expected the user-selected Downloads location, found {matches}")
                 raw = adb("exec-out", "cat", matches[0])
                 try:
                     data = json.loads(raw)
@@ -489,6 +513,50 @@ class Screen:
         print("Verified a saved fast on its original History date and a weekly reflection after relaunch.")
 
 
+    def verify_reinstall_restore(self, recovery_apk):
+        name = "00-fasting-shift-recovery.json"
+        before = self.export_backup(name, downloads=True)
+        statuses = [fast["ended_at"] is None for fast in before["fasts"]]
+        if sorted(statuses) != [False, True] or not before["schedules"] or not before["challenges"]:
+            raise AssertionError("The recovery fixture must include a running fast, history, a schedule and a challenge")
+        if len(before["settings"]["day_overrides"]) != 2 or not before["settings"]["week_reflections"]:
+            raise AssertionError("The recovery fixture must include dated overrides and a reflection")
+
+        denied = subprocess.run(["adb", "install", "-r", recovery_apk], capture_output=True, text=True)
+        if denied.returncode == 0 or "INSTALL_FAILED_UPDATE_INCOMPATIBLE" not in denied.stdout + denied.stderr:
+            raise AssertionError("Android did not reject replacing the installed package with a different signer")
+        # This package was created by this run on a disposable emulator. The backup
+        # must still be on shared storage after Android removes the old app's data.
+        if adb("uninstall", PACKAGE) != "Success":
+            raise AssertionError("Could not remove the fixture app")
+        adb("shell", "test", "-s", "/sdcard/Download/" + name)
+        adb("install", recovery_apk)
+        self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+        self.onboard("tab_timer", allow_notifications=False)
+        self.open_settings()
+        self.open_settings_category("settings_open_privacy")
+        label = self.strings["settings_restore"]
+        self.find_node(self.device(textContains=label, packageName=PACKAGE), label, scroll=True).click()
+        self.open_downloads_folder()
+        self.device(text=name, packageNameMatches=".*documentsui").click(timeout=15)
+        self.find("restore_confirm_title")
+        self.click("restore_confirm_action")
+        self.find("settings_restored")
+
+        self.device.app_stop(PACKAGE)
+        self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+        self.find("timer_end", scroll=True)
+        recovered = self.export_backup("recovery-after-relaunch.json")
+        for key in ("fasts", "schedules", "challenges", "screenings"):
+            if before[key] != recovered[key]:
+                raise AssertionError(f"Restoring the backup changed {key}")
+        for key in ("goal", "default_protocol", "plan_revisions", "day_overrides", "week_reflections", "appearance"):
+            if before["settings"][key] != recovered["settings"][key]:
+                raise AssertionError(f"Restoring the backup changed the {key} setting")
+        print("Verified Android rejected the changed signer, then a fresh install recovered the active target, "
+              "history, routine, one-day changes, reflection, screening and challenge through the Android file picker.")
+
+
 def fingerprint(fasts):
     keys = ("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status")
     if len(fasts) != 2 or {f["status"] for f in fasts} != {"ENDED_EARLY", "ACTIVE"}:
@@ -499,7 +567,10 @@ def fingerprint(fasts):
     return sorted(tuple(f[k] for k in keys) for f in fasts)
 
 
-def main(device, old_apk, new_apk):
+def main(device, old_apk, new_apk, recovery_apk):
+    emulator = any(adb("shell", "getprop", key) == "1" for key in ("ro.boot.qemu", "ro.kernel.qemu"))
+    if not emulator or adb("shell", "getprop", "ro.build.version.sdk") != "35" or adb("shell", "pm", "list", "packages", PACKAGE):
+        raise RuntimeError("Use a fresh disposable Android 15 emulator without the internal beta package")
     adb("shell", "wm", "size", "1080x2160")
     adb("shell", "wm", "density", "240")
     adb("shell", "settings", "put", "secure", "show_ime_with_hard_keyboard", "0")
@@ -543,6 +614,7 @@ def main(device, old_apk, new_apk):
     candidate.verify_week_planner()
     candidate.verify_history_day()
     candidate.verify_declined_first_start()
+    candidate.verify_reinstall_restore(recovery_apk)
 
 
 if __name__ == "__main__":

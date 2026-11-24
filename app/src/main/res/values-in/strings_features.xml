@@ -168,7 +168,7 @@
     <string name="med_glp1">Obat GLP-1 (mis. semaglutida, tirzepatida)</string>
     <string name="onb_height">Tinggi (cm)</string>
     <string name="onb_weight">Berat (kg)</string>
-    <string name="onb_form_error">Mohon periksa usia, tinggi, dan berat Anda.</string>
+    <string name="onb_form_error">%1$s · Masukkan angka dari %2$d hingga %3$d.</string>
     <string name="onb_screen_privacy">Jawaban Anda dienkripsi di basis data aplikasi dan disertakan dalam cadangan lengkap dan ekspor ZIP yang Anda simpan. Anda dapat mengubah jawaban di Setelan.</string>
     <string name="onb_ok_title">Semua siap</string>
     <string name="onb_ok_body">Semua protokol tersedia untuk Anda. Puasa 24 jam atau lebih selalu disertai daftar periksa keselamatan singkat.</string>

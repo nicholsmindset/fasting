@@ -174,7 +174,7 @@
     <string name="med_glp1">GLP-1 medication (e.g. semaglutide, tirzepatide)</string>
     <string name="onb_height">Height (cm)</string>
     <string name="onb_weight">Weight (kg)</string>
-    <string name="onb_form_error">Please check your age, height and weight.</string>
+    <string name="onb_form_error">%1$s · Enter a number from %2$d to %3$d.</string>
     <string name="onb_screen_privacy">Your answers are encrypted in the app database and included in full backups and ZIP exports you choose to save. You can change your answers in Settings.</string>
     <string name="onb_ok_title">You\'re all set</string>
     <string name="onb_ok_body">Every protocol is available to you. Fasts of 24 hours or more always come with a short safety checklist.</string>
