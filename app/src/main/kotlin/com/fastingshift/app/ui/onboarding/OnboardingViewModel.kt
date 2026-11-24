@@ -43,6 +43,12 @@ fun recommendedProtocol(goal: Goal?): Protocol = when (goal) {
     Goal.WEIGHT, Goal.METABOLIC_HEALTH, Goal.LONG_FASTS, null -> Presets.W16_8
 }
 
+internal enum class ScreeningNumber(val bounds: IntRange) {
+    AGE(1..120), HEIGHT(50..260), WEIGHT(20..400);
+
+    fun accepts(value: Double): Boolean = value >= bounds.first && value <= bounds.last
+}
+
 /** Raw form input; validated into [ScreeningAnswers] on submit. */
 data class ScreeningForm(
     val age: String = "",
@@ -53,11 +59,21 @@ data class ScreeningForm(
     val heightCm: String = "",
     val weightKg: String = "",
 ) {
+    private val ageYears = age.trim().toIntOrNull()?.takeIf { it in ScreeningNumber.AGE.bounds }
+    private val height = heightCm.trim().replace(',', '.').toDoubleOrNull()?.takeIf(ScreeningNumber.HEIGHT::accepts)
+    private val weight = weightKg.trim().replace(',', '.').toDoubleOrNull()?.takeIf(ScreeningNumber.WEIGHT::accepts)
+
+    internal val invalidNumber: ScreeningNumber?
+        get() = when {
+            ageYears == null -> ScreeningNumber.AGE
+            height == null -> ScreeningNumber.HEIGHT
+            weight == null -> ScreeningNumber.WEIGHT
+            else -> null
+        }
+
     fun toAnswers(): ScreeningAnswers? {
-        val a = age.trim().toIntOrNull()?.takeIf { it in 1..120 } ?: return null
-        val h = heightCm.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it in 50.0..260.0 } ?: return null
-        val w = weightKg.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it in 20.0..400.0 } ?: return null
-        return ScreeningAnswers(a, pregnant, eatingDisorder, type1, medications, h, w)
+        return ScreeningAnswers(ageYears ?: return null, pregnant, eatingDisorder, type1, medications,
+            height ?: return null, weight ?: return null)
     }
 }
 

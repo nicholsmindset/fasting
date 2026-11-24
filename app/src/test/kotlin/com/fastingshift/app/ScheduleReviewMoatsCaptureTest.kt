@@ -1,6 +1,11 @@
 package com.fastingshift.app
 
 import android.app.Application
+import android.text.format.DateFormat
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.unit.Density
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.app.ui.plus.InsightsScreen
 import com.fastingshift.app.ui.plus.InsightsState
 import com.fastingshift.app.ui.theme.FastingShiftTheme
@@ -20,6 +26,9 @@ import com.fastingshift.domain.insights.WeeklyConsistency
 import com.fastingshift.domain.model.WeightUnit
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.fastingshift.domain.schedule.DayOverride
+import java.time.DayOfWeek
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.time.LocalTime
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -70,6 +79,42 @@ class ScheduleReviewMoatsCaptureTest {
         compose.onNodeWithText(app.getString(R.string.review_open_week)).performScrollTo().performClick()
         compose.onNodeWithText(app.getString(R.string.plan_see_plus)).performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, plans); assertEquals(1, offers) }
+    }
+
+    @Test
+    @Config(qualifiers = "ms-rMY-w320dp-h640dp-night-xxhdpi")
+    fun compactMalayReviewPairsEachDateWithItsChangeAtDoubleFontSize() {
+        val config = app.resources.configuration
+        val locale = config.locales[0]
+        assertEquals("ms", locale.language)
+        assertEquals(320, config.screenWidthDp)
+        val monday = LocalDate.of(2026, 11, 16)
+        val older = monday.minusWeeks(1)
+        val moved = LocalTime.of(21, 30)
+        val weeks = listOf(
+            ReviewWeek(WeeklyConsistency(monday, 2, 3), PlanCoverage.PLANNED, changes = mapOf(monday to DayOverride(moved))),
+            ReviewWeek(WeeklyConsistency(older, 0, 0), PlanCoverage.NO_PLANNED_DAYS, changes = mapOf(older to DayOverride())),
+        )
+        val state = InsightsState.Personal(weeks, weeks.map { it.consistency }.reversed(), emptyMap(), null, WeightUnit.KG)
+        var openedWeek = false
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
+                FastingShiftTheme(darkTheme = true) {
+                    InsightsScreen(state, {}, {}, { openedWeek = true }) {}
+                }
+            }
+        }
+        val weekday = DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, locale)
+        compose.onNodeWithText(app.getString(R.string.plan_repeat_count, weekday, 2)).performScrollTo().assertIsDisplayed().performClick()
+        val dates = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMd"), locale)
+        val time = WeekFormat(locale, DateFormat.is24HourFormat(app)).time.format(moved)
+        compose.onNode(hasText(monday.format(dates)) and hasText(app.getString(R.string.plan_moved_to, time)))
+            .performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText(older.format(dates)) and hasText(app.getString(R.string.week_skipped)))
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.settings_done)).performClick()
+        compose.onNodeWithText(app.getString(R.string.review_open_week)).performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(true, openedWeek) }
     }
 
     @Test fun personalReviewIncludesOnlyRecordedReflectionsAndHonorsHiddenWeight() {

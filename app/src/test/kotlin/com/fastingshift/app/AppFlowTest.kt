@@ -3,6 +3,10 @@ package com.fastingshift.app
 import android.Manifest
 import android.app.NotificationManager
 import android.provider.Settings
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
@@ -130,6 +134,31 @@ class AppFlowTest {
                 settings.setOnboardingComplete(false)
             }
         }
+    }
+
+    @Test fun incompleteScreeningShowsTheFirstInvalidFieldBesideNext() {
+        waitFor(s(R.string.onb_get_started))
+        click(s(R.string.onb_get_started))
+        waitFor(s(R.string.onb_goal_title))
+        click(s(R.string.goal_consistency))
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.onb_screen_title))
+        val liveError = SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)
+
+        click(s(R.string.onb_next))
+        val ageError = s(R.string.onb_form_error, s(R.string.onb_age), 1, 120)
+        compose.onNode(hasText(ageError) and liveError).assertIsDisplayed()
+
+        field(s(R.string.onb_age), "40")
+        field(s(R.string.onb_height), "261")
+        click(s(R.string.onb_next))
+        val heightError = s(R.string.onb_form_error, s(R.string.onb_height), 50, 260)
+        compose.onNode(hasText(heightError) and liveError).assertIsDisplayed()
+
+        field(s(R.string.onb_height), "175")
+        field(s(R.string.onb_weight), "70,5")
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.onb_ok_title))
     }
 
     @Test fun blockedUserThenUpdatedAnswersThenStartAndEndAFast() {

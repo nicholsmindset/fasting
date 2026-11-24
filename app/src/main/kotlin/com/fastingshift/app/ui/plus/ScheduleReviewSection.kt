@@ -68,7 +68,7 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
                 .sortedByDescending { it.key }.forEach { (day, change) ->
                     val detail = change.startTime?.let { stringResource(R.string.plan_moved_to, format.time.format(it)) }
                         ?: stringResource(R.string.week_skipped)
-                    GroupRow(day.format(full), value = detail)
+                    GroupRow(day.format(full), modifier = Modifier.semantics(mergeDescendants = true) {}, value = detail)
                 }
         }
     }
@@ -90,7 +90,7 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
             }
             if (repeated.isNotEmpty()) {
                 Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.plan_repeat_heading), style = MaterialTheme.typography.labelLarge, color = secondary)
+                    Text(stringResource(R.string.plan_repeat_heading), Modifier.semantics { heading() }, style = MaterialTheme.typography.labelLarge, color = secondary)
                     repeated.forEach { (weekday, count) ->
                         GroupRow(stringResource(R.string.plan_repeat_count, weekday.getDisplayName(TextStyle.FULL, locale), count),
                             showChevron = true, onClick = { selectedDay = weekday })

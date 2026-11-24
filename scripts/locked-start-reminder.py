@@ -26,9 +26,18 @@ def set_picker(device, when):
     hour = device(resourceId="android:id/input_hour")
     if not hour.exists:
         device(resourceId="android:id/toggle_mode").click(timeout=8)
+    minute = device(resourceId="android:id/input_minute")
+    hour.click(timeout=8)
     hour.set_text(str(when.hour), timeout=8)
-    device(resourceId="android:id/input_minute").set_text(f"{when.minute:02d}", timeout=8)
-    device(resourceId="android:id/button1").click(timeout=8)
+    minute.click(timeout=8)
+    minute.set_text(f"{when.minute:02d}", timeout=8)
+    actual = (hour.get_text(), minute.get_text())
+    if not all(value.isdigit() for value in actual) or tuple(map(int, actual)) != (when.hour, when.minute):
+        raise AssertionError(f"Time picker shows {actual} before confirming {when:%H:%M}")
+    confirm = device(resourceId="android:id/button1")
+    confirm.click(timeout=8)
+    if not confirm.wait_gone(timeout=8):
+        raise AssertionError(f"Time picker did not close after selecting {when:%H:%M}")
 
 
 def wait_for_alarm(when, replaced=None):
@@ -71,13 +80,23 @@ def check(screen):
     screen.find_node(screen.device(textContains=repeat, packageName=PACKAGE), repeat, scroll=True).click()
     screen.click("week_every_day")
     start_label = screen.strings["schedules_start_time"]
-    screen.find_node(screen.device(textContains=start_label, packageName=PACKAGE), start_label, scroll=True).click()
+    start_row = screen.device(textContains=start_label, packageName=PACKAGE)
+    screen.find_node(start_row, start_label, scroll=True).click()
     original = device_time().replace(second=0) + timedelta(minutes=3)
     # Date overrides move a time within one civil date. Keep both times on the same date.
     if original.hour == 23 and original.minute == 59:
         original += timedelta(minutes=1)
     moved = original + timedelta(minutes=1)
     set_picker(screen.device, original)
+    # Read back the draft before saving. Otherwise an unchanged native picker can
+    # look like an AlarmManager delivery failure several screens later.
+    draft_time = screen.device(text=original.strftime("%H:%M"), packageName=PACKAGE)
+    if not draft_time.wait(timeout=3):
+        print(f"Routine editor did not display {original:%H:%M}; reopening its picker once.", flush=True)
+        screen.find_node(start_row, start_label, scroll=True).click()
+        set_picker(screen.device, original)
+        if not draft_time.wait(timeout=3):
+            raise AssertionError(f"Routine editor did not accept {original:%H:%M}")
     screen.click("week_save", scroll=True)
     screen.find("week_routines", scroll=True)
     wait_for_alarm(original)

@@ -34,11 +34,27 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class PlanOffer(val plan: PlanType, internal val pkg: Package) {
+class PlanOffer private constructor(val plan: PlanType, internal val pkg: Package) {
     val id: String get() = pkg.identifier
     val price: String get() = pkg.product.price.formatted
     val phases = pkg.product.defaultOption?.pricingPhases.orEmpty()
     val installments = pkg.product.defaultOption?.installmentsInfo
+
+    companion object {
+        /** An offering can be edited independently of its Play product and billing terms. */
+        internal fun from(pkg: Package): PlanOffer? {
+            val plan = when (pkg.product.type) {
+                ProductType.INAPP -> PlanType.LIFETIME.takeIf { pkg.packageType == PackageType.LIFETIME }
+                ProductType.SUBS -> when (pkg.packageType) {
+                    PackageType.MONTHLY -> PlanType.MONTHLY
+                    PackageType.ANNUAL -> PlanType.ANNUAL
+                    else -> null
+                }
+                else -> null
+            } ?: return null
+            return PlanOffer(plan, pkg)
+        }
+    }
 }
 
 enum class PurchaseOutcome { ACTIVE, CANCELLED, PENDING, UNCONFIRMED, ALREADY_OWNED, FAILED, BUSY }
@@ -110,15 +126,7 @@ class BillingManager @Inject constructor(
         if (!isConfigured) return emptyList()
         val current = Purchases.sharedInstance.awaitOfferings().current ?: return emptyList()
         rememberPeriods(current.availablePackages.map { it.product })
-        return current.availablePackages.mapNotNull { pkg ->
-            val plan = when (pkg.packageType) {
-                PackageType.ANNUAL -> PlanType.ANNUAL
-                PackageType.MONTHLY -> PlanType.MONTHLY
-                PackageType.LIFETIME -> PlanType.LIFETIME
-                else -> return@mapNotNull null
-            }
-            PlanOffer(plan, pkg)
-        }.sortedBy { it.plan.ordinal }
+        return current.availablePackages.mapNotNull(PlanOffer::from).sortedBy { it.plan.ordinal }
     }
 
     // Both entry points share a guard, including restores launched from Settings.

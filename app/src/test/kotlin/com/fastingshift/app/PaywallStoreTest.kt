@@ -15,7 +15,6 @@ import com.fastingshift.app.ui.plus.Storefront
 import com.fastingshift.app.ui.plus.offerTerms
 import com.fastingshift.app.ui.plus.phaseTerms
 import com.fastingshift.domain.billing.Entitlement
-import com.fastingshift.domain.billing.PlanType
 import com.revenuecat.purchases.Package
 import com.revenuecat.purchases.PackageType
 import com.revenuecat.purchases.PresentedOfferingContext
@@ -88,7 +87,7 @@ class PaywallStoreTest {
             freeTrialPricingPhase = phase("P1W", "Free", 0, RecurrenceMode.FINITE_RECURRING, 1),
             introPricePricingPhase = phase("P1M", "S$2.00", 2_000_000, RecurrenceMode.FINITE_RECURRING, 3),
         )
-        return PlanOffer(PlanType.ANNUAL, Package("annual", PackageType.ANNUAL, product, PresentedOfferingContext("test")))
+        return requireNotNull(PlanOffer.from(Package("annual", PackageType.ANNUAL, product, PresentedOfferingContext("test"))))
     }
 
     @Test fun noKeyNeverContactsStoreAndMissingEntitlementCanBeRetried() = runTest(dispatcher) {
@@ -173,8 +172,28 @@ class PaywallStoreTest {
             id = "fixture_lifetime", name = "Lifetime", title = "Lifetime", description = "",
             price = Price("S$120.00", 120_000_000, "SGD"), period = null, freeTrialPricingPhase = null,
         )
-        val offer = PlanOffer(PlanType.LIFETIME, Package("one-time", PackageType.LIFETIME, product, PresentedOfferingContext("test")))
+        val offer = requireNotNull(PlanOffer.from(Package("one-time", PackageType.LIFETIME, product, PresentedOfferingContext("test"))))
         assertEquals(listOf(res.getString(R.string.shift_price_once, product.price.formatted)), offerTerms(offer, Locale.US, res))
+    }
+
+    @Test fun mixedCatalogExcludesSubscriptionsLabeledLifetimeAndOneTimeProductsLabeledRecurring() {
+        val annual = annual().pkg
+        val oneTime = TestStoreProduct(id = "one-time", name = "One time", title = "One time", description = "",
+            price = Price("S$120.00", 120_000_000, "SGD"), period = null, freeTrialPricingPhase = null)
+        val context = PresentedOfferingContext("test")
+        val catalog = listOf(
+            Package("bad-lifetime", PackageType.LIFETIME, annual.product, context),
+            Package("bad-monthly", PackageType.MONTHLY, oneTime, context),
+            Package("bad-annual", PackageType.ANNUAL, oneTime, context),
+            Package("custom", PackageType.CUSTOM, annual.product, context),
+            annual,
+            Package("lifetime", PackageType.LIFETIME, oneTime, context),
+        )
+        val visible = catalog.mapNotNull(PlanOffer::from)
+        assertEquals(listOf("annual", "lifetime"), visible.map { it.id })
+        assertTrue(offerTerms(visible.first(), Locale.US, res).any { it.contains("Renews") })
+        assertEquals(listOf(res.getString(R.string.shift_price_once, oneTime.price.formatted)),
+            offerTerms(visible.last(), Locale.US, res))
     }
 
     @Test fun sdkOutcomesPreserveCancellationPendingAndExistingOwnership() {
