@@ -1,4 +1,4 @@
-name: Review Settings fixtures
+name: Review daily Android fixtures
 on:
   push:
     branches: [codex/settings-review-fixtures]
@@ -11,26 +11,27 @@ jobs:
     timeout-minutes: 4
     strategy:
       matrix:
-        theme: [light, dark]
+        include:
+          - {phase: baseline, capture: 45510098748}
+          - {phase: updated, capture: 45512201367}
     steps:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 45511600639
+          run-id: ${{ matrix.capture }}
           name: fasting-shift-moats-screens
           path: captured
       - name: Read synthetic screenshots
         env:
-          THEME: ${{ matrix.theme }}
+          PHASE: ${{ matrix.phase }}
         run: |
           python -c 'import PIL' || python -m pip install Pillow
           python - <<'PY'
           import base64, hashlib, io, os
           from PIL import Image
           from pathlib import Path
-          for name in ("4-settings", "4a-reminders", "4b-milestone-picker"):
-              key = name + "-" + os.environ["THEME"]
-              with Image.open(Path("captured/settings") / (key + ".png")) as im:
+          for key in ("layout-ready-light", "layout-active-dark", "layout-log-light"):
+              with Image.open(Path("captured/en") / (key + ".png")) as im:
                   im = im.convert("RGB")
                   im.thumbnail((480, 960), Image.Resampling.LANCZOS)
                   out = io.BytesIO()
