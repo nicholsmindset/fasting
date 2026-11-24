@@ -10,6 +10,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,12 +36,16 @@ import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.protocol.Presets
+import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.service.EditResult
 import com.fastingshift.domain.service.FastService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,22 +60,54 @@ data class AddPastFastState(
     val error: Boolean = false,
 )
 
+/** The earliest whole picker minute that still fits the rolling history window. */
+private fun oldestStartMinute(now: Instant): Instant {
+    val cutoff = now.minus(FastService.MAX_PAST_AGE)
+    val minute = cutoff.truncatedTo(ChronoUnit.MINUTES)
+    return if (minute == cutoff) minute else minute.plus(1, ChronoUnit.MINUTES)
+}
+
+/** Anchor the suggested end on the selected local day, even when the fast started the night before. */
+internal fun pastFastEndOn(day: LocalDate, zone: ZoneId, now: Instant): Instant? {
+    val oldest = oldestStartMinute(now)
+    if (day < oldest.atZone(zone).toLocalDate() || day > now.atZone(zone).toLocalDate()) return null
+    val dayStart = day.atStartOfDay(zone).toInstant()
+    // At exactly midnight a fast ending now belongs to yesterday.
+    val firstEnd = maxOf(oldest.plus(FastPolicy.MIN_FAST), dayStart.plus(1, ChronoUnit.MINUTES))
+    val lastEnd = minOf(now.truncatedTo(ChronoUnit.MINUTES), day.plusDays(1).atStartOfDay(zone).toInstant().minus(1, ChronoUnit.MINUTES))
+    if (firstEnd > lastEnd) return null
+    return day.atTime(LocalTime.NOON).atZone(zone).toInstant().coerceIn(firstEnd, lastEnd)
+}
+
+internal fun canAddPastFastEndingOn(day: LocalDate, zone: ZoneId, now: Instant): Boolean =
+    pastFastEndOn(day, zone, now) != null
+
 /** Records a fast the user forgot to time (PRD F2). The draft survives process death. */
 @HiltViewModel
 class AddPastFastViewModel @Inject constructor(
     private val service: FastService,
     private val handle: SavedStateHandle,
-    clock: Clock,
+    private val clock: Clock,
 ) : ViewModel() {
     private val _state: MutableStateFlow<AddPastFastState>
     val state: StateFlow<AddPastFastState> get() = _state
 
+    private val dateArgument = handle.get<String>("date")
+    val unavailableDate: Boolean
+
     init {
-        val now = clock.instant().truncatedTo(ChronoUnit.MINUTES)
+        val now = clock.instant()
+        val dateEnd = dateArgument?.let { raw ->
+            runCatching { LocalDate.parse(raw) }.getOrNull()?.let { pastFastEndOn(it, ZoneId.systemDefault(), now) }
+        }
+        val restoredEnd = handle.get<Long>(KEY_END)?.let(Instant::ofEpochMilli)
+        unavailableDate = dateArgument != null && dateEnd == null && restoredEnd == null
         val protocol = handle.get<String>(KEY_PROTOCOL)?.let(Presets::byId) ?: Presets.W16_8
-        val end = handle.get<Long>(KEY_END)?.let(Instant::ofEpochMilli) ?: now.minus(Duration.ofHours(2))
-        val start = handle.get<Long>(KEY_START)?.let(Instant::ofEpochMilli) ?: end.minus(Duration.ofHours(protocol.fastHours.toLong()))
+        val end = restoredEnd ?: dateEnd ?: now.truncatedTo(ChronoUnit.MINUTES).minus(Duration.ofHours(2))
+        val suggestedStart = end.minus(Duration.ofHours(protocol.fastHours.toLong()))
+        val start = handle.get<Long>(KEY_START)?.let(Instant::ofEpochMilli) ?: maxOf(suggestedStart, oldestStartMinute(now))
         _state = MutableStateFlow(AddPastFastState(protocol, start, end))
+        if (!unavailableDate) persist(_state.value)
     }
 
     private fun persist(s: AddPastFastState) {
@@ -81,12 +118,17 @@ class AddPastFastViewModel @Inject constructor(
 
     private fun change(f: (AddPastFastState) -> AddPastFastState) = _state.update { f(it).copy(error = false).also(::persist) }
 
-    /** Choosing a protocol keeps the start and sets the end to its usual length. */
-    fun select(p: Protocol) = change { it.copy(protocol = p, end = it.start.plus(Duration.ofHours(p.fastHours.toLong()))) }
+    /** A day-specific draft keeps the chosen end. The general history form keeps its start. */
+    fun select(p: Protocol) = change {
+        val length = Duration.ofHours(p.fastHours.toLong())
+        if (dateArgument == null) it.copy(protocol = p, end = it.start.plus(length))
+        else it.copy(protocol = p, start = maxOf(it.end.minus(length), oldestStartMinute(clock.instant())))
+    }
     fun setStart(i: Instant) = change { it.copy(start = i) }
     fun setEnd(i: Instant) = change { it.copy(end = i) }
 
     fun save(onDone: () -> Unit) {
+        if (unavailableDate) return
         val s = _state.value
         viewModelScope.launch {
             when (service.addPastFast(s.protocol, s.start, s.end)) {
@@ -105,6 +147,10 @@ class AddPastFastViewModel @Inject constructor(
 
 @Composable
 fun AddPastFastRoute(onDone: () -> Unit, vm: AddPastFastViewModel = hiltViewModel()) {
+    if (vm.unavailableDate) {
+        LaunchedEffect(vm) { onDone() }
+        return
+    }
     val st by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     SecondaryScaffold(title = stringResource(R.string.add_past_title), onBack = onDone) {

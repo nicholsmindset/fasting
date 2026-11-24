@@ -36,6 +36,7 @@ import com.fastingshift.domain.service.FastService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
@@ -168,7 +169,9 @@ fun pickDateTime(context: Context, initial: Instant, onPicked: (Instant) -> Unit
     val z = initial.atZone(zone)
     DatePickerDialog(context, { _, y, m, d ->
         TimePickerDialog(context, { _, h, min ->
-            onPicked(ZonedDateTime.of(y, m + 1, d, h, min, 0, 0, zone).toInstant())
+            val local = LocalDateTime.of(y, m + 1, d, h, min)
+            // Preserve the original occurrence when the selected clock time happens twice.
+            onPicked(ZonedDateTime.ofLocal(local, zone, z.offset).toInstant())
         }, z.hour, z.minute, DateFormat.is24HourFormat(context)).show()
     }, z.year, z.monthValue - 1, z.dayOfMonth).show()
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_day_open">查看当天详情</string>
+    <string name="history_day_total">当天断食时长：%1$s</string>
+    <string name="history_day_empty">当天没有断食记录。</string>
+    <string name="history_day_recorded">断食记录</string>
+    <string name="history_day_ongoing">进行中</string>
+    <string name="history_day_slice">当天 %1$s · %2$s</string>
+    <string name="history_day_interval">%1$s – %2$s</string>
+    <string name="history_day_break">本周休息</string>
+    <string name="history_day_unknown">没有这一天的计划记录</string>
+    <string name="history_day_planned">计入计划天数</string>
+    <string name="history_day_starts">计划开始时间 · %1$s</string>
+    <string name="history_day_plan">计划</string>
+</resources>

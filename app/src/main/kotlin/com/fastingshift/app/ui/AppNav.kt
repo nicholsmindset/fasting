@@ -87,6 +87,7 @@ object Routes {
     const val REFEEDING = "refeeding?tier={tier}&fastId={fastId}"
     fun checkIn(fastId: Long) = "checkin/$fastId"
     fun editFast(fastId: Long) = "fast/$fastId"
+    fun addPastFast(day: LocalDate?) = if (day == null) ADD_PAST_FAST else "$ADD_PAST_FAST?date=$day"
     fun refeeding(tier: RefeedingTier?, fastId: Long? = null) =
         "refeeding?tier=${tier?.name ?: ""}&fastId=${fastId ?: -1L}"
 }
@@ -195,7 +196,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onEditFast = { nav.navigate(Routes.editFast(it)) },
                     onOpenInsights = { nav.navigate(Routes.INSIGHTS) },
                     onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
-                    onAddPastFast = { nav.navigate(Routes.ADD_PAST_FAST) },
+                    onAddPastFast = { day -> nav.navigate(Routes.addPastFast(day)) },
                     onOpenChallenges = { nav.navigate(Routes.CHALLENGES) },
                 )
             }
@@ -258,7 +259,10 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
             composable(Routes.MUSLIM) {
                 com.fastingshift.app.ui.ramadan.MuslimHubRoute(onBack = back, onOpenTimer = toTimer)
             }
-            composable(Routes.ADD_PAST_FAST) { AddPastFastRoute(onDone = back) }
+            composable(
+                "${Routes.ADD_PAST_FAST}?date={date}",
+                arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { AddPastFastRoute(onDone = back) }
             composable(
                 Routes.REFEEDING,
                 arguments = listOf(

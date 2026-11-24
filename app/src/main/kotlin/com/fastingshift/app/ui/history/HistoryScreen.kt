@@ -29,6 +29,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +55,13 @@ import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.SegmentedControl
 import com.fastingshift.app.ui.design.Spacing
 import com.fastingshift.app.ui.timer.Today
+import com.fastingshift.app.alarm.eligibleSchedules
+import com.fastingshift.data.repo.ScheduleRepository
+import com.fastingshift.domain.model.Schedule
+import com.fastingshift.domain.schedule.PlanHistory
+import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.service.ScreeningRepository
+import java.time.Instant
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.history.WeeklyRecaps
@@ -110,6 +122,12 @@ import kotlinx.coroutines.flow.flow
 
 data class WeekRow(val weekStart: LocalDate, val segments: List<WeekSegment>)
 
+data class CalendarPlan(
+    val history: PlanHistory = PlanHistory(),
+    val schedules: List<Schedule> = emptyList(),
+    val firstEvening: Pair<Long, LocalDate>? = null,
+)
+
 data class HistoryState(
     val period: Period = Period.WEEK,
     val summary: PeriodSummary? = null,
@@ -126,6 +144,9 @@ data class HistoryState(
     val recaps: List<RecapItem> = emptyList(),
     val trackedFrom: LocalDate? = null,
     val nextWeekChoice: WeekChoice? = null,
+    val now: Instant = Instant.now(),
+    val zone: ZoneId = ZoneId.systemDefault(),
+    val calendarPlan: CalendarPlan = CalendarPlan(),
 )
 
 @HiltViewModel
@@ -133,6 +154,8 @@ class HistoryViewModel @Inject constructor(
     fasts: FastRepository,
     private val freezes: StreakFreezeRepository,
     logs: LogRepository,
+    schedules: ScheduleRepository,
+    screening: ScreeningRepository,
     private val settings: SettingsRepository,
     private val clock: Clock,
 ) : ViewModel() {
@@ -155,13 +178,18 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
+    private val plans = combine(settings.settings, schedules.observeAll(), screening.observeLatest()) { settings, rows, record ->
+        val max = FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true)
+        CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening())
+    }
+
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */
-    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), settings.settings, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, preferences, (m, p), timedHydration ->
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), plans, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, calendarPlan, (m, p), timedHydration ->
         val (hydrationValues, now) = timedHydration
         val (water, goal) = hydrationValues
         val zone = ZoneId.systemDefault()
         val today = now.atZone(zone).toLocalDate()
-        val history = preferences.planHistory
+        val history = calendarPlan.history
         val planned = history::isPlanned
         val completed = StreakCalculator.completedDays(all, zone)
         val yesterday = today.minusDays(1)
@@ -177,6 +205,9 @@ class HistoryViewModel @Inject constructor(
             .toList()
         HistoryState(
             period = p,
+            now = now,
+            zone = zone,
+            calendarPlan = calendarPlan,
             trackedFrom = history.trackedFrom,
             nextWeekChoice = history.choices[History.weekStart(today).plusWeeks(1)],
             summary = HistoryStats.periodSummary(all, zone, p, today, now, planned),
@@ -212,15 +243,20 @@ class HistoryViewModel @Inject constructor(
 }
 
 @Composable
-fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: () -> Unit, onOpenSchedules: () -> Unit, onOpenChallenges: () -> Unit = {}, vm: HistoryViewModel = hiltViewModel()) {
+fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPastFast: (LocalDate?) -> Unit, onOpenSchedules: () -> Unit, onOpenChallenges: () -> Unit = {}, vm: HistoryViewModel = hiltViewModel()) {
     val loaded by vm.state.collectAsStateWithLifecycle()
     val st = loaded
     if (st == null) {
         LoadingBox(Modifier.padding(top = 120.dp))
         return
     }
+    var selectedEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
+    selectedEpochDay?.let { epochDay ->
+        val day = LocalDate.ofEpochDay(epochDay)
+        HistoryDaySheet(day, st, onEditFast, onAdd = { onAddPastFast(day) }, onClose = { selectedEpochDay = null })
+    }
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = Spacing.screen),
+        Modifier.testTag("history-list").fillMaxSize().padding(horizontal = Spacing.screen),
         contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
     ) {
         section { LargeTitle(stringResource(R.string.history_title)) }
@@ -242,7 +278,9 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
             }
         }
         section { RecentFastsCard(st.recent, onEditFast) }
-        section { CalendarCard(st, vm::shiftMonth, onEditFast) }
+        section(key = "history-calendar") {
+            CalendarCard(st, vm::shiftMonth, onEditFast) { selectedEpochDay = it.toEpochDay() }
+        }
         section {
             InsetGroup {
                 GroupRow(stringResource(R.string.history_insights), showChevron = true, onClick = onOpenInsights)
@@ -262,7 +300,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                PlainButton(stringResource(R.string.add_past_button), onClick = onAddPastFast)
+                PlainButton(stringResource(R.string.add_past_button), onClick = { onAddPastFast(null) })
             }
         }
         if (st.fasts.isEmpty()) item { Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -335,8 +373,8 @@ private fun Stat(label: String, value: String, modifier: Modifier) {
 }
 
 /** Gap below each section of the History list (fast rows sit flush, as one inset group). */
-private fun LazyListScope.section(content: @Composable () -> Unit) {
-    item { Box(Modifier.padding(bottom = 16.dp)) { content() } }
+private fun LazyListScope.section(key: String? = null, content: @Composable () -> Unit) {
+    item(key = key) { Box(Modifier.padding(bottom = 16.dp)) { content() } }
 }
 
 /** "76h" for the ring; minutes only matter for short totals. */
@@ -432,7 +470,7 @@ private fun Legend(color: androidx.compose.ui.graphics.Color, label: String) {
 // ---------- Calendar with fasts drawn across days ----------
 
 @Composable
-internal fun CalendarCard(st: HistoryState, onShift: (Long) -> Unit, onEditFast: (Long) -> Unit) {
+internal fun CalendarCard(st: HistoryState, onShift: (Long) -> Unit, onEditFast: (Long) -> Unit, onDay: (LocalDate) -> Unit = {}) {
     val locale = LocalConfiguration.current.locales[0]
     val dayFormat = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale) }
     SectionCard {
@@ -460,38 +498,43 @@ internal fun CalendarCard(st: HistoryState, onShift: (Long) -> Unit, onEditFast:
                 )
             }
         }
-        st.weeks.forEach { row -> WeekRowView(row, st.month, st.today, dayFormat, onEditFast) }
+        st.weeks.forEach { row -> WeekRowView(row, st.month, st.today, dayFormat, onEditFast, onDay) }
     }
 }
 
 @Composable
-private fun WeekRowView(row: WeekRow, month: YearMonth, today: LocalDate, dayFormat: DateTimeFormatter, onEditFast: (Long) -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(Modifier.fillMaxWidth()) {
-            (0L until 7L).map { row.weekStart.plusDays(it) }.forEach { day ->
-                val inMonth = YearMonth.from(day) == month
-                val isToday = day == today
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    if (inMonth) {
-                        val label = day.format(dayFormat)
+private fun WeekRowView(row: WeekRow, month: YearMonth, today: LocalDate, dayFormat: DateTimeFormatter, onEditFast: (Long) -> Unit, onDay: (LocalDate) -> Unit) {
+    Box(Modifier.fillMaxWidth().padding(vertical = 4.dp).height(60.dp)) {
+        // The cells fill the entire row, including empty space in the bar lane.
+        Row(Modifier.fillMaxSize()) {
+            repeat(7) { offset ->
+                val day = row.weekStart.plusDays(offset.toLong())
+                if (YearMonth.from(day) != month) {
+                    Spacer(Modifier.weight(1f))
+                } else {
+                    val label = day.format(dayFormat)
+                    val isToday = day == today
+                    Box(
+                        Modifier.weight(1f).fillMaxHeight().testTag("history-day-$day")
+                            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.history_day_open)) { onDay(day) }
+                            .semantics { contentDescription = label },
+                        contentAlignment = Alignment.TopCenter,
+                    ) {
                         Box(
                             Modifier.size(28.dp).clip(CircleShape)
                                 .background(if (isToday) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent)
-                                .clearAndSetSemantics { contentDescription = label },
+                                .clearAndSetSemantics {},
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                day.dayOfMonth.toString(),
-                                style = MaterialTheme.typography.bodySmall,
+                            Text(day.dayOfMonth.toString(), style = MaterialTheme.typography.bodySmall,
                                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                                color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             }
         }
-        BoxWithConstraints(Modifier.fillMaxWidth().height(26.dp)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.BottomCenter).height(26.dp)) {
             val dayWidth = maxWidth / 7
             row.segments.forEach { seg -> SegmentBar(seg, dayWidth, onEditFast) }
         }
@@ -574,7 +617,7 @@ private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit)
     }
 }
 
-private fun statusLabel(s: FastStatus) = when (s) {
+internal fun statusLabel(s: FastStatus) = when (s) {
     FastStatus.ACTIVE -> R.string.status_active
     FastStatus.COMPLETED -> R.string.status_completed
     FastStatus.ENDED_EARLY -> R.string.status_ended

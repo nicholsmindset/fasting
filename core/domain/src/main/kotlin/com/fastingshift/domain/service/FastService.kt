@@ -127,7 +127,7 @@ class FastService(
     suspend fun addPastFast(protocol: Protocol, startAt: Instant, endedAt: Instant): EditResult {
         val now = clock.instant()
         val length = Duration.between(startAt, endedAt)
-        if (endedAt.isAfter(now.plus(CLOCK_SLACK)) || startAt.isBefore(now.minus(Duration.ofDays(366)))) return EditResult.Invalid
+        if (endedAt.isAfter(now) || startAt.isBefore(now.minus(MAX_PAST_AGE))) return EditResult.Invalid
         if (length < FastPolicy.MIN_FAST || length > FastPolicy.MAX_FAST) return EditResult.Invalid
         if (overlapsAny(startAt, endedAt, excludeId = null)) return EditResult.Invalid
         val planned = Duration.ofHours(protocol.fastHours.toLong())
@@ -190,6 +190,8 @@ class FastService(
     }
 
     companion object {
+        val MAX_PAST_AGE: Duration = Duration.ofDays(366)
+
         /** Tolerates small clock differences between a picker and "now". */
         val CLOCK_SLACK: Duration = Duration.ofMinutes(2)
 
