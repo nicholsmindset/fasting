@@ -5,4 +5,6 @@
     <string name="plan_review_empty">Tidak ada hari yang direncanakan dalam empat minggu ini.</string>
     <string name="plan_repeat_heading">Hari yang Anda ubah atau lewati lebih dari sekali</string>
     <string name="plan_repeat_count">%1$s · %2$d minggu</string>
+    <string name="plan_past_time">Pilih waktu lokal yang valid dan sudah berlalu.</string>
+    <string name="plan_review_new">Ulasan pertama akan muncul setelah minggu dengan riwayat rencana berakhir pada hari Minggu.</string>
 </resources>

@@ -66,7 +66,6 @@ import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.startReminderNotificationsEnabled
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.TabularNumbers
-import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.formatTime
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.AppCard
@@ -339,8 +338,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
     SelectedFast(state.selected, onChoose = { choosing = true })
     if (selectedEnabled) {
         val format = rememberWeekFormat()
-        val target = (state.startAt ?: state.now).plus(Duration.ofHours(state.selected.fastHours.toLong()))
-        Text(stringResource(R.string.plan_target_time, format.dateTime.format(target.atZone(ZoneId.systemDefault()))),
+        Text(stringResource(R.string.plan_target_time, format.dateTime.format(state.selectedTargetEnd.atZone(ZoneId.systemDefault()))),
             style = MaterialTheme.typography.titleMedium.merge(TabularNumbers))
     }
     Column(Modifier.fillMaxWidth()) {
@@ -466,12 +464,13 @@ private fun StartTimeRow(state: TimerUiState, onStartAt: (java.time.Instant?) ->
         if (at == null) {
             TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_start_earlier)) }
         } else {
-            TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_starting_at, at.formatDateTime())) }
+            val start = rememberWeekFormat().dateTime.format(at.atZone(ZoneId.systemDefault()))
+            TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_starting_at, start)) }
             TextButton(onClick = { onStartAt(null) }) { Text(stringResource(R.string.timer_start_now)) }
         }
     }
     if (picking) {
-        StartEarlierDialog(at, onDismiss = { picking = false }) { onStartAt(it); picking = false }
+        StartEarlierDialog(at, state.now, onDismiss = { picking = false }, onPick = { onStartAt(it); picking = false })
     }
 }
 

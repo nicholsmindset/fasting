@@ -62,7 +62,9 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
                 Text(pluralStringResource(R.plurals.review_days_done, planned, completed, planned),
                     style = MaterialTheme.typography.headlineSmall.merge(TabularNumbers))
             } else {
-                Text(stringResource(R.string.plan_review_empty), style = MaterialTheme.typography.titleMedium)
+                val message = if (weeks.all { it.coverage == PlanCoverage.BEFORE_TRACKING }) R.string.plan_review_new
+                    else R.string.plan_review_empty
+                Text(stringResource(message), style = MaterialTheme.typography.titleMedium)
             }
             val repeated = remember(weeks) { ScheduleReview.repeatedChanges(weeks) }
             if (repeated.isNotEmpty()) {

@@ -5,4 +5,6 @@
     <string name="plan_review_empty">No planned days in these four weeks.</string>
     <string name="plan_repeat_heading">Days you moved or skipped more than once</string>
     <string name="plan_repeat_count">%1$s · %2$d weeks</string>
+    <string name="plan_past_time">Choose a valid local time in the past.</string>
+    <string name="plan_review_new">Your first review appears after a week with plan history ends on Sunday.</string>
 </resources>

@@ -17,7 +17,7 @@ The [staging APK](https://github.com/nicholsmindset/fasting/actions/runs/4546614
 
 ## Timer, one-date edits and the paid review
 
-The next beta connects three decisions. On Timer, the selected window shows the local date and time it would finish, including a backdated start. In My week, opening a date shows its effective starts. A changed date also shows the usual times. Choosing the original first time clears its one-day adjustment. In Shift+, the four-week review totals completed planned days and identifies weekdays moved or skipped in at least two different weeks. A reader can open My week directly from the summary.
+The next beta connects three decisions. On Timer, the selected window shows the local date and time it would finish, including a backdated start. After midnight, “Started earlier?” defaults to the previous date when an hour ago fell yesterday. The picker rejects future times and local times skipped by a clock change. In My week, opening a date shows its effective starts. A changed date also shows the usual times. Choosing the original first time clears its one-day adjustment. In Shift+, the four-week review totals completed planned days and identifies weekdays moved or skipped in at least two different weeks. A reader can open My week directly from the summary.
 
 Easy Fast offers a free timer and paid trends. Zero offers journaling and statistics. Our paid hypothesis is narrower: a person who repeatedly changes Tuesday might value seeing that pattern when planning next week. The example uses fictional records so a first-time user can evaluate it immediately. [Easy Fast](https://easyfastapp.com/) · [Zero](https://play.google.com/store/apps/details?id=com.zerofasting.zero)
 

@@ -5,4 +5,6 @@
     <string name="plan_review_empty">这四周没有计划日。</string>
     <string name="plan_repeat_heading">多次调整开始时间或跳过的日子</string>
     <string name="plan_repeat_count">%1$s · 共 %2$d 周</string>
+    <string name="plan_past_time">请选择已经过去的有效本地时间。</string>
+    <string name="plan_review_new">有计划记录的第一周在周日结束后，即可查看回顾。</string>
 </resources>
