@@ -17,7 +17,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.design.GroupRow
-import com.fastingshift.app.ui.design.InsetGroup
 import java.util.Locale
 
 /**
@@ -26,25 +25,21 @@ import java.util.Locale
  * without AppCompat, so it shows where to change the phone's language instead.
  */
 @Composable
-fun LanguageGroup() {
+internal fun LanguageRow() {
     val context = LocalContext.current
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         // Re-read on return from the system page so the value updates.
         var refresh by remember { mutableIntStateOf(0) }
         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh++ }
         val current = remember(refresh) { AppLanguage.current(context) }
-        InsetGroup(header = stringResource(R.string.settings_language), footer = stringResource(R.string.settings_language_footer)) {
-            GroupRow(
-                stringResource(R.string.settings_app_language),
-                value = current?.let(AppLanguage::displayName) ?: stringResource(R.string.settings_language_system),
-                showChevron = true,
-                onClick = { AppLanguage.openSystemSettings(context) },
-            )
-        }
+        GroupRow(
+            stringResource(R.string.settings_app_language),
+            value = current?.let(AppLanguage::displayName) ?: stringResource(R.string.settings_language_system),
+            showChevron = true,
+            onClick = { AppLanguage.openSystemSettings(context) },
+        )
     } else {
-        InsetGroup(header = stringResource(R.string.settings_language)) {
-            GroupRow(stringResource(R.string.settings_app_language), subtitle = stringResource(R.string.settings_language_note))
-        }
+        GroupRow(stringResource(R.string.settings_app_language), subtitle = stringResource(R.string.settings_language_note))
     }
 }
 

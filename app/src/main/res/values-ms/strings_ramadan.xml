@@ -38,7 +38,7 @@
     <!-- Settings redesign -->
     <string name="settings_title">Tetapan</string>
     <string name="settings_plan_row">Pelan</string>
-    <string name="settings_reminders_footer">Jika peringatan tiba lewat, jalankan semakan kebolehpercayaan di bawah Puasa.</string>
+    <string name="settings_reminders_footer">Untuk peringatan yang lewat atau tidak muncul</string>
     <string name="settings_after_hours">Selepas %1$dh</string>
     <string name="settings_hours_value">%1$dh</string>
     <string name="settings_milestones_footer">Terima pemberitahuan apabila puasa anda mencapai tempoh ini.</string>

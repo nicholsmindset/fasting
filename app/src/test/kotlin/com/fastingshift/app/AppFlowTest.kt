@@ -9,6 +9,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -76,6 +78,7 @@ class AppFlowTest {
         try {
             waitFor(s(R.string.tab_settings))
             click(s(R.string.tab_settings))
+            compose.onNodeWithTag("settings_open_plan").performScrollTo().performClick()
             waitFor(s(R.string.plan_see_plus))
             click(s(R.string.plan_see_plus))
             waitFor(s(R.string.program_read_sample))
@@ -117,6 +120,8 @@ class AppFlowTest {
 
         // Update answers from Settings.
         click(s(R.string.tab_settings))
+        compose.onNodeWithTag("settings_open_safety").performScrollTo().performClick()
+        waitFor(s(R.string.settings_rerun_screening))
         click(s(R.string.settings_rerun_screening))
         waitFor(s(R.string.onb_screen_title))
         field(s(R.string.onb_age), "40")
@@ -128,6 +133,8 @@ class AppFlowTest {
 
         // Finishing a re-run returns to Settings, which now shows the new result.
         waitFor(s(R.string.screening_ok))
+        compose.onNodeWithContentDescription(s(R.string.navigate_up)).performClick()
+        waitFor(s(R.string.tab_timer))
         click(s(R.string.tab_timer))
 
         // Start the plan suggested for a consistency goal (14:10), then end it with one tap.

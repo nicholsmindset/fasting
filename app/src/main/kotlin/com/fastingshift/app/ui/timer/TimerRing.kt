@@ -1,32 +1,31 @@
 package com.fastingshift.app.ui.timer
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -36,17 +35,20 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.ProgressRing
 import com.fastingshift.app.ui.components.TabularNumbers
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.rememberHaptics
+import com.fastingshift.app.ui.onboarding.SelectGroupRow
+import com.fastingshift.app.ui.ramadan.GroupedSheet
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.timer.TimerDisplayMode
 import com.fastingshift.domain.timer.TimerState
 import com.fastingshift.domain.timer.toClockString
+import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -100,7 +102,7 @@ fun TimerRing(
     timer: TimerState,
     mode: TimerDisplayMode,
     now: Instant,
-    onToggle: () -> Unit,
+    onSetMode: (TimerDisplayMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val text = ringText(mode, fast, timer, now)
@@ -114,64 +116,75 @@ fun TimerRing(
     val description = "$base. $modeDescription"
     val switchLabel = stringResource(R.string.a11y_timer_switch)
     val haptics = rememberHaptics()
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(256.dp)
-                .clip(CircleShape)
+    var choosingView by rememberSaveable { mutableStateOf(false) }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text.label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = { choosingView = true }) { Text(stringResource(R.string.timer_choose_view)) }
+        }
+        BoxWithConstraints(
+            Modifier.fillMaxWidth()
                 .clearAndSetSemantics {
                     contentDescription = description
                     progressBarRangeInfo = ProgressBarRangeInfo(timer.progress, 0f..1f)
                     role = Role.Button
-                    onClick(label = switchLabel) { onToggle(); true }
+                    onClick(label = switchLabel) { onSetMode(mode.next()); true }
                 }
-                .clickable(onClickLabel = switchLabel, role = Role.Button) { haptics.tick(); onToggle() },
+                .clickable(onClickLabel = switchLabel, role = Role.Button) { haptics.tick(); onSetMode(mode.next()) },
         ) {
-            ProgressRing(timer.progress, Modifier.fillMaxSize(), stroke = 18.dp)
-            AnimatedContent(
-                targetState = mode,
-                transitionSpec = {
-                    (fadeIn(tween(220, delayMillis = 60)) + scaleIn(tween(220, delayMillis = 60), initialScale = 0.94f))
-                        .togetherWith(fadeOut(tween(120)))
-                },
-                label = "timerMode",
-            ) { shown ->
-                RingFace(if (shown == mode) text else ringText(shown, fast, timer, now))
+            if (maxWidth >= 315.dp && LocalDensity.current.fontScale <= 1.4f) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TimerValue(text, Modifier.weight(1f))
+                    GoalDial(timer.progress)
+                }
+            } else {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TimerValue(text, Modifier.fillMaxWidth())
+                    LinearProgressIndicator(progress = { timer.progress }, modifier = Modifier.fillMaxWidth().height(5.dp))
+                }
             }
         }
-        Spacer(Modifier.height(16.dp))
-        ModeDots(mode)
-        Text(stringResource(R.string.timer_tap_hint), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-@Composable
-private fun RingFace(t: RingText) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 30.dp)) {
-        Text(t.label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-        Text(
-            t.big,
-            style = MaterialTheme.typography.displaySmall.merge(TabularNumbers),
-            fontWeight = FontWeight.Light,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.padding(vertical = 2.dp),
-        )
-        t.sub?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
-    }
-}
-
-@Composable
-private fun ModeDots(mode: TimerDisplayMode) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
-        TimerDisplayMode.entries.forEach { m ->
-            val width by animateDpAsState(if (m == mode) 18.dp else 6.dp, label = "dot")
-            Box(
-                Modifier.height(6.dp).width(width).clip(CircleShape).background(
-                    if (m == mode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                ),
-            )
+    if (choosingView) {
+        GroupedSheet(stringResource(R.string.timer_choose_view), onDismiss = { choosingView = false }) {
+            Column(Modifier.selectableGroup()) {
+                TimerDisplayMode.entries.forEach { choice ->
+                    val title = when (choice) {
+                        TimerDisplayMode.ELAPSED -> R.string.timer_view_elapsed
+                        TimerDisplayMode.REMAINING -> R.string.timer_view_remaining
+                        TimerDisplayMode.BREAK_AT -> R.string.timer_view_end
+                    }
+                    SelectGroupRow(stringResource(title), selected = mode == choice, onClick = {
+                        onSetMode(choice)
+                        choosingView = false
+                    })
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun TimerValue(text: RingText, modifier: Modifier) {
+    val sizes = remember { TextAutoSize.StepBased(minFontSize = 20.sp, maxFontSize = 64.sp, stepSize = 2.sp) }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        BasicText(
+            text.big, modifier = Modifier.fillMaxWidth(), maxLines = 1, softWrap = false, autoSize = sizes,
+            style = MaterialTheme.typography.displayLarge.merge(TabularNumbers).copy(
+                color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, letterSpacing = (-1.5).sp,
+            ),
+        )
+        text.sub?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+}
+
+@Composable
+private fun GoalDial(progress: Float) {
+    val format = remember(Locale.getDefault()) { NumberFormat.getPercentInstance() }
+    val percentage = (progress * 100).toInt()
+    Box(Modifier.size(72.dp), contentAlignment = Alignment.Center) {
+        ProgressRing(progress, Modifier.fillMaxSize(), stroke = 5.dp)
+        Text(format.format(percentage / 100.0), style = MaterialTheme.typography.titleSmall.merge(TabularNumbers),
+            color = MaterialTheme.colorScheme.primary)
     }
 }

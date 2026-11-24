@@ -127,7 +127,7 @@ class FirstWeekScreenshotTest {
         waitFor(s(R.string.timer_start))
         waitFor(s(R.string.first_fast_title))
         shoot("11-timer-first-fast")
-        click(s(R.string.first_fast_start_now))
+        click(s(R.string.timer_start))
         waitFor(s(R.string.timer_end))
         click(s(R.string.timer_end))
         waitFor(s(R.string.summary_mood_title))
@@ -162,6 +162,7 @@ class FirstWeekScreenshotTest {
             fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8").end(start.plus(Duration.ofHours(16))))
         }
         waitFor(s(R.string.timer_start))
+        click(s(R.string.timer_pick_protocol))
         click("36h")
         click(s(R.string.timer_start))
         waitFor(s(R.string.checklist_title))

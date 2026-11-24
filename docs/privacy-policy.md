@@ -33,7 +33,7 @@ The app excludes its private data from Android's automatic cloud backup and devi
 
 ## Health Connect
 
-You can enable sync in Settings and grant Android's Health Connect permissions. When you grant access, the app reads recent weight entries from Health Connect into your weight log. When you log weight or water with sync enabled, it writes the measurement and its time to Health Connect. Weight entries can also appear in your personal trends.
+To enable sync, open **Settings → Privacy and data → Sync with Health Connect** and grant Android’s Health Connect permissions. When you grant access, the app reads recent weight entries from Health Connect into your weight log. When you log weight or water with sync enabled, it writes the measurement and its time to Health Connect. Weight entries can also appear in your personal trends.
 
 With sync enabled, you can also allow the app to write glucose readings you log, so other apps you choose can see them; deleting a reading in the app removes the copy it wrote. If you open Body signals in Shift+ Insights and allow it, the app reads your sleep sessions and resting heart rate to compare fasting and non-fasting days. These are read while that screen is open and are not stored. Other apps can access Health Connect records according to the permissions you give them.
 

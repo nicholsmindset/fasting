@@ -10,6 +10,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
@@ -147,7 +149,8 @@ class ChineseCaptureTest {
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
         waitFor(s(R.string.settings_plan))
         shoot("4-settings")
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText(s(R.string.settings_privacy)))
+        compose.onNodeWithTag("settings_open_privacy").performScrollTo().performClick()
+        waitFor(s(R.string.trust_row))
         shoot("4b-settings")
         compose.onNode(hasScrollAction()).performScrollToNode(hasText(s(R.string.settings_privacy_policy)))
         shoot("4c-settings")

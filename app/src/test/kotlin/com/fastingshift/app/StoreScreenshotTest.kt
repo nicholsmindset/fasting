@@ -1,12 +1,19 @@
 package com.fastingshift.app
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.isOff
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onAllNodesWithText
@@ -172,8 +179,30 @@ class StoreScreenshotTest {
         compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("weight_chart"))
         shoot("3b-log-trend", mode)
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
-        waitFor(s(R.string.settings_plan))
+        waitFor(s(R.string.appearance_title))
         shoot("4-settings", mode)
+        val reminders = hasTestTag("settings_open_reminders")
+        val endReminder = hasText(s(R.string.settings_end_alert)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch)
+        fun openReminders() = compose.onNode(reminders).performScrollTo().performClick()
+        fun backToOverview() {
+            compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            compose.waitUntil(15_000) { compose.onAllNodes(reminders).fetchSemanticsNodes().size == 1 }
+        }
+        fun waitForState(target: SemanticsMatcher) = compose.waitUntil(15_000) {
+            compose.onAllNodes(target).fetchSemanticsNodes().size == 1
+        }
+        openReminders()
+        waitForState(endReminder and isOn())
+        shoot("4a-reminders", mode)
+        compose.onNode(endReminder).performScrollTo().assertIsDisplayed().performClick()
+        waitForState(endReminder and isOff())
+        backToOverview()
+        openReminders()
+        waitForState(endReminder and isOff())
+        compose.onNode(endReminder).performScrollTo().performClick()
+        waitForState(endReminder and isOn())
+        backToOverview()
     }
 
     @Config(qualifiers = "w411dp-h822dp-notnight-xxhdpi")

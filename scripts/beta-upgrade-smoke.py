@@ -100,8 +100,32 @@ class Screen:
         self.click("timer_start", scroll=True)
         self.find("timer_end", scroll=True)
 
+    def settings_overview(self):
+        return self.device(resourceId="settings_overview", packageName=PACKAGE)
+
+    def open_settings(self):
+        tab = self.device(resourceId="tab_settings", packageName=PACKAGE)
+        if tab.wait(timeout=2):
+            tab.click()
+        else:
+            # The oldest upgrade baselines expose only the text of the tab.
+            self.click("tab_settings")
+
+    def open_settings_category(self, tag):
+        self.find_node(self.device(resourceId=tag, packageName=PACKAGE), tag, scroll=True).click()
+
+    def back_to_settings(self):
+        self.device.press("back")
+        if not self.settings_overview().wait(timeout=10):
+            raise AssertionError("Back from the settings category did not return to the overview")
+
     def export_backup(self, name):
-        self.click("tab_settings")
+        self.open_settings()
+        # The two signed APKs are built from different checkouts. The older flat
+        # screen has its backup action inline; the new overview links to Privacy.
+        categorized = self.settings_overview().wait(timeout=3)
+        if categorized:
+            self.open_settings_category("settings_open_privacy")
         self.click("settings_backup", scroll=True)
         # The picker chooses a local folder on a fresh emulator. Locate the unique file
         # on shared storage, regardless of whether this image defaults to Documents or Downloads.
@@ -119,15 +143,19 @@ class Screen:
             if matches:
                 raw = adb("exec-out", "cat", matches[0])
                 try:
-                    return json.loads(raw)
+                    data = json.loads(raw)
                 except json.JSONDecodeError:
                     pass  # The provider created the document before the app finished writing.
+                else:
+                    if categorized:
+                        self.back_to_settings()
+                    return data
             time.sleep(0.5)
         raise AssertionError(f"The app did not write {name}")
 
     def verify_appearance(self, original_fasts):
         def choose(key):
-            self.device(resourceId="tab_settings", packageName=PACKAGE).click(timeout=15)
+            self.open_settings()
             title = self.strings["appearance_title"]
             self.find_node(self.device(textContains=title, packageName=PACKAGE), title, scroll=True).click()
             self.click(key)
@@ -173,6 +201,29 @@ class Screen:
         if fingerprint(self.export_backup("appearance-after.json")["fasts"]) != original_fasts:
             raise AssertionError("Changing appearance changed the fasting records")
         print("Verified light, dark, system changes and a cold launch with the original active timer.")
+
+    def verify_reminder_and_timer_view(self, initial_end_alert, original_fasts):
+        self.open_settings()
+        self.open_settings_category("settings_open_reminders")
+        label = self.strings["settings_end_alert"]
+        self.find_node(self.device(textContains=label, packageName=PACKAGE), label, scroll=True).click()
+        self.back_to_settings()
+        self.device.app_stop(PACKAGE)
+        self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+        self.find("timer_end")
+        self.click("timer_choose_view")
+        self.click("timer_view_end")
+        description = self.strings["a11y_mode_break_at"].split("%1$s")[0]
+        if not self.device(descriptionContains=description, packageName=PACKAGE).wait(timeout=10):
+            raise AssertionError("Choosing End time did not change the active timer display")
+        changed = self.export_backup("reminder-after.json")
+        if changed["settings"]["fast_end_alert"] != (not initial_end_alert):
+            raise AssertionError("The end-of-fast reminder toggle did not survive relaunch")
+        if changed["settings"]["timer_mode"] != "BREAK_AT":
+            raise AssertionError("The selected end-time view was not saved")
+        if fingerprint(changed["fasts"]) != original_fasts:
+            raise AssertionError("Changing a reminder or timer view changed the running fast or history")
+        print("Verified Settings category navigation, a persisted reminder change, and the end-time view with the original running fast.")
 
     def verify_fresh_invite(self):
         # Only run after all upgrade assertions. Reset this dedicated emulator app's data so
@@ -235,8 +286,9 @@ class Screen:
         def open_week():
             self.device.app_stop(PACKAGE)
             self.device.app_start(PACKAGE, activity=ACTIVITY)
-            self.click("tab_settings")
-            self.click("week_title", scroll=True)
+            self.open_settings()
+            label = self.strings["week_title"]
+            self.find_node(self.device(textContains=label, packageName=PACKAGE), label, scroll=True).click()
 
         def open_date(day):
             # Android's English localized abbreviation and punctuation can vary by API.
@@ -385,11 +437,13 @@ def main(device, old_apk, new_apk):
     candidate = Screen(device, Path("."))
     candidate.find("tab_timer")
     candidate.find("timer_end", scroll=True)
-    after = fingerprint(candidate.export_backup("upgrade-after.json")["fasts"])
+    upgraded = candidate.export_backup("upgrade-after.json")
+    after = fingerprint(upgraded["fasts"])
     if before != after:
         raise AssertionError(f"Fast records changed on upgrade: {before} -> {after}")
     print("Verified both fasts, including the running timer's original start and target.")
     candidate.verify_appearance(before)
+    candidate.verify_reminder_and_timer_view(upgraded["settings"]["fast_end_alert"], before)
     candidate.verify_fresh_invite()
     candidate.verify_week_planner()
     candidate.verify_history_day()

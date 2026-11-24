@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_fasting_preferences">Fasting preferences</string>
+    <string name="settings_safety_reports">Safety and reports</string>
+    <string name="settings_reminders_summary">Start and end alerts, timing and delivery</string>
+    <string name="settings_fasting_summary">Eating window, water goal, Ramadan and Sunnah</string>
+    <string name="settings_privacy_summary">Data protection, Health Connect and backups</string>
+    <string name="settings_safety_summary">Screening, refeeding and doctor reports</string>
+    <string name="settings_fast_timing">Fast timing</string>
+    <string name="settings_delivery">Notification delivery</string>
+    <string name="settings_routine_reminders">Routine reminders</string>
+    <string name="settings_files">Backups and transfers</string>
+</resources>

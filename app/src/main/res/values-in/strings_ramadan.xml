@@ -37,7 +37,7 @@
     <!-- Settings redesign -->
     <string name="settings_title">Setelan</string>
     <string name="settings_plan_row">Paket</string>
-    <string name="settings_reminders_footer">Jika pengingat datang terlambat, jalankan cek keandalan di bagian Puasa.</string>
+    <string name="settings_reminders_footer">Untuk pengingat yang terlambat atau tidak muncul</string>
     <string name="settings_after_hours">Setelah %1$d jam</string>
     <string name="settings_hours_value">%1$d jam</string>
     <string name="settings_milestones_footer">Dapatkan notifikasi saat puasa Anda mencapai durasi ini.</string>

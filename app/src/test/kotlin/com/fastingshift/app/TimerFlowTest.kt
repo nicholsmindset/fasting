@@ -95,6 +95,24 @@ class TimerFlowTest {
         ring.performClick()
         waitForRing(s(R.string.a11y_mode_elapsed))
         assertEquals(TimerDisplayMode.ELAPSED, runBlocking { settings.current().timerMode })
+        compose.onNodeWithText(s(R.string.timer_choose_view)).performClick()
+        waitFor(s(R.string.timer_view_end))
+        compose.onNodeWithText(s(R.string.timer_view_end)).performClick()
+        waitForRing(s(R.string.a11y_mode_break_at, "").trimEnd(' ', ':'))
+        assertEquals(TimerDisplayMode.BREAK_AT, runBlocking { settings.current().timerMode })
+    }
+
+    @Test fun changingTheSelectedFastUpdatesTheSingleStartAction() {
+        seed(GateResult.OK, activeHoursIn = null)
+        waitFor(s(R.string.timer_start))
+        compose.onNodeWithText(s(R.string.timer_pick_protocol)).performClick()
+        waitFor("14:10")
+        compose.onNodeWithText("14:10").performScrollTo().performClick()
+        waitUntil { compose.onAllNodesWithText(s(R.string.timer_custom)).fetchSemanticsNodes().isEmpty() }
+        assertEquals(1, compose.onAllNodesWithText(s(R.string.timer_start)).fetchSemanticsNodes().size)
+        compose.onNodeWithText(s(R.string.timer_start)).performClick()
+        waitFor(s(R.string.timer_end))
+        assertEquals("window_14_10", runBlocking { fasts.getActive()?.protocolId })
     }
 
     @Test fun educationOnlyShowsNoStartButton() {

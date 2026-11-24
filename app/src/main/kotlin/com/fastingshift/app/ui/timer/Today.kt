@@ -1,23 +1,20 @@
 package com.fastingshift.app.ui.timer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -26,13 +23,13 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.ProgressRing
 import com.fastingshift.app.ui.components.formatTime
 import com.fastingshift.app.ui.components.waterLabel
-import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.domain.hydration.WaterGoal
 import java.time.Instant
@@ -62,47 +59,43 @@ object Today {
 @Composable
 fun TodayCard(today: TodaySummary, onAddWater: () -> Unit, modifier: Modifier = Modifier) {
     val haptics = rememberHaptics()
-    AppCard(modifier.testTag("today_card")) {
-        Text(stringResource(R.string.daily_today_title), style = MaterialTheme.typography.titleMedium)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            // Next fast
-            val nextValue = when (val n = today.next) {
-                NextFast.FastingNow -> stringResource(R.string.daily_fasting_now)
-                is NextFast.At -> n.at.formatTime()
-                NextFast.None -> stringResource(R.string.daily_next_none)
-            }
-            TodayStat(stringResource(R.string.daily_next_fast), nextValue, Modifier.weight(1f).testTag("today_next"))
-            Divider()
-            // Water: a small ring; tapping adds 250 ml.
-            val waterValue = stringResource(R.string.daily_water_of, waterLabel(today.waterMl), waterLabel(today.waterGoalMl.toDouble()))
-            val waterA11y = stringResource(R.string.daily_water_a11y, today.waterMl.toInt(), today.waterGoalMl)
-            val addLabel = stringResource(R.string.daily_add_water)
-            Column(
-                Modifier.weight(1.2f).clip(RoundedCornerShape(14.dp))
-                    .clickable(onClickLabel = addLabel, role = Role.Button) { haptics.tick(); onAddWater() }
-                    .clearAndSetSemantics {
-                        contentDescription = waterA11y
-                        role = Role.Button
-                        onClick(label = addLabel) { onAddWater(); true }
-                    }
-                    .testTag("today_water")
-                    .padding(vertical = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(stringResource(R.string.daily_water), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Box(contentAlignment = Alignment.Center) {
-                    ProgressRing(today.waterProgress, Modifier.size(44.dp), stroke = 5.dp, color = WaterBlue)
-                    Text("+", style = MaterialTheme.typography.titleMedium, color = WaterBlue)
+    Column(modifier.fillMaxWidth().testTag("today_card"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.daily_today_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        val waterValue = stringResource(R.string.daily_water_of, waterLabel(today.waterMl), waterLabel(today.waterGoalMl.toDouble()))
+        val waterA11y = stringResource(R.string.daily_water_a11y, today.waterMl.toInt(), today.waterGoalMl)
+        val addLabel = stringResource(R.string.daily_add_water)
+        Row(
+            Modifier.fillMaxWidth().testTag("today_water")
+                .clearAndSetSemantics {
+                    contentDescription = waterA11y
+                    role = Role.Button
+                    onClick(label = addLabel) { onAddWater(); true }
                 }
-                Text(waterValue, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1)
+                .clickable(onClickLabel = addLabel, role = Role.Button) { haptics.tick(); onAddWater() }
+                .heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.daily_water), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(waterValue, style = MaterialTheme.typography.titleMedium)
             }
-            Divider()
-            TodayStat(
-                stringResource(R.string.daily_streak),
-                pluralStringResource(R.plurals.daily_streak_days, today.streak, today.streak),
-                Modifier.weight(1f).testTag("today_streak"),
-            )
+            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                ProgressRing(today.waterProgress, Modifier.size(40.dp), stroke = 3.dp, color = WaterBlue)
+                Text("+", style = MaterialTheme.typography.titleMedium, color = WaterBlue)
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        val next = when (val n = today.next) {
+            NextFast.FastingNow -> stringResource(R.string.daily_fasting_now)
+            is NextFast.At -> n.at.formatTime()
+            NextFast.None -> stringResource(R.string.daily_next_none)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            TodayStat(stringResource(R.string.daily_next_fast), next, Modifier.weight(1f).testTag("today_next"))
+            TodayStat(stringResource(R.string.daily_streak), pluralStringResource(R.plurals.daily_streak_days, today.streak, today.streak),
+                Modifier.weight(1f).testTag("today_streak"))
         }
     }
 }
@@ -115,14 +108,9 @@ val WaterBlue: androidx.compose.ui.graphics.Color
 private fun androidx.compose.ui.graphics.Color.luminance(): Float = 0.2126f * red + 0.7152f * green + 0.0722f * blue
 
 @Composable
-private fun Divider() {
-    Box(Modifier.padding(top = 6.dp).width(0.5.dp).height(64.dp).background(MaterialTheme.colorScheme.outlineVariant))
-}
-
-@Composable
 private fun TodayStat(label: String, value: String, modifier: Modifier) {
-    Column(modifier.padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+        Text(value, style = MaterialTheme.typography.titleMedium)
     }
 }

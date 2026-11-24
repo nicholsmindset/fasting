@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="timer_idle_title">我的断食</string>
+    <string name="timer_choose_view">切换视图</string>
+    <string name="timer_view_elapsed">已断食时长</string>
+    <string name="timer_view_remaining">剩余时间</string>
+    <string name="timer_view_end">结束时间</string>
+</resources>

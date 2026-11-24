@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="timer_idle_title">Your fast</string>
+    <string name="timer_choose_view">Change view</string>
+    <string name="timer_view_elapsed">Time fasted</string>
+    <string name="timer_view_remaining">Time left</string>
+    <string name="timer_view_end">End time</string>
+</resources>

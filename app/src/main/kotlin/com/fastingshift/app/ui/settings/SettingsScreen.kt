@@ -6,12 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -36,12 +32,12 @@ import com.fastingshift.app.R
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.export.ExportManager
 import com.fastingshift.app.health.HealthConnectManager
+import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.convertWeight
 import com.fastingshift.app.ui.components.formatDate
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
-import com.fastingshift.app.ui.design.LargeTitle
 import com.fastingshift.app.ui.design.SwitchGroupRow
 import com.fastingshift.app.ui.ramadan.CityPickerSheet
 import com.fastingshift.app.ui.ramadan.MethodPickerSheet
@@ -151,7 +147,10 @@ class SettingsViewModel @Inject constructor(
 private enum class SettingsSheet { APPEARANCE, MILESTONES, FORGOT, WATER, CITY, METHOD, BOOK_CODE }
 
 @Composable
-fun SettingsRoute(
+internal fun SettingsRoute(
+    section: SettingsSection?,
+    onOpenSection: (SettingsSection) -> Unit,
+    onBack: () -> Unit,
     onRerunScreening: () -> Unit,
     onOpenReliability: () -> Unit,
     onOpenSchedules: () -> Unit,
@@ -202,161 +201,120 @@ fun SettingsRoute(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
-        ) {
-            LargeTitle(stringResource(R.string.settings_title), Modifier.padding(horizontal = 4.dp))
-
-            InsetGroup {
-                GroupRow(
-                    stringResource(R.string.appearance_title),
-                    value = stringResource(appearanceLabel(s.appearance)),
-                    showChevron = true,
-                    onClick = { sheet = SettingsSheet.APPEARANCE },
-                )
-            }
-
-            InsetGroup(header = stringResource(R.string.settings_fasting)) {
-                GroupRow(stringResource(R.string.settings_eating_window_title), subtitle = stringResource(R.string.settings_eating_window_subtitle), value = stringResource(R.string.settings_hours_value, s.eatingWindowHours)) {
-                    StepperControl(
-                        onDecrease = { vm.set { setEatingWindowHours(s.eatingWindowHours - 1) } },
-                        onIncrease = { vm.set { setEatingWindowHours(s.eatingWindowHours + 1) } },
-                        canDecrease = s.eatingWindowHours > 1,
-                        canIncrease = s.eatingWindowHours < 23,
-                    )
-                }
-                GroupDivider()
-                GroupRow(
-                    stringResource(R.string.settings_schedules_title),
-                    subtitle = stringResource(R.string.settings_schedules_subtitle),
-                    showChevron = true,
-                    onClick = onOpenSchedules,
-                )
-                GroupDivider()
-                GroupRow(stringResource(R.string.settings_reliability), showChevron = true, onClick = onOpenReliability)
-            }
-
-            InsetGroup(header = stringResource(R.string.settings_reminders), footer = stringResource(R.string.settings_reminders_footer)) {
-                SwitchGroupRow(stringResource(R.string.settings_end_alert), s.reminders.fastEndEnabled, { v -> vm.set { setFastEndReminder(v) } })
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_near_goal), s.reminders.nearGoalEnabled, { v -> vm.set { setNearGoalReminder(v) } })
-                GroupDivider()
-                GroupRow(
-                    stringResource(R.string.settings_milestones),
-                    value = milestonesValue(s.reminders.milestones.map { it.toHours().toInt() }),
-                    showChevron = true,
-                    onClick = { sheet = SettingsSheet.MILESTONES },
-                )
-                GroupDivider()
-                GroupRow(
-                    stringResource(R.string.settings_forgot_title),
-                    value = forgotValue(s.reminders.forgotToEndAfter?.toHours()?.toInt() ?: 0),
-                    showChevron = true,
-                    onClick = { sheet = SettingsSheet.FORGOT },
-                )
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_start_alert), s.reminders.fastStartEnabled, { v -> vm.set { setFastStartReminder(v) } })
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_window_closing), s.reminders.windowClosingEnabled, { v -> vm.set { setWindowClosingReminder(v) } })
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_hydration), s.reminders.hydrationEnabled, { v -> vm.set { setHydrationNudges(v) } })
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_ongoing), s.ongoingNotification, { v -> vm.set { setOngoingNotification(v) } })
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_coaching), s.coachingEnabled, { v -> vm.set { setCoaching(v) } })
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_weekly_recap), s.weeklyRecapEnabled, { v -> vm.set { setWeeklyRecap(v) } })
-            }
-
-            InsetGroup(header = stringResource(R.string.settings_water), footer = stringResource(R.string.settings_water_footer)) {
-                GroupRow(
-                    stringResource(R.string.settings_water_goal),
-                    value = waterGoalValue(water),
-                    showChevron = true,
-                    onClick = { sheet = SettingsSheet.WATER },
-                )
-            }
-
-            InsetGroup(header = stringResource(R.string.settings_privacy), footer = stringResource(R.string.settings_data_footer)) {
-                GroupRow(stringResource(R.string.trust_row), showChevron = true, onClick = onOpenTrust)
-                GroupDivider()
-                SwitchGroupRow(stringResource(R.string.settings_hide_weight), s.hideWeight, { v -> vm.set { setHideWeight(v) } })
-                if (vm.health.isAvailable()) {
-                    GroupDivider()
-                    SwitchGroupRow(
-                        stringResource(R.string.settings_health_connect),
-                        s.healthConnectSync,
-                        { on -> if (on) hcLauncher.launch(vm.health.permissions) else vm.set { setHealthConnectSync(false) } },
-                        subtitle = stringResource(R.string.settings_hc_note),
-                    )
-                } else if (vm.health.needsProviderUpdate()) {
-                    // Health Connect is installed but too old to use: offer the Play Store update.
-                    GroupDivider()
-                    GroupRow(
-                        stringResource(R.string.settings_hc_update),
-                        showChevron = true,
-                        onClick = { runCatching { context.startActivity(vm.health.providerUpdateIntent()) } },
-                    )
-                }
-                GroupDivider()
-                HistoryTransferRows()
-                GroupDivider()
-                ActionRow(stringResource(R.string.settings_export)) { exportLauncher.launch("fasting-shift-export.zip") }
-                GroupDivider()
-                ActionRow(stringResource(R.string.settings_backup)) { backupLauncher.launch("fasting-shift-backup.json") }
-                GroupDivider()
-                ActionRow(stringResource(R.string.settings_restore)) {
-                    restoreLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
-                }
-            }
-
-            LanguageGroup()
-
-            DoctorReportGroup()
-
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                InsetGroup(header = stringResource(R.string.settings_safety)) {
-                    screeningStatus?.let { st ->
-                        GroupRow(stringResource(R.string.settings_screening_status), subtitle = stringResource(st.label()))
-                        GroupDivider()
-                    }
-                    GroupRow(stringResource(R.string.settings_rerun_screening), showChevron = true, onClick = onRerunScreening)
-                    GroupDivider()
-                    GroupRow(stringResource(R.string.settings_refeeding), showChevron = true, onClick = onOpenRefeeding)
-                    GroupDivider()
-                    GroupRow(stringResource(R.string.settings_privacy_policy), showChevron = true, onClick = {
-                        // No browser installed must not crash Settings.
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.privacy_policy_url)))) }
-                    })
-                }
-                HelplineList()
-                Text(
-                    stringResource(R.string.disclaimer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-            }
-            RamadanGroup(
-                s = s,
-                preview = ramadan,
-                onToggle = { on ->
-                    vm.set { setRamadan(on) }
-                    if (on && ramadan == null) sheet = SettingsSheet.CITY
-                },
-                onCity = { sheet = SettingsSheet.CITY },
-                onMethod = { sheet = SettingsSheet.METHOD },
+    if (section == null) {
+        Box(Modifier.fillMaxSize()) {
+            SettingsOverview(
+                appearance = s.appearance,
+                entitlement = ent,
+                onOpenWeek = onOpenSchedules,
+                onAppearance = { sheet = SettingsSheet.APPEARANCE },
+                onSection = onOpenSection,
             )
-
-            SunnahSettingsGroup(s, vm, onOpenMuslimHub)
-
-            PlanGroup(ent, vm, onOpenPaywall, onBookCode = { sheet = SettingsSheet.BOOK_CODE })
-
-            Spacer(Modifier.height(24.dp))
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    } else {
+        SecondaryScaffold(stringResource(section.title), onBack, snackbar) {
+            when (section) {
+                SettingsSection.REMINDERS -> ReminderGroups(
+                    settings = s,
+                    vm = vm,
+                    onReliability = onOpenReliability,
+                    onMilestones = { sheet = SettingsSheet.MILESTONES },
+                    onForgot = { sheet = SettingsSheet.FORGOT },
+                )
+                SettingsSection.FASTING -> {
+                    InsetGroup {
+                        EatingWindowControl(
+                            s.eatingWindowHours,
+                            { vm.set { setEatingWindowHours(s.eatingWindowHours - 1) } },
+                            { vm.set { setEatingWindowHours(s.eatingWindowHours + 1) } },
+                        )
+                    }
+                    InsetGroup(header = stringResource(R.string.settings_water), footer = stringResource(R.string.settings_water_footer)) {
+                        GroupRow(
+                            stringResource(R.string.settings_water_goal),
+                            value = waterGoalValue(water),
+                            showChevron = true, opensPicker = true,
+                            onClick = { sheet = SettingsSheet.WATER },
+                        )
+                    }
+
+                    RamadanGroup(
+                        s = s,
+                        preview = ramadan,
+                        onToggle = { on ->
+                            vm.set { setRamadan(on) }
+                            if (on && ramadan == null) sheet = SettingsSheet.CITY
+                        },
+                        onCity = { sheet = SettingsSheet.CITY },
+                        onMethod = { sheet = SettingsSheet.METHOD },
+                    )
+
+                    SunnahSettingsGroup(s, vm, onOpenMuslimHub)
+                }
+                SettingsSection.PRIVACY -> {
+                    InsetGroup {
+                        GroupRow(stringResource(R.string.trust_row), showChevron = true, onClick = onOpenTrust)
+                        GroupDivider()
+                        SwitchGroupRow(stringResource(R.string.settings_hide_weight), s.hideWeight, { v -> vm.set { setHideWeight(v) } })
+                        if (vm.health.isAvailable()) {
+                            GroupDivider()
+                            SwitchGroupRow(
+                                stringResource(R.string.settings_health_connect),
+                                s.healthConnectSync,
+                                { on -> if (on) hcLauncher.launch(vm.health.permissions) else vm.set { setHealthConnectSync(false) } },
+                                subtitle = stringResource(R.string.settings_hc_note),
+                            )
+                        } else if (vm.health.needsProviderUpdate()) {
+                            // Health Connect is installed but too old to use: offer the Play Store update.
+                            GroupDivider()
+                            GroupRow(
+                                stringResource(R.string.settings_hc_update),
+                                showChevron = true,
+                                onClick = { runCatching { context.startActivity(vm.health.providerUpdateIntent()) } },
+                            )
+                        }
+                        GroupDivider()
+                        GroupRow(stringResource(R.string.settings_privacy_policy), showChevron = true, onClick = {
+                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.privacy_policy_url)))) }
+                        })
+                    }
+                    InsetGroup(header = stringResource(R.string.settings_files), footer = stringResource(R.string.settings_data_footer)) {
+                        HistoryTransferRows()
+                        GroupDivider()
+                        ActionRow(stringResource(R.string.settings_export)) { exportLauncher.launch("fasting-shift-export.zip") }
+                        GroupDivider()
+                        ActionRow(stringResource(R.string.settings_backup)) { backupLauncher.launch("fasting-shift-backup.json") }
+                        GroupDivider()
+                        ActionRow(stringResource(R.string.settings_restore)) {
+                            restoreLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
+                        }
+                    }
+                }
+                SettingsSection.SAFETY -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        InsetGroup(header = stringResource(R.string.settings_safety)) {
+                            screeningStatus?.let { st ->
+                                GroupRow(stringResource(R.string.settings_screening_status), subtitle = stringResource(st.label()))
+                                GroupDivider()
+                            }
+                            GroupRow(stringResource(R.string.settings_rerun_screening), showChevron = true, onClick = onRerunScreening)
+                            GroupDivider()
+                            GroupRow(stringResource(R.string.settings_refeeding), showChevron = true, onClick = onOpenRefeeding)
+                        }
+                        HelplineList()
+                        Text(
+                            stringResource(R.string.disclaimer),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    DoctorReportGroup()
+                }
+                SettingsSection.PLAN -> PlanGroup(ent, vm, onOpenPaywall, onBookCode = { sheet = SettingsSheet.BOOK_CODE })
+            }
+        }
     }
 
     when (sheet) {
@@ -396,6 +354,54 @@ fun SettingsRoute(
 }
 
 @Composable
+private fun ReminderGroups(
+    settings: AppSettings,
+    vm: SettingsViewModel,
+    onReliability: () -> Unit,
+    onMilestones: () -> Unit,
+    onForgot: () -> Unit,
+) {
+    val reminders = settings.reminders
+    InsetGroup(header = stringResource(R.string.settings_fast_timing)) {
+        SwitchGroupRow(stringResource(R.string.settings_start_alert), reminders.fastStartEnabled, { v -> vm.set { setFastStartReminder(v) } })
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_end_alert), reminders.fastEndEnabled, { v -> vm.set { setFastEndReminder(v) } })
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_near_goal), reminders.nearGoalEnabled, { v -> vm.set { setNearGoalReminder(v) } })
+        GroupDivider()
+        GroupRow(
+            stringResource(R.string.settings_milestones),
+            value = milestonesValue(reminders.milestones.map { it.toHours().toInt() }),
+            showChevron = true, opensPicker = true, onClick = onMilestones,
+        )
+        GroupDivider()
+        GroupRow(
+            stringResource(R.string.settings_forgot_title),
+            value = forgotValue(reminders.forgotToEndAfter?.toHours()?.toInt() ?: 0),
+            showChevron = true, opensPicker = true, onClick = onForgot,
+        )
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_window_closing), reminders.windowClosingEnabled, { v -> vm.set { setWindowClosingReminder(v) } })
+    }
+    InsetGroup(header = stringResource(R.string.settings_delivery)) {
+        GroupRow(
+            stringResource(R.string.settings_reliability),
+            subtitle = stringResource(R.string.settings_reminders_footer),
+            showChevron = true, onClick = onReliability,
+        )
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_ongoing), settings.ongoingNotification, { v -> vm.set { setOngoingNotification(v) } })
+    }
+    InsetGroup(header = stringResource(R.string.settings_routine_reminders)) {
+        SwitchGroupRow(stringResource(R.string.settings_hydration), reminders.hydrationEnabled, { v -> vm.set { setHydrationNudges(v) } })
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_coaching), settings.coachingEnabled, { v -> vm.set { setCoaching(v) } })
+        GroupDivider()
+        SwitchGroupRow(stringResource(R.string.settings_weekly_recap), settings.weeklyRecapEnabled, { v -> vm.set { setWeeklyRecap(v) } })
+    }
+}
+
+@Composable
 private fun waterGoalValue(w: WaterGoalDisplay): String {
     val liters = stringResource(R.string.settings_liters, formatLiters(w.ml))
     return if (w.automatic) stringResource(R.string.settings_water_auto, liters) else liters
@@ -426,11 +432,11 @@ private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Bo
                 stringResource(R.string.ramadan_city),
                 value = preview?.city?.name ?: stringResource(R.string.ramadan_city_none),
                 showChevron = true,
-                onClick = onCity,
+                opensPicker = true, onClick = onCity,
             )
             if (preview != null) {
                 GroupDivider()
-                GroupRow(stringResource(R.string.ramadan_method), value = RamadanText.methodName(preview.method), showChevron = true, onClick = onMethod)
+                GroupRow(stringResource(R.string.ramadan_method), value = RamadanText.methodName(preview.method), showChevron = true, opensPicker = true, onClick = onMethod)
                 GroupDivider()
                 GroupRow(
                     stringResource(R.string.ramadan_today_suhoor),
@@ -449,16 +455,8 @@ private fun RamadanGroup(s: AppSettings, preview: RamadanPreview?, onToggle: (Bo
 /** Paywall rule 4: plan, renewal date and one-tap cancel are always visible. */
 @Composable
 private fun PlanGroup(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: () -> Unit, onBookCode: () -> Unit) {
-    val context = LocalContext.current
-    InsetGroup(header = stringResource(R.string.settings_plan)) {
-        val planName = stringResource(
-            when (ent.plan) {
-                PlanType.FREE -> R.string.plan_free
-                PlanType.MONTHLY -> R.string.plan_monthly
-                PlanType.ANNUAL -> R.string.plan_annual
-                PlanType.LIFETIME -> R.string.plan_lifetime
-            },
-        )
+    InsetGroup {
+        val planName = stringResource(planLabel(ent.plan))
         GroupRow(
             stringResource(R.string.settings_plan_row),
             value = planName + if (ent.inTrial) " · " + stringResource(R.string.plan_trial) else "",
@@ -468,9 +466,7 @@ private fun PlanGroup(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: ()
         GroupRow(stringResource(R.string.plan_see_plus), showChevron = true, onClick = onOpenPaywall)
         if (ent.plan == PlanType.MONTHLY || ent.plan == PlanType.ANNUAL) {
             GroupDivider()
-            GroupRow(stringResource(R.string.plan_cancel), showChevron = true, onClick = {
-                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, BillingManager.playSubscriptionsUri(context.packageName))) }
-            })
+            ManagePlanRow()
         }
         if (vm.billing.isConfigured) {
             GroupDivider()

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -85,6 +86,7 @@ class MuslimHubScreenTest {
     private fun openHubFromSettings() {
         waitFor(s(R.string.tab_settings))
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
+        compose.onNodeWithTag("settings_open_fasting").performScrollTo().performClick()
         waitFor(s(R.string.muslim_hub_entry))
         compose.onNodeWithText(s(R.string.muslim_hub_entry)).performScrollTo().performClick()
         waitFor(s(R.string.muslim_upcoming))

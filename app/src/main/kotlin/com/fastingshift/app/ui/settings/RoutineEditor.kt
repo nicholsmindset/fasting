@@ -2,10 +2,11 @@ package com.fastingshift.app.ui.settings
 
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.Modifier
+import com.fastingshift.app.ui.ramadan.GroupedSheet
+import com.fastingshift.app.ui.ramadan.RadioChoiceRow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,18 +70,7 @@ internal fun RoutineEditor(state: PlannerState, original: Schedule?, protocol: S
     val draft = initial.copy(days = days, startTime = time, enabled = enabled)
     val preview = state.copy(schedules = state.schedules.filter { it.id != initial.id } + draft)
     InsetGroup(header = Presets.byId(protocol)?.name ?: protocol) {
-        Box {
-            GroupRow(stringResource(R.string.week_repeat), value = stringResource(repeat.label), showChevron = true, onClick = { repeatMenu = true })
-            DropdownMenu(expanded = repeatMenu, onDismissRequest = { repeatMenu = false }) {
-                Repeat.entries.forEach { item ->
-                    DropdownMenuItem(text = { Text(stringResource(item.label)) }, onClick = {
-                        if (repeat != Repeat.CHOOSE && item == Repeat.CHOOSE) customDays = days.sumOf { 1 shl it.ordinal }
-                        repeat = item
-                        repeatMenu = false
-                    })
-                }
-            }
-        }
+        GroupRow(stringResource(R.string.week_repeat), value = stringResource(repeat.label), showChevron = true, onClick = { repeatMenu = true })
         if (repeat == Repeat.CHOOSE) {
             DayOfWeek.entries.forEach { day ->
                 GroupDivider()
@@ -102,6 +92,20 @@ internal fun RoutineEditor(state: PlannerState, original: Schedule?, protocol: S
     PrimaryButton(stringResource(R.string.week_save), onClick = { onSave(draft) }, enabled = !busy && days.isNotEmpty())
     if (original != null) {
         TextButton(enabled = !busy, onClick = { deleteDialog = true }) { Text(stringResource(R.string.week_delete)) }
+    }
+    if (repeatMenu) {
+        GroupedSheet(title = stringResource(R.string.week_repeat), onDismiss = { repeatMenu = false }) {
+            InsetGroup(modifier = Modifier.selectableGroup()) {
+                Repeat.entries.forEachIndexed { index, item ->
+                    if (index > 0) GroupDivider()
+                    RadioChoiceRow(stringResource(item.label), selected = item == repeat, onClick = {
+                        if (repeat != Repeat.CHOOSE && item == Repeat.CHOOSE) customDays = days.sumOf { 1 shl it.ordinal }
+                        repeat = item
+                        repeatMenu = false
+                    })
+                }
+            }
+        }
     }
     if (deleteDialog) {
         AlertDialog(onDismissRequest = { deleteDialog = false }, title = { Text(stringResource(R.string.week_delete)) },

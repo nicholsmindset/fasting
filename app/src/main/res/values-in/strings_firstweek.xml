@@ -34,11 +34,11 @@
     <string name="onb_field_hint">Wajib diisi</string>
 
     <!-- First fast card -->
-    <string name="first_fast_title">Siap untuk puasa pertama?</string>
+    <string name="first_fast_title">Pengingat puasa pertama</string>
     <string name="first_fast_body">Rencana Anda: %1$s. Mulai kapan pun Anda siap. Mengakhiri lebih awal selalu tidak apa-apa.</string>
     <string name="first_fast_start_now">Mulai sekarang</string>
-    <string name="first_fast_tonight">Mulai malam ini pukul %1$s</string>
-    <string name="first_fast_tomorrow">Mulai besok pukul %1$s</string>
+    <string name="first_fast_tonight">Ingatkan saya malam ini pukul %1$s</string>
+    <string name="first_fast_tomorrow">Ingatkan saya besok pukul %1$s</string>
     <string name="first_fast_planned_tonight">Kami akan mengingatkan Anda malam ini pukul %1$s.</string>
     <string name="first_fast_planned_tomorrow">Kami akan mengingatkan Anda besok pukul %1$s.</string>
     <string name="first_fast_cancel_plan">Batalkan pengingat</string>

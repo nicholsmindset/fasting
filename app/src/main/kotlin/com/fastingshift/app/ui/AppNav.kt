@@ -1,13 +1,9 @@
 package com.fastingshift.app.ui
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.ui.unit.dp
@@ -27,8 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
 import java.time.LocalDate
 import androidx.navigation.NavType
@@ -52,6 +49,7 @@ import com.fastingshift.app.ui.safety.RefeedingRoute
 import com.fastingshift.app.ui.safety.StopFastRoute
 import com.fastingshift.app.ui.settings.SchedulesRoute
 import com.fastingshift.app.ui.settings.SettingsRoute
+import com.fastingshift.app.ui.settings.SettingsSection
 import com.fastingshift.app.ui.timer.TimerRoute
 import com.fastingshift.app.ui.trust.TrustRoute
 import com.fastingshift.app.ui.challenge.ChallengeDetailRoute
@@ -96,13 +94,13 @@ object Routes {
         "refeeding?tier=${tier?.name ?: ""}&fastId=${fastId ?: -1L}"
 }
 
-private data class Tab(val route: String, @StringRes val label: Int, val icon: ImageVector)
+private data class Tab(val route: String, @StringRes val label: Int, @DrawableRes val icon: Int)
 
 private val tabs = listOf(
-    Tab(Routes.TIMER, R.string.tab_timer, Icons.Filled.Home),
-    Tab(Routes.HISTORY, R.string.tab_history, Icons.Filled.DateRange),
-    Tab(Routes.LOG, R.string.tab_log, Icons.Filled.Edit),
-    Tab(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
+    Tab(Routes.TIMER, R.string.tab_timer, R.drawable.ic_tab_timer),
+    Tab(Routes.HISTORY, R.string.tab_history, R.drawable.ic_tab_history),
+    Tab(Routes.LOG, R.string.tab_log, R.drawable.ic_tab_log),
+    Tab(Routes.SETTINGS, R.string.tab_settings, R.drawable.ic_tab_settings),
 )
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -134,33 +132,35 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (tabs.any { it.route == current }) {
-                // iOS-style tab bar: translucent, hairline on top, accent colour for the selected tab.
                 Column {
                     HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.94f), tonalElevation = 0.dp) {
-                    tabs.forEach { tab ->
-                        NavigationBarItem(
-                            modifier = Modifier.testTag("tab_${tab.route}"),
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                            ),
-                            selected = current == tab.route,
-                            onClick = {
-                                nav.navigate(tab.route) {
-                                    popUpTo(Routes.TIMER) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall) },
-                        )
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest, tonalElevation = 0.dp) {
+                        tabs.forEach { tab ->
+                            NavigationBarItem(
+                                modifier = Modifier.testTag("tab_${tab.route}"),
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                ),
+                                selected = current == tab.route,
+                                onClick = {
+                                    nav.navigate(tab.route) {
+                                        popUpTo(Routes.TIMER) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(painterResource(tab.icon), contentDescription = null) },
+                                label = {
+                                    Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (current == tab.route) FontWeight.SemiBold else FontWeight.Normal)
+                                },
+                            )
+                        }
                     }
-                }
                 }
             }
         },
@@ -208,16 +208,22 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 )
             }
             composable(Routes.LOG) { LogRoute() }
-            composable(Routes.SETTINGS) {
-                SettingsRoute(
-                    onRerunScreening = { nav.navigate(Routes.ONBOARDING) },
-                    onOpenReliability = { nav.navigate(Routes.RELIABILITY) },
-                    onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
-                    onOpenPaywall = { nav.navigate(Routes.PAYWALL) },
-                    onOpenRefeeding = { nav.navigate(Routes.refeeding(null)) },
-                    onOpenTrust = { nav.navigate(Routes.TRUST) },
-                    onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
-                )
+            val settingsDestinations = listOf<SettingsSection?>(null) + SettingsSection.entries
+            settingsDestinations.forEach { section ->
+                composable(section?.route ?: Routes.SETTINGS) {
+                    SettingsRoute(
+                        section = section,
+                        onOpenSection = { nav.navigate(it.route) },
+                        onBack = back,
+                        onRerunScreening = { nav.navigate(Routes.ONBOARDING) },
+                        onOpenReliability = { nav.navigate(Routes.RELIABILITY) },
+                        onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
+                        onOpenPaywall = { nav.navigate(Routes.PAYWALL) },
+                        onOpenRefeeding = { nav.navigate(Routes.refeeding(null)) },
+                        onOpenTrust = { nav.navigate(Routes.TRUST) },
+                        onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
+                    )
+                }
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
             composable(Routes.TRUST) { TrustRoute(onBack = back) }
