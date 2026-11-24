@@ -13,6 +13,8 @@ The review covered the four daily tabs in the November appearance release. It us
 | Log | A second oversized ring dominated water entry. Electrolyte totals and the input selector repeated the same three mineral names. | Put the water amount, goal and two portion buttons together. Make each mineral's total its selectable input row. |
 | Settings | Routine changes, appearance and reminder reliability were dispersed. A long stack of individual switches buried other settings. | Keep direct access to My Week and Appearance. Move detailed controls to named pages for reminders, fasting preferences, privacy and data, safety and reports, and your plan. Show the current choices on the overview. |
 
+On the matched 411 × 822 screenshots, the center of Start moved from 83% to 38% of the way down the screen. This measures its placement. The five-person pilot will check whether people find it faster.
+
 ## How the Settings controls work
 
 A right-facing arrow opens a destination. A downward arrow opens a list of choices with the current value selected. Switching a setting takes effect on the first tap. Its checked position and checkmark remain visible in both themes, and the whole labeled row is one switch for TalkBack. Numeric steppers keep decrease and increase separate. File restore and deletion retain their confirmation steps. These differences give a user a way to anticipate what a tap will do. [Toggle switch research](https://www.nngroup.com/articles/toggle-switch-guidelines/)
