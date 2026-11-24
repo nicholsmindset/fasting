@@ -53,29 +53,33 @@ Facts Codex will need (all from the repo):
 
 ## Phase 1 — Website on Vercel (fastingshift.com)
 
-Play needs the privacy policy live before review, and challenge links need a page to land on.
+Play needs the privacy policy live before review, and the app opens challenge links on
+`fastingshift.com/c/` (see `AndroidManifest.xml`). The reviewed invite page already exists in
+`web/c/` and is published to GitHub Pages (`gh-pages`, see `docs/friends-beta.md`). This phase
+serves the same `web/` folder at fastingshift.com and adds the home and privacy pages.
 
 ```text
-Phase 1: Vercel website for fastingshift.com.
+Phase 1: Vercel website for fastingshift.com, from the repo's web/ folder.
 
-1. In the repo, create a small static site in a new folder `site/` (plain HTML + CSS, no
-   framework, no analytics, no cookies, no trackers):
-   - `site/index.html`: one-page landing for Fasting Shift using the title, short description and
-     the free/safety/privacy points from docs/store-listing.md. Include a "Get it on Google
-     Play" link placeholder (https://play.google.com/store/apps/details?id=com.fastingshift.app)
-     and a link to /privacy.
-   - `site/privacy/index.html`: docs/privacy-policy.md converted to HTML, word for word.
-     Keep the "[monitored privacy contact]" placeholder visible and add it to "Needs Robert".
-   - `site/c/index.html` plus a `site/vercel.json` rewrite so /c/<anything> serves it: "You've been
-     invited to a Fasting Shift challenge. Open this link on an Android phone with Fasting Shift
-     installed, or get the app on Google Play." Do not parse or display the code.
-   - `site/.well-known/assetlinks.json`: leave as an empty array `[]` for now (Phase 2 fills it).
-   Commit with a clear message on branch claude/friendly-cray-p3fgxg and push.
-2. In Vercel: create a project from the GitHub repo, root directory `site`, framework "Other",
-   no build command. Deploy. Show me the preview URL.
-3. Ask me before adding the domain. When I confirm, add fastingshift.com and www.fastingshift.com
-   to the project and show me the DNS records Vercel asks for. I will set them at my registrar.
-4. Check that https://fastingshift.com/privacy loads (it may take time for DNS). Log the result.
+1. Read docs/friends-beta.md. Do NOT change anything in web/c/ (it is reviewed and has tests in
+   tests/invite.test.mjs). Run `node --test tests/invite.test.mjs` and stop if it fails.
+2. Add, as plain HTML + CSS (no framework, no analytics, cookies or trackers), reusing the look of
+   web/c/challenge.css:
+   - web/index.html: a one-page landing using the title, short description and the
+     free/safety/privacy points from docs/store-listing.md, a link to /privacy and a Google Play
+     link placeholder (https://play.google.com/store/apps/details?id=com.fastingshift.app).
+   - web/privacy/index.html: docs/privacy-policy.md converted to HTML word for word. Keep the
+     "[monitored ...]" contact placeholder and the draft note visible, and add both to
+     "Needs Robert" (the policy must be final before Play review).
+   - web/.well-known/assetlinks.json containing [] for now (Phase 2 fills it).
+   Commit on branch claude/friendly-cray-p3fgxg and push.
+3. In Vercel: create a project from the GitHub repo with root directory `web`, framework
+   "Other", no build command, no environment variables. Deploy and show me the preview URL.
+   Check /, /privacy and /c/ on the preview.
+4. Ask me before adding the domain. When I confirm, add fastingshift.com and
+   www.fastingshift.com and show me the DNS records Vercel asks for; I set them at my registrar.
+5. Once DNS works, check https://fastingshift.com/privacy and https://fastingshift.com/c/ load.
+   Log the result. Keep GitHub Pages running until I say otherwise (beta builds link there).
 ```
 
 ---
@@ -98,12 +102,13 @@ Phase 2: Google Play Console for com.fastingshift.app.
    STOP before accepting the declarations — show them to me.
 2. Play App Signing: choose to let Google manage the app signing key. Then go to
    Setup → App signing and copy the SHA-256 fingerprint of the APP SIGNING key (it's public,
-   not a secret). Put it in site/.well-known/assetlinks.json as an Android app link entry for
+   not a secret). Put it in web/.well-known/assetlinks.json as an Android app link entry for
    package com.fastingshift.app with relation "delegate_permission/common.handle_all_urls",
    commit, push, and confirm Vercel redeployed.
-3. Internal testing: create a release and tell me when to upload app-release.aab (I'll pick the
-   file). Release name "0.1.0 (1)". Notes: "First internal test build." Add the testers email
-   list I give you. Don't roll out until I confirm.
+3. Internal testing (see docs/play-internal-testing.md): register the upload certificate,
+   create the tester list I give you and copy its opt-in link. For the FIRST release, tell me
+   when to upload app-release.aab (I'll pick the file); later releases go through the GitHub
+   workflow. Don't roll out until I confirm.
 4. Main store listing: copy title, short description and full description exactly from
    docs/store-listing.md. App icon and feature graphic: add to "Needs Robert" (placeholder icon).
    Phone screenshots (max 8): upload docs/screenshots/1-timer-light.png, 1b-timer-left-light.png,
@@ -149,29 +154,37 @@ Phase 3: RevenueCat for Fasting Shift.
 5. Offering: create `default`, make it current, with packages $rc_monthly → shift_plus_monthly and
    $rc_annual → shift_plus_annual.
 6. API keys: tell me where the Google Play PUBLIC SDK key is shown. Don't copy it anywhere.
-   I'll add it as `revenuecat.apiKey` in my ~/.gradle/gradle.properties before building the
-   release bundle.
+   I'll add it as the play-internal variable REVENUECAT_ANDROID_PUBLIC_KEY (Phase 4) and as
+   `revenuecat.apiKey` in my ~/.gradle/gradle.properties for local builds.
 ```
 
 ---
 
 ## Phase 4 — GitHub
 
+The Play internal-testing workflow and its settings are described in
+`docs/play-internal-testing.md`; follow that file, not this summary, if they differ.
+
 ```text
 Phase 4: GitHub repo nicholsmindset/fasting.
 
-1. Settings → Secrets and variables → Actions: list which of these exist (names only). Today
-   only .github/workflows/internal-beta.yml uses secrets: BETA_KEYSTORE_BASE64, BETA_KEY_ALIAS,
-   BETA_STORE_PASSWORD, BETA_KEY_PASSWORD. Re-check the workflow files for the exact names
-   before reporting. For each missing one, open the "New secret" form and let me paste the
-   value. Never type secret values yourself.
-   The Play upload key (FS_UPLOAD_STORE_FILE, FS_UPLOAD_STORE_PASSWORD, FS_UPLOAD_KEY_ALIAS,
-   FS_UPLOAD_KEY_PASSWORD) and the RevenueCat key (`revenuecat.apiKey`) are only used by local
-   builds today; no workflow reads them, so don't create GitHub secrets for them unless I ask
-   for a release workflow.
-2. Actions: confirm the latest "Android CI" run on claude/friendly-cray-p3fgxg passed, and that
-   the "Internal beta APK" workflow can be started manually. Don't start it unless I ask.
-3. Do not merge pull requests or change branch protection unless I ask.
+1. Read docs/play-internal-testing.md and .github/workflows/*.yml and list every secret and
+   variable they use. Today that is:
+   - Repository secrets for "Internal beta APK": BETA_KEYSTORE_BASE64, BETA_KEY_ALIAS,
+     BETA_STORE_PASSWORD, BETA_KEY_PASSWORD.
+   - Environment "play-internal" (deployments only from the default branch): secrets
+     PLAY_UPLOAD_KEYSTORE_BASE64, FS_UPLOAD_STORE_PASSWORD, FS_UPLOAD_KEY_ALIAS,
+     FS_UPLOAD_KEY_PASSWORD; variables PLAY_UPLOAD_CERT_SHA256, PLAY_WORKLOAD_IDENTITY_PROVIDER,
+     PLAY_SERVICE_ACCOUNT, and optional REVENUECAT_ANDROID_PUBLIC_KEY.
+2. Report which exist (names only). For each missing one, open the right form and let me paste
+   the value. Never type secret values yourself. Variables that are public (the upload
+   certificate SHA-256 from Play Console, the RevenueCat PUBLIC key) you may fill after I confirm.
+3. Google Cloud (for the Play workflow): follow steps 2–3 of docs/play-internal-testing.md —
+   enable the Google Play Android Developer API, create a dedicated service account, set up
+   Workload Identity Federation restricted to this repo, its default branch and the
+   play-internal environment. Show me each IAM change before saving. No JSON keys.
+4. Actions: confirm the latest "Android CI" run passed. Don't start the Play or beta workflows
+   unless I ask. Don't merge pull requests or change branch protection.
 ```
 
 ---
