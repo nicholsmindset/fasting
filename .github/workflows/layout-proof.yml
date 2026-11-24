@@ -7,32 +7,44 @@ permissions:
   contents: read
   actions: read
 jobs:
-  diagnostics:
+  capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 30
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          github-token: ${{ github.token }}
-          run-id: 45433761871
-          name: reports
-          path: captured
-      - name: Report failed UI assertions
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: 40838f3d2e3feee2b96b9b74f2ad0dd7689f2db3
+          path: review-app
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Capture fixed-clock app screens
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
+        working-directory: review-app
         run: |
-          python - <<'PYCODE'
-          from pathlib import Path
-          from html import unescape
-          import re
-          for path in sorted(Path("captured").rglob("*.html")):
-              if not any(name in path.name for name in ["TimerFlowTest", "MuslimHubScreenTest"]):
-                  continue
-              html = path.read_text()
-              print("FSREPORT", path.name)
-              for raw in re.findall(r"<pre[^>]*>(.*?)</pre>", html, re.S):
-                  s = unescape(re.sub(r"<[^>]*>", "", raw))
-                  if "DBG>>" in s:
-                      lines = [l for l in s.splitlines() if "text" in l.lower() or "description" in l.lower()]
-                      print("FSSEMANTICS", "\n".join(lines[-42:])[:4200])
-                  else:
-                      print("FSERROR", s[:2600])
-          PYCODE
+          ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.MoatsCaptureTest.dailyLayout*' --tests '*.MoatsCaptureTest.changeTimerViewAtDoubleFontSize' --tests '*.StoreScreenshotTest'
+          mkdir -p app/build/moats-captures/settings
+          cp docs/screenshots/{4a-reminders,4b-milestone-picker}-{light,dark}.png app/build/moats-captures/settings/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-review-originals
+          path: review-app/app/build/moats-captures/
+          if-no-files-found: error
+      - name: Encode synthetic review images
+        run: |
+          python -c 'import PIL' || python -m pip install Pillow
+          python scripts/layout-proof.py review-app/app/build/moats-captures/en light dark
