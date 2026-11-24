@@ -5,7 +5,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.fast.AddPastFastViewModel
 import com.fastingshift.app.ui.fast.canAddPastFastEndingOn
 import com.fastingshift.app.ui.fast.pastFastEndOn
+import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.protocol.Presets
+import com.fastingshift.domain.service.FastRepository
+import com.fastingshift.domain.service.ScreeningRepository
 import com.fastingshift.domain.service.FastService
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -21,6 +24,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -33,6 +44,8 @@ import org.robolectric.annotation.Config
 class AddPastFastDateTest {
     @get:Rule val hilt = HiltAndroidRule(this)
     @Inject lateinit var service: FastService
+    @Inject lateinit var fasts: FastRepository
+    @Inject lateinit var screening: ScreeningRepository
     @Before fun setUp() = hilt.inject()
 
     @Test fun localNoonRespectsSpringAndFallTransitions() {
@@ -66,6 +79,52 @@ class AddPastFastDateTest {
         assertEquals(noon, vm.state.value.end)
         vm.setEnd(noon.minusSeconds(900))
         assertEquals(vm.state.value, AddPastFastViewModel(service, handle, clock).state.value)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test fun invalidDraftCanRetryAndRepeatedSaveInsertsAndNavigatesOnce() = runTest {
+        val clock = Clock.fixed(Instant.parse("2026-11-24T12:40:00Z"), ZoneOffset.UTC)
+        val releaseRead = CompletableDeferred<Unit>()
+        val inserted = mutableListOf<Fast>()
+        var reads = 0
+        val repository = object : FastRepository by fasts {
+            override suspend fun getAll(): List<Fast> {
+                reads++
+                val snapshot = inserted.toList()
+                releaseRead.await()
+                return snapshot
+            }
+
+            override suspend fun insert(fast: Fast): Fast =
+                fast.copy(id = inserted.size.toLong() + 1).also { inserted.add(it) }
+        }
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val vm = AddPastFastViewModel(FastService(repository, screening, clock), SavedStateHandle(), clock)
+            val end = vm.state.value.end
+            var navigations = 0
+            vm.setEnd(vm.state.value.start)
+            vm.save { navigations++ }
+            runCurrent()
+            assertTrue(vm.state.value.error)
+            assertFalse(vm.state.value.saving)
+
+            vm.setEnd(end)
+            vm.save { navigations++ }
+            vm.save { navigations++ }
+            runCurrent()
+            assertTrue(vm.state.value.saving)
+            assertEquals(1, reads)
+            vm.save { navigations++ }
+            releaseRead.complete(Unit)
+            runCurrent()
+            vm.save { navigations++ }
+            runCurrent()
+            assertEquals(1, inserted.size)
+            assertEquals(1, navigations)
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 
     @Test fun undatedFormKeepsItsUsualDefaultsAndInvalidLinksClose() {

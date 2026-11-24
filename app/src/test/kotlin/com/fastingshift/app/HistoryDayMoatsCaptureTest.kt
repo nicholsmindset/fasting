@@ -4,9 +4,12 @@ import android.app.Application
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.DialogInterface
+import android.content.res.Configuration
 import android.os.Looper
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -46,12 +49,14 @@ import java.time.format.FormatStyle
 import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -73,6 +78,7 @@ class HistoryDayMoatsCaptureTest {
 
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
     private val originalZone = TimeZone.getDefault()
+    private var initialFontScale: Float? = null
     private val recordedDay = LocalDate.of(2026, 11, 20)
     private lateinit var overnight: Fast
     private lateinit var afternoon: Fast
@@ -92,8 +98,6 @@ class HistoryDayMoatsCaptureTest {
             afternoon = fasts.insert(Fast(startAt = later, targetEndAt = later.plus(Duration.ofHours(16)), protocolId = Presets.W16_8.id)
                 .end(later.plus(Duration.ofMinutes(90))))
         }
-        scenario = ActivityScenario.launch(MainActivity::class.java)
-        tap(label(R.string.tab_history))
     }
 
     @After fun tearDown() {
@@ -101,6 +105,7 @@ class HistoryDayMoatsCaptureTest {
             scenario?.close()
             if (::settings.isInitialized) runBlocking { settings.clearAll() }
         } finally {
+            initialFontScale?.let { RuntimeEnvironment.setFontScale(it) }
             TimeZone.setDefault(originalZone)
         }
     }
@@ -125,6 +130,8 @@ class HistoryDayMoatsCaptureTest {
     }
 
     private fun openDay(day: LocalDate) {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        tap(label(R.string.tab_history))
         awaitNode(hasTestTag("history-list"))
         compose.onNodeWithTag("history-list").performScrollToKey("history-calendar")
         val dateLabel = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(app.resources.configuration.locales[0]).format(day)
@@ -166,6 +173,36 @@ class HistoryDayMoatsCaptureTest {
         val corrected = runBlocking { fasts.getById(afternoon.id) }
         assertEquals(recordedDay.atTime(16, 45).atZone(moatsZone).toInstant(), corrected?.endedAt)
         assertEquals(overnight, runBlocking { fasts.getById(overnight.id) })
+    }
+
+    @Test
+    @Config(qualifiers = "en-rSG-w360dp-h640dp-night-xxhdpi")
+    fun dayActionsStayReachableWithLargeTextInDarkMode() {
+        initialFontScale = RuntimeEnvironment.getFontScale()
+        RuntimeEnvironment.setFontScale(2f)
+        // Several fasts on this date force the sheet to scroll on a narrow phone.
+        runBlocking {
+            for (hour in listOf(17, 19, 21)) {
+                val start = recordedDay.atTime(hour, 0).atZone(moatsZone).toInstant()
+                fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = Presets.W16_8.id)
+                    .end(start.plus(Duration.ofMinutes(30))))
+            }
+        }
+        openDay(recordedDay)
+        requireNotNull(scenario).onActivity { activity ->
+            val config = activity.resources.configuration
+            assertEquals(2f, config.fontScale)
+            assertEquals(360, config.screenWidthDp)
+            assertEquals(Configuration.UI_MODE_NIGHT_YES, config.uiMode and Configuration.UI_MODE_NIGHT_MASK)
+        }
+        val sheet = compose.onNodeWithTag("history-day-sheet")
+        compose.waitForIdle()
+        val scroll = sheet.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue(scroll.maxValue() > 0f)
+        capture("history-day-large")
+        compose.onNodeWithTag("history-day-add").performScrollTo().assertIsDisplayed()
+        compose.onNode(label(R.string.settings_done)).performScrollTo().assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasTestTag("history-day-sheet")).fetchSemanticsNodes().isEmpty() }
     }
 
     @Test fun addFromEmptyDaySavesTheTappedDate() {

@@ -1,4 +1,4 @@
-"""Verify a signed upgrade, fresh invite onboarding, and persisted one-date planner changes."""
+"""Verify a signed upgrade, fresh invite onboarding, and persisted planner and history edits."""
 from base64 import urlsafe_b64encode
 from datetime import date, timedelta
 import json
@@ -244,6 +244,42 @@ class Screen:
             raise AssertionError(f"Unexpected planner overrides: {stored['settings']['day_overrides']}")
         print("Verified a weekday plan, one moved start, one skipped date and an unchanged weekday after relaunch.")
 
+    def verify_history_day(self):
+        today = date.fromisoformat(adb("shell", "date", "+%F"))
+        selected = today - timedelta(days=7)
+
+        def open_selected_day():
+            self.device.app_stop(PACKAGE)
+            self.device.app_start(PACKAGE, activity=ACTIVITY)
+            self.click("tab_history")
+            shown = date.fromisoformat(adb("shell", "date", "+%F"))
+            if (selected.year, selected.month) != (shown.year, shown.month):
+                previous = self.device(description=self.strings["a11y_prev_month"], packageName=PACKAGE)
+                self.find_node(previous, "Previous month", scroll=True).click()
+            # Calendar cells announce localized long dates; use English date parts rather
+            # than a day number which also appears in adjacent rows and summary metrics.
+            pattern = rf"(?i)(?=.*\b{selected:%B}\b)(?=.*\b{selected.day}\b)(?=.*\b{selected.year}\b).*"
+            cell = self.device(descriptionMatches=pattern, packageName=PACKAGE)
+            self.find_node(cell, selected.isoformat(), scroll=True).click(offset=(0.5, 0.2))
+
+        open_selected_day()
+        self.find("history_day_empty")
+        self.click("add_past_button")
+        self.find("add_past_title")
+        self.click("save", scroll=True)
+        self.find("history_day_recorded")
+        open_selected_day()
+        self.find("history_day_recorded")
+        self.click("settings_done", scroll=True)
+        stored = self.export_backup("history-day-after.json")["fasts"]
+        if len(stored) != 1 or stored[0]["ended_at"] is None:
+            raise AssertionError(f"Expected one ended fast from the calendar, got {stored}")
+        end_seconds = stored[0]["ended_at"] // 1000
+        local_end = adb("shell", "date", "-d", f"@{end_seconds}", "+%F")
+        if local_end != selected.isoformat():
+            raise AssertionError(f"Calendar date {selected} saved a fast ending on {local_end}")
+        print("Verified recording on a selected past date, reopening its History sheet, and the saved local date.")
+
 
 def fingerprint(fasts):
     keys = ("id", "start_at", "target_end_at", "ended_at", "protocol_id", "status")
@@ -288,6 +324,7 @@ def main(device, old_apk, new_apk):
     print("Verified both fasts, including the running timer's original start and target.")
     candidate.verify_fresh_invite()
     candidate.verify_week_planner()
+    candidate.verify_history_day()
 
 
 if __name__ == "__main__":

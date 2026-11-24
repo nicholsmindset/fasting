@@ -48,6 +48,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -58,6 +59,7 @@ data class AddPastFastState(
     val start: Instant,
     val end: Instant,
     val error: Boolean = false,
+    val saving: Boolean = false,
 )
 
 /** The earliest whole picker minute that still fits the rolling history window. */
@@ -116,7 +118,9 @@ class AddPastFastViewModel @Inject constructor(
         handle[KEY_END] = s.end.toEpochMilli()
     }
 
-    private fun change(f: (AddPastFastState) -> AddPastFastState) = _state.update { f(it).copy(error = false).also(::persist) }
+    private fun change(f: (AddPastFastState) -> AddPastFastState) = _state.update {
+        if (it.saving) it else f(it).copy(error = false).also(::persist)
+    }
 
     /** A day-specific draft keeps the chosen end. The general history form keeps its start. */
     fun select(p: Protocol) = change {
@@ -130,11 +134,17 @@ class AddPastFastViewModel @Inject constructor(
     fun save(onDone: () -> Unit) {
         if (unavailableDate) return
         val s = _state.value
+        if (s.saving || !_state.compareAndSet(s, s.copy(saving = true, error = false))) return
         viewModelScope.launch {
-            when (service.addPastFast(s.protocol, s.start, s.end)) {
-                is EditResult.Updated -> onDone()
-                else -> _state.update { it.copy(error = true) }
+            val saved = try {
+                service.addPastFast(s.protocol, s.start, s.end) is EditResult.Updated
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
             }
+            // Keep a successful draft locked while its destination closes.
+            if (saved) onDone() else _state.update { it.copy(saving = false, error = true) }
         }
     }
 
@@ -187,6 +197,6 @@ fun AddPastFastRoute(onDone: () -> Unit, vm: AddPastFastViewModel = hiltViewMode
         AnimatedVisibility(st.error) {
             Text(stringResource(R.string.add_past_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
-        PrimaryButton(stringResource(R.string.save), onClick = { vm.save(onDone) }, haptic = true)
+        PrimaryButton(stringResource(R.string.save), onClick = { vm.save(onDone) }, enabled = !st.saving, haptic = true)
     }
 }

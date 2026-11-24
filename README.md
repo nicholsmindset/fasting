@@ -4,9 +4,11 @@ A private Android fasting tracker from Nichols Mindset. Start a timer, review yo
 
 ## Status
 
+Tap a date in History to see how much of each fast fell on that day. Open a record to correct it, or use **Add a past fast** to enter a missing fast ending on the selected date.
+
 My Week lets you schedule your usual fasting window, preview the next seven days and change a single date. Timer shows the next planned start. Settings also contains reminders. Health logs, doctor reports, Health Connect insights, and the Ramadan and Sunnah hub are optional. Glucose writes use the same persistent retry queue as weight and water. An invitation shares the challenge settings. Sharing a progress card is a separate action.
 
-Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The Android 15 upgrade check verifies that a completed fast and an active timer survive an update. It also opens a friend invite on a clean install, finishes screening, joins once and reopens the same challenge. The release bundle built in CI is unsigned unless a release upload key is configured.
+Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The Android 15 upgrade check verifies that a completed fast and an active timer survive an update. It also opens a friend invite on a clean install, finishes screening, joins once and reopens the same challenge. It verifies a My Week exception and saves a missing fast from History on the selected local date. The release bundle built in CI is unsigned unless a release upload key is configured.
 
 Highlights beyond the PRD: tappable timer (fasted / time left / break-fast time), eating-window
 countdown, quick-add on the Timer, undo after ending, add a past fast, "started earlier",
