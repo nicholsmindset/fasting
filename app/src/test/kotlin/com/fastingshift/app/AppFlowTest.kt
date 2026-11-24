@@ -1,5 +1,8 @@
 package com.fastingshift.app
 
+import android.Manifest
+import android.app.NotificationManager
+import android.provider.Settings
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
@@ -15,6 +18,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
 import com.fastingshift.data.settings.SettingsRepository
@@ -32,6 +36,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -68,6 +73,34 @@ class AppFlowTest {
     } catch (e: Throwable) {
         println("DBG>> " + compose.onRoot().printToString().lines().joinToString("\nDBG>> "))
         throw e
+    }
+
+    @Test fun reminderPreferencesOfferAndroidSettingsWhenDeliveryIsBlocked() {
+        val application = compose.activity.application
+        val systemNotifications = shadowOf(application.getSystemService(NotificationManager::class.java))
+        shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        systemNotifications.setNotificationsEnabled(false)
+        runBlocking { settings.setOnboardingComplete(true) }
+        try {
+            waitFor(s(R.string.tab_settings))
+            click(s(R.string.tab_settings))
+            compose.onNodeWithTag("settings_open_reminders").performScrollTo().performClick()
+            val enable = s(R.string.rel_notifications_fix)
+            waitFor(enable)
+            click(enable)
+            val intent = shadowOf(application).nextStartedActivity
+            assertEquals(Settings.ACTION_APP_NOTIFICATION_SETTINGS, intent.action)
+            assertEquals(application.packageName, intent.getStringExtra(Settings.EXTRA_APP_PACKAGE))
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+            systemNotifications.setNotificationsEnabled(true)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            compose.waitUntil(5_000) { compose.onAllNodesWithText(enable).fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithText(s(R.string.settings_start_alert)).assertExists()
+        } finally {
+            runBlocking { settings.setOnboardingComplete(false) }
+        }
     }
 
     @Test fun freeReaderCanOpenReflectionEvenWithAnOldEnrollment() {

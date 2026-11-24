@@ -25,7 +25,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
@@ -34,6 +36,8 @@ import com.fastingshift.app.billing.RestoreOutcome
 import com.fastingshift.app.export.ExportManager
 import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.app.ui.components.SecondaryScaffold
+import com.fastingshift.app.ui.components.appNotificationsEnabled
+import com.fastingshift.app.ui.components.openAppNotificationSettings
 import com.fastingshift.app.ui.components.convertWeight
 import com.fastingshift.app.ui.components.formatDate
 import com.fastingshift.app.ui.design.GroupDivider
@@ -382,6 +386,20 @@ private fun ReminderGroups(
     onMilestones: () -> Unit,
     onForgot: () -> Unit,
 ) {
+    val context = LocalContext.current
+    var notificationsEnabled by remember(context) { mutableStateOf(appNotificationsEnabled(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { notificationsEnabled = appNotificationsEnabled(context) }
+    if (!notificationsEnabled) {
+        InsetGroup {
+            GroupRow(
+                title = stringResource(R.string.rel_notifications),
+                value = stringResource(R.string.off),
+                subtitle = stringResource(R.string.rel_notifications_fix),
+                showChevron = true,
+                onClick = { openAppNotificationSettings(context) },
+            )
+        }
+    }
     val reminders = settings.reminders
     InsetGroup(header = stringResource(R.string.settings_fast_timing)) {
         SwitchGroupRow(stringResource(R.string.settings_start_alert), reminders.fastStartEnabled, { v -> vm.set { setFastStartReminder(v) } })
