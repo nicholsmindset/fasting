@@ -7,6 +7,7 @@ import com.fastingshift.domain.model.FastKind
 import com.fastingshift.domain.model.FastStatus
 import com.fastingshift.domain.model.ProtocolType
 import com.fastingshift.domain.protocol.Presets
+import com.fastingshift.domain.schedule.PlanHistory
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
@@ -120,7 +121,10 @@ object Challenges {
                 (fast.kind != FastKind.REGULAR || fast.plannedDuration >= MIN_SUNNAH_FAST)
     }
 
-    fun progress(challenge: Challenge, fasts: List<Fast>, zone: ZoneId, now: Instant, hijriOffsetDays: Int = 0): ChallengeProgress {
+    fun progress(
+        challenge: Challenge, fasts: List<Fast>, zone: ZoneId, now: Instant,
+        hijriOffsetDays: Int = 0, personalPlan: PlanHistory = PlanHistory(),
+    ): ChallengeProgress {
         val today = now.atZone(zone).toLocalDate()
         val start = challenge.startDate
         val end = challenge.endDate
@@ -130,11 +134,12 @@ object Challenges {
             .groupBy({ it.second }, { it.first })
         val days = (0 until challenge.lengthDays).map { i ->
             val date = start.plusDays(i.toLong())
-            val required = isRequired(challenge.type, date, hijriOffsetDays)
+            val required = if (challenge.followsOwnPlan) personalPlan.isPlanned(date)
+                else isRequired(challenge.type, date, hijriOffsetDays)
             val started = byDay[date].orEmpty()
             val state = when {
                 !required -> DayState.REST
-                started.any { meets(challenge, it, now) } -> DayState.DONE
+                started.any { if (challenge.followsOwnPlan) !it.isActive else meets(challenge, it, now) } -> DayState.DONE
                 date.isAfter(today) -> DayState.UPCOMING
                 date == today || started.any { it.isActive } -> DayState.TODAY
                 else -> DayState.MISSED

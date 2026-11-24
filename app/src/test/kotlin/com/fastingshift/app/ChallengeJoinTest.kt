@@ -143,12 +143,27 @@ class ChallengeJoinTest {
         assertEquals(invite, ChallengeInvite.of(runBlocking { challenges.observeAll().first().single() }))
     }
 
-    @Test fun pilotInviteShowsJoinPreviewBeforeCreatingAnything() {
+    @Test fun pilotInvitePreviewsBeforeJoiningAndKeepsThePrivatePlanChoice() {
         val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.now().plusDays(1), 7, "Walking group")
         open(ChallengeLinks.link(invite, pilot = true))
         waitFor("Walking group")
         compose.onNodeWithText(s(R.string.challenge_join)).assertExists()
         assertEquals(0, runBlocking { challenges.observeAll().first() }.size)
+        compose.onNodeWithText(s(R.string.friend_own_plan)).performScrollTo().performClick()
+        compose.onNodeWithText(s(R.string.challenge_join)).performScrollTo().performClick()
+        // The invite preview explains personal progress too. Wait for the detail route itself.
+        waitFor(s(R.string.challenge_leave))
+        compose.waitForIdle()
+        compose.onNodeWithText(s(R.string.friend_personal_count)).assertExists()
+        val enrollment = runBlocking { challenges.observeAll().first().single() }
+        assertEquals(true, enrollment.followsOwnPlan)
+        assertEquals(invite, ChallengeInvite.of(enrollment))
+        runBlocking {
+            assertEquals(enrollment.id, challenges.join(invite.toChallenge(Instant.now())))
+            assertEquals(true, challenges.observeAll().first().single().followsOwnPlan)
+        }
+        compose.onNodeWithText(s(R.string.friend_own_plan)).performScrollTo().performClick()
+        compose.waitUntil(10_000) { !runBlocking { challenges.observeAll().first().single().followsOwnPlan } }
     }
 
     @Test fun changedScreeningClosesTheInviteAndBlocksAStaleEnrollment() {

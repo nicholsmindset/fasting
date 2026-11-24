@@ -43,6 +43,8 @@ class Screen:
         if node.wait(timeout=2 if scroll else 20):
             return node
         if scroll:
+            if not self.device(packageName=PACKAGE).wait(timeout=15):
+                raise AssertionError(f"Fasting Shift did not reach the foreground while looking for {label}")
             for direction in ("up", "down"):
                 for _ in range(10):
                     self.device.swipe_ext(direction, scale=0.65)
@@ -150,6 +152,8 @@ class Screen:
         open_invite()
         self.onboard("challenge_join_title", allow_notifications=False)
         check_title()
+        choice = self.device(textContains=self.strings["friend_own_plan"], packageName=PACKAGE)
+        self.find_node(choice, "Follow my own plan", scroll=True).click()
         self.click("challenge_join", scroll=True)
         self.find("challenge_invite", scroll=True)  # Only the detail screen offers this action.
         check_title()
@@ -172,7 +176,9 @@ class Screen:
         joined = self.export_backup("invite-after.json")["challenges"]
         if len(joined) != 1 or joined[0]["name"] != name:
             raise AssertionError(f"Expected one joined challenge named {name!r}, got {joined}")
-        print("Verified fresh onboarding, explicit Join, and reopening the same local challenge.")
+        if joined[0].get("follows_own_plan") is not True:
+            raise AssertionError("Reopening the invitation lost the private choice of plan")
+        print("Verified fresh onboarding, personal-plan enrollment, and reopening the same local challenge.")
 
 
     def verify_week_planner(self):
@@ -273,14 +279,24 @@ class Screen:
         open_selected_day()
         self.find("history_day_recorded")
         self.click("settings_done", scroll=True)
-        stored = self.export_backup("history-day-after.json")["fasts"]
+        self.find("recap_fit_question", scroll=True)
+        self.click("recap_fit_partly", scroll=True)
+        self.find("recap_change_answer", scroll=True)
+        self.device.app_stop(PACKAGE)
+        self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+        self.find("timer_start")
+        backup = self.export_backup("history-day-after.json")
+        answers = backup["settings"]["week_reflections"]
+        if list(answers.values()) != ["PARTLY"]:
+            raise AssertionError(f"Expected one saved weekly reflection, got {answers}")
+        stored = backup["fasts"]
         if len(stored) != 1 or stored[0]["ended_at"] is None:
             raise AssertionError(f"Expected one ended fast from the calendar, got {stored}")
         end_seconds = stored[0]["ended_at"] // 1000
         local_end = adb("shell", "date", "-d", f"@{end_seconds}", "+%F")
         if local_end != selected.isoformat():
             raise AssertionError(f"Calendar date {selected} saved a fast ending on {local_end}")
-        print("Verified recording on a selected past date, reopening its History sheet, and the saved local date.")
+        print("Verified a saved fast on its original History date and a weekly reflection after relaunch.")
 
 
 def fingerprint(fasts):
@@ -317,8 +333,9 @@ def main(device, old_apk, new_apk):
     # Package manager enforces package identity and signing certificate continuity.
     adb("install", "-r", new_apk)
     assert installed_version() == 101, "Replacement version was not installed"
-    device.app_start(PACKAGE, activity=ACTIVITY)
+    device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
     candidate = Screen(device, Path("."))
+    candidate.find("tab_timer")
     candidate.find("timer_end", scroll=True)
     after = fingerprint(candidate.export_backup("upgrade-after.json")["fasts"])
     if before != after:
@@ -336,6 +353,9 @@ if __name__ == "__main__":
     except Exception:
         DIAGNOSTICS.mkdir(exist_ok=True)
         (DIAGNOSTICS / "logcat.txt").write_text(adb("logcat", "-d", "-t", "1200"))
+        crash = adb("logcat", "-b", "crash", "-d", "-t", "180")
+        if PACKAGE in crash:
+            print(crash)
         hierarchy = device.dump_hierarchy()
         (DIAGNOSTICS / "screen.xml").write_text(hierarchy)
         for node in ET.fromstring(hierarchy).iter("node"):

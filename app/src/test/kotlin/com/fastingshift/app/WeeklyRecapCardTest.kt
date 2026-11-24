@@ -17,6 +17,7 @@ import com.fastingshift.app.ui.history.RecapItem
 import com.fastingshift.app.ui.history.WeeklyRecapCard
 import com.fastingshift.app.ui.theme.FastingShiftTheme
 import com.fastingshift.domain.history.WeeklyRecaps
+import com.fastingshift.domain.history.ScheduleFit
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.VolumeUnit
 import com.fastingshift.domain.model.WaterLog
@@ -82,6 +83,25 @@ class WeeklyRecapCardTest {
         compose.onNodeWithText(ctx.getString(R.string.history_keep_selected)).assertExists()
         compose.onNodeWithText(ctx.getString(R.string.history_edit_schedule)).performClick()
         compose.runOnIdle { kotlin.test.assertTrue(opened) }
+    }
+
+    @Test fun aReflectionCanBeSkippedAnsweredAndChangedForTheDisplayedWeek() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val item = seededItem()
+        compose.setContent {
+            var answer by remember { mutableStateOf<ScheduleFit?>(null) }
+            FastingShiftTheme { WeeklyRecapCard(item.copy(fit = answer), onReflect = { answer = it }) }
+        }
+        fun tap(label: Int) = compose.onNodeWithText(ctx.getString(label)).performClick()
+        tap(R.string.recap_fit_skip)
+        compose.onNodeWithText(ctx.getString(R.string.recap_fit_question)).assertDoesNotExist()
+        tap(R.string.recap_add_reflection)
+        tap(R.string.recap_fit_partly)
+        compose.onNodeWithText(ctx.getString(R.string.recap_fit_partly)).assertExists()
+        tap(R.string.recap_change_answer)
+        tap(R.string.recap_fit_yes)
+        compose.onNodeWithText(ctx.getString(R.string.recap_fit_partly)).assertDoesNotExist()
+        compose.onNodeWithText(ctx.getString(R.string.recap_fit_yes)).assertExists()
     }
 
     @Test fun theMessageNeverRewardsLength() {

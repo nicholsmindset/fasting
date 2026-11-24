@@ -1,0 +1,16 @@
+<resources>
+    <string name="recap_fit_question">Apakah jadwal ini sesuai dengan kegiatan Anda minggu ini?</string>
+    <string name="recap_fit_yes">Ya</string>
+    <string name="recap_fit_partly">Sebagian</string>
+    <string name="recap_fit_no">Tidak</string>
+    <string name="recap_fit_skip">Lewati minggu ini</string>
+    <string name="recap_change_answer">Ubah jawaban</string>
+    <string name="recap_add_reflection">Tambahkan refleksi</string>
+    <string name="friend_own_plan">Ikuti rencana saya sendiri</string>
+    <string name="friend_own_plan_hint">Gunakan hari yang saya rencanakan untuk mencatat kemajuan saya. Teman saya tetap mengikuti rutinitasnya sendiri.</string>
+    <string name="friend_no_planned_days">Belum ada hari yang direncanakan untuk periode ini</string>
+    <string name="friend_personal_count">Puasa yang sudah diakhiri dihitung sekali pada hari mulai yang direncanakan, meskipun Anda berhenti lebih awal.</string>
+    <string name="friend_personal_days">hari yang saya rencanakan</string>
+    <string name="friend_send_encouragement">Kirim semangat</string>
+    <string name="friend_encouragement_message">Semangat untuk minggu ini!</string>
+</resources>

@@ -6,7 +6,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.AutoMigrationSpec
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.execSQL
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.io.File
 import java.nio.file.Files
@@ -28,9 +31,13 @@ import java.nio.file.Files
         QadaRepaymentEntity::class,
         ChallengeEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5, spec = FastingDatabase.MigrateToV5::class),
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class FastingDatabase : RoomDatabase() {
@@ -75,6 +82,13 @@ abstract class FastingDatabase : RoomDatabase() {
                 Files.deleteIfExists(File(file.path + suffix).toPath())
             }
             DatabaseKeyProvider(context).reset()
+        }
+    }
+
+    class MigrateToV5 : AutoMigrationSpec {
+        override fun onPostMigrate(connection: SQLiteConnection) {
+            // Room validates the entity indexes before onOpen recreates our partial index.
+            connection.execSQL("DROP INDEX IF EXISTS index_fast_single_active")
         }
     }
 

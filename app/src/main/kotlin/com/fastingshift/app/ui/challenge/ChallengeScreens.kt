@@ -50,6 +50,7 @@ import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.app.ui.design.SwitchGroupRow
 import com.fastingshift.app.ui.design.SegmentedControl
 import com.fastingshift.app.ui.onboarding.SelectGroupRow
 import com.fastingshift.app.ui.onboarding.TextFieldGroupRow
@@ -92,6 +93,24 @@ private fun statusText(item: ChallengeItem): String = when {
     item.progress.status == ChallengeStatus.UPCOMING -> stringResource(R.string.challenge_status_upcoming, item.challenge.startDate.text())
     item.progress.status == ChallengeStatus.ACTIVE -> stringResource(R.string.challenge_status_active, item.challenge.endDate.text())
     else -> stringResource(R.string.challenge_status_finished)
+}
+
+@Composable
+private fun progressLabel(item: ChallengeItem): String {
+    val progress = item.progress
+    return if (item.challenge.followsOwnPlan && progress.requiredDays == 0) {
+        stringResource(R.string.friend_no_planned_days)
+    } else {
+        pluralStringResource(R.plurals.challenge_progress, progress.requiredDays, progress.doneDays, progress.requiredDays)
+    }
+}
+
+@Composable
+private fun PersonalPlanSwitch(enabled: Boolean, onChange: (Boolean) -> Unit) {
+    SwitchGroupRow(
+        title = stringResource(R.string.friend_own_plan), checked = enabled, onCheckedChange = onChange,
+        subtitle = stringResource(R.string.friend_own_plan_hint),
+    )
 }
 
 // ---------- list ----------
@@ -154,7 +173,7 @@ private fun ChallengeGroup(header: String, items: List<ChallengeItem>, onOpen: (
             val c = item.challenge
             GroupRow(
                 c.name ?: challengeTypeTitle(c.type, c.protocolId, c.lengthDays),
-                subtitle = pluralStringResource(R.plurals.challenge_progress, item.progress.requiredDays, item.progress.doneDays, item.progress.requiredDays) + " · " + statusText(item),
+                subtitle = progressLabel(item) + " · " + statusText(item),
                 leading = { ProgressRing(item.progress.fraction, Modifier.size(32.dp), stroke = 5.dp) },
                 showChevron = true,
                 onClick = { onOpen(c.id) },
@@ -169,6 +188,7 @@ private fun ChallengeGroup(header: String, items: List<ChallengeItem>, onOpen: (
 fun CreateChallengeRoute(onBack: () -> Unit, onCreated: (Long) -> Unit, vm: CreateChallengeViewModel = hiltViewModel()) {
     val allowed by vm.allowed.collectAsStateWithLifecycle()
     var template by rememberSaveable { mutableStateOf(ChallengeTemplate.DAILY_16_8_WEEK) }
+    var followsOwnPlan by rememberSaveable { mutableStateOf(false) }
     var start by rememberSaveable { mutableStateOf(StartOption.TOMORROW) }
     var name by rememberSaveable { mutableStateOf("") }
     SecondaryScaffold(title = stringResource(R.string.challenge_new_title), onBack = onBack) {
@@ -220,7 +240,8 @@ fun CreateChallengeRoute(onBack: () -> Unit, onCreated: (Long) -> Unit, vm: Crea
                 valueWidth = 180.dp,
             )
         }
-        PrimaryButton(stringResource(R.string.challenge_create), onClick = { vm.create(template, start, name, onCreated) }, haptic = true)
+        PersonalPlanSwitch(followsOwnPlan) { followsOwnPlan = it }
+        PrimaryButton(stringResource(R.string.challenge_create), onClick = { vm.create(template, start, name, followsOwnPlan, onCreated) }, haptic = true)
     }
 }
 
@@ -239,7 +260,7 @@ internal fun challengeInviteIntent(context: Context, title: String, link: String
         .putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_challenge_text, title, link))
 
 @Composable
-fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hiltViewModel()) {
+fun ChallengeDetailRoute(onBack: () -> Unit, onOpenWeek: () -> Unit, vm: ChallengeDetailViewModel = hiltViewModel()) {
     val item by vm.item.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var confirmLeave by rememberSaveable { mutableStateOf(false) }
@@ -260,7 +281,7 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ProgressRing(p.fraction, Modifier.size(64.dp), stroke = 8.dp)
                 Column {
-                    Text(pluralStringResource(R.plurals.challenge_progress, p.requiredDays, p.doneDays, p.requiredDays), style = MaterialTheme.typography.titleLarge)
+                    Text(progressLabel(it), style = MaterialTheme.typography.titleLarge)
                     // The date range already says when it starts and ends; only "Finished"/"Left" add anything.
                     if (it.left || p.status == ChallengeStatus.FINISHED) {
                         Text(statusText(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -272,17 +293,38 @@ fun ChallengeDetailRoute(onBack: () -> Unit, vm: ChallengeDetailViewModel = hilt
                     )
                 }
             }
-            ProgressGrid(p.days, Modifier.testTag("challenge_grid"), p.doneDays, p.requiredDays)
-            Legend()
-            Text(howItCounts(c.type, c.protocolId), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (p.requiredDays > 0) {
+                ProgressGrid(p.days, Modifier.testTag("challenge_grid"), p.doneDays, p.requiredDays)
+                Legend()
+            }
+            Text(
+                if (c.followsOwnPlan) stringResource(R.string.friend_personal_count) else howItCounts(c.type, c.protocolId),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         if (!it.left) {
+            if (p.status != ChallengeStatus.FINISHED) {
+                InsetGroup {
+                    PersonalPlanSwitch(c.followsOwnPlan) { enabled -> vm.setOwnPlan(enabled) }
+                    if (c.followsOwnPlan) {
+                        GroupDivider()
+                        GroupRow(stringResource(R.string.week_title), showChevron = true, onClick = onOpenWeek)
+                    }
+                }
+            }
             PrimaryButton(stringResource(R.string.challenge_invite), onClick = {
                 val chooser = Intent.createChooser(challengeInviteIntent(context, title, link), null)
                 runCatching { context.startActivity(chooser) }
             })
-            SecondaryButton(stringResource(R.string.challenge_share_progress), onClick = {
-                ShareCards.shareChallenge(context, title, p.doneDays, p.requiredDays, link)
+            if (p.requiredDays > 0) {
+                SecondaryButton(stringResource(R.string.challenge_share_progress), onClick = {
+                    ShareCards.shareChallenge(context, title, p.doneDays, p.requiredDays, link, c.followsOwnPlan)
+                })
+            }
+            PlainButton(stringResource(R.string.friend_send_encouragement), onClick = {
+                val message = Intent(Intent.ACTION_SEND).setType("text/plain")
+                    .putExtra(Intent.EXTRA_TEXT, context.getString(R.string.friend_encouragement_message))
+                context.startActivity(Intent.createChooser(message, null))
             })
         }
         Text(stringResource(R.string.challenge_join_privacy), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -366,6 +408,7 @@ fun JoinChallengeRoute(onBack: () -> Unit, onJoined: (Long) -> Unit, vm: JoinCha
             JoinState.NotAllowed -> AppCard { Text(stringResource(R.string.challenges_not_allowed), style = MaterialTheme.typography.bodyLarge) }
             is JoinState.Ready -> {
                 val i = s.invite
+                var followsOwnPlan by rememberSaveable(i) { mutableStateOf(false) }
                 AppCard(Modifier.testTag("join_card")) {
                     Text(inviteTitle(i), style = MaterialTheme.typography.titleLarge)
                     if (i.name != null) {
@@ -376,7 +419,11 @@ fun JoinChallengeRoute(onBack: () -> Unit, onJoined: (Long) -> Unit, vm: JoinCha
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(howItCounts(i.type, i.protocolId), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if (followsOwnPlan && s.alreadyJoinedId == null) stringResource(R.string.friend_personal_count)
+                        else howItCounts(i.type, i.protocolId),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Text(stringResource(R.string.challenge_join_privacy), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val existing = s.alreadyJoinedId
@@ -384,7 +431,8 @@ fun JoinChallengeRoute(onBack: () -> Unit, onJoined: (Long) -> Unit, vm: JoinCha
                     Text(stringResource(R.string.challenge_join_already), style = MaterialTheme.typography.bodyMedium)
                     SecondaryButton(stringResource(R.string.challenge_open), onClick = { onJoined(existing) })
                 } else {
-                    PrimaryButton(stringResource(R.string.challenge_join), onClick = { vm.join(onJoined) }, haptic = true)
+                    PersonalPlanSwitch(followsOwnPlan) { followsOwnPlan = it }
+                    PrimaryButton(stringResource(R.string.challenge_join), onClick = { vm.join(followsOwnPlan, onJoined) }, haptic = true)
                 }
             }
         }

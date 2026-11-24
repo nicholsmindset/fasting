@@ -40,5 +40,5 @@ internal fun MetricLogEntity.toDomain() = MetricLog(id, at, type, value, unit, s
 internal fun MetricLog.toEntity() = MetricLogEntity(id, at, type, value, unit, source, note)
 internal fun QadaDebtEntity.toDomain() = QadaDebt(hijriYear, daysOwed)
 internal fun QadaDebt.toEntity() = QadaDebtEntity(hijriYear, daysOwed)
-internal fun ChallengeEntity.toDomain() = Challenge(id, type, protocolId, startDate, lengthDays, name, joinedAt, leftAt)
-internal fun Challenge.toEntity() = ChallengeEntity(id, type, protocolId, startDate, lengthDays, name, joinedAt, leftAt)
+internal fun ChallengeEntity.toDomain() = Challenge(id, type, protocolId, startDate, lengthDays, name, joinedAt, leftAt, followsOwnPlan)
+internal fun Challenge.toEntity() = ChallengeEntity(id, type, protocolId, startDate, lengthDays, name, joinedAt, leftAt, followsOwnPlan)

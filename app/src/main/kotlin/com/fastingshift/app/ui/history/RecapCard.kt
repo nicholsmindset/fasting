@@ -5,6 +5,8 @@ import com.fastingshift.app.share.ShareCards
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +15,10 @@ import com.fastingshift.domain.schedule.WeekChoice
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -25,13 +31,14 @@ import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.TabularNumbers
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.domain.history.WeeklyRecap
+import com.fastingshift.domain.history.ScheduleFit
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 
 /** A week to recap on History: the current week so far, or last week (shown Mon–Tue). */
-data class RecapItem(val recap: WeeklyRecap, val isLastWeek: Boolean, val daysInWeek: Int)
+data class RecapItem(val recap: WeeklyRecap, val isLastWeek: Boolean, val daysInWeek: Int, val fit: ScheduleFit? = null)
 
 object RecapCopy {
     /**
@@ -55,7 +62,7 @@ object RecapCopy {
 }
 
 @Composable
-fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier) {
+fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier, onReflect: ((ScheduleFit) -> Unit)? = null) {
     val r = item.recap
     val range = remember(r.weekStart) {
         val f = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -80,11 +87,43 @@ fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (onReflect != null) ScheduleFitQuestion(item, onReflect)
         if (!r.isEmpty && r.fastsStarted > 0) {
             val context = LocalContext.current
             PlainButton(stringResource(R.string.share), onClick = { ShareCards.shareWeek(context, r) })
         }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScheduleFitQuestion(item: RecapItem, onReflect: (ScheduleFit) -> Unit) {
+    var editing by rememberSaveable(item.recap.weekStart, item.fit) { mutableStateOf(false) }
+    val fit = item.fit
+    if (fit == ScheduleFit.SKIPPED && !editing) {
+        TextButton(onClick = { editing = true }) { Text(stringResource(R.string.recap_add_reflection)) }
+        return
+    }
+    Column {
+        Text(stringResource(R.string.recap_fit_question), style = MaterialTheme.typography.titleSmall)
+        if (fit == null || editing) {
+            FlowRow {
+                ScheduleFit.entries.forEach { answer ->
+                    TextButton(onClick = { onReflect(answer); editing = false }) { Text(stringResource(fitLabel(answer))) }
+                }
+            }
+        } else {
+            Text(stringResource(fitLabel(fit)), style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = { editing = true }) { Text(stringResource(R.string.recap_change_answer)) }
+        }
+    }
+}
+
+private fun fitLabel(fit: ScheduleFit): Int = when (fit) {
+    ScheduleFit.YES -> R.string.recap_fit_yes
+    ScheduleFit.PARTLY -> R.string.recap_fit_partly
+    ScheduleFit.NO -> R.string.recap_fit_no
+    ScheduleFit.SKIPPED -> R.string.recap_fit_skip
 }
 
 @Composable

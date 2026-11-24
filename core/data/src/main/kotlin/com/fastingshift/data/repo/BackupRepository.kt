@@ -89,7 +89,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
                 .map { QadaRepaymentRecord(it.observedOn.toString(), it.hijriYear) },
             metrics = b.metrics().map { MetricRecord(it.id, it.at.ms, it.type.name, it.value, it.unit.name, it.source.name, it.note) },
             challenges = b.challenges().map {
-                ChallengeRecord(it.id, it.type.name, it.protocolId, it.startDate.toString(), it.lengthDays, it.name, it.joinedAt.ms, it.leftAt?.ms)
+                ChallengeRecord(it.id, it.type.name, it.protocolId, it.startDate.toString(), it.lengthDays, it.name, it.joinedAt.ms, it.leftAt?.ms, it.followsOwnPlan)
             },
         )
     }
@@ -207,7 +207,7 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
         }
 
         val challenges = b.challenges.map {
-            Challenge(it.id, ChallengeType.valueOf(it.type), it.protocolId, LocalDate.parse(it.startDate), it.lengthDays, it.name, it.joinedAt.inst, it.leftAt?.inst).toEntity()
+            Challenge(it.id, ChallengeType.valueOf(it.type), it.protocolId, LocalDate.parse(it.startDate), it.lengthDays, it.name, it.joinedAt.inst, it.leftAt?.inst, it.followsOwnPlan).toEntity()
         }
 
         private fun positive(v: Double): Double {

@@ -65,6 +65,8 @@ data class Challenge(
     val name: String? = null,
     val joinedAt: Instant,
     val leftAt: Instant? = null,
+    /** Private to this participant. The invitation always keeps its original plan. */
+    val followsOwnPlan: Boolean = false,
 ) {
     init {
         require(lengthDays in 1..366) { "challenge length must be 1..366 days" }

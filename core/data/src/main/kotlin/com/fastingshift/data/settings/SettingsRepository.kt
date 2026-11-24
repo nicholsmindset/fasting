@@ -18,6 +18,7 @@ import com.fastingshift.domain.ramadan.SunnahType
 import com.fastingshift.domain.reminders.ReminderSettings
 import com.fastingshift.domain.timer.TimerDisplayMode
 import com.fastingshift.domain.history.History
+import com.fastingshift.domain.history.ScheduleFit
 import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.schedule.WeekChoice
@@ -68,6 +69,7 @@ data class AppSettings(
     val sunnahReminders: Boolean = false,
     val sunnahTypes: Set<SunnahType> = emptySet(),
     val planHistory: PlanHistory = PlanHistory(),
+    val weekReflections: Map<LocalDate, ScheduleFit> = emptyMap(),
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -120,6 +122,9 @@ class SettingsRepository(context: Context) {
             weeklyRecapEnabled = p[WEEKLY_RECAP] ?: true,
             onboardedAt = p[ONBOARDED_AT],
             planHistory = p.planHistory(),
+            weekReflections = readReflections(p[WEEK_REFLECTIONS].orEmpty().associate {
+                it.substringBefore('=') to it.substringAfter('=')
+            }),
             ramadanEnabled = p[RAMADAN] ?: false,
             ramadanCityId = p[RAMADAN_CITY],
             ramadanMethod = p[RAMADAN_METHOD]?.let { runCatching { PrayerMethod.valueOf(it) }.getOrNull() },
@@ -200,6 +205,20 @@ class SettingsRepository(context: Context) {
         }
     }
 
+    suspend fun setWeekReflection(week: LocalDate, fit: ScheduleFit, today: LocalDate) = store.edit { p ->
+        if (week == History.weekStart(week) && week <= today) {
+            val kept = p[WEEK_REFLECTIONS].orEmpty().filterNot { it.substringBefore('=') == week.toString() }
+            p[WEEK_REFLECTIONS] = kept.toSet() + "$week=${fit.name}"
+        }
+    }
+
+    private fun readReflections(records: Map<String, String>): Map<LocalDate, ScheduleFit> =
+        records.mapNotNull { (key, value) ->
+            val date = runCatching { LocalDate.parse(key) }.getOrNull() ?: return@mapNotNull null
+            val fit = ScheduleFit.entries.find { it.name == value } ?: return@mapNotNull null
+            if (date == History.weekStart(date)) date to fit else null
+        }.toMap()
+
     /** A null override restores the recurring plan. Past civil dates are read-only. */
     suspend fun setDayOverride(day: LocalDate, override: DayOverride?, today: LocalDate) = store.edit { p ->
         if (day >= today) {
@@ -213,6 +232,7 @@ class SettingsRepository(context: Context) {
         it.remove(PLAN_REVISIONS)
         it.remove(WEEK_CHOICES)
         it.remove(DAY_OVERRIDES)
+        it.remove(WEEK_REFLECTIONS)
         Unit
     }
 
@@ -243,6 +263,7 @@ class SettingsRepository(context: Context) {
             planRevisions = s.planHistory.revisions.mapKeys { it.key.toString() },
             dayOverrides = s.planHistory.dayOverrides.entries.associate { it.key.toString() to it.value.toRecord() },
             weekChoices = s.planHistory.choices.entries.associate { it.key.toString() to it.value.name },
+            weekReflections = s.weekReflections.entries.associate { it.key.toString() to it.value.name },
             goal = s.goal?.name,
             defaultProtocolId = s.defaultProtocolId,
             hideWeight = s.hideWeight,
@@ -276,6 +297,7 @@ class SettingsRepository(context: Context) {
         it[PLAN_REVISIONS] = history.revisions.entries.map { entry -> "${entry.key}=${entry.value}" }.toSet()
         it[DAY_OVERRIDES] = history.dayOverrides.entries.map { entry -> "${entry.key}=${entry.value.toRecord()}" }.toSet()
         it[WEEK_CHOICES] = history.choices.entries.map { entry -> "${entry.key}=${entry.value.name}" }.toSet()
+        it[WEEK_REFLECTIONS] = readReflections(r.weekReflections).map { (date, fit) -> "$date=${fit.name}" }.toSet()
         r.goal?.takeIf { g -> Goal.entries.any { e -> e.name == g } }?.let { g -> it[GOAL] = g } ?: it.remove(GOAL)
         r.defaultProtocolId?.let { d -> it[DEFAULT_PROTOCOL] = d } ?: it.remove(DEFAULT_PROTOCOL)
         // Restoring an older backup must never reveal weight someone has chosen to hide (SR-6).
@@ -316,6 +338,7 @@ class SettingsRepository(context: Context) {
         val COACHING = booleanPreferencesKey("coaching")
         val PLAN_REVISIONS = stringSetPreferencesKey("plan_revisions")
         val WEEK_CHOICES = stringSetPreferencesKey("week_choices")
+        val WEEK_REFLECTIONS = stringSetPreferencesKey("week_reflections")
         val DAY_OVERRIDES = stringSetPreferencesKey("day_overrides")
         val WEEKLY_RECAP = booleanPreferencesKey("weekly_recap")
         val ONBOARDED_AT = longPreferencesKey("onboarded_at")

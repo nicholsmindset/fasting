@@ -12,6 +12,9 @@ import com.fastingshift.domain.model.Challenge
 import com.fastingshift.domain.model.ChallengeType
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastKind
+import com.fastingshift.domain.schedule.DayOverride
+import com.fastingshift.domain.schedule.PlanHistory
+import com.fastingshift.domain.schedule.WeekChoice
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
@@ -53,6 +56,31 @@ class ChallengesTest {
     }
 
     private fun daily(start: LocalDate = monday) = ChallengeTemplate.DAILY_16_8_WEEK.create(start, joined)
+
+    @Test fun personalProgressUsesOnlyTheParticipantsPlannedDaysAndFinishedFasts() {
+        val shared = daily()
+        val personal = shared.copy(followsOwnPlan = true)
+        val plan = PlanHistory(
+            revisions = mapOf(monday to 0b0010101), // Mon, Wed, Fri
+            dayOverrides = mapOf(monday.plusDays(2) to DayOverride()),
+        )
+        val fasts = listOf(
+            fast(monday, 16, actual = 4), fast(monday, 16, actual = 2, startTime = LocalTime.MIDNIGHT),
+            fast(monday.plusDays(1), 16), fast(monday.plusDays(2), 16), fast(monday.plusDays(4), 16, actual = null),
+        )
+        val now = at(monday.plusDays(5), LocalTime.NOON)
+        val progress = Challenges.progress(personal, fasts, zone, now, personalPlan = plan)
+        assertEquals(2, progress.requiredDays)
+        assertEquals(1, progress.doneDays)
+        assertEquals(DayState.DONE, progress.days[0].state)
+        assertEquals(DayState.REST, progress.days[2].state)
+        assertEquals(DayState.TODAY, progress.days[4].state)
+        assertEquals(0, Challenges.progress(personal, fasts, zone, now).requiredDays)
+        val weekOff = plan.copy(choices = mapOf(monday to WeekChoice.BREAK))
+        assertEquals(0, Challenges.progress(personal, fasts, zone, now, personalPlan = weekOff).requiredDays)
+        assertEquals(7, Challenges.progress(shared, fasts, zone, now, personalPlan = plan).requiredDays)
+        assertEquals(ChallengeLinks.link(ChallengeInvite.of(shared)), ChallengeLinks.link(ChallengeInvite.of(personal)))
+    }
 
     // ---------- templates ----------
 

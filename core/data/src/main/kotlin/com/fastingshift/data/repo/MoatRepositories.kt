@@ -58,9 +58,11 @@ class ChallengeRepository(private val db: FastingDatabase) {
         val limit = FastPolicy.maxAllowed(screening?.gateResult, screening?.clinicianAcknowledged == true)
         if (!invite.allowsEnrollment(limit)) return@withTransaction null
         val existing = dao.joinedStartingOn(invite.startDate).firstOrNull { invite.matchesJoined(it.toDomain()) }
-        existing?.id ?: dao.insert(invite.toChallenge(challenge.joinedAt).toEntity())
+        existing?.id ?: dao.insert(invite.toChallenge(challenge.joinedAt).copy(followsOwnPlan = challenge.followsOwnPlan).toEntity())
     }
 
     suspend fun update(challenge: Challenge) = dao.update(challenge.toEntity())
+    suspend fun setOwnPlan(id: Long, enabled: Boolean) = dao.setOwnPlan(id, enabled)
+    suspend fun leave(id: Long, at: Instant) = dao.leave(id, at)
     suspend fun delete(id: Long) = dao.delete(id)
 }

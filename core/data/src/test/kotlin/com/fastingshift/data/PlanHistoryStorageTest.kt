@@ -6,6 +6,7 @@ import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.backup.Backup
 import com.fastingshift.domain.backup.BackupCodec
 import com.fastingshift.domain.backup.SettingsRecord
+import com.fastingshift.domain.history.ScheduleFit
 import com.fastingshift.domain.schedule.DayOverride
 import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.schedule.WeekChoice
@@ -24,6 +25,33 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [35])
 class PlanHistoryStorageTest {
+    @Test fun reflectionCanBeSkippedAndRevisedIndependentlyOfThePlan() = runBlocking {
+        val settings = SettingsRepository(ApplicationProvider.getApplicationContext())
+        val monday = LocalDate.of(2026, 11, 23)
+        val today = monday.plusDays(3)
+        settings.restore(SettingsRecord(onboardingComplete = true))
+        settings.recordSchedule(monday, 31)
+        settings.setDayOverride(today, DayOverride(), today)
+        settings.setNextWeekChoice(monday.plusWeeks(1), WeekChoice.BREAK, today)
+        val plan = settings.current().planHistory
+        settings.setWeekReflection(monday, ScheduleFit.SKIPPED, today)
+        assertEquals(ScheduleFit.SKIPPED, settings.current().weekReflections[monday])
+        settings.setWeekReflection(monday, ScheduleFit.PARTLY, today)
+        settings.setWeekReflection(today, ScheduleFit.NO, today)
+        settings.setWeekReflection(monday.plusWeeks(1), ScheduleFit.NO, today)
+        val encoded = BackupCodec.encode(Backup(exportedAt = 1, settings = settings.toRecord()))
+        val backup = requireNotNull(BackupCodec.decode(encoded).settings)
+        assertEquals(mapOf(monday.toString() to "PARTLY"), backup.weekReflections)
+        settings.restore(backup.copy(weekReflections = backup.weekReflections + mapOf("invalid" to "YES", today.toString() to "NO", monday.minusWeeks(1).toString() to "unknown")))
+        assertEquals(mapOf(monday to ScheduleFit.PARTLY), settings.current().weekReflections)
+        assertEquals(plan, settings.current().planHistory)
+        settings.clearPlanHistory()
+        assertTrue(settings.current().weekReflections.isEmpty())
+        settings.restore(backup)
+        settings.restore(SettingsRecord())
+        assertTrue(settings.current().weekReflections.isEmpty())
+    }
+
     @Test fun recordsSurviveRestoreAndLegacyBackupsResetTheDenominator() = runBlocking {
         val settings = SettingsRepository(ApplicationProvider.getApplicationContext())
         val monday = LocalDate.of(2026, 11, 16)

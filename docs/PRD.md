@@ -29,7 +29,7 @@ The MVP has to prove two things: people keep fasting with it every day, and a tr
 3. Make safety a visible feature: screening, red-flag checks and refeeding guidance.
 4. Validate Shift+ conversion through the book funnel and the onboarding trial.
 
-**Non-goals for the MVP:** food or calorie logging, an AI coach, social features, an iOS version, Wear OS, religious modes and accounts or cloud sync.
+The core Android experience covers the timer, personal schedule and editable fasting history. A friend can join through a private link. Optional modes live in Settings.
 
 | Metric | Target | Why |
 | --- | --- | --- |
@@ -208,7 +208,7 @@ Every surface reads from one local database, so a timer can never drift or lose 
 | Layer | Choice |
 | --- | --- |
 | Language / UI | Kotlin, Jetpack Compose, Material 3 |
-| Architecture | MVVM + clean domain module (kept KMP-ready for a later iOS app) |
+| Architecture | Android MVVM with a separate Kotlin domain module |
 | Storage | Room + SQLCipher (encrypted at rest), DataStore for settings |
 | Background | AlarmManager for fast alerts; WorkManager for check-ins and widget refresh |
 | Widgets | Jetpack Glance |
@@ -228,17 +228,16 @@ Every surface reads from one local database, so a timer can never drift or lose 
 | screening | answered_at, answers, gate_result (ok / soft / block) |
 | program_progress | program_id, day, completed_at |
 
-## Later phases (out of MVP scope)
+## Product priorities after the core tracker
 
-The MVP data model must leave room for them: protocol types, a schedules table and a source field on records.
+Keep the free Android experience usable from the first fast through a change of routine. The beta will test these priorities.
 
-| Phase | Timing | Features |
-| --- | --- | --- |
-| Phase 1 | Months 3–5 | Wear OS tile and complications; full Extended Fast Copilot (pre-fast screening, electrolyte schedule, clinician PDF); journal with mood and symptom trends; eating-disorder pattern monitoring; Ramadan mode (prayer-time calculation, iftar and suhoor, free); Malay, Indonesian and Chinese localisation |
-| Phase 2 | Months 6–9 | AI coach grounded in the book (RAG, medical guardrails); Health Connect reads for heart rate, HRV, sleep and glucose; manual ketone log; GLP-1 and cycle-aware modes; shift-worker schedules; other faith modes; private accountability Circles; optional end-to-end-encrypted sync |
-| Phase 3 | Months 9+ | iOS via Kotlin Multiplatform; clinician share portal; Thai, Vietnamese and Tagalog |
-
-Explicitly avoided: a food or calorie database, a public social feed, ads, and any reward for longer fasts.
+| Priority | What the tester can do |
+| --- | --- |
+| Review a week | Open a calendar date, correct or add a fast, and answer or skip a dated weekly reflection. Keep next week's plan, adjust the schedule or take a week off. |
+| Invite a friend | Share the invitation through an existing chat. Both people can choose their own scheduled days and send a short message of encouragement. |
+| Evaluate Shift+ | Read the sample of Robert’s 21-day book companion. Full lessons require author-approved copy. Test purchase restoration on Google Play before distribution. |
+| Keep specialist tools optional | Open the existing health logs, clinician report, Health Connect insights or Ramadan and Sunnah settings when wanted. Test the supported languages with native readers. |
 
 ## Build plan, risks and open questions
 
