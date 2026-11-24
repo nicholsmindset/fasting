@@ -1,0 +1,87 @@
+package com.fastingshift.app.ui.plus
+
+import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.TabularNumbers
+import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.domain.history.ScheduleFit
+import com.fastingshift.domain.insights.PlanCoverage
+import com.fastingshift.domain.insights.ReviewWeek
+import com.fastingshift.domain.insights.WeeklyConsistency
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+/** Fixed fictional records; the preview never reads a person's history, schedule or reflections. */
+internal val reviewExample = listOf(
+    ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 22), 3, 4), PlanCoverage.PLANNED,
+        movedDates = 1, skippedDates = 1, reflection = ScheduleFit.PARTLY),
+    ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 15), 0, 0), PlanCoverage.WEEK_OFF),
+    ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 8), 4, 4), PlanCoverage.PLANNED, reflection = ScheduleFit.YES),
+    ReviewWeek(WeeklyConsistency(LocalDate.of(2026, 6, 1), 2, 3), PlanCoverage.PLANNED),
+)
+
+@Composable
+internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, onOpenWeek: () -> Unit) {
+    val locale = LocalConfiguration.current.locales[0]
+    val date = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale) }
+    val full = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMd"), locale) }
+    val secondary = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(Modifier.fillMaxWidth().testTag(if (example) "schedule-review-example" else "schedule-review-personal"),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(stringResource(R.string.review_title), Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(if (example) R.string.review_example_label else R.string.review_period),
+            style = MaterialTheme.typography.bodyMedium, color = if (example) MaterialTheme.colorScheme.primary else secondary)
+        weeks.forEach { week ->
+            val counts = week.consistency
+            val monday = counts.weekStart
+            val sunday = monday.plusDays(6)
+            val range = stringResource(R.string.history_chart_range,
+                monday.format(if (monday.year == sunday.year) date else full), sunday.format(full))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Column(Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {},
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(range, style = MaterialTheme.typography.titleMedium)
+                val result = when (week.coverage) {
+                    PlanCoverage.PLANNED -> pluralStringResource(R.plurals.review_days_done, counts.plannedDays, counts.completedDays, counts.plannedDays)
+                    PlanCoverage.WEEK_OFF -> stringResource(R.string.history_day_break)
+                    PlanCoverage.BEFORE_TRACKING -> stringResource(R.string.review_untracked)
+                    PlanCoverage.NO_PLANNED_DAYS -> stringResource(R.string.history_no_planned_days)
+                }
+                Text(result, style = MaterialTheme.typography.bodyLarge.merge(TabularNumbers))
+                week.trackedFrom?.let { Text(stringResource(R.string.history_tracking_since, it.format(full)), style = MaterialTheme.typography.bodySmall, color = secondary) }
+                val changes = listOfNotNull(
+                    if (week.movedDates > 0) stringResource(R.string.review_moved, week.movedDates) else null,
+                    if (week.skippedDates > 0) stringResource(R.string.review_skipped, week.skippedDates) else null,
+                )
+                if (changes.isNotEmpty()) Text(changes.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = secondary)
+                week.reflection?.let { fit ->
+                    val answer = when (fit) {
+                        ScheduleFit.YES -> R.string.recap_fit_yes
+                        ScheduleFit.PARTLY -> R.string.recap_fit_partly
+                        ScheduleFit.NO -> R.string.recap_fit_no
+                        ScheduleFit.SKIPPED -> null
+                    }
+                    if (answer != null) Text(stringResource(R.string.review_fit, stringResource(answer)), style = MaterialTheme.typography.bodySmall, color = secondary)
+                }
+            }
+        }
+        SecondaryButton(stringResource(R.string.review_open_week), onClick = onOpenWeek)
+    }
+}

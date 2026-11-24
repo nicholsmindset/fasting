@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_fasting_preferences">Preferensi puasa</string>
+    <string name="settings_safety_reports">Keselamatan dan laporan</string>
+    <string name="settings_reminders_summary">Waktu dan pengiriman pengingat mulai dan selesai</string>
+    <string name="settings_fasting_summary">Jendela makan, target air, Ramadan dan sunah</string>
+    <string name="settings_privacy_summary">Perlindungan data, Health Connect, dan cadangan</string>
+    <string name="settings_safety_summary">Skrining, panduan berbuka, dan laporan dokter</string>
+    <string name="settings_fast_timing">Waktu puasa</string>
+    <string name="settings_delivery">Pengiriman notifikasi</string>
+    <string name="settings_routine_reminders">Pengingat rutin</string>
+    <string name="settings_files">Cadangan dan transfer</string>
+</resources>

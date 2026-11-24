@@ -9,9 +9,11 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.semantics.Role
@@ -43,6 +45,7 @@ import com.fastingshift.domain.model.MetricUnit
 import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
@@ -66,6 +69,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -159,6 +163,84 @@ class MoatsCaptureTest {
     }
 
     @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
+    @Test fun dailyLayoutLight() = dailyLayout("light")
+
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-night-xxhdpi")
+    @Test fun dailyLayoutDark() = dailyLayout("dark")
+
+    /** Render the same real destinations with exactly the same records, clock and viewport. */
+    private fun dailyLayout(mode: String) {
+        runBlocking {
+            // Leave enough time after the previous fast for both the idle and active fixtures.
+            fasts.delete(fasts.getAll().maxBy { it.startAt }.id)
+            settings.recordSchedule(today.minusDays(14), PlanHistory.EVERY_DAY)
+        }
+        scenario?.close()
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        waitFor(s(R.string.timer_start))
+        shoot("layout-ready-$mode")
+
+        runBlocking {
+            val start = moatsNow.minus(Duration.ofHours(13)).minus(Duration.ofMinutes(40))
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
+        }
+        waitFor(s(R.string.timer_end))
+        shoot("layout-active-$mode")
+
+        compose.onNodeWithTag("tab_history").performClick()
+        click(s(R.string.history_period_month))
+        compose.waitUntil(20_000) {
+            compose.onAllNodes(hasContentDescription(s(R.string.history_fasted_month), substring = true))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        shoot("layout-history-$mode")
+
+        compose.onNodeWithTag("tab_log").performClick()
+        waitFor(s(R.string.log_water))
+        shoot("layout-log-$mode")
+        compose.onNodeWithTag("tab_settings").performClick()
+        waitFor(s(R.string.appearance_title))
+        shoot("layout-settings-$mode")
+    }
+
+    @Config(qualifiers = "en-rSG-w320dp-h720dp-notnight-xxhdpi")
+    @Test fun changeTimerViewAtDoubleFontSize() {
+        val originalScale = RuntimeEnvironment.getFontScale()
+        scenario?.close()
+        try {
+            RuntimeEnvironment.setFontScale(2f)
+            runBlocking {
+                val start = moatsNow.minus(Duration.ofHours(1))
+                fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
+            }
+            scenario = ActivityScenario.launch(MainActivity::class.java)
+            requireNotNull(scenario).onActivity { activity ->
+                val configuration = activity.resources.configuration
+                check(configuration.fontScale == 2f && configuration.screenWidthDp == 320)
+            }
+            val changeView = compose.onNode(hasText(s(R.string.timer_choose_view)) and hasClickAction())
+            waitFor(s(R.string.timer_choose_view))
+            changeView.performScrollTo().assertIsDisplayed().performClick()
+            val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+            val elapsed = radio and hasText(s(R.string.timer_view_elapsed))
+            val remaining = radio and hasText(s(R.string.timer_view_remaining))
+            compose.onNode(elapsed and isSelected()).assertIsDisplayed()
+            compose.onNode(remaining).performClick()
+            val remainingLabel = app.getString(R.string.a11y_mode_remaining, "").trimEnd(' ', ':')
+            val timer = hasClickAction() and hasContentDescription(remainingLabel, substring = true)
+            compose.waitUntil(20_000) { compose.onAllNodes(timer).fetchSemanticsNodes().size == 1 }
+            compose.onNode(timer).performScrollTo().assertIsDisplayed()
+            shoot("timer-large-text")
+            changeView.performScrollTo().performClick()
+            compose.onNode(remaining and isSelected()).assertIsDisplayed()
+        } finally {
+            scenario?.close()
+            scenario = null
+            RuntimeEnvironment.setFontScale(originalScale)
+        }
+    }
+
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
     @Test fun chooseDarkOnALightDevice() = verifyAppearance(R.string.appearance_dark, "dark", expectLight = false)
 
     @Config(qualifiers = "en-rSG-w411dp-h822dp-night-xxhdpi")
@@ -209,9 +291,15 @@ class MoatsCaptureTest {
         compose.onNode(target).performScrollTo().assertIsDisplayed()
     }
 
+    private fun openSettingsSection(name: String) {
+        val section = hasTestTag("settings_open_$name")
+        compose.waitUntil(20_000) { compose.onAllNodes(section).fetchSemanticsNodes().size == 1 }
+        compose.onNode(section).performScrollTo().performClick()
+    }
+
     private fun hub() {
         click(s(R.string.tab_settings))
-        waitFor(s(R.string.settings_plan))
+        openSettingsSection("fasting")
         scroll(R.string.muslim_hub_entry)
         shoot("settings-sunnah")
         click(s(R.string.muslim_hub_entry))
@@ -228,15 +316,21 @@ class MoatsCaptureTest {
         scroll(R.string.qada_manage)
         shoot("hub-2")
         back()
-        waitFor(s(R.string.settings_plan))
+        waitFor(s(R.string.muslim_hub_entry))
+        back()
+        openSettingsSection("safety")
         scroll(R.string.report_row)
         shoot("settings-report")
+        back()
+        openSettingsSection("privacy")
         scroll(R.string.trust_row)
         click(s(R.string.trust_row))
         waitFor(s(R.string.trust_title))
         shoot("trust-1")
         scroll(R.string.trust_delete)
         shoot("trust-2")
+        back()
+        waitFor(s(R.string.trust_row))
         back()
 
         click(s(R.string.tab_history))

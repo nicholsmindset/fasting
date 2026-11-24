@@ -121,7 +121,6 @@ class ChallengeJoinTest {
         }
 
         tap(R.string.onb_get_started)
-        tap(R.string.onb_skip)
         tap(R.string.goal_consistency)
         tap(R.string.onb_next)
         waitFor(s(R.string.onb_screen_title))

@@ -1,14 +1,22 @@
 package com.fastingshift.app
 
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.log.LogActions
 import com.fastingshift.app.ui.log.LogScreen
 import com.fastingshift.app.ui.log.LogState
 import com.fastingshift.app.ui.log.weightTrendPoints
 import com.fastingshift.app.ui.theme.FastingShiftTheme
+import com.fastingshift.domain.model.Electrolyte
 import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.model.WeightUnit
 import java.time.Duration
@@ -19,7 +27,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/** The Log screen's weight trend: shown normally, gone in hide-weight mode, 90 days only. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], application = android.app.Application::class)
 class LogScreenTest {
@@ -44,6 +51,27 @@ class LogScreenTest {
     @Test fun weightChartIsHiddenInHideWeightMode() {
         show(hideWeight = true)
         assertEquals(0, compose.onAllNodesWithTag("weight_chart").fetchSemanticsNodes().size)
+    }
+
+    @Test fun mineralSelectedInTheTotalsListReceivesTheEnteredAmount() {
+        var saved: Pair<Electrolyte, Double>? = null
+        compose.setContent {
+            FastingShiftTheme(darkTheme = false) {
+                LogScreen(
+                    LogState(hideWeight = true),
+                    LogActions(addElectrolyte = { type, mg -> saved = type to mg }),
+                )
+            }
+        }
+
+        val add = compose.onNodeWithText("Add")
+        add.assertIsNotEnabled()
+        val potassium = compose.onNodeWithText("Potassium")
+        potassium.performScrollTo().performClick()
+        potassium.assertIsSelected()
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("125")
+        add.performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(Electrolyte.POTASSIUM to 125.0, saved) }
     }
 
     @Test fun trendKeepsTheLast90DaysOldestFirst() {

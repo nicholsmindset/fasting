@@ -12,12 +12,16 @@ import com.revenuecat.purchases.ProductType
 import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import com.revenuecat.purchases.PurchasesErrorCode
+import com.revenuecat.purchases.PurchasesException
+import com.revenuecat.purchases.PurchasesTransactionException
 import com.revenuecat.purchases.awaitCustomerInfo
 import com.revenuecat.purchases.awaitGetProducts
 import com.revenuecat.purchases.models.StoreProduct
 import com.fastingshift.app.di.ApplicationScope
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.launch
 import com.revenuecat.purchases.awaitOfferings
 import com.revenuecat.purchases.awaitPurchase
@@ -30,15 +34,32 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-data class PlanOffer(val plan: PlanType, val price: String, internal val pkg: Package) {
-    private val freePhase get() = pkg.product.defaultOption?.freePhase
-    val hasTrial get() = freePhase != null
-    val trialPeriod: java.time.Period? get() = freePhase?.let { phase ->
-        runCatching {
-            java.time.Period.parse(phase.billingPeriod.iso8601)
-                .multipliedBy((phase.billingCycleCount ?: 1).coerceAtLeast(1))
-        }.getOrNull()
-    }
+class PlanOffer(val plan: PlanType, internal val pkg: Package) {
+    val id: String get() = pkg.identifier
+    val price: String get() = pkg.product.price.formatted
+    val phases = pkg.product.defaultOption?.pricingPhases.orEmpty()
+    val installments = pkg.product.defaultOption?.installmentsInfo
+}
+
+enum class PurchaseOutcome { ACTIVE, CANCELLED, PENDING, UNCONFIRMED, ALREADY_OWNED, FAILED, BUSY }
+enum class RestoreOutcome { ACTIVE, EMPTY, FAILED, BUSY }
+
+internal fun transactionOutcome(code: PurchasesErrorCode, userCancelled: Boolean): PurchaseOutcome = when {
+    userCancelled || code == PurchasesErrorCode.PurchaseCancelledError -> PurchaseOutcome.CANCELLED
+    code == PurchasesErrorCode.PaymentPendingError -> PurchaseOutcome.PENDING
+    code == PurchasesErrorCode.OperationAlreadyInProgressError -> PurchaseOutcome.BUSY
+    code == PurchasesErrorCode.ProductAlreadyPurchasedError -> PurchaseOutcome.ALREADY_OWNED
+    else -> PurchaseOutcome.FAILED
+}
+
+interface PaywallStore {
+    val entitlement: StateFlow<Entitlement>
+    val loadedEntitlement: StateFlow<Entitlement?>
+    val isConfigured: Boolean
+    suspend fun refresh(): Boolean
+    suspend fun offers(): List<PlanOffer>
+    suspend fun purchase(activity: Activity, offer: PlanOffer): PurchaseOutcome
+    suspend fun restore(): RestoreOutcome
 }
 
 /**
@@ -50,9 +71,9 @@ data class PlanOffer(val plan: PlanType, val price: String, internal val pkg: Pa
 class BillingManager @Inject constructor(
     @ApplicationContext private val context: Context,
     @ApplicationScope private val scope: CoroutineScope,
-) {
+) : PaywallStore {
     private val _entitlement = MutableStateFlow(Entitlement.FREE)
-    val entitlement: StateFlow<Entitlement> = _entitlement
+    override val entitlement: StateFlow<Entitlement> = _entitlement
 
     /**
      * The entitlement from real RevenueCat customer info, or null until the first info arrives.
@@ -60,12 +81,12 @@ class BillingManager @Inject constructor(
      * placeholder (billing reminders) reads this instead.
      */
     private val _loadedEntitlement = MutableStateFlow<Entitlement?>(null)
-    val loadedEntitlement: StateFlow<Entitlement?> = _loadedEntitlement
+    override val loadedEntitlement: StateFlow<Entitlement?> = _loadedEntitlement
 
     private val _managementUrl = MutableStateFlow<Uri?>(null)
     val managementUrl: StateFlow<Uri?> = _managementUrl
 
-    val isConfigured: Boolean get() = BuildConfig.REVENUECAT_API_KEY.isNotBlank()
+    override val isConfigured: Boolean get() = BuildConfig.REVENUECAT_API_KEY.isNotBlank()
 
     fun configure() {
         if (!isConfigured) return
@@ -75,14 +96,19 @@ class BillingManager @Inject constructor(
         }
     }
 
-    suspend fun refresh() {
-        if (!isConfigured) return
-        runCatching { Purchases.sharedInstance.awaitCustomerInfo() }.onSuccess(::publish)
+    override suspend fun refresh(): Boolean {
+        if (!isConfigured) return false
+        return try {
+            publish(Purchases.sharedInstance.awaitCustomerInfo())
+            true
+        } catch (_: PurchasesException) {
+            false
+        }
     }
 
-    suspend fun offers(): List<PlanOffer> {
+    override suspend fun offers(): List<PlanOffer> {
         if (!isConfigured) return emptyList()
-        val current = runCatching { Purchases.sharedInstance.awaitOfferings().current }.getOrNull() ?: return emptyList()
+        val current = Purchases.sharedInstance.awaitOfferings().current ?: return emptyList()
         rememberPeriods(current.availablePackages.map { it.product })
         return current.availablePackages.mapNotNull { pkg ->
             val plan = when (pkg.packageType) {
@@ -91,26 +117,41 @@ class BillingManager @Inject constructor(
                 PackageType.LIFETIME -> PlanType.LIFETIME
                 else -> return@mapNotNull null
             }
-            PlanOffer(plan, pkg.product.price.formatted, pkg)
+            PlanOffer(plan, pkg)
         }.sortedBy { it.plan.ordinal }
     }
 
-    /** Returns null on success, or a user-facing reason. A user cancelling is not an error. */
-    suspend fun purchase(activity: Activity, offer: PlanOffer): String? = try {
-        val result = Purchases.sharedInstance.awaitPurchase(PurchaseParams.Builder(activity, offer.pkg).build())
-        publish(result.customerInfo)
-        null
-    } catch (e: com.revenuecat.purchases.PurchasesTransactionException) {
-        if (e.userCancelled) null else e.message
-    } catch (e: com.revenuecat.purchases.PurchasesException) {
-        e.message
+    // Both entry points share a guard, including restores launched from Settings.
+    private val transaction = Mutex()
+
+    override suspend fun purchase(activity: Activity, offer: PlanOffer): PurchaseOutcome {
+        if (!isConfigured) return PurchaseOutcome.FAILED
+        if (!transaction.tryLock()) return PurchaseOutcome.BUSY
+        return try {
+            val info = Purchases.sharedInstance.awaitPurchase(PurchaseParams.Builder(activity, offer.pkg).build()).customerInfo
+            publish(info)
+            if (info.entitlements[ENTITLEMENT_ID]?.isActive == true) PurchaseOutcome.ACTIVE else PurchaseOutcome.UNCONFIRMED
+        } catch (ex: PurchasesTransactionException) {
+            transactionOutcome(ex.code, ex.userCancelled)
+        } catch (ex: PurchasesException) {
+            transactionOutcome(ex.code, false)
+        } finally {
+            transaction.unlock()
+        }
     }
 
-    suspend fun restore(): String? = try {
-        publish(Purchases.sharedInstance.awaitRestore())
-        null
-    } catch (e: com.revenuecat.purchases.PurchasesException) {
-        e.message
+    override suspend fun restore(): RestoreOutcome {
+        if (!isConfigured) return RestoreOutcome.FAILED
+        if (!transaction.tryLock()) return RestoreOutcome.BUSY
+        return try {
+            val info = Purchases.sharedInstance.awaitRestore()
+            publish(info)
+            if (info.entitlements[ENTITLEMENT_ID]?.isActive == true) RestoreOutcome.ACTIVE else RestoreOutcome.EMPTY
+        } catch (_: PurchasesException) {
+            RestoreOutcome.FAILED
+        } finally {
+            transaction.unlock()
+        }
     }
 
     /** Subscription period (ISO 8601) by store product id, from offerings and product lookups. */
@@ -122,18 +163,22 @@ class BillingManager @Inject constructor(
     }
 
     /** The plan comes from the product's period; fetch it once, then publish again. */
-    private fun lookUpPeriod(productId: String, info: CustomerInfo) {
+    private fun lookUpPeriod(productId: String) {
         if (!lookedUp.add(productId)) return
         scope.launch {
             runCatching { Purchases.sharedInstance.awaitGetProducts(listOf(productId), ProductType.SUBS) }
                 .onSuccess {
                     rememberPeriods(it)
-                    publish(info)
-                }
+                    synchronized(this@BillingManager) { latestInfo?.let(::publish) }
+                }.onFailure { lookedUp.remove(productId) }
         }
     }
 
+    private var latestInfo: CustomerInfo? = null
+
+    @Synchronized
     private fun publish(info: CustomerInfo) {
+        latestInfo = info
         _managementUrl.value = info.managementURL
         val e = info.entitlements[ENTITLEMENT_ID]
         _entitlement.value = if (e == null || !e.isActive) {
@@ -141,7 +186,7 @@ class BillingManager @Inject constructor(
         } else {
             val key = PlanMapper.productKey(e.productIdentifier, e.productPlanIdentifier)
             val period = periods[key]
-            if (period == null && e.expirationDate != null) lookUpPeriod(e.productIdentifier, info)
+            if (period == null && e.expirationDate != null) lookUpPeriod(e.productIdentifier)
             val plan = PlanMapper.plan(e.expirationDate?.toInstant(), period, e.productIdentifier, e.productPlanIdentifier)
             Entitlement(
                 plan = plan,

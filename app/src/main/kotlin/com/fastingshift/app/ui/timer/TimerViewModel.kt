@@ -242,10 +242,8 @@ class TimerViewModel @Inject constructor(
         }
     }
 
-    /** Tapping the ring cycles the view; the choice is remembered across launches. */
-    fun cycleMode() {
-        val next = (state.value?.mode ?: TimerDisplayMode.ELAPSED).next()
-        viewModelScope.launch { settings.setTimerMode(next) }
+    fun setMode(mode: TimerDisplayMode) {
+        viewModelScope.launch { settings.setTimerMode(mode) }
     }
 
     fun select(protocol: Protocol) = selected.update { protocol }

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -32,6 +33,7 @@ import dagger.hilt.android.testing.HiltTestApplication
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlinx.coroutines.runBlocking
@@ -85,13 +87,14 @@ class MuslimHubScreenTest {
     private fun openHubFromSettings() {
         waitFor(s(R.string.tab_settings))
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
+        compose.onNodeWithTag("settings_open_fasting").performScrollTo().performClick()
         waitFor(s(R.string.muslim_hub_entry))
         compose.onNodeWithText(s(R.string.muslim_hub_entry)).performScrollTo().performClick()
         waitFor(s(R.string.muslim_upcoming))
     }
 
     @Test fun hubShowsTodaysHijriDateAndQadaLedger() {
-        val today = Hijri.of(LocalDate.now())!!
+        val today = Hijri.of(LocalDate.now(ZoneId.of("Asia/Singapore")))!!
         openHubFromSettings()
         // Today's Hijri date, in the app's language.
         val month = s(com.fastingshift.app.ui.ramadan.MuslimText.monthName(today.month))

@@ -38,7 +38,7 @@
     <!-- Settings redesign -->
     <string name="settings_title">设置</string>
     <string name="settings_plan_row">方案</string>
-    <string name="settings_reminders_footer">如果提醒延迟送达，请在“断食”下运行可靠性检查。</string>
+    <string name="settings_reminders_footer">排查提醒延迟或未送达的问题</string>
     <string name="settings_after_hours">%1$d 小时后</string>
     <string name="settings_hours_value">%1$d 小时</string>
     <string name="settings_milestones_footer">当断食达到这些时长时通知你。</string>
@@ -61,7 +61,8 @@
     <string name="settings_eating_window_subtitle">长时间断食之后</string>
     <string name="settings_schedules_title">@string/week_title</string>
     <string name="settings_schedules_subtitle">安排每周计划，或只调整某一天</string>
-    <string name="settings_data_footer">恢复备份会替换现有记录。完整备份和导出的 ZIP 包含敏感记录，能打开文件的人就能读取。请选择可信的保存位置。</string>
+    <string name="settings_data_footer">完整备份和导出的 ZIP 包含敏感记录，能打开文件的人就能读取。请选择可信的保存位置。</string>
+    <string name="settings_restore_summary">恢复备份会替换现有记录。</string>
     <string name="settings_language">语言</string>
     <string name="settings_app_language">应用语言</string>
     <string name="settings_language_system">跟随系统</string>

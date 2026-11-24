@@ -1,40 +1,36 @@
 package com.fastingshift.app.ui.timer
 
-import android.Manifest
 import android.app.AlarmManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -52,17 +48,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,14 +65,12 @@ import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.startReminderNotificationsEnabled
 import com.fastingshift.app.ui.components.LoadingBox
-import com.fastingshift.app.ui.components.ProgressRing
+import com.fastingshift.app.ui.components.TabularNumbers
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.formatTime
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.AppCard
-import com.fastingshift.app.ui.design.GroupHeader
 import com.fastingshift.app.ui.design.NicholsMark
-import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.Spacing
@@ -87,6 +78,7 @@ import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.app.ui.firstweek.CoachingTipCard
 import com.fastingshift.app.ui.firstweek.FastSummarySheet
 import com.fastingshift.app.ui.firstweek.FirstFastCard
+import com.fastingshift.app.ui.ramadan.GroupedSheet
 import com.fastingshift.app.ui.ramadan.RamadanCard
 import com.fastingshift.app.ui.safety.RamadanSafetyCard
 import com.fastingshift.app.ui.safety.ChecklistDialog
@@ -98,6 +90,7 @@ import com.fastingshift.domain.safety.BlockReason
 import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.RefeedingTier
+import com.fastingshift.domain.timer.TimerDisplayMode
 import com.fastingshift.domain.timeline.BodyTimeline
 import com.fastingshift.domain.timeline.EvidenceLabel
 import java.time.Duration
@@ -123,15 +116,6 @@ fun TimerRoute(
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    // Notification permission is requested in context: when the user starts a fast.
-    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val onStart = {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        viewModel.start()
-    }
-
     Box(Modifier.fillMaxSize()) {
         val state = loaded
         if (state == null) {
@@ -140,9 +124,9 @@ fun TimerRoute(
             TimerScreen(
                 state = state,
                 actions = TimerActions(
-                    onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = onStart, onEnd = viewModel::end,
+                    onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = { viewModel.start() }, onEnd = viewModel::end,
                     onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
-                    onOpenProgram = onOpenProgram, onToggleMode = viewModel::cycleMode, onOpenScreening = onOpenScreening,
+                    onOpenProgram = onOpenProgram, onSetMode = viewModel::setMode, onOpenScreening = onOpenScreening,
                     onStartAt = viewModel::setStartAt, onWater = { viewModel.addWater() },
                     onWeight = { v, u -> viewModel.addWeight(v, u) }, onElectrolyte = { e, mg -> viewModel.addElectrolyte(e, mg) },
                     onTodayWater = { viewModel.addWaterQuietly() },
@@ -193,7 +177,7 @@ class TimerActions(
     val onEdit: () -> Unit = {},
     val onCheckIn: () -> Unit = {},
     val onOpenProgram: () -> Unit = {},
-    val onToggleMode: () -> Unit = {},
+    val onSetMode: (TimerDisplayMode) -> Unit = {},
     val onOpenScreening: () -> Unit = {},
     val onStartAt: (java.time.Instant?) -> Unit = {},
     val onWater: () -> Unit = {},
@@ -209,47 +193,46 @@ class TimerActions(
 @Composable
 fun TimerScreen(state: TimerUiState, actions: TimerActions) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            // The app scaffold already pads for the status bar; no second inset here.
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            val timer = state.timer
-            val active = state.active
-            TimerHeader(state)
-            RamadanCard(onOpenHub = actions.onOpenMuslimHub)
-            RamadanSafetyCard()
-            // A gentle cross-fade between fasting and not fasting.
-            AnimatedContent(
-                targetState = active != null && timer != null,
-                transitionSpec = { fadeIn().togetherWith(fadeOut()) },
-                label = "timerState",
-            ) { fasting ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (fasting && active != null && timer != null) {
-                        ExactAlarmBanner()
-                        AppCard(padding = PaddingValues(start = 18.dp, end = 18.dp, top = 24.dp, bottom = 18.dp)) {
-                            TimerRing(active, timer, state.mode, state.now, onToggle = actions.onToggleMode, modifier = Modifier.fillMaxWidth())
-                            Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp)) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            Column(
+                Modifier.widthIn(max = 640.dp).fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.screen, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                val timer = state.timer
+                val active = state.active
+                TimerHeader(state)
+                RamadanSafetyCard()
+                AnimatedContent(
+                    targetState = active != null && timer != null,
+                    transitionSpec = { fadeIn().togetherWith(fadeOut()) },
+                    label = "timerState",
+                ) { fasting ->
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        if (fasting && active != null && timer != null) {
+                            TimerRing(active, timer, state.mode, state.now, onSetMode = actions.onSetMode)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 FactColumn(stringResource(R.string.daily_started), startLabel(active.startAt, state.now), Modifier.weight(1f))
                                 FactColumn(stringResource(R.string.daily_goal), active.plannedDuration.hoursMinutes(), Modifier.weight(1f))
                             }
-                            // Ending takes one tap (PRD F2: at most 2).
-                            PrimaryButton(stringResource(R.string.timer_end), onClick = actions.onEnd, haptic = true)
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                SecondaryButton(stringResource(R.string.timer_edit), onClick = actions.onEdit, modifier = Modifier.weight(1f))
-                                if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
-                                    SecondaryButton(stringResource(R.string.timer_check_in), onClick = actions.onCheckIn, modifier = Modifier.weight(1f))
+                            Column(Modifier.fillMaxWidth()) {
+                                PrimaryButton(stringResource(R.string.timer_end), onClick = actions.onEnd, haptic = true)
+                                FlowActions {
+                                    TextButton(onClick = actions.onEdit) { Text(stringResource(R.string.timer_edit)) }
+                                    if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
+                                        TextButton(onClick = actions.onCheckIn) { Text(stringResource(R.string.timer_check_in)) }
+                                    }
                                 }
                             }
+                            ExactAlarmBanner()
+                            RamadanCard(onOpenHub = actions.onOpenMuslimHub)
+                            CoachingTipCard(active)
+                            TodayCard(state.today, actions.onTodayWater)
+                            QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
+                            BodyTimelineCard(timer.elapsed)
+                        } else {
+                            NotFasting(state, actions)
                         }
-                        CoachingTipCard(active)
-                        TodayCard(state.today, actions.onTodayWater)
-                        QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
-                        BodyTimelineCard(timer.elapsed)
-                    } else {
-                        NotFasting(state, actions)
                     }
                 }
             }
@@ -257,7 +240,12 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
     }
 }
 
-/** Compact header: today's date, a state title and the current streak. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowActions(content: @Composable () -> Unit) {
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) { content() }
+}
+
 /**
  * The locale's full date pattern without the year: "EEEE, MMMM d" (en-US), "EEEE d MMMM" (en-GB),
  * "M月d日EEEE" (zh), "EEEE, d MMMM" (ms/in). CJK patterns write the year as "y年"/"y년", so the
@@ -284,25 +272,14 @@ private fun TimerHeader(state: TimerUiState) {
     val title = when {
         state.active != null -> stringResource(R.string.daily_header_fasting)
         state.eatingWindow != null -> stringResource(R.string.eating_title)
-        else -> stringResource(R.string.daily_header_ready)
+        else -> stringResource(R.string.timer_idle_title)
     }
-    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NicholsMark(Modifier.size(24.dp), compact = true)
-                Text(date.uppercase(Locale.getDefault()), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            NicholsMark(Modifier.size(26.dp), compact = true)
+            Text(date, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (state.today.streak > 0) {
-            Text(
-                pluralStringResource(R.plurals.daily_streak_pill, state.today.streak, state.today.streak),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
+        Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
     }
 }
 
@@ -321,27 +298,20 @@ private fun startLabel(start: Instant, now: Instant): String {
 
 @Composable
 private fun FactColumn(label: String, value: String, modifier: Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+        Text(value, style = MaterialTheme.typography.titleMedium.merge(TabularNumbers))
     }
 }
 
 @Composable
 private fun NotFasting(state: TimerUiState, actions: TimerActions) {
-    val window = state.eatingWindow
-    AppCard(padding = PaddingValues(start = 18.dp, end = 18.dp, top = 24.dp, bottom = 22.dp)) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            if (window != null) EatingWindowRing(window, state.now) else ReadyRing(state.selected)
-        }
-        if (state.maxHours != null) {
-            WeekStartPreview(state, actions.onOpenWeek)
-        }
-    }
+    // Place any required screening action before the routine or time controls.
     when {
         state.gate == GateResult.BLOCK -> {
             // Education-only: no protocols, no start button; support and the body timeline.
             AppCard { Text(stringResource(R.string.timer_education_only), style = MaterialTheme.typography.bodyLarge) }
+            RamadanCard(onOpenHub = actions.onOpenMuslimHub)
             HelplineList()
             BodyTimelineCard(null)
             return
@@ -349,25 +319,35 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
         state.gate == null -> {
             AppCard { Text(stringResource(R.string.timer_needs_screening), style = MaterialTheme.typography.bodyLarge) }
             PrimaryButton(stringResource(R.string.timer_finish_screening), onClick = actions.onOpenScreening)
+            RamadanCard(onOpenHub = actions.onOpenMuslimHub)
             return
         }
         state.gate == GateResult.SOFT && !state.clinicianAcknowledged -> {
             AppCard { Text(stringResource(R.string.timer_locked_doctor), style = MaterialTheme.typography.bodyLarge) }
             PrimaryButton(stringResource(R.string.timer_confirm_doctor), onClick = actions.onOpenScreening)
+            RamadanCard(onOpenHub = actions.onOpenMuslimHub)
             HelplineList()
             return
         }
     }
-    FirstFastCard(onStartNow = actions.onStart)
-    state.programTargetHours?.let {
-        SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    val window = state.eatingWindow
+    if (window != null) {
+        EatingWindowReadout(window, state.now)
     }
-    ProtocolPicker(state, actions)
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    SelectedFast(state.selected, onChoose = { choosing = true })
+    Column(Modifier.fillMaxWidth()) {
         val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
         PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
         StartTimeRow(state, actions.onStartAt)
     }
+    if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek)
+    RamadanCard(onOpenHub = actions.onOpenMuslimHub)
+    FirstFastCard()
+    state.programTargetHours?.let {
+        SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
+    }
+    if (choosing) ProtocolPicker(state, actions) { choosing = false }
     TodayCard(state.today, actions.onTodayWater)
     QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWater, actions.onWeight, actions.onElectrolyte)
 }
@@ -381,11 +361,12 @@ private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Un
     val zone = ZoneId.systemDefault()
     val day = planned?.atZone(zone)?.toLocalDate()
     val today = state.now.atZone(zone).toLocalDate()
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxWidth()) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         if (planned != null) {
             Text(
                 stringResource(R.string.week_timer_planned, format.dateTime.format(planned.atZone(zone))),
-                style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp),
             )
         }
         val reminderText = when {
@@ -395,75 +376,78 @@ private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Un
             else -> null
         }
         reminderText?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         val action = when (day) {
             null -> R.string.week_timer_plan
             today -> R.string.week_timer_change_today
             else -> R.string.week_timer_change
         }
-        PlainButton(stringResource(action), onClick = { onOpenWeek(day) })
+        TextButton(onClick = { onOpenWeek(day) }) { Text(stringResource(action)) }
     }
 }
 
-/** Horizontally scrolling protocol cards, iOS style, then a custom-length stepper. */
+/** Presets and the custom length are available together when the user changes the plan. */
 @Composable
-private fun ProtocolPicker(state: TimerUiState, actions: TimerActions) {
+private fun ProtocolPicker(state: TimerUiState, actions: TimerActions, onDismiss: () -> Unit) {
     val haptics = rememberHaptics()
-    Column(Modifier.fillMaxWidth()) {
-        GroupHeader(stringResource(R.string.timer_pick_protocol), Modifier.semantics { heading() })
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            // Let the cards scroll edge to edge past the screen padding.
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            items(state.options, key = { it.protocol.id }) { option ->
-                val selected = option.protocol.id == state.selected.id
-                ProtocolCard(option, selected) { haptics.tick(); actions.onSelect(option.protocol) }
+    GroupedSheet(stringResource(R.string.timer_pick_protocol), onDismiss = onDismiss) {
+        CustomLengthRow(state, actions.onSelectCustom)
+        Column(Modifier.fillMaxWidth().selectableGroup()) {
+            state.options.forEach { option ->
+                val p = option.protocol
+                val selected = p.id == state.selected.id
+                val detail = p.eatHours?.let {
+                    stringResource(R.string.daily_protocol_fast, p.fastHours) + " · " + stringResource(R.string.daily_protocol_eat, it)
+                } ?: stringResource(R.string.daily_protocol_fast, p.fastHours)
+                Row(
+                    Modifier.fillMaxWidth()
+                        .selectable(selected, enabled = option.enabled, role = Role.RadioButton) {
+                            haptics.tick()
+                            actions.onSelect(p)
+                            onDismiss()
+                        }
+                        .heightIn(min = 56.dp).padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    RadioButton(selected = selected, onClick = null, enabled = option.enabled)
+                    Column {
+                        Text(p.name, style = MaterialTheme.typography.titleMedium,
+                            color = if (option.enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
-        CustomLengthRow(state, actions.onSelectCustom)
         if (state.options.any { !it.enabled }) {
-            Text(
-                stringResource(R.string.timer_locked_soft),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
-            )
+            Text(stringResource(R.string.timer_locked_soft), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
-private fun ProtocolCard(option: ProtocolOption, selected: Boolean, onClick: () -> Unit) {
-    val p = option.protocol
-    val shape = RoundedCornerShape(18.dp)
-    val bg = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer
-    val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    val sub = if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
-    Column(
-        Modifier.width(104.dp).heightIn(min = 84.dp).clip(shape).background(bg)
-            .then(if (selected) Modifier else Modifier.border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, shape))
-            .selectable(selected = selected, enabled = option.enabled, role = Role.RadioButton, onClick = onClick)
-            .alpha(if (option.enabled) 1f else 0.4f)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(p.name, style = MaterialTheme.typography.titleLarge, color = fg, maxLines = 1)
-        Text(stringResource(R.string.daily_protocol_fast, p.fastHours), style = MaterialTheme.typography.bodySmall, color = sub)
-        p.eatHours?.let { Text(stringResource(R.string.daily_protocol_eat, it), style = MaterialTheme.typography.bodySmall, color = sub) }
-    }
-}
-
-/** Ready state ring: the chosen protocol, at rest. */
-@Composable
-private fun ReadyRing(selected: Protocol) {
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(232.dp)) {
-        ProgressRing(0f, Modifier.fillMaxSize(), stroke = 16.dp)
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.week_timer_selected), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(selected.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Light, maxLines = 1)
-            Text(stringResource(R.string.daily_protocol_fast, selected.fastHours), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun SelectedFast(selected: Protocol, onChoose: () -> Unit) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.week_timer_selected), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = onChoose) { Text(stringResource(R.string.timer_pick_protocol)) }
+        }
+        Text(selected.name, style = MaterialTheme.typography.displayMedium.merge(TabularNumbers), color = MaterialTheme.colorScheme.onSurface)
+        val eating = selected.eatHours
+        val fastingLabel = stringResource(R.string.daily_protocol_fast, selected.fastHours)
+        if (eating != null && eating > 0) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Box(Modifier.weight(selected.fastHours.toFloat()).height(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                Box(Modifier.weight(eating.toFloat()).height(6.dp).background(MaterialTheme.colorScheme.outlineVariant, CircleShape))
+            }
+            Text(fastingLabel + " · " + stringResource(R.string.daily_protocol_eat, eating), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            Text(fastingLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -472,12 +456,12 @@ private fun ReadyRing(selected: Protocol) {
 private fun StartTimeRow(state: TimerUiState, onStartAt: (java.time.Instant?) -> Unit) {
     var picking by rememberSaveable { mutableStateOf(false) }
     val at = state.startAt
-    if (at == null) {
-        PlainButton(stringResource(R.string.timer_start_earlier), onClick = { picking = true })
-    } else {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PlainButton(stringResource(R.string.timer_starting_at, at.formatDateTime()), onClick = { picking = true })
-            PlainButton(stringResource(R.string.timer_start_now), onClick = { onStartAt(null) })
+    FlowActions {
+        if (at == null) {
+            TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_start_earlier)) }
+        } else {
+            TextButton(onClick = { picking = true }) { Text(stringResource(R.string.timer_starting_at, at.formatDateTime())) }
+            TextButton(onClick = { onStartAt(null) }) { Text(stringResource(R.string.timer_start_now)) }
         }
     }
     if (picking) {
@@ -487,22 +471,15 @@ private fun StartTimeRow(state: TimerUiState, onStartAt: (java.time.Instant?) ->
 
 /** While the eating window is open: the remaining time is independent of the planned or rescheduled fasting start. */
 @Composable
-private fun EatingWindowRing(window: EatingWindow, now: java.time.Instant) {
-    val total = Duration.between(window.startedAt, window.endsAt).toMillis().coerceAtLeast(1)
+private fun EatingWindowReadout(window: EatingWindow, now: Instant) {
     val left = Duration.between(now, window.endsAt).coerceAtLeast(Duration.ZERO)
-    val progress = (Duration.between(window.startedAt, now).toMillis().toFloat() / total).coerceIn(0f, 1f)
     val description = stringResource(R.string.eating_a11y, left.hoursMinutes(), window.endsAt.formatTime())
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.size(232.dp).clearAndSetSemantics { contentDescription = description },
-    ) {
-        ProgressRing(progress, Modifier.fillMaxSize(), stroke = 16.dp, color = MaterialTheme.colorScheme.tertiary)
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 32.dp)) {
-            Text(stringResource(R.string.eating_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.eating_next_in, left.hoursMinutes()), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-            Text(stringResource(R.string.eating_next_at, window.endsAt.formatTime()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+    Column(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }) {
+        Text(stringResource(R.string.eating_next_in, left.hoursMinutes()), style = MaterialTheme.typography.headlineMedium.merge(TabularNumbers))
+        Text(stringResource(R.string.eating_next_at, window.endsAt.formatTime()), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 /** Custom length: type the hours, or nudge them with − and +. */
@@ -515,28 +492,23 @@ private fun CustomLengthRow(state: TimerUiState, onSelectCustom: (Int) -> Unit) 
     val increase = stringResource(R.string.a11y_increase)
     val typed = text.toIntOrNull()
     val error = text.isNotEmpty() && (typed == null || typed !in 1..max)
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.timer_custom), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                StepButton("−", decrease) { onSelectCustom(((hours ?: 16) - 1).coerceIn(1, max)) }
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { v ->
-                        text = v.filter(Char::isDigit).take(3)
-                        text.toIntOrNull()?.takeIf { it in 1..max }?.let(onSelectCustom)
-                    },
-                    singleLine = true,
-                    isError = error,
-                    label = { Text(stringResource(R.string.timer_custom_hours)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-                    modifier = Modifier.width(84.dp),
-                )
-                StepButton("+", increase) { onSelectCustom(((hours ?: 16) + 1).coerceIn(1, max)) }
-            }
-            if (error) Text(stringResource(R.string.timer_custom_range, max), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.timer_custom), style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StepButton("−", decrease) { onSelectCustom(((hours ?: 16) - 1).coerceIn(1, max)) }
+            OutlinedTextField(
+                value = text,
+                onValueChange = { value ->
+                    text = value.filter(Char::isDigit).take(3)
+                    text.toIntOrNull()?.takeIf { it in 1..max }?.let(onSelectCustom)
+                },
+                singleLine = true, isError = error, label = { Text(stringResource(R.string.timer_custom_hours)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center), modifier = Modifier.weight(1f),
+            )
+            StepButton("+", increase) { onSelectCustom(((hours ?: 16) + 1).coerceIn(1, max)) }
         }
+        if (error) Text(stringResource(R.string.timer_custom_range, max), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
 }
 
@@ -546,7 +518,7 @@ private fun StepButton(glyph: String, description: String, onClick: () -> Unit) 
         onClick = onClick,
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.size(40.dp).semantics { contentDescription = description },
+        modifier = Modifier.size(48.dp).semantics { contentDescription = description },
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(glyph, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)

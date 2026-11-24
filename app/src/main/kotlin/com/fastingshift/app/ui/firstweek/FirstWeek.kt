@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,7 +74,6 @@ import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.app.ui.onboarding.HeroIcon
 import com.fastingshift.app.ui.onboarding.TextFieldGroupRow
-import com.fastingshift.app.ui.onboarding.protocolDescription
 import com.fastingshift.domain.coaching.CoachingTip
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastStatus
@@ -94,24 +92,16 @@ import kotlinx.coroutines.launch
 private val eveningLabel: String
     get() = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(FirstWeekRules.EVENING_START)
 
-/** Shown when not fasting and the user has never started a fast: "Start now" / "Start tonight". */
+/** One-off reminder before the first fast. The Timer provides the start action. */
 @Composable
-fun FirstFastCard(onStartNow: () -> Unit, vm: FirstFastViewModel = hiltViewModel()) {
+fun FirstFastCard(vm: FirstFastViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
     AnimatedVisibility(st != null, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
         val ui = st ?: return@AnimatedVisibility
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         AppCard(Modifier.animateContentSize(), padding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                HeroIcon(Icons.Filled.PlayArrow, size = 44.dp)
-                Text(stringResource(R.string.first_fast_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-            }
-            Text(
-                stringResource(R.string.first_fast_body, protocolDescription(ui.protocol)),
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PrimaryButton(stringResource(R.string.first_fast_start_now), onClick = onStartNow, haptic = true, modifier = Modifier.padding(top = 4.dp))
+            Text(stringResource(R.string.first_fast_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
             val plan = ui.planned
             if (plan == null) {
                 val tonight = FirstWeekRules.nextEvening(Instant.now(), zone).toLocalDate() == today

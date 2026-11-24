@@ -50,7 +50,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -83,7 +82,6 @@ import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.NicholsMark
 import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
-import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.Spacing
 import com.fastingshift.app.ui.design.SwitchGroupRow
 import com.fastingshift.app.ui.design.rememberHaptics
@@ -98,7 +96,7 @@ import com.fastingshift.domain.safety.Medication
 import kotlinx.coroutines.launch
 
 @Composable
-fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: OnboardingViewModel = hiltViewModel()) {
+fun OnboardingRoute(onFinished: () -> Unit, vm: OnboardingViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
     val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.completeNotifications() }
     if (st.step == Step.COMPLETE) {
@@ -111,7 +109,7 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.safeDrawingPadding().imePadding()) {
-            ProgressHeader(stepProgress(st.step, st.rerun, vm.offerAvailable), canGoBack, vm::back)
+            ProgressHeader(stepProgress(st.step, st.rerun), canGoBack, vm::back)
             AnimatedContent(
                 targetState = st.step,
                 transitionSpec = {
@@ -124,8 +122,8 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
                 modifier = Modifier.weight(1f),
             ) { step ->
                 when (step) {
-                    Step.WELCOME -> Welcome(vm::next)
-                    Step.INTRO -> Intro(onSkip = vm::skipIntro, onDone = vm::next)
+                    Step.WELCOME -> Welcome(onStart = vm::openGoal, onTour = vm::openTour)
+                    Step.INTRO -> Intro(onSkip = vm::openGoal, onDone = vm::openGoal)
                     Step.GOAL -> GoalStep(st, vm)
                     Step.SCREENING -> ScreeningForm(st, vm)
                     Step.RESULT -> Result(st, vm, onFinished)
@@ -141,7 +139,6 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
                         CenteredHero(Icons.Filled.Notifications, R.string.onb_notif_title, R.string.onb_notif_body)
                     }
                     Step.COMPLETE -> Unit
-                    Step.OFFER -> Offer(onSeePlans = { vm.finish { onFinished(); onShowPaywall() } }, onFree = { vm.finish(onFinished) })
                 }
             }
         }
@@ -219,8 +216,11 @@ private fun CenteredHero(icon: ImageVector, title: Int, body: Int?, container: a
 }
 
 @Composable
-private fun Welcome(onNext: () -> Unit) {
-    StepPage(actions = { PrimaryButton(stringResource(R.string.onb_get_started), onClick = onNext, haptic = true) }) {
+private fun Welcome(onStart: () -> Unit, onTour: () -> Unit) {
+    StepPage(actions = {
+        PrimaryButton(stringResource(R.string.onb_get_started), onClick = onStart, haptic = true)
+        PlainButton(stringResource(R.string.onb_open_tour), onClick = onTour, modifier = Modifier.fillMaxWidth())
+    }) {
         Column(
             Modifier.fillMaxWidth().padding(top = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -307,7 +307,7 @@ private fun PageDots(current: Int, count: Int, modifier: Modifier = Modifier) {
 
 @Composable
 private fun GoalStep(st: OnboardingState, vm: OnboardingViewModel) {
-    StepPage(actions = { PrimaryButton(stringResource(R.string.onb_next), onClick = vm::next, enabled = st.goal != null) }) {
+    StepPage(actions = { PrimaryButton(stringResource(R.string.onb_next), onClick = vm::continueFromGoal, enabled = st.goal != null) }) {
         StepTitle(R.string.onb_goal_title, R.string.onb_goal_body)
         InsetGroup {
             Goal.entries.forEachIndexed { i, g ->
@@ -451,27 +451,6 @@ fun protocolDescription(p: Protocol): String = when {
     p.id == Presets.ADF.id -> stringResource(R.string.protocol_desc_adf, p.name)
     p.type == ProtocolType.WINDOW && p.eatHours != null -> stringResource(R.string.protocol_desc_window, p.name, p.fastHours, p.eatHours ?: 0)
     else -> stringResource(R.string.protocol_desc_duration, p.name, p.fastHours)
-}
-
-@Composable
-private fun Offer(onSeePlans: () -> Unit, onFree: () -> Unit) {
-    // Paywall rule 1: "Continue free" is exactly as visible as "See plans": same style, same size.
-    StepPage(
-        actions = {
-            SecondaryButton(stringResource(R.string.program_see_plans), onClick = onSeePlans)
-            SecondaryButton(stringResource(R.string.onb_offer_free), onClick = onFree)
-        },
-    ) {
-        CenteredHero(Icons.Filled.Star, R.string.onb_offer_title, R.string.program_offer_insights)
-        Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainer).padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text(stringResource(R.string.onb_offer_free_note), style = MaterialTheme.typography.bodyMedium)
-        }
-    }
 }
 
 private fun goalLabel(g: Goal) = when (g) {

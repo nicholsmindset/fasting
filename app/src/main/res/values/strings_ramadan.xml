@@ -38,7 +38,7 @@
     <!-- Settings redesign -->
     <string name="settings_title">Settings</string>
     <string name="settings_plan_row">Plan</string>
-    <string name="settings_reminders_footer">If reminders arrive late, run the reliability check under Fasting.</string>
+    <string name="settings_reminders_footer">For reminders that arrive late or never appear</string>
     <string name="settings_after_hours">After %1$dh</string>
     <string name="settings_hours_value">%1$dh</string>
     <string name="settings_milestones_footer">Get a notification when your fast reaches these lengths.</string>
@@ -61,7 +61,8 @@
     <string name="settings_eating_window_subtitle">After long fasts</string>
     <string name="settings_schedules_title">@string/week_title</string>
     <string name="settings_schedules_subtitle">Plan your usual days or change a single date</string>
-    <string name="settings_data_footer">Restoring a backup replaces your current records. Full backups and ZIP exports contain sensitive records in readable files. Choose a storage location you trust.</string>
+    <string name="settings_data_footer">Full backups and ZIP exports contain sensitive records in readable files. Choose a storage location you trust.</string>
+    <string name="settings_restore_summary">Restoring a backup replaces your current records.</string>
     <string name="settings_language">Language</string>
     <string name="settings_app_language">App language</string>
     <string name="settings_language_system">System default</string>

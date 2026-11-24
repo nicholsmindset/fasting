@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="FastPickerLight" parent="@android:style/Theme.Material.Light.Dialog.Alert">
-        <item name="android:colorAccent">#1F6F62</item>
+        <item name="android:colorAccent">#007A56</item>
     </style>
     <style name="FastPickerDark" parent="@android:style/Theme.Material.Dialog.Alert">
-        <item name="android:colorAccent">#5FD3BD</item>
+        <item name="android:colorAccent">#83DAB8</item>
     </style>
 </resources>

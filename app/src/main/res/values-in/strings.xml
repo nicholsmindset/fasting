@@ -19,8 +19,9 @@
     <string name="notif_forgot_body">Puasa Anda sudah melewati target beberapa waktu lalu. Ketuk untuk mengakhirinya atau menyesuaikan waktunya.</string>
     <string name="notif_check_in_title">Cek singkat</string>
     <string name="notif_check_in_body">Bagaimana perasaan Anda? Jika Anda merasa mau pingsan, nyeri dada, atau bingung, akhiri puasa dan segera cari bantuan medis.</string>
+    <string name="notif_scheduled_start_title">Waktu puasa terjadwal Anda</string>
     <string name="notif_start_title">Jendela makan Anda telah berakhir</string>
-    <string name="notif_start_body">Ketuk untuk memulai puasa berikutnya.</string>
+    <string name="notif_start_body">Buka pengatur waktu saat Anda siap.</string>
     <string name="action_end_fast">Akhiri puasa</string>
 
     <!-- Timer screen -->

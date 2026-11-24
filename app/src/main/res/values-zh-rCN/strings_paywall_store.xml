@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shift_review_title">您的四周计划回顾</string>
+    <string name="shift_review_description">查看已完成的计划日、调整或跳过的开始时间，以及每周回顾的回答。</string>
+    <string name="shift_open_review">打开我的回顾</string>
+    <string name="shift_example_review">查看回顾示例</string>
+    <string name="shift_billing_off">此版本暂不支持购买。您可以查看示例，继续使用免费功能。</string>
+    <string name="shift_no_offers">Google Play 目前没有适用于此账号的 Shift+ 方案。</string>
+    <string name="shift_load_failed">无法从 Google Play 加载方案。请检查网络后重试。</string>
+    <string name="shift_retry_plans">重新加载方案</string>
+    <string name="shift_continue_play">前往 Google Play</string>
+    <string name="shift_opening_play">正在等待 Google Play…</string>
+    <string name="shift_restoring">正在恢复购买…</string>
+    <string name="shift_purchase_active">Shift+ 已启用，可以查看您的回顾了。</string>
+    <string name="shift_purchase_pending">付款正在 Google Play 中处理。确认后即会开通 Shift+。</string>
+    <string name="shift_purchase_unconfirmed">Google Play 已完成购买，但尚未确认 Shift+ 的使用权限。请选择“恢复购买”再次检查。</string>
+    <string name="shift_purchase_failed">Google Play 未能完成购买。请重试，或恢复已有购买。</string>
+    <string name="shift_restore_empty">此 Google Play 账号没有可恢复的有效 Shift+ 购买。</string>
+    <string name="shift_restore_failed">无法恢复购买。请检查 Google Play 账号及网络后重试。</string>
+    <string name="shift_transaction_busy">正在处理另一项 Google Play 请求。</string>
+    <string name="shift_free_features">计时器、我的一周、历史记录、提醒、数据导出及安全工具均可免费使用。</string>
+    <string name="shift_price_once">%1$s，一次性付款</string>
+    <string name="shift_price_confirm">%1$s，付款条款请见 Google Play</string>
+    <string name="shift_intro_recurring">每 %2$s 支付 %1$s，为期 %3$s</string>
+    <string name="shift_price_period">%2$s 共 %1$s</string>
+    <string name="shift_recurring">每 %2$s 收取 %1$s，自动续订，可在 Google Play 取消。</string>
+    <string name="shift_prepaid">%2$s 共 %1$s，不会自动续订。</string>
+    <string name="shift_commitment">首次承诺付款期数：%1$d</string>
+    <string name="shift_renewal_commitment">续订承诺付款期数：%1$d</string>
+    <string name="shift_already_owned">Google Play 已有这项购买记录。请选择“恢复购买”检查使用权限。</string>
+</resources>

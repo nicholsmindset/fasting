@@ -4,6 +4,10 @@ A private Android fasting tracker from Nichols Mindset. Start a timer, review yo
 
 ## Status
 
+The [beta worklist](docs/beta-worklist.md) covers the candidate, five usability tasks, physical reminder checks, Play purchase testing and the two-week pilot.
+
+Timer puts the selected window and Start together. During a fast, use **Change view** to pick elapsed time, time remaining, or the finish time. In History, the large total shows hours and the ring counts completed planned days. [Layout review and design references](docs/layout-review.md).
+
 Open **Settings → Appearance** to choose **System default**, **Light**, or **Dark**. The choice is saved on the phone. The app icon and welcome screen use the Nichols Mindset N.
 
 Tap a date in History to see how much of each fast fell on that day. Open a record to correct it, or use **Add a past fast** to enter a missing fast ending on the selected date.
@@ -16,10 +20,9 @@ Android CI runs the domain, data and app unit suites. Pull requests also run lin
 
 Highlights beyond the PRD: tappable timer (fasted / time left / break-fast time), eating-window
 countdown, quick-add on the Timer, undo after ending, add a past fast, "started earlier",
-refeeding screen, History hours ring + fast bars, database-key recovery screen, a guided first
+refeeding screen, History totals, planned-day ring and fast bars, database-key recovery screen, a guided first
 week (first-fast card, coaching tips, end-of-fast summary with mood), weekly recap, hydration
-goal, Ramadan mode (offline suhoor/iftar times for MUIS, JAKIM, KEMENAG, MWL) and an
-iOS-inspired design.
+goal, Ramadan mode (offline suhoor/iftar times for MUIS, JAKIM, KEMENAG, MWL) and light and dark appearance.
 
 Languages: English, Bahasa Melayu, Bahasa Indonesia, Simplified Chinese (per-app language
 picker on Android 13+). The three translations are drafts and need a native-speaker review,

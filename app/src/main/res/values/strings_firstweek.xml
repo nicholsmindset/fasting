@@ -3,6 +3,7 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">Step %1$d of %2$d</string>
+    <string name="onb_open_tour">How it works</string>
     <string name="onb_skip">Skip</string>
     <string name="onb_back">Back</string>
 
@@ -35,11 +36,11 @@
     <string name="onb_field_hint">Required</string>
 
     <!-- First fast card -->
-    <string name="first_fast_title">Ready for your first fast?</string>
+    <string name="first_fast_title">First fast reminder</string>
     <string name="first_fast_body">Your plan: %1$s. Start whenever you\'re ready. Ending early is always fine.</string>
     <string name="first_fast_start_now">Start now</string>
-    <string name="first_fast_tonight">Start tonight at %1$s</string>
-    <string name="first_fast_tomorrow">Start tomorrow at %1$s</string>
+    <string name="first_fast_tonight">Remind me tonight at %1$s</string>
+    <string name="first_fast_tomorrow">Remind me tomorrow at %1$s</string>
     <string name="first_fast_planned_tonight">We\'ll remind you tonight at %1$s.</string>
     <string name="first_fast_planned_tomorrow">We\'ll remind you tomorrow at %1$s.</string>
     <string name="first_fast_cancel_plan">Cancel reminder</string>

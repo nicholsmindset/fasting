@@ -14,62 +14,57 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * Fasting Shift's premium look: calm, iOS-inspired. Grouped light-grey backgrounds with white
- * cards (pure black with elevated greys in dark), one teal accent, generous rounded corners,
- * a large-title type scale and hairline separators. Every Material role is set so nothing falls
- * back to default purple. No wallpaper colours: the app looks the same on every phone.
- */
-private val Teal = Color(0xFF1F6F62)
-private val TealDark = Color(0xFF5FD3BD)
+// The launcher mark uses the original emerald. The lightened shade keeps the
+// same actions legible on the dark reading surface.
+private val Emerald = Color(0xFF007A56)
+private val LightEmerald = Color(0xFF83DAB8)
 
 private val LightColors = lightColorScheme(
-    primary = Teal, onPrimary = Color.White,
-    primaryContainer = Color(0xFFD6F2EC), onPrimaryContainer = Color(0xFF00201B),
-    secondary = Color(0xFF55615E), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE6ECEA), onSecondaryContainer = Color(0xFF111A18),
-    tertiary = Color(0xFFB0661F), onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFE6CF), onTertiaryContainer = Color(0xFF2E1500),
-    // Grouped background (like iOS systemGroupedBackground) with white cards on top.
-    background = Color(0xFFF2F3F5), onBackground = Color(0xFF111312),
-    surface = Color(0xFFF2F3F5), onSurface = Color(0xFF111312),
-    surfaceVariant = Color(0xFFE5E7EA), onSurfaceVariant = Color(0xFF6B6F73),
+    primary = Emerald, onPrimary = Color.White,
+    primaryContainer = Color(0xFFD9EDE3), onPrimaryContainer = Color(0xFF104A35),
+    secondary = Color(0xFF495E53), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE2E8DF), onSecondaryContainer = Color(0xFF263A30),
+    tertiary = Color(0xFF915012), onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFF7E4D2), onTertiaryContainer = Color(0xFF472A12),
+    background = Color(0xFFF7F6F0), onBackground = Color(0xFF18281F),
+    surface = Color(0xFFF7F6F0), onSurface = Color(0xFF18281F),
+    surfaceVariant = Color(0xFFE8EAE1), onSurfaceVariant = Color(0xFF526057),
     surfaceTint = Color.Transparent,
-    surfaceContainerLowest = Color.White, surfaceContainerLow = Color.White,
-    surfaceContainer = Color.White, surfaceContainerHigh = Color.White,
-    surfaceContainerHighest = Color(0xFFF7F8F9),
-    outline = Color(0xFFC6C8CC), outlineVariant = Color(0xFFE1E3E6),
-    inverseSurface = Color(0xFF2C2E30), inverseOnSurface = Color(0xFFF2F3F5), inversePrimary = TealDark,
-    error = Color(0xFFD93A2B), errorContainer = Color(0xFFFFE3DF), onErrorContainer = Color(0xFF410002),
+    surfaceContainerLowest = Color(0xFFFFFEFA), surfaceContainerLow = Color(0xFFFAFAF4),
+    surfaceContainer = Color(0xFFFFFEFA), surfaceContainerHigh = Color(0xFFF2F2EA),
+    surfaceContainerHighest = Color(0xFFE8EAE1),
+    outline = Color(0xFF778378), outlineVariant = Color(0xFFD5DACF),
+    inverseSurface = Color(0xFF28382F), inverseOnSurface = Color(0xFFF5F5ED), inversePrimary = LightEmerald,
+    error = Color(0xFFB3352B), onError = Color.White,
+    errorContainer = Color(0xFFFFE3DF), onErrorContainer = Color(0xFF470C08),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = TealDark, onPrimary = Color(0xFF00382F),
-    primaryContainer = Color(0xFF12443B), onPrimaryContainer = Color(0xFFC4F5EA),
-    secondary = Color(0xFFB4BEBB), onSecondary = Color(0xFF1C2523),
-    secondaryContainer = Color(0xFF2C2F31), onSecondaryContainer = Color(0xFFE2E7E5),
-    tertiary = Color(0xFFFFB878), onTertiary = Color(0xFF4C2700),
-    tertiaryContainer = Color(0xFF5C3A12), onTertiaryContainer = Color(0xFFFFDCC0),
-    background = Color.Black, onBackground = Color(0xFFF2F3F5),
-    surface = Color.Black, onSurface = Color(0xFFF2F3F5),
-    surfaceVariant = Color(0xFF2C2C2E), onSurfaceVariant = Color(0xFF9A9EA3),
+    primary = LightEmerald, onPrimary = Color(0xFF053728),
+    primaryContainer = Color(0xFF24473A), onPrimaryContainer = Color(0xFFC3EFDB),
+    secondary = Color(0xFFBACABE), onSecondary = Color(0xFF14291E),
+    secondaryContainer = Color(0xFF2A3B30), onSecondaryContainer = Color(0xFFDFEBE1),
+    tertiary = Color(0xFFEBBA8C), onTertiary = Color(0xFF46270B),
+    tertiaryContainer = Color(0xFF4C3826), onTertiaryContainer = Color(0xFFFFDFC1),
+    background = Color(0xFF111814), onBackground = Color(0xFFF1F2E9),
+    surface = Color(0xFF111814), onSurface = Color(0xFFF1F2E9),
+    surfaceVariant = Color(0xFF2B352E), onSurfaceVariant = Color(0xFFB0BDB2),
     surfaceTint = Color.Transparent,
-    // Elevated greys like iOS secondarySystemGroupedBackground.
-    surfaceContainerLowest = Color(0xFF0E0E0F), surfaceContainerLow = Color(0xFF1C1C1E),
-    surfaceContainer = Color(0xFF1C1C1E), surfaceContainerHigh = Color(0xFF1C1C1E),
-    surfaceContainerHighest = Color(0xFF2C2C2E),
-    outline = Color(0xFF48484A), outlineVariant = Color(0xFF2C2C2E),
-    inverseSurface = Color(0xFFF2F3F5), inverseOnSurface = Color(0xFF1C1C1E), inversePrimary = Teal,
-    error = Color(0xFFFF6B5E), errorContainer = Color(0xFF5C1A14), onErrorContainer = Color(0xFFFFDAD5),
+    surfaceContainerLowest = Color(0xFF141D17), surfaceContainerLow = Color(0xFF172019),
+    surfaceContainer = Color(0xFF1C261F), surfaceContainerHigh = Color(0xFF263229),
+    surfaceContainerHighest = Color(0xFF2D3A31),
+    outline = Color(0xFF859486), outlineVariant = Color(0xFF364339),
+    inverseSurface = Color(0xFFE7ECE1), inverseOnSurface = Color(0xFF1A241D), inversePrimary = Emerald,
+    error = Color(0xFFFFA599), onError = Color(0xFF561D16),
+    errorContainer = Color(0xFF542A24), onErrorContainer = Color(0xFFFFDAD5),
 )
 
-/** iOS-like scale: bold large titles, 17sp body, semibold headings, slightly tight tracking. */
 private val AppTypography = Typography(
     displayLarge = TextStyle(fontSize = 64.sp, fontWeight = FontWeight.Light, letterSpacing = (-1.5).sp),
     displayMedium = TextStyle(fontSize = 52.sp, fontWeight = FontWeight.Normal, letterSpacing = (-1).sp),
     displaySmall = TextStyle(fontSize = 44.sp, fontWeight = FontWeight.Normal, letterSpacing = (-0.8).sp),
-    headlineLarge = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp, lineHeight = 41.sp),
-    headlineMedium = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp, lineHeight = 34.sp),
+    headlineLarge = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Medium, letterSpacing = (-1.2).sp, lineHeight = 43.sp),
+    headlineMedium = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.7).sp, lineHeight = 34.sp),
     headlineSmall = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.2).sp, lineHeight = 28.sp),
     titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, lineHeight = 25.sp),
     titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold, lineHeight = 22.sp),
@@ -79,14 +74,14 @@ private val AppTypography = Typography(
     bodySmall = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Normal, lineHeight = 18.sp),
     labelLarge = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold, lineHeight = 22.sp),
     labelMedium = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, lineHeight = 18.sp),
-    labelSmall = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, lineHeight = 13.sp, letterSpacing = 0.1.sp),
+    labelSmall = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, lineHeight = 16.sp, letterSpacing = 0.1.sp),
 )
 
 private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(22.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(14.dp),
     extraLarge = RoundedCornerShape(28.dp),
 )
 

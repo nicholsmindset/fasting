@@ -1,12 +1,10 @@
 package com.fastingshift.app.ui.reliability
 
-import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
@@ -23,13 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.fastingshift.app.R
 import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.app.ui.components.SecondaryScaffold
+import com.fastingshift.app.ui.components.appNotificationsEnabled
+import com.fastingshift.app.ui.components.openAppNotificationSettings
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
@@ -60,7 +58,7 @@ fun ReliabilityRoute(onBack: () -> Unit) {
             }
             GroupDivider()
             Item(R.string.rel_notifications, checks.notifications, R.string.rel_notifications_fix) {
-                context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+                openAppNotificationSettings(context)
             }
             // Safety alerts and check-ins can be switched off one channel at a time.
             if (checks.notifications) {
@@ -136,10 +134,7 @@ private data class Checks(
             val nm = context.getSystemService(NotificationManager::class.java)
             return Checks(
                 exactAlarms = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms(),
-                notifications = (
-                    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                    ) && NotificationManagerCompat.from(context).areNotificationsEnabled(),
+                notifications = appNotificationsEnabled(context),
                 unrestrictedBattery = pm.isIgnoringBatteryOptimizations(context.packageName),
                 blockedChannels = SAFETY_CHANNELS.map { it.first }
                     .filter { nm.getNotificationChannel(it)?.importance == NotificationManager.IMPORTANCE_NONE }

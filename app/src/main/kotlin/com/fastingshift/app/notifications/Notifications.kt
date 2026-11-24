@@ -109,7 +109,12 @@ object Notifications {
     /** Reminders that don't belong to a running fast: next start, window closing, recap, Ramadan. */
     fun showGeneral(context: Context, reminder: Reminder) {
         val (channel, id, title, body) = when (reminder.kind) {
-            ReminderKind.FAST_START -> return showStartReminder(context)
+            // My Week reminders have no originating fast. Eating-window reminders do.
+            ReminderKind.FAST_START -> Content(
+                CHANNEL_REMINDERS, ID_START,
+                context.getString(if (reminder.fastId == 0L) R.string.notif_scheduled_start_title else R.string.notif_start_title),
+                context.getString(R.string.notif_start_body),
+            )
             ReminderKind.EATING_WINDOW_CLOSING -> Content(
                 CHANNEL_REMINDERS, ID_START,
                 context.getString(R.string.notif_window_closing_title),
@@ -157,13 +162,6 @@ object Notifications {
 
     private fun formatTime(i: java.time.Instant): String =
         java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(i.atZone(java.time.ZoneId.systemDefault()))
-
-    fun showStartReminder(context: Context) {
-        notify(
-            context, ID_START,
-            base(context, CHANNEL_REMINDERS, context.getString(R.string.notif_start_title), context.getString(R.string.notif_start_body)),
-        )
-    }
 
     /** Optional ongoing notification with a live chronometer (PRD F3). */
     fun showOngoing(context: Context, fast: Fast) {

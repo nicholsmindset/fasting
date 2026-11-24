@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -80,20 +81,34 @@ class RamadanSettingsCaptureTest {
 
     private fun scrollTo(text: String) { compose.onNodeWithText(text).performScrollTo() }
 
+    private fun openSection(tag: String, target: Int) {
+        compose.onNodeWithTag(tag).performScrollTo().performClick()
+        waitFor(s(target))
+    }
+
+    private fun returnToOverview() {
+        compose.onNodeWithContentDescription(s(R.string.navigate_up)).performClick()
+        waitFor(s(R.string.settings_schedules_title))
+    }
+
     private fun captureAll(mode: String) {
         waitFor("Ramadan mode · Singapore")
         shoot("r1-timer", mode)
         compose.onNodeWithText(s(R.string.tab_settings)).performClick()
         waitFor(s(R.string.settings_title))
         shoot("r2-settings-top", mode)
-        scrollTo(s(R.string.settings_water_goal))
+        openSection("settings_open_reminders", R.string.settings_end_alert)
         shoot("r3-settings-reminders", mode)
+        returnToOverview()
+        openSection("settings_open_privacy", R.string.trust_row)
+        shoot("r5-settings-data", mode)
+        returnToOverview()
+        openSection("settings_open_safety", R.string.settings_rerun_screening)
+        shoot("r6-settings-safety", mode)
+        returnToOverview()
+        openSection("settings_open_fasting", R.string.settings_water_goal)
         scrollTo(s(R.string.ramadan_today_iftar))
         shoot("r4-settings-ramadan", mode)
-        scrollTo(s(R.string.settings_app_language))
-        shoot("r5-settings-data", mode)
-        scrollTo(s(R.string.settings_privacy_policy))
-        shoot("r6-settings-safety", mode)
         scrollTo(s(R.string.ramadan_city))
         compose.onNodeWithText(s(R.string.ramadan_city)).performClick()
         waitFor(s(R.string.ramadan_search))
@@ -106,6 +121,7 @@ class RamadanSettingsCaptureTest {
         shoot("r8-water-sheet", mode)
         compose.onNodeWithText(s(R.string.settings_done)).performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText(s(R.string.settings_water_use_auto)).fetchSemanticsNodes().isEmpty() }
+        returnToOverview()
         scrollTo(s(R.string.settings_schedules_title))
         compose.onNodeWithText(s(R.string.settings_schedules_title)).performClick()
         waitFor(s(R.string.schedules_add_52))
@@ -115,6 +131,7 @@ class RamadanSettingsCaptureTest {
         compose.onNodeWithText(s(R.string.week_save)).performScrollTo().performClick()
         waitFor(s(R.string.week_routines))
         compose.onNodeWithContentDescription(s(R.string.navigate_up)).performClick()
+        openSection("settings_open_reminders", R.string.settings_reliability)
         scrollTo(s(R.string.settings_reliability))
         compose.onNodeWithText(s(R.string.settings_reliability)).performClick()
         waitFor(s(R.string.rel_battery))

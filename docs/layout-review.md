@@ -1,0 +1,45 @@
+# Fasting Shift layout review
+
+## What made the beta feel generic
+
+The same treatment marked three different things as important. A large ring meant “ready” on Timer, total hours and adherence on History, and water intake on Log. Large rounded cards then divided each screen into equally prominent blocks. The recurring shapes gave someone little help deciding what to do first.
+
+The review covered the four daily tabs in the November appearance release. It used the app's layout code, beta screenshots and published design references. The comparison uses the same local sample records, minute, locale, theme and 411dp-wide phone viewport. Its findings are design judgments. The physical pilot is where to check whether the new layouts actually help people.
+
+| Screen | What we found | Design decision |
+| --- | --- | --- |
+| Timer | An empty 232dp ring took the first-use focal point. Presets, custom setup and a second start action competed with starting the selected fast. | Show the selected window and Start together. A running fast gets the largest number, its start and goal, and one End action. Keep changing the window or display an explicit choice. |
+| History | On the November fixture, a ring contained 191h, but its arc measured 11 of 15 planned days. Several chart bars read 16h and sounded alike when focused. | Give total hours their own headline. Put planned-day completion inside its ring. Give each fasting record a dated edit target, a common zero baseline and an average reference. Preserve date-level editing and the calendar's month total. |
+| Log | A second oversized ring dominated water entry. Electrolyte totals and the input selector repeated the same three mineral names. | Put the water amount, goal and two portion buttons together. Make each mineral's total its selectable input row. |
+| Settings | Routine changes, appearance and reminder reliability were dispersed. A long stack of individual switches buried other settings. | Keep direct access to My Week and Appearance. Move detailed controls to named pages for reminders, fasting preferences, privacy and data, safety and reports, and your plan. Show the current choices on the overview. |
+
+On the matched 411 × 822 screenshots, the center of Start moved from 83% to 38% of the way down the screen. This measures its placement. The five-person pilot will check whether people find it faster.
+
+## How the Settings controls work
+
+A right-facing arrow opens a destination. A downward arrow opens a list of choices with the current value selected. Switching a setting takes effect on the first tap. Its checked position and checkmark remain visible in both themes, and the whole labeled row is one switch for TalkBack. Numeric steppers keep decrease and increase separate. File restore and deletion retain their confirmation steps. These differences give a user a way to anticipate what a tap will do. [Toggle switch research](https://www.nngroup.com/articles/toggle-switch-guidelines/)
+
+## Research that informed the changes
+
+- Zero's illustrated timer shows the chosen fasting window and start action as one task. Its distinction between setting a goal and running the timer informed our idle and active states. [Zero timer walkthrough, page 8](https://zerolongevity.com/blog/wp-content/uploads/The-Complete-Guide-to-FB.pdf)
+- Apple Health gives the user a concise summary with a route into the underlying data. We used that relationship between a total and an individual dated record in History. [Apple Health summary and details](https://support.apple.com/en-sg/104997)
+- The UK Office for National Statistics recommends a zero baseline for bars so that bar length represents magnitude. History keeps this shared baseline and distinguishes the average reference from the plotted fasts. [ONS chart guidance](https://service-manual.ons.gov.uk/data-visualisation/guidance/axes-and-gridlines)
+- Nielsen Norman Group explains how scale and contrast establish what to look at first. We used a single dominant value or action per tab, shared left edges and fewer card outlines. [Visual hierarchy and contrast](https://www.nngroup.com/articles/good-visual-design/)
+- Android recommends at least 48dp touch targets and scalable text. Its Settings guide calls for frequently used settings and their values near the top. Those principles informed chart targets, choice controls and the order of Settings. [Android accessibility](https://developer.android.com/design/ui/mobile/guides/foundations/accessibility) · [Android Settings patterns](https://developer.android.com/design/ui/mobile/guides/patterns/settings)
+
+## Current apps and design galleries
+
+The November 2026 review compared published app behavior, Mobbin's documented flows and designers' portfolio work. Each answered a different question about the build.
+
+| Question | What the reference showed | Fasting Shift decision |
+| --- | --- | --- |
+| What belongs beside a running timer? | Zero's October release added a compact timer and brought common logging actions closer. Its support guide lists basic timing and total hours in both tiers. [Zero release notes](https://apps.apple.com/us/app/zero-fasting-food-tracker/id1168348542) · [Zero feature comparison](https://zerofasting.zendesk.com/hc/en-us/articles/4402552785691-What-are-the-Benefits-of-Zero-Plus) | Give the running clock the most space. Keep its start, goal and end action together. A user can choose elapsed time, remaining time or the finish time in one sheet. Basic timing, hours and dated records stay free. |
+| Why would someone install another Android timer? | Easy Fast and Simple Intermittent Fasting already advertise timers, reminders and history. Simple Fast also lists date corrections, CSV export and water logging. [Easy Fast on Google Play](https://play.google.com/store/apps/details?id=com.easyfastapp.app) · [Simple Intermittent Fasting on Google Play](https://play.google.com/store/apps/details?id=com.carl.simplefast) | Keep corrections and export free. In the pilot, ask someone to move one late dinner, find the new reminder and see how the rest of their week holds up. That task tests the distinctive promise better than asking them to start a stopwatch. |
+| When does a control deserve a separate screen? | Mobbin's mobile examples show sheets for one contextual choice. Its guidance points to a full screen when people need space for several related steps. [Mobbin bottom sheets](https://mobbin.com/glossary/bottom-sheet) | A timer display choice returns directly to the running fast. Reminders has its own Settings page so permission, delivery and individual alerts can be checked together. |
+| How much setup earns its place? | Mobbin's onboarding study includes Noom's extended quiz and the subscription offer that follows it. The study documents the sequence. Fasting Shift users' response to a similar sequence would require a separate test. [Mobbin onboarding study](https://mobbin.com/blog/the-long-onboarding-a-study-of-1-460-flows) | Get started opens the goal question. The introduction is optional, the safety questions still precede a window, and setup ends in the app. A user can explore Shift+ later. |
+| What makes a timer or journal look like part of the same app? | Mansi Oza's Ritmo study carries a warm palette and a consistent icon family from setup to daily tracking. Purrweb's concept gives the timer and the journal separate screens. These are portfolio examples of hierarchy and identity. [Ritmo on Dribbble](https://dribbble.com/shots/27884137-Ritmo-Intermittent-Fasting-App) · [Purrweb's fasting tracker on Dribbble](https://dribbble.com/shots/22392705-Intermittent-Fasting-Tracker-Mobile-iOS-App) | Keep the Nichols N and emerald accent in both appearances. Let each tab's content determine its layout. Timer centers on time, History on a duration and the underlying days, and Log on the next entry. |
+| What recurring question could justify a subscription? | BodyFast presents an adjustable weekly plan. Strava subscribers can open previous weeks of training and inspect the underlying activity. Both describe value someone can revisit after the first day. [BodyFast weekly planning](https://help.bodyfast.app/hc/en-001/articles/34673414292242-How-does-the-BodyFast-Coach-work) · [Strava Training Log](https://support.strava.com/en-us/articles/15402077-training-log) | Shift+ asks whether the routine fit the user's last four completed weeks. It shows dated counts, moves, skips and voluntary fit reflections, then opens the free planner. A labeled sample lets someone inspect the report before considering a purchase. |
+
+## Check the design with testers
+
+Give the first tester a fresh install and the second a running sample fast. Without pointing at controls, ask them to start the shown window, find the expected finish time, identify how many hours they fasted this month, and explain what the ring counts. Ask them to edit one of two records with the same duration, log water, and find the next planned start. Record the first wrong tap and any point where they ask for help. Repeat the key tasks with larger Android text and TalkBack on a physical phone.

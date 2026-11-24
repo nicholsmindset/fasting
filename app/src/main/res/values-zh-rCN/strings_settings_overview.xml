@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_fasting_preferences">断食偏好</string>
+    <string name="settings_safety_reports">安全与报告</string>
+    <string name="settings_reminders_summary">开始、结束及提醒送达设置</string>
+    <string name="settings_fasting_summary">进食时段、饮水目标、斋月及圣行斋</string>
+    <string name="settings_privacy_summary">数据保护、健康数据共享和备份</string>
+    <string name="settings_safety_summary">筛查、恢复进食指南及就医报告</string>
+    <string name="settings_fast_timing">断食计时</string>
+    <string name="settings_delivery">通知送达</string>
+    <string name="settings_routine_reminders">日常提醒</string>
+    <string name="settings_files">备份与传输</string>
+</resources>

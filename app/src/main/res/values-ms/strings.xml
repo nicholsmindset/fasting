@@ -19,8 +19,9 @@
     <string name="notif_forgot_body">Puasa anda sudah melepasi sasaran sejak tadi. Ketik untuk menamatkannya atau melaraskan masa.</string>
     <string name="notif_check_in_title">Semakan ringkas</string>
     <string name="notif_check_in_body">Bagaimana perasaan anda? Jika anda rasa hendak pitam, sakit dada atau keliru, tamatkan puasa dan dapatkan rawatan perubatan.</string>
+    <string name="notif_scheduled_start_title">Waktu puasa yang dijadualkan</string>
     <string name="notif_start_title">Tempoh makan anda telah tamat</string>
-    <string name="notif_start_body">Ketik untuk memulakan puasa seterusnya.</string>
+    <string name="notif_start_body">Buka pemasa apabila anda sudah bersedia.</string>
     <string name="action_end_fast">Tamatkan puasa</string>
 
     <!-- Timer screen -->

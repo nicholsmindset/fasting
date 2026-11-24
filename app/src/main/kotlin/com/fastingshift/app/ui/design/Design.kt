@@ -1,52 +1,63 @@
 package com.fastingshift.app.ui.design
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 /*
- * Fasting Shift design system (iOS-inspired). Use these instead of raw Material components
- * so every screen shares one calm, premium look:
+ * Shared navigation, grouped rows and actions for Fasting Shift.
  * - LargeTitle for tab screens; SecondaryScaffold (components/Common.kt) for pushed screens
  * - InsetGroup + GroupRow / SwitchGroupRow for settings-style lists
  * - PrimaryButton / SecondaryButton / PlainButton for actions
@@ -60,25 +71,25 @@ object Spacing {
     val item = 12.dp
 }
 
-/** Big bold title at the top of a tab screen (scrolls with content, like iOS large titles). */
+/** Page heading that scrolls with the tab content. */
 @Composable
 fun LargeTitle(text: String, modifier: Modifier = Modifier, subtitle: String? = null) {
     Column(modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)) {
-        Text(text, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
+        Text(text, modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
         if (subtitle != null) {
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
-/** Small uppercase-free caption above a group, iOS style. */
+/** Section heading above grouped rows. */
 @Composable
 fun GroupHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(start = 16.dp, bottom = 6.dp, top = 4.dp),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier.padding(start = 2.dp, bottom = 8.dp, top = 4.dp).semantics { heading() },
     )
 }
 
@@ -130,30 +141,43 @@ fun GroupRow(
     showChevron: Boolean = false,
     titleColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
     onClick: (() -> Unit)? = null,
+    opensPicker: Boolean = false,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
-    Row(
-        modifier.fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .heightIn(min = 52.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (leading != null) leading()
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor)
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    BoxWithConstraints(modifier.fillMaxWidth().then(
+        if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier,
+    )) {
+        val valueBelow = value != null && (LocalDensity.current.fontScale > 1.25f || maxWidth < 310.dp)
+        val valueWidth = maxWidth * 0.40f
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            leading?.invoke()
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor)
+                if (valueBelow && value != null) {
+                    Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (subtitle != null) {
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (value != null && !valueBelow) {
+                Text(value, modifier = Modifier.widthIn(max = valueWidth), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
+            }
+            trailing?.invoke(this)
+            if (showChevron) {
+                val icon = if (opensPicker) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight
+                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        if (value != null) {
-            Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        trailing?.invoke(this)
-        if (showChevron) Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
     }
 }
 
-/** A row with an iOS-style switch; the whole row toggles (accessible as one switch). */
+/** The entire row is a single switch target. The thumb position and check also communicate state. */
 @Composable
 fun SwitchGroupRow(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, subtitle: String? = null) {
     val haptics = rememberHaptics()
@@ -168,21 +192,36 @@ fun SwitchGroupRow(title: String, checked: Boolean, onCheckedChange: (Boolean) -
             Text(title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                checkedThumbColor = androidx.compose.ui.graphics.Color.White,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                uncheckedThumbColor = androidx.compose.ui.graphics.Color.White,
-                uncheckedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-            ),
-        )
+        PreferenceSwitchMark(checked)
     }
 }
 
-private val ButtonShape = RoundedCornerShape(14.dp)
+@Composable
+private fun PreferenceSwitchMark(checked: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    val progress by animateFloatAsState(if (checked) 1f else 0f, tween(150), label = "switchThumb")
+    val track by animateColorAsState(if (checked) colors.primary else colors.surfaceVariant, label = "switchTrack")
+    val outline by animateColorAsState(if (checked) colors.primary else colors.outline, label = "switchOutline")
+    val thumb by animateColorAsState(if (checked) colors.onPrimary else colors.onSurfaceVariant, label = "switchKnob")
+
+    Canvas(Modifier.padding(start = 10.dp).size(width = 46.dp, height = 28.dp)) {
+        val border = 1.5.dp.toPx()
+        val radius = size.height / 2f
+        drawRoundRect(track, cornerRadius = CornerRadius(radius))
+        drawRoundRect(outline, Offset(border / 2, border / 2), Size(size.width - border, size.height - border),
+            CornerRadius(radius - border / 2), style = Stroke(border))
+        val fraction = if (layoutDirection == LayoutDirection.Rtl) 1f - progress else progress
+        val center = Offset(radius + (size.width - 2 * radius) * fraction, radius)
+        drawCircle(thumb, radius = (7.5f + 2.5f * progress).dp.toPx(), center = center)
+        if (checked) {
+            val bend = center + Offset(-1.dp.toPx(), 2.5.dp.toPx())
+            drawLine(track, center + Offset(-4.dp.toPx(), 0f), bend, 1.7.dp.toPx(), StrokeCap.Round)
+            drawLine(track, bend, center + Offset(4.dp.toPx(), -3.dp.toPx()), 1.7.dp.toPx(), StrokeCap.Round)
+        }
+    }
+}
+
+private val ButtonShape = RoundedCornerShape(12.dp)
 
 /** Main call to action: full width, 52dp, rounded rectangle (iOS filled button). */
 @Composable
@@ -216,39 +255,39 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
 /** Text-only action in the accent colour (iOS plain button). */
 @Composable
 fun PlainButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.primary,
-        textAlign = TextAlign.Center,
-        modifier = modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
-    )
+    Box(
+        modifier.clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center)
+    }
 }
 
-/** iOS-style segmented control with a sliding selection. */
+/** Equal hit areas expand together when translated labels or larger text wrap. */
 @Composable
 fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val haptics = rememberHaptics()
-    BoxWithConstraints(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(2.dp),
+    Row(
+        modifier.fillMaxWidth().selectableGroup().clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(3.dp).height(IntrinsicSize.Min),
     ) {
-        val segment = maxWidth / options.size
-        val offset by animateDpAsState(segment * selected, spring(dampingRatio = 0.85f, stiffness = 500f), label = "segment")
-        Box(
-            Modifier.offset(x = offset).width(segment).heightIn(min = 32.dp)
-                .clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerLowest),
-        )
-        Row(Modifier.fillMaxWidth()) {
-            options.forEachIndexed { i, label ->
-                val color by animateColorAsState(
-                    if (i == selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                    label = "segmentText",
-                )
-                Box(
-                    Modifier.weight(1f).heightIn(min = 32.dp)
-                        .selectable(selected = i == selected, role = Role.Tab, onClick = { haptics.tick(); onSelect(i) }),
-                    contentAlignment = Alignment.Center,
-                ) { Text(label, style = MaterialTheme.typography.titleSmall, color = color, maxLines = 1) }
+        options.forEachIndexed { index, label ->
+            val active = index == selected
+            val fill by animateColorAsState(
+                if (active) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.surfaceVariant,
+                label = "segmentFill",
+            )
+            Box(
+                Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(9.dp)).background(fill)
+                    .selectable(selected = active, role = Role.Tab, onClick = { haptics.tick(); onSelect(index) })
+                    .heightIn(min = 48.dp).padding(horizontal = 4.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(label, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center,
+                    color = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

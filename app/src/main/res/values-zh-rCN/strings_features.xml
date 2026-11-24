@@ -189,7 +189,7 @@
     <string name="onb_protocol_title">选择你常用的断食方案</string>
     <string name="onb_protocol_body">你可以随时更改。16:8 是常见的入门方案。</string>
     <string name="onb_notif_title">断食结束时提醒你？</string>
-    <string name="onb_notif_body">我们只发送你选择的提醒：断食结束、里程碑，以及长时间断食期间的安全问候。</string>
+    <string name="onb_notif_body">接收断食和状态确认提醒。你也可以稍后在“设置”的“提醒”中开启。</string>
     <string name="onb_notif_allow">允许通知</string>
     <string name="onb_offer_title">Shift+ 是可选的</string>
     <string name="onb_offer_free_note">计时器、小组件、所有断食方案、历史记录、导出以及所有安全功能永久免费。</string>

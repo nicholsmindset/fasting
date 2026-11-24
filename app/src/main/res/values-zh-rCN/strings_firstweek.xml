@@ -3,6 +3,7 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">第 %1$d 步，共 %2$d 步</string>
+    <string name="onb_open_tour">了解使用方法</string>
     <string name="onb_skip">跳过</string>
     <string name="onb_back">返回</string>
 
@@ -35,11 +36,11 @@
     <string name="onb_field_hint">必填</string>
 
     <!-- First fast card -->
-    <string name="first_fast_title">准备好第一次断食了吗？</string>
+    <string name="first_fast_title">首次断食提醒</string>
     <string name="first_fast_body">你的计划：%1$s。准备好就可以开始。提前结束也完全没关系。</string>
     <string name="first_fast_start_now">立即开始</string>
-    <string name="first_fast_tonight">今晚 %1$s 开始</string>
-    <string name="first_fast_tomorrow">明天 %1$s 开始</string>
+    <string name="first_fast_tonight">今晚 %1$s 提醒我</string>
+    <string name="first_fast_tomorrow">明天 %1$s 提醒我</string>
     <string name="first_fast_planned_tonight">我们会在今晚 %1$s 提醒你。</string>
     <string name="first_fast_planned_tomorrow">我们会在明天 %1$s 提醒你。</string>
     <string name="first_fast_cancel_plan">取消提醒</string>

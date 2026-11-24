@@ -1,17 +1,19 @@
 package com.fastingshift.app.ui
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +26,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.navigation.NavHostController
 import java.time.LocalDate
 import androidx.navigation.NavType
@@ -52,6 +57,7 @@ import com.fastingshift.app.ui.safety.RefeedingRoute
 import com.fastingshift.app.ui.safety.StopFastRoute
 import com.fastingshift.app.ui.settings.SchedulesRoute
 import com.fastingshift.app.ui.settings.SettingsRoute
+import com.fastingshift.app.ui.settings.SettingsSection
 import com.fastingshift.app.ui.timer.TimerRoute
 import com.fastingshift.app.ui.trust.TrustRoute
 import com.fastingshift.app.ui.challenge.ChallengeDetailRoute
@@ -96,14 +102,80 @@ object Routes {
         "refeeding?tier=${tier?.name ?: ""}&fastId=${fastId ?: -1L}"
 }
 
-private data class Tab(val route: String, @StringRes val label: Int, val icon: ImageVector)
+private data class Tab(val route: String, @StringRes val label: Int, @DrawableRes val icon: Int)
 
 private val tabs = listOf(
-    Tab(Routes.TIMER, R.string.tab_timer, Icons.Filled.Home),
-    Tab(Routes.HISTORY, R.string.tab_history, Icons.Filled.DateRange),
-    Tab(Routes.LOG, R.string.tab_log, Icons.Filled.Edit),
-    Tab(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
+    Tab(Routes.TIMER, R.string.tab_timer, R.drawable.ic_tab_timer),
+    Tab(Routes.HISTORY, R.string.tab_history, R.drawable.ic_tab_history),
+    Tab(Routes.LOG, R.string.tab_log, R.drawable.ic_tab_log),
+    Tab(Routes.SETTINGS, R.string.tab_settings, R.drawable.ic_tab_settings),
 )
+
+@Composable
+internal fun BottomTabs(current: String?, onSelect: (String) -> Unit) {
+    Column {
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest, tonalElevation = 0.dp) {
+            // Measure all labels at the selected weight so choosing a tab never moves a target.
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val density = LocalDensity.current
+                val measurer = rememberTextMeasurer()
+                val style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)
+                val widths = tabs.map { tab ->
+                    val label = measurer.measure(stringResource(tab.label), style, softWrap = false).size.width
+                    maxOf(64.dp, with(density) { label.toDp() } + 4.dp)
+                }
+                val gap = 8.dp
+                val evenWidth = (maxWidth - gap * (tabs.size - 1)) / tabs.size
+                if (widths.all { it <= evenWidth }) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                        tabs.forEach { tab -> TabDestination(tab, current, onSelect) }
+                    }
+                } else {
+                    val widthNeeded = widths.reduce { total, item -> total + item }
+                    if (widthNeeded <= maxWidth) {
+                        val extra = (maxWidth - widthNeeded) / tabs.size
+                        Row(Modifier.fillMaxWidth()) {
+                            tabs.forEachIndexed { index, tab ->
+                                Row(Modifier.width(widths[index] + extra)) { TabDestination(tab, current, onSelect) }
+                            }
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth()) {
+                            tabs.chunked(2).forEach { pair ->
+                                Row(Modifier.fillMaxWidth()) {
+                                    pair.forEach { tab -> TabDestination(tab, current, onSelect) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TabDestination(tab: Tab, current: String?, onSelect: (String) -> Unit) {
+    val selected = current == tab.route
+    NavigationBarItem(
+        modifier = Modifier.testTag("tab_${tab.route}"),
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.primary,
+            selectedTextColor = MaterialTheme.colorScheme.primary,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+        selected = selected,
+        onClick = { onSelect(tab.route) },
+        icon = { Icon(painterResource(tab.icon), contentDescription = null) },
+        label = {
+            Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
+        },
+    )
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -134,33 +206,12 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (tabs.any { it.route == current }) {
-                // iOS-style tab bar: translucent, hairline on top, accent colour for the selected tab.
-                Column {
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.94f), tonalElevation = 0.dp) {
-                    tabs.forEach { tab ->
-                        NavigationBarItem(
-                            modifier = Modifier.testTag("tab_${tab.route}"),
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                            ),
-                            selected = current == tab.route,
-                            onClick = {
-                                nav.navigate(tab.route) {
-                                    popUpTo(Routes.TIMER) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall) },
-                        )
+                BottomTabs(current) { route ->
+                    nav.navigate(route) {
+                        popUpTo(Routes.TIMER) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                }
                 }
             }
         },
@@ -184,7 +235,6 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                             }
                         }
                     },
-                    onShowPaywall = { nav.navigate(Routes.PAYWALL) },
                 )
             }
             composable(Routes.TIMER) {
@@ -208,16 +258,22 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 )
             }
             composable(Routes.LOG) { LogRoute() }
-            composable(Routes.SETTINGS) {
-                SettingsRoute(
-                    onRerunScreening = { nav.navigate(Routes.ONBOARDING) },
-                    onOpenReliability = { nav.navigate(Routes.RELIABILITY) },
-                    onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
-                    onOpenPaywall = { nav.navigate(Routes.PAYWALL) },
-                    onOpenRefeeding = { nav.navigate(Routes.refeeding(null)) },
-                    onOpenTrust = { nav.navigate(Routes.TRUST) },
-                    onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
-                )
+            val settingsDestinations = listOf<SettingsSection?>(null) + SettingsSection.entries
+            settingsDestinations.forEach { section ->
+                composable(section?.route ?: Routes.SETTINGS) {
+                    SettingsRoute(
+                        section = section,
+                        onOpenSection = { nav.navigate(it.route) },
+                        onBack = back,
+                        onRerunScreening = { nav.navigate(Routes.ONBOARDING) },
+                        onOpenReliability = { nav.navigate(Routes.RELIABILITY) },
+                        onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
+                        onOpenPaywall = { nav.navigate(Routes.PAYWALL) },
+                        onOpenRefeeding = { nav.navigate(Routes.refeeding(null)) },
+                        onOpenTrust = { nav.navigate(Routes.TRUST) },
+                        onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
+                    )
+                }
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
             composable(Routes.TRUST) { TrustRoute(onBack = back) }
@@ -249,9 +305,23 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 val day = destination.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
                 SchedulesRoute(onBack = back, initialDate = day)
             }
-            composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
+            composable(Routes.PAYWALL) {
+                PaywallRoute(
+                    onClose = back,
+                    onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } },
+                    onOpenReview = {
+                        if (nav.previousBackStackEntry?.destination?.route == Routes.INSIGHTS) nav.popBackStack()
+                        else nav.navigate(Routes.INSIGHTS) { launchSingleTop = true }
+                    },
+                )
+            }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
-            composable(Routes.INSIGHTS) { InsightsRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
+            composable(Routes.INSIGHTS) {
+                InsightsRoute(onBack = back, onUpgrade = {
+                    if (nav.previousBackStackEntry?.destination?.route == Routes.PAYWALL) nav.popBackStack()
+                    else nav.navigate(Routes.PAYWALL) { launchSingleTop = true }
+                }, onOpenWeek = { nav.navigate(Routes.SCHEDULES) })
+            }
             composable(Routes.STOP) { StopFastRoute(onDone = { nav.popBackStack(Routes.TIMER, inclusive = false) }) }
             composable(Routes.CHECKIN, arguments = listOf(navArgument("fastId") { type = NavType.LongType })) { e ->
                 CheckInRoute(
