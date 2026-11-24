@@ -185,7 +185,7 @@
     <string name="onb_protocol_title">Pilih puasa yang biasa Anda lakukan</string>
     <string name="onb_protocol_body">Anda dapat mengubahnya kapan saja. 16:8 adalah titik awal yang umum.</string>
     <string name="onb_notif_title">Ingin diingatkan saat puasa berakhir?</string>
-    <string name="onb_notif_body">Kami hanya mengirim pengingat yang Anda pilih: saat puasa berakhir, tonggak, dan cek keselamatan pada puasa panjang.</string>
+    <string name="onb_notif_body">Dapatkan pengingat untuk puasa dan pemeriksaan Anda. Anda bisa mengaktifkannya nanti melalui Pengaturan, di bagian Pengingat.</string>
     <string name="onb_notif_allow">Izinkan notifikasi</string>
     <string name="onb_offer_title">Shift+ bersifat opsional</string>
     <string name="onb_offer_free_note">Timer, widget, semua protokol, riwayat, ekspor, dan semua fitur keselamatan gratis selamanya.</string>

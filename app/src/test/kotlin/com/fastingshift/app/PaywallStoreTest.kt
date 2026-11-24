@@ -1,0 +1,186 @@
+package com.fastingshift.app
+
+import android.app.Activity
+import android.app.Application
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.billing.PaywallStore
+import com.fastingshift.app.billing.PlanOffer
+import com.fastingshift.app.billing.PurchaseOutcome
+import com.fastingshift.app.billing.RestoreOutcome
+import com.fastingshift.app.billing.transactionOutcome
+import com.fastingshift.app.ui.plus.PaywallViewModel
+import com.fastingshift.app.ui.plus.Storefront
+import com.fastingshift.app.ui.plus.offerTerms
+import com.fastingshift.app.ui.plus.phaseTerms
+import com.fastingshift.domain.billing.Entitlement
+import com.fastingshift.domain.billing.PlanType
+import com.revenuecat.purchases.Package
+import com.revenuecat.purchases.PackageType
+import com.revenuecat.purchases.PresentedOfferingContext
+import com.revenuecat.purchases.PurchasesErrorCode
+import com.revenuecat.purchases.models.Period
+import com.revenuecat.purchases.models.Price
+import com.revenuecat.purchases.models.PricingPhase
+import com.revenuecat.purchases.models.RecurrenceMode
+import com.revenuecat.purchases.models.TestStoreProduct
+import java.util.Locale
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [34], application = Application::class, qualifiers = "en-rUS")
+class PaywallStoreTest {
+    private val dispatcher = StandardTestDispatcher()
+    private val res get() = ApplicationProvider.getApplicationContext<Context>().resources
+
+    @Before fun useDispatcher() = Dispatchers.setMain(dispatcher)
+    @After fun resetDispatcher() = Dispatchers.resetMain()
+
+    private class FakeStore(override val isConfigured: Boolean = true) : PaywallStore {
+        override val entitlement = MutableStateFlow(Entitlement.FREE)
+        override val loadedEntitlement = MutableStateFlow<Entitlement?>(null)
+        var canRefresh = true
+        var offers = emptyList<PlanOffer>()
+        var offerRequests = 0
+        var purchaseRequests = 0
+        var restoreRequests = 0
+        var purchaseResult = CompletableDeferred<PurchaseOutcome>()
+        var restoreResult = RestoreOutcome.EMPTY
+
+        override suspend fun refresh(): Boolean {
+            if (canRefresh) loadedEntitlement.value = entitlement.value
+            return canRefresh
+        }
+        override suspend fun offers(): List<PlanOffer> { offerRequests++; return offers }
+        override suspend fun purchase(activity: Activity, offer: PlanOffer): PurchaseOutcome {
+            purchaseRequests++
+            return purchaseResult.await()
+        }
+        override suspend fun restore(): RestoreOutcome { restoreRequests++; return restoreResult }
+    }
+
+    private fun phase(period: String, formatted: String, micros: Long, mode: RecurrenceMode, cycles: Int? = null) =
+        PricingPhase(Period.create(period), mode, cycles, Price(formatted, micros, "SGD"))
+
+    private fun annual(): PlanOffer {
+        val product = TestStoreProduct(
+            id = "fixture", name = "Annual", title = "Annual", description = "",
+            price = Price("S$50.00", 50_000_000, "SGD"), period = Period.create("P1Y"),
+            freeTrialPricingPhase = phase("P1W", "Free", 0, RecurrenceMode.FINITE_RECURRING, 1),
+            introPricePricingPhase = phase("P1M", "S$2.00", 2_000_000, RecurrenceMode.FINITE_RECURRING, 3),
+        )
+        return PlanOffer(PlanType.ANNUAL, Package("annual", PackageType.ANNUAL, product, PresentedOfferingContext("test")))
+    }
+
+    @Test fun noKeyNeverContactsStoreAndMissingEntitlementCanBeRetried() = runTest(dispatcher) {
+        val disabled = FakeStore(false)
+        val offline = PaywallViewModel(disabled)
+        offline.reload()
+        offline.restore()
+        runCurrent()
+        assertEquals(Storefront.Disabled, offline.storefront)
+        assertEquals(0, disabled.offerRequests + disabled.restoreRequests)
+
+        val store = FakeStore().apply { canRefresh = false }
+        val vm = PaywallViewModel(store)
+        runCurrent()
+        assertEquals(Storefront.Failed, vm.storefront)
+        assertEquals(0, store.offerRequests)
+        store.canRefresh = true
+        vm.reload()
+        runCurrent()
+        assertEquals(Storefront.Empty, vm.storefront)
+        store.offers = listOf(annual())
+        vm.reload()
+        runCurrent()
+        assertTrue(vm.storefront is Storefront.Ready)
+    }
+
+    @Test fun oneTransactionAtATimeAndCancellationIsQuiet() = runTest(dispatcher) {
+        val offer = annual()
+        val store = FakeStore().apply { offers = listOf(offer) }
+        val vm = PaywallViewModel(store)
+        runCurrent()
+        val activity = Activity()
+        vm.purchase(activity, offer)
+        vm.purchase(activity, offer)
+        vm.restore()
+        runCurrent()
+        assertEquals(1, store.purchaseRequests)
+        assertEquals(0, store.restoreRequests)
+        store.purchaseResult.complete(PurchaseOutcome.CANCELLED)
+        runCurrent()
+        assertNull(vm.message)
+        assertNull(vm.action)
+        assertFalse(vm.pendingPayment)
+        store.purchaseResult = CompletableDeferred(PurchaseOutcome.PENDING)
+        vm.purchase(activity, offer)
+        runCurrent()
+        assertTrue(vm.pendingPayment)
+        assertEquals(R.string.shift_purchase_pending, vm.message)
+        vm.purchase(activity, offer)
+        runCurrent()
+        assertEquals(2, store.purchaseRequests)
+    }
+
+    @Test fun emptyFailedAndActiveRestoresHaveDistinctFeedback() = runTest(dispatcher) {
+        val store = FakeStore()
+        val vm = PaywallViewModel(store)
+        runCurrent()
+        for ((result, expected) in listOf(
+            RestoreOutcome.EMPTY to R.string.shift_restore_empty,
+            RestoreOutcome.FAILED to R.string.shift_restore_failed,
+            RestoreOutcome.ACTIVE to R.string.settings_purchases_restored,
+        )) {
+            store.restoreResult = result
+            vm.restore()
+            runCurrent()
+            assertEquals(expected, vm.message)
+        }
+    }
+
+    @Test fun playOffersKeepTrialIntroRenewalAndNonRenewingTermsDistinct() {
+        val lines = offerTerms(annual(), Locale.US, res)
+        assertEquals(3, lines.size)
+        assertTrue(lines[0].contains("1 week"))
+        assertTrue(lines[1].contains("S$2.00") && lines[1].contains("3 months"))
+        assertTrue(lines[2].contains("S$50.00") && lines[2].contains("1 year") && lines[2].contains("Renews"))
+        val prepaid = phaseTerms(phase("P1M", "S$4.00", 4_000_000, RecurrenceMode.NON_RECURRING), Locale.US, res)
+        assertTrue(prepaid.contains("Does not renew"))
+    }
+
+    @Test fun lifetimeHasOneStoreFormattedPaymentAndNoRenewal() {
+        val product = TestStoreProduct(
+            id = "fixture_lifetime", name = "Lifetime", title = "Lifetime", description = "",
+            price = Price("S$120.00", 120_000_000, "SGD"), period = null, freeTrialPricingPhase = null,
+        )
+        val offer = PlanOffer(PlanType.LIFETIME, Package("one-time", PackageType.LIFETIME, product, PresentedOfferingContext("test")))
+        assertEquals(listOf(res.getString(R.string.shift_price_once, product.price.formatted)), offerTerms(offer, Locale.US, res))
+    }
+
+    @Test fun sdkOutcomesPreserveCancellationPendingAndExistingOwnership() {
+        assertEquals(PurchaseOutcome.CANCELLED, transactionOutcome(PurchasesErrorCode.StoreProblemError, userCancelled = true))
+        assertEquals(PurchaseOutcome.PENDING, transactionOutcome(PurchasesErrorCode.PaymentPendingError, false))
+        assertEquals(PurchaseOutcome.ALREADY_OWNED, transactionOutcome(PurchasesErrorCode.ProductAlreadyPurchasedError, false))
+        assertEquals(PurchaseOutcome.FAILED, transactionOutcome(PurchasesErrorCode.NetworkError, false))
+    }
+}

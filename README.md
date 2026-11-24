@@ -4,6 +4,8 @@ A private Android fasting tracker from Nichols Mindset. Start a timer, review yo
 
 ## Status
 
+The [beta worklist](docs/beta-worklist.md) covers the candidate, five usability tasks, physical reminder checks, Play purchase testing and the two-week pilot.
+
 Timer puts the selected window and Start together. During a fast, use **Change view** to pick elapsed time, time remaining, or the finish time. In History, the large total shows hours and the ring counts completed planned days. [Layout review and design references](docs/layout-review.md).
 
 Open **Settings → Appearance** to choose **System default**, **Light**, or **Dark**. The choice is saved on the phone. The app icon and welcome screen use the Nichols Mindset N.

@@ -90,7 +90,7 @@ class FirstWeekScreenshotTest {
     @Test fun onboarding() {
         waitFor(s(R.string.onb_get_started))
         shoot("01-welcome")
-        click(s(R.string.onb_get_started))
+        click(s(R.string.onb_open_tour))
         waitFor(s(R.string.onb_intro_timer_title))
         shoot("02-intro-1")
         click(s(R.string.onb_next))
@@ -121,9 +121,6 @@ class FirstWeekScreenshotTest {
         waitFor(s(R.string.onb_notif_title))
         shoot("09-notifications")
         click(s(R.string.onb_not_now))
-        waitFor(s(R.string.onb_offer_title))
-        shoot("10-offer")
-        click(s(R.string.onb_offer_free))
         waitFor(s(R.string.timer_start))
         waitFor(s(R.string.first_fast_title))
         shoot("11-timer-first-fast")

@@ -81,6 +81,10 @@ class AppFlowTest {
             compose.onNodeWithTag("settings_open_plan").performScrollTo().performClick()
             waitFor(s(R.string.plan_see_plus))
             click(s(R.string.plan_see_plus))
+            waitFor(s(R.string.shift_example_review))
+            click(s(R.string.shift_example_review))
+            waitFor(s(R.string.review_example_label))
+            compose.onNodeWithContentDescription(s(R.string.navigate_up)).performClick()
             waitFor(s(R.string.program_read_sample))
             click(s(R.string.program_read_sample))
             waitFor(s(R.string.program_sample_prompt))
@@ -99,6 +103,10 @@ class AppFlowTest {
         // Onboarding with a hard-block answer (under 18).
         waitFor(s(R.string.onb_get_started))
         click(s(R.string.onb_get_started))
+        waitFor(s(R.string.onb_goal_title))
+        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        waitFor(s(R.string.onb_open_tour))
+        click(s(R.string.onb_open_tour))
         // Intro pages: one Next, then Skip the rest.
         waitFor(s(R.string.onb_intro_timer_title))
         click(s(R.string.onb_next))

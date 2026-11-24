@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="review_title">计划回顾</string>
+    <string name="review_period">过去四个完整周，从周一到周日。</string>
+    <string name="review_example_label">示例回顾 · 虚构记录</string>
+    <plurals name="review_days_done">
+        <item quantity="other">已完成 %1$d 天，共计划 %2$d 天</item>
+    </plurals>
+    <string name="review_untracked">本周没有计划记录。</string>
+    <string name="review_moved">调整开始时间 · %1$d</string>
+    <string name="review_skipped">跳过日期 · %1$d</string>
+    <string name="review_fit">计划是否合适 · %1$s</string>
+    <string name="review_open_week">打开我的一周</string>
+</resources>

@@ -2,6 +2,7 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">Langkah %1$d dari %2$d</string>
+    <string name="onb_open_tour">Cara kerja aplikasi</string>
     <string name="onb_skip">Lewati</string>
     <string name="onb_back">Kembali</string>
 

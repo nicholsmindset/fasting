@@ -14,6 +14,7 @@ import uiautomator2 as u2
 
 PACKAGE = "com.fastingshift.app.beta"
 ACTIVITY = "com.fastingshift.app.ui.MainActivity"
+NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
 DIAGNOSTICS = Path("upgrade-diagnostics")
 
 
@@ -24,6 +25,14 @@ def adb(*arguments):
 def installed_version():
     info = adb("shell", "dumpsys", "package", PACKAGE)
     return int(re.search(r"\bversionCode=(\d+)\b", info).group(1))
+
+
+def notification_permission_granted():
+    info = adb("shell", "dumpsys", "package", PACKAGE)
+    permission = re.search(rf"{re.escape(NOTIFICATIONS)}: granted=(true|false)", info)
+    if not permission:
+        raise AssertionError("Android did not report the notification permission")
+    return permission.group(1) == "true"
 
 
 class Screen:
@@ -55,7 +64,7 @@ class Screen:
     def click(self, key, scroll=False):
         self.find(key, scroll).click()
 
-    def finish_free_onboarding(self, destination):
+    def finish_free_onboarding(self, destination, allow_notifications):
         # Ads and billing services are not needed. Older baselines display an offer before
         # entering the app; current free builds go directly to the timer or pending invite.
         offer = self.device(text=self.strings["onb_offer_free"], packageName=PACKAGE)
@@ -63,18 +72,26 @@ class Screen:
         permission = self.device(resourceIdMatches=".*permissioncontroller:id/permission_allow_button")
         deadline = time.monotonic() + 25
         while time.monotonic() < deadline:
-            if target.exists:
-                return
             if permission.exists:
+                if not allow_notifications:
+                    raise AssertionError("Not now unexpectedly opened the notification permission dialog")
                 permission.click()
             elif offer.exists:
+                if "onb_open_tour" in self.strings:
+                    raise AssertionError("A paid offer interrupted free onboarding")
                 offer.click()
+            elif target.exists:
+                return
             time.sleep(0.25)
         raise AssertionError(f"Onboarding did not reach {destination}")
 
     def onboard(self, destination, allow_notifications):
         self.click("onb_get_started")
-        self.click("onb_skip")
+        # The baseline first opened a mandatory tour. On newer APKs the same
+        # primary action goes straight to Goal; the tour is a separate choice.
+        if "onb_open_tour" not in self.strings:
+            self.click("onb_skip")
+        self.find("onb_goal_title")
         self.click("goal_consistency")
         self.click("onb_next")
         self.find("onb_screen_title")
@@ -89,7 +106,7 @@ class Screen:
         self.find("onb_protocol_title")
         self.click("onb_next")
         self.click("onb_notif_allow" if allow_notifications else "onb_not_now")
-        self.finish_free_onboarding(destination)
+        self.finish_free_onboarding(destination, allow_notifications)
 
     def create_fasts(self):
         self.onboard("tab_timer", allow_notifications=True)
@@ -225,11 +242,71 @@ class Screen:
             raise AssertionError("Changing a reminder or timer view changed the running fast or history")
         print("Verified Settings category navigation, a persisted reminder change, and the end-time view with the original running fast.")
 
+    def enable_notifications_in_settings(self):
+        if notification_permission_granted():
+            raise AssertionError("Expected notifications off before the tester opted in")
+        self.open_settings()
+        self.open_settings_category("settings_open_reminders")
+        label = self.strings["settings_reliability"]
+        self.find_node(self.device(textContains=label, packageName=PACKAGE), label, scroll=True).click()
+        self.find("rel_title")
+        fix = self.device(textContains=self.strings["rel_notifications_fix"], packageName=PACKAGE)
+        self.find_node(fix, self.strings["rel_notifications_fix"], scroll=True).click()
+        settings = "com.android.settings"
+        if not self.device(packageName=settings, textContains="Fasting Shift").wait(timeout=15):
+            raise AssertionError("The reminder action did not open this app’s Android notification settings")
+
+        # Android 15 may display the master preference's label or just the switch.
+        # With app-level notifications disabled, channel switches cannot be used.
+        label = self.device(packageName=settings, textMatches=r"(?i)(All Fasting Shift.* notifications|Allow notifications)")
+        if label.exists:
+            label.click()
+        else:
+            switches = self.device(packageName=settings, checkable=True, enabled=True)
+            if switches.count != 1:
+                raise AssertionError(f"Could not identify the app-wide notification switch: {switches.count} enabled switches")
+            switches.click()
+        deadline = time.monotonic() + 10
+        while not notification_permission_granted():
+            if time.monotonic() >= deadline:
+                raise AssertionError("Android did not grant notifications after the explicit settings choice")
+            time.sleep(0.2)
+        self.device.press("back")
+        self.find("rel_title")
+        if not fix.wait_gone(timeout=10):
+            raise AssertionError("Reliability still offers to enable notifications after returning from Android settings")
+        self.device.press("back")
+        self.back_to_settings()
+
+    def verify_declined_first_start(self):
+        if notification_permission_granted():
+            raise AssertionError("Not now unexpectedly granted notification permission")
+        self.device(resourceId="tab_timer", packageName=PACKAGE).click(timeout=15)
+        self.click("timer_start", scroll=True)
+        permission = self.device(packageNameMatches=r".*permissioncontroller")
+        end = self.device(text=self.strings["timer_end"], packageName=PACKAGE)
+        deadline = time.monotonic() + 20
+        while not end.exists:
+            if permission.exists:
+                raise AssertionError("Starting after Not now opened a permission prompt")
+            if time.monotonic() >= deadline:
+                raise AssertionError("The first fast did not start after declining notifications")
+            time.sleep(0.2)
+        if permission.wait(timeout=2) or notification_permission_granted():
+            raise AssertionError("First Start did not honor the notification choice")
+        self.enable_notifications_in_settings()
+        print("Verified first Start after Not now, and a later opt-in through Android notification settings.")
+
     def verify_fresh_invite(self):
         # Only run after all upgrade assertions. Reset this dedicated emulator app's data so
         # screening and onboarding actually run while Android is handing over the new invite.
         if adb("shell", "pm", "clear", PACKAGE) != "Success":
             raise AssertionError("Could not reset the test beta package")
+        # Make this dedicated fixture match a new install even on images that
+        # preserve previous permission decisions when clearing app data.
+        if notification_permission_granted():
+            adb("shell", "pm", "revoke", PACKAGE, NOTIFICATIONS)
+        adb("shell", "pm", "clear-permission-flags", PACKAGE, NOTIFICATIONS, "user-set", "user-fixed")
         name = "Seven days with friends"
         start = (date.today() + timedelta(days=1)).strftime("%Y%m%d")
         payload = f"1|D|window_16_8|{start}|7|{name}"
@@ -429,6 +506,9 @@ def main(device, old_apk, new_apk):
     base.create_fasts()
     before = fingerprint(base.export_backup("upgrade-before.json")["fasts"])
     device.app_stop(PACKAGE)
+    # An upgrading tester may have previously switched off notifications in Android.
+    if notification_permission_granted():
+        adb("shell", "pm", "revoke", PACKAGE, NOTIFICATIONS)
 
     # Package manager enforces package identity and signing certificate continuity.
     adb("install", "-r", new_apk)
@@ -444,9 +524,12 @@ def main(device, old_apk, new_apk):
     print("Verified both fasts, including the running timer's original start and target.")
     candidate.verify_appearance(before)
     candidate.verify_reminder_and_timer_view(upgraded["settings"]["fast_end_alert"], before)
+    candidate.enable_notifications_in_settings()
+    print("Verified a previously installed user can opt in through Android notification settings after upgrading.")
     candidate.verify_fresh_invite()
     candidate.verify_week_planner()
     candidate.verify_history_day()
+    candidate.verify_declined_first_start()
 
 
 if __name__ == "__main__":

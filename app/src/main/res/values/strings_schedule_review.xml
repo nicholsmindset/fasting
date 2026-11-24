@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="review_title">Schedule review</string>
+    <string name="review_period">Your last four finished weeks, Monday to Sunday.</string>
+    <string name="review_example_label">Example review · fictional records</string>
+    <plurals name="review_days_done">
+        <item quantity="one">%1$d of %2$d planned day completed</item>
+        <item quantity="other">%1$d of %2$d planned days completed</item>
+    </plurals>
+    <string name="review_untracked">No plan history recorded for this week.</string>
+    <string name="review_moved">Moved starts · %1$d</string>
+    <string name="review_skipped">Skipped dates · %1$d</string>
+    <string name="review_fit">Schedule fit · %1$s</string>
+    <string name="review_open_week">Open My week</string>
+</resources>

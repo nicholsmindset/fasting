@@ -184,7 +184,6 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                             }
                         }
                     },
-                    onShowPaywall = { nav.navigate(Routes.PAYWALL) },
                 )
             }
             composable(Routes.TIMER) {
@@ -255,9 +254,23 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 val day = destination.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
                 SchedulesRoute(onBack = back, initialDate = day)
             }
-            composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
+            composable(Routes.PAYWALL) {
+                PaywallRoute(
+                    onClose = back,
+                    onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } },
+                    onOpenReview = {
+                        if (nav.previousBackStackEntry?.destination?.route == Routes.INSIGHTS) nav.popBackStack()
+                        else nav.navigate(Routes.INSIGHTS) { launchSingleTop = true }
+                    },
+                )
+            }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
-            composable(Routes.INSIGHTS) { InsightsRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
+            composable(Routes.INSIGHTS) {
+                InsightsRoute(onBack = back, onUpgrade = {
+                    if (nav.previousBackStackEntry?.destination?.route == Routes.PAYWALL) nav.popBackStack()
+                    else nav.navigate(Routes.PAYWALL) { launchSingleTop = true }
+                }, onOpenWeek = { nav.navigate(Routes.SCHEDULES) })
+            }
             composable(Routes.STOP) { StopFastRoute(onDone = { nav.popBackStack(Routes.TIMER, inclusive = false) }) }
             composable(Routes.CHECKIN, arguments = listOf(navArgument("fastId") { type = NavType.LongType })) { e ->
                 CheckInRoute(

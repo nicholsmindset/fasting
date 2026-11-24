@@ -19,8 +19,9 @@
     <string name="notif_forgot_body">Your fast passed its goal a while ago. Tap to end it or adjust the time.</string>
     <string name="notif_check_in_title">Quick check-in</string>
     <string name="notif_check_in_body">How are you feeling? If you feel faint, have chest pain or feel confused, end your fast and seek medical care.</string>
+    <string name="notif_scheduled_start_title">Your scheduled fast</string>
     <string name="notif_start_title">Your eating window has closed</string>
-    <string name="notif_start_body">Tap to start your next fast.</string>
+    <string name="notif_start_body">Open the timer when you’re ready.</string>
     <string name="action_end_fast">End fast</string>
 
     <!-- Timer screen -->

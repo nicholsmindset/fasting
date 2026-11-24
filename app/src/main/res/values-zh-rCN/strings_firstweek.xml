@@ -3,6 +3,7 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">第 %1$d 步，共 %2$d 步</string>
+    <string name="onb_open_tour">了解使用方法</string>
     <string name="onb_skip">跳过</string>
     <string name="onb_back">返回</string>
 

@@ -33,6 +33,7 @@ import dagger.hilt.android.testing.HiltTestApplication
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlinx.coroutines.runBlocking
@@ -93,7 +94,7 @@ class MuslimHubScreenTest {
     }
 
     @Test fun hubShowsTodaysHijriDateAndQadaLedger() {
-        val today = Hijri.of(LocalDate.now())!!
+        val today = Hijri.of(LocalDate.now(ZoneId.of("Asia/Singapore")))!!
         openHubFromSettings()
         // Today's Hijri date, in the app's language.
         val month = s(com.fastingshift.app.ui.ramadan.MuslimText.monthName(today.month))

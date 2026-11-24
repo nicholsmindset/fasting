@@ -189,7 +189,7 @@
     <string name="onb_protocol_title">Pilih puasa biasa anda</string>
     <string name="onb_protocol_body">Anda boleh mengubahnya bila-bila masa. 16:8 ialah titik permulaan yang biasa.</string>
     <string name="onb_notif_title">Mahu peringatan apabila puasa anda tamat?</string>
-    <string name="onb_notif_body">Kami hanya menghantar peringatan yang anda pilih: apabila puasa tamat, pencapaian, dan semakan keselamatan semasa puasa panjang.</string>
+    <string name="onb_notif_body">Dapatkan peringatan untuk puasa dan semakan anda. Anda boleh mengaktifkannya kemudian di bahagian Peringatan dalam Tetapan.</string>
     <string name="onb_notif_allow">Benarkan pemberitahuan</string>
     <string name="onb_offer_title">Shift+ adalah pilihan</string>
     <string name="onb_offer_free_note">Pemasa, widget, semua protokol, sejarah, eksport dan semua ciri keselamatan adalah percuma selama-lamanya.</string>

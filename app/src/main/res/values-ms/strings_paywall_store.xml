@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shift_review_title">Semakan jadual empat minggu anda</string>
+    <string name="shift_review_description">Lihat hari berjadual yang anda selesaikan, masa mula yang anda ubah atau langkau, serta jawapan refleksi mingguan anda.</string>
+    <string name="shift_open_review">Buka semakan saya</string>
+    <string name="shift_example_review">Lihat contoh semakan</string>
+    <string name="shift_billing_off">Pembelian tidak tersedia dalam versi ini. Anda boleh melihat contoh dan terus menggunakan aplikasi percuma.</string>
+    <string name="shift_no_offers">Google Play tidak menawarkan pelan Shift+ untuk akaun ini buat masa ini.</string>
+    <string name="shift_load_failed">Pelan Google Play tidak dapat dimuatkan. Semak sambungan dan cuba lagi.</string>
+    <string name="shift_retry_plans">Muat semula pelan</string>
+    <string name="shift_continue_play">Teruskan ke Google Play</string>
+    <string name="shift_opening_play">Menunggu Google Play…</string>
+    <string name="shift_restoring">Memulihkan pembelian…</string>
+    <string name="shift_purchase_active">Shift+ aktif. Semakan anda tersedia.</string>
+    <string name="shift_purchase_pending">Pembayaran belum disahkan oleh Google Play. Shift+ akan dibuka selepas pengesahan.</string>
+    <string name="shift_purchase_unconfirmed">Pembelian di Google Play selesai, tetapi akses Shift+ belum disahkan. Pilih Pulihkan pembelian untuk menyemak semula.</string>
+    <string name="shift_purchase_failed">Google Play tidak dapat menyelesaikan pembelian. Cuba lagi atau pulihkan pembelian sedia ada.</string>
+    <string name="shift_restore_empty">Tiada pembelian Shift+ aktif ditemui untuk akaun Google Play ini.</string>
+    <string name="shift_restore_failed">Pembelian tidak dapat dipulihkan. Semak akaun Google Play dan sambungan anda, kemudian cuba lagi.</string>
+    <string name="shift_transaction_busy">Permintaan Google Play lain sedang diproses.</string>
+    <string name="shift_free_features">Pemasa, Minggu saya, Sejarah, peringatan, eksport dan alat keselamatan adalah percuma.</string>
+    <string name="shift_price_once">%1$s · bayaran sekali sahaja</string>
+    <string name="shift_price_confirm">%1$s · lihat syarat pembayaran di Google Play</string>
+    <string name="shift_intro_recurring">%1$s setiap %2$s selama %3$s</string>
+    <string name="shift_price_period">%1$s untuk %2$s</string>
+    <string name="shift_recurring">%1$s setiap %2$s. Diperbaharui sehingga dibatalkan di Google Play.</string>
+    <string name="shift_prepaid">%1$s untuk %2$s. Tiada pembaharuan automatik.</string>
+    <string name="shift_commitment">Bilangan bayaran dalam komitmen awal: %1$d</string>
+    <string name="shift_renewal_commitment">Bilangan bayaran bagi setiap komitmen pembaharuan: %1$d</string>
+    <string name="shift_already_owned">Pembelian ini sudah ada di Google Play. Pilih Pulihkan pembelian untuk menyemak akses.</string>
+</resources>

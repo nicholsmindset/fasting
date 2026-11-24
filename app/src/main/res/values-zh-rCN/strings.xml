@@ -19,8 +19,9 @@
     <string name="notif_forgot_body">你的断食已超过目标一段时间了。点按即可结束或调整时间。</string>
     <string name="notif_check_in_title">简单问候</string>
     <string name="notif_check_in_body">你感觉怎么样？如果感到头晕欲倒、胸痛或意识混乱，请结束断食并尽快就医。</string>
+    <string name="notif_scheduled_start_title">计划断食提醒</string>
     <string name="notif_start_title">进食窗口已结束</string>
-    <string name="notif_start_body">点按开始下一次断食。</string>
+    <string name="notif_start_body">准备好后，打开计时器。</string>
     <string name="action_end_fast">结束断食</string>
 
     <!-- Timer screen -->

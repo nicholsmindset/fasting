@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="review_title">Tinjauan jadwal</string>
+    <string name="review_period">Empat minggu penuh terakhir, dari Senin hingga Minggu.</string>
+    <string name="review_example_label">Contoh tinjauan · data rekaan</string>
+    <plurals name="review_days_done">
+        <item quantity="other">%1$d dari %2$d hari yang direncanakan selesai</item>
+    </plurals>
+    <string name="review_untracked">Belum ada riwayat rencana untuk minggu ini.</string>
+    <string name="review_moved">Waktu mulai diubah · %1$d</string>
+    <string name="review_skipped">Tanggal yang dilewati · %1$d</string>
+    <string name="review_fit">Kecocokan jadwal · %1$s</string>
+    <string name="review_open_week">Buka Minggu saya</string>
+</resources>

@@ -1,6 +1,8 @@
 package com.fastingshift.app
 
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -103,11 +105,13 @@ class TimerFlowTest {
     }
 
     @Test fun changingTheSelectedFastUpdatesTheSingleStartAction() {
+        runBlocking { settings.setDefaultProtocol("window_16_8") }
         seed(GateResult.OK, activeHoursIn = null)
         waitFor(s(R.string.timer_start))
         compose.onNodeWithText(s(R.string.timer_pick_protocol)).performClick()
-        waitFor("14:10")
-        compose.onNodeWithText("14:10").performScrollTo().performClick()
+        val alternative = hasText("14:10") and hasClickAction()
+        waitUntil { compose.onAllNodes(alternative).fetchSemanticsNodes().size == 1 }
+        compose.onNode(alternative).performScrollTo().performClick()
         waitUntil { compose.onAllNodesWithText(s(R.string.timer_custom)).fetchSemanticsNodes().isEmpty() }
         assertEquals(1, compose.onAllNodesWithText(s(R.string.timer_start)).fetchSemanticsNodes().size)
         compose.onNodeWithText(s(R.string.timer_start)).performClick()

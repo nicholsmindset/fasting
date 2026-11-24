@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.billing.BillingManager
+import com.fastingshift.app.billing.RestoreOutcome
 import com.fastingshift.app.export.ExportManager
 import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.app.ui.components.SecondaryScaffold
@@ -128,8 +129,24 @@ class SettingsViewModel @Inject constructor(
     fun backup(uri: android.net.Uri) = io(R.string.settings_backed_up) { export.writeBackup(uri) }
     fun restore(uri: android.net.Uri) = io(R.string.settings_restored) { export.restore(uri) }
 
-    fun restorePurchases() = viewModelScope.launch {
-        message.value = if (billing.restore() == null) R.string.settings_purchases_restored else R.string.settings_billing_error
+    var restoringPurchases by mutableStateOf(false)
+        private set
+
+    fun restorePurchases() {
+        if (restoringPurchases) return
+        restoringPurchases = true
+        viewModelScope.launch {
+            try {
+                message.value = when (billing.restore()) {
+                    RestoreOutcome.ACTIVE -> R.string.settings_purchases_restored
+                    RestoreOutcome.EMPTY -> R.string.shift_restore_empty
+                    RestoreOutcome.FAILED -> R.string.shift_restore_failed
+                    RestoreOutcome.BUSY -> R.string.shift_transaction_busy
+                }
+            } finally {
+                restoringPurchases = false
+            }
+        }
     }
 
     private fun io(success: Int, block: suspend () -> Unit) = viewModelScope.launch {
@@ -474,7 +491,8 @@ private fun PlanGroup(ent: Entitlement, vm: SettingsViewModel, onOpenPaywall: ()
         }
         if (vm.billing.isConfigured) {
             GroupDivider()
-            ActionRow(stringResource(R.string.plan_restore), vm::restorePurchases)
+            if (vm.restoringPurchases) GroupRow(stringResource(R.string.shift_restoring))
+            else ActionRow(stringResource(R.string.plan_restore), vm::restorePurchases)
             GroupDivider()
             GroupRow(stringResource(R.string.plan_book_code), showChevron = true, onClick = onBookCode)
         }

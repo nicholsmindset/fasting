@@ -3,7 +3,6 @@ package com.fastingshift.app.ui.onboarding
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.onboarding.Goal
@@ -25,18 +24,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, OFFER, COMPLETE }
+enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, COMPLETE }
 
-internal fun afterNotifications(offerAvailable: Boolean): Step = if (offerAvailable) Step.OFFER else Step.COMPLETE
-
-/** "Step n of N" for the progress bar; null on Welcome (no bar). A re-run only has its own steps. */
-fun stepProgress(step: Step, rerun: Boolean, offerAvailable: Boolean): Pair<Int, Int>? {
-    val first = if (rerun) Step.SCREENING else Step.INTRO
-    val last = when {
-        rerun -> Step.PROTOCOL
-        offerAvailable -> Step.OFFER
-        else -> Step.NOTIFICATIONS
-    }
+/** Only count setup steps. The welcome and optional tour have their own navigation. */
+fun stepProgress(step: Step, rerun: Boolean): Pair<Int, Int>? {
+    val first = if (rerun) Step.SCREENING else Step.GOAL
+    val last = if (rerun) Step.PROTOCOL else Step.NOTIFICATIONS
     if (step !in first..last) return null
     return (step.ordinal - first.ordinal + 1) to (last.ordinal - first.ordinal + 1)
 }
@@ -71,6 +64,7 @@ data class ScreeningForm(
 data class OnboardingState(
     val step: Step = Step.WELCOME,
     val rerun: Boolean = false,
+    val goalFromTour: Boolean = false,
     val goal: Goal? = null,
     val form: ScreeningForm = ScreeningForm(),
     val formError: Boolean = false,
@@ -86,9 +80,7 @@ class OnboardingViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val clock: Clock,
     private val handle: SavedStateHandle,
-    billing: BillingManager,
 ) : ViewModel() {
-    val offerAvailable = billing.isConfigured
     private val _state = MutableStateFlow(restore() ?: OnboardingState())
     val state: StateFlow<OnboardingState> = _state
 
@@ -117,6 +109,7 @@ class OnboardingViewModel @Inject constructor(
     private fun save(st: OnboardingState) {
         handle[KEY_STEP] = st.step.name
         handle[KEY_RERUN] = st.rerun
+        handle[KEY_TOUR] = st.goalFromTour
         handle[KEY_GOAL] = st.goal?.name
         handle[KEY_AGE] = st.form.age
         handle[KEY_PREGNANT] = st.form.pregnant
@@ -130,7 +123,10 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun restore(): OnboardingState? {
-        val step = handle.get<String>(KEY_STEP)?.let { n -> Step.entries.firstOrNull { it.name == n } } ?: return null
+        val savedStep = handle.get<String>(KEY_STEP) ?: return null
+        // The paid offer used to follow completed setup. Resume an older saved flow
+        // at its original free destination while keeping the validation below.
+        val step = if (savedStep == "OFFER") Step.COMPLETE else Step.entries.firstOrNull { it.name == savedStep } ?: return null
         val form = ScreeningForm(
             age = handle[KEY_AGE] ?: "",
             pregnant = handle[KEY_PREGNANT] ?: false,
@@ -143,15 +139,13 @@ class OnboardingViewModel @Inject constructor(
         val outcome = form.toAnswers()?.let(ScreeningEvaluator::evaluate)
         val ack = handle[KEY_ACK] ?: false
         // Steps after the result need its outcome; without valid answers, go back to the form.
-        val safeStep = when {
-            step > Step.SCREENING && outcome == null -> Step.SCREENING
-            step == Step.OFFER -> afterNotifications(offerAvailable)
-            else -> step
-        }
+        val safeStep = if (step > Step.SCREENING && outcome == null) Step.SCREENING else step
         val allowed = outcome?.let { allowedProtocols(it.result, it.result == GateResult.SOFT && ack) }.orEmpty()
         return OnboardingState(
             step = safeStep,
             rerun = handle[KEY_RERUN] ?: false,
+            // Older versions always led through the tour before the goal.
+            goalFromTour = handle[KEY_TOUR] ?: (step >= Step.INTRO),
             goal = handle.get<String>(KEY_GOAL)?.let { n -> Goal.entries.firstOrNull { it.name == n } },
             form = form,
             outcome = outcome,
@@ -166,18 +160,34 @@ class OnboardingViewModel @Inject constructor(
         return Presets.all.filter { Duration.ofHours(it.fastHours.toLong()) <= max }
     }
 
-    fun next() = _state.update { it.copy(step = Step.entries[it.step.ordinal + 1]) }
-    fun completeNotifications() = _state.update {
-        if (it.step == Step.NOTIFICATIONS) it.copy(step = afterNotifications(offerAvailable)) else it
+    fun openTour() = _state.update { if (it.step == Step.WELCOME) it.copy(step = Step.INTRO) else it }
+
+    fun openGoal() = _state.update {
+        when (it.step) {
+            Step.WELCOME, Step.INTRO -> it.copy(step = Step.GOAL, goalFromTour = it.step == Step.INTRO)
+            else -> it
+        }
     }
 
-    fun back() = _state.update { if (it.step.ordinal > 0 && !(it.rerun && it.step == Step.SCREENING)) it.copy(step = Step.entries[it.step.ordinal - 1]) else it }
+    fun continueFromGoal() = _state.update {
+        if (it.step == Step.GOAL && it.goal != null) it.copy(step = Step.SCREENING) else it
+    }
+
+    fun completeNotifications() = _state.update {
+        if (it.step == Step.NOTIFICATIONS) it.copy(step = Step.COMPLETE) else it
+    }
+
+    fun back() = _state.update {
+        when {
+            it.step == Step.WELCOME || (it.rerun && it.step == Step.SCREENING) -> it
+            it.step == Step.GOAL && !it.goalFromTour -> it.copy(step = Step.WELCOME)
+            else -> it.copy(step = Step.entries[it.step.ordinal - 1])
+        }
+    }
 
     /** Choosing a goal also pre-selects its suggested protocol for the protocol step. */
     fun setGoal(goal: Goal) = _state.update { it.copy(goal = goal, selected = recommendedProtocol(goal)) }
 
-    /** Skips the rest of the intro pages. */
-    fun skipIntro() = _state.update { if (it.step == Step.INTRO) it.copy(step = Step.GOAL) else it }
     fun updateForm(f: (ScreeningForm) -> ScreeningForm) = _state.update { it.copy(form = f(it.form), formError = false) }
     fun setClinicianAck(ack: Boolean) = _state.update { it.copy(clinicianAck = ack) }
     fun select(p: Protocol) = _state.update { it.copy(selected = p) }
@@ -238,6 +248,7 @@ class OnboardingViewModel @Inject constructor(
     private companion object {
         const val KEY_STEP = "step"
         const val KEY_RERUN = "rerun"
+        const val KEY_TOUR = "goal_from_tour"
         const val KEY_GOAL = "goal"
         const val KEY_AGE = "age"
         const val KEY_PREGNANT = "pregnant"

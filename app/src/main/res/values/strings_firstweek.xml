@@ -3,6 +3,7 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">Step %1$d of %2$d</string>
+    <string name="onb_open_tour">How it works</string>
     <string name="onb_skip">Skip</string>
     <string name="onb_back">Back</string>
 

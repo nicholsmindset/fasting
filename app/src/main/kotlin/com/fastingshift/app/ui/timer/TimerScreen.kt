@@ -1,13 +1,10 @@
 package com.fastingshift.app.ui.timer
 
-import android.Manifest
 import android.app.AlarmManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -119,15 +116,6 @@ fun TimerRoute(
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    // Notification permission is requested in context: when the user starts a fast.
-    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val onStart = {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        viewModel.start()
-    }
-
     Box(Modifier.fillMaxSize()) {
         val state = loaded
         if (state == null) {
@@ -136,7 +124,7 @@ fun TimerRoute(
             TimerScreen(
                 state = state,
                 actions = TimerActions(
-                    onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = onStart, onEnd = viewModel::end,
+                    onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = { viewModel.start() }, onEnd = viewModel::end,
                     onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
                     onOpenProgram = onOpenProgram, onSetMode = viewModel::setMode, onOpenScreening = onOpenScreening,
                     onStartAt = viewModel::setStartAt, onWater = { viewModel.addWater() },

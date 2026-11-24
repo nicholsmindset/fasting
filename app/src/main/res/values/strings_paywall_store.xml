@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shift_review_title">Your four-week schedule review</string>
+    <string name="shift_review_description">See which planned days you completed, which starts you moved or skipped, and how you answered your weekly reflections.</string>
+    <string name="shift_open_review">Open my review</string>
+    <string name="shift_example_review">See an example review</string>
+    <string name="shift_billing_off">Purchases are unavailable in this build. You can explore the example and keep using the free app.</string>
+    <string name="shift_no_offers">Google Play has no Shift+ plans available for this account right now.</string>
+    <string name="shift_load_failed">Couldn’t load plans from Google Play. Check your connection and try again.</string>
+    <string name="shift_retry_plans">Reload plans</string>
+    <string name="shift_continue_play">Continue to Google Play</string>
+    <string name="shift_opening_play">Waiting for Google Play…</string>
+    <string name="shift_restoring">Restoring purchases…</string>
+    <string name="shift_purchase_active">Shift+ is active. Your review is ready.</string>
+    <string name="shift_purchase_pending">Payment is pending in Google Play. Shift+ unlocks when the payment is confirmed.</string>
+    <string name="shift_purchase_unconfirmed">Google Play completed the purchase, but Shift+ access has not been confirmed. Use Restore purchases to check again.</string>
+    <string name="shift_purchase_failed">Google Play couldn’t complete the purchase. Try again or restore an existing purchase.</string>
+    <string name="shift_restore_empty">No active Shift+ purchase was found for this Google Play account.</string>
+    <string name="shift_restore_failed">Couldn’t restore purchases. Check your Google Play account and connection, then try again.</string>
+    <string name="shift_transaction_busy">Another Google Play request is in progress.</string>
+    <string name="shift_free_features">Timer, My week, History, reminders, exports and safety tools are free.</string>
+    <string name="shift_price_once">%1$s · one-time payment</string>
+    <string name="shift_price_confirm">%1$s · see billing terms in Google Play</string>
+    <string name="shift_intro_recurring">%1$s every %2$s for %3$s</string>
+    <string name="shift_price_period">%1$s for %2$s</string>
+    <string name="shift_recurring">%1$s every %2$s. Renews until cancelled in Google Play.</string>
+    <string name="shift_prepaid">%1$s for %2$s. Does not renew automatically.</string>
+    <string name="shift_commitment">Initial payment commitment: %1$d</string>
+    <string name="shift_renewal_commitment">Payments per renewal commitment: %1$d</string>
+    <string name="shift_already_owned">Google Play already has this purchase. Restore purchases to check access.</string>
+</resources>
