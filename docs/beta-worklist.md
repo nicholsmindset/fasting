@@ -11,6 +11,8 @@ The question for this beta is whether people can manage a real change of plan on
 | Settings | My week and Appearance open directly. Related settings have their own pages. The whole switch row responds to a tap, the current choice is visible, and Back returns to the overview. |
 | Shift+ | The free example uses labeled fictional records. The personal review covers the last four **finished** Monday–Sunday weeks, including planned days completed, moved starts, skipped dates and optional weekly reflections. It links back to My week. A book sample is available. |
 
+The [staging APK](https://github.com/nicholsmindset/fasting/actions/runs/45466145864/artifacts/14954214093) uses this redesign. Its [Android build](https://github.com/nicholsmindset/fasting/actions/runs/45466145864) passed all 392 executed tests, with 22 cases skipped in the unit-test step. Android lint reported zero errors and 46 warnings. Screenshots ran in a separate step. The [Android 15 signed upgrade](https://github.com/nicholsmindset/fasting/actions/runs/45466145626/job/138701453408) preserved the running target and history. In the [locked-phone check](https://github.com/nicholsmindset/fasting/actions/runs/45467614605/job/138706659590), the emulator posted the moved reminder at 19:18 UTC, skipped the replaced 19:17 alarm and scheduled the following day at 19:17.
+
 [Candidate changes and automated checks](https://github.com/nicholsmindset/fasting/pull/14) · [Design findings and sources](layout-review.md)
 
 ## 1. Watch five people use the app
