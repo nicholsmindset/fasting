@@ -43,6 +43,8 @@ class Screen:
         if node.wait(timeout=2 if scroll else 20):
             return node
         if scroll:
+            if not self.device(packageName=PACKAGE).wait(timeout=15):
+                raise AssertionError(f"Fasting Shift did not reach the foreground while looking for {label}")
             for direction in ("up", "down"):
                 for _ in range(10):
                     self.device.swipe_ext(direction, scale=0.65)
@@ -331,8 +333,9 @@ def main(device, old_apk, new_apk):
     # Package manager enforces package identity and signing certificate continuity.
     adb("install", "-r", new_apk)
     assert installed_version() == 101, "Replacement version was not installed"
-    device.app_start(PACKAGE, activity=ACTIVITY)
+    device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
     candidate = Screen(device, Path("."))
+    candidate.find("tab_timer")
     candidate.find("timer_end", scroll=True)
     after = fingerprint(candidate.export_backup("upgrade-after.json")["fasts"])
     if before != after:
@@ -350,6 +353,9 @@ if __name__ == "__main__":
     except Exception:
         DIAGNOSTICS.mkdir(exist_ok=True)
         (DIAGNOSTICS / "logcat.txt").write_text(adb("logcat", "-d", "-t", "1200"))
+        crash = adb("logcat", "-b", "crash", "-d", "-t", "180")
+        if PACKAGE in crash:
+            print(crash)
         hierarchy = device.dump_hierarchy()
         (DIAGNOSTICS / "screen.xml").write_text(hierarchy)
         for node in ET.fromstring(hierarchy).iter("node"):

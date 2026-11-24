@@ -1,10 +1,13 @@
 package com.fastingshift.data
 
+import android.database.sqlite.SQLiteConstraintException
+import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.fastingshift.data.db.FastingDatabase
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,19 +19,34 @@ import org.robolectric.annotation.Config
 class MigrationTest {
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), FastingDatabase::class.java)
 
-    @Test fun v4ToV5KeepsAnExistingEnrollmentOnItsOriginalSchedule() {
-        helper.createDatabase("friend-plan-migration", 4).use { db ->
+    @Test fun v4ToV5KeepsTheRunningTimerItsConstraintAndAnExistingEnrollment() {
+        val name = "friend-plan-migration"
+        val active = "INSERT INTO fast(start_at,target_end_at,protocol_id,status) VALUES (1000,2000,'window_16_8','ACTIVE')"
+        helper.createDatabase(name, 4).use { db ->
+            FastingDatabase.Constraints.onCreate(db)
+            db.execSQL(active)
             db.execSQL(
                 "INSERT INTO challenge(id,type,protocol_id,start_date,length_days,name,joined_at) " +
                     "VALUES (7,'DAILY_PROTOCOL','window_16_8','2026-11-23',7,'My family',1000)",
             )
         }
-        helper.runMigrationsAndValidate("friend-plan-migration", 5, true).use { db ->
+        val room = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, FastingDatabase::class.java, name)
+            .addCallback(FastingDatabase.Constraints).allowMainThreadQueries().build()
+        try {
+            val db = room.openHelper.writableDatabase
             db.query("SELECT name, follows_own_plan FROM challenge WHERE id = 7").use { c ->
                 assertEquals(true, c.moveToFirst())
                 assertEquals("My family", c.getString(0))
                 assertEquals(0, c.getInt(1))
             }
+            db.query("SELECT start_at, target_end_at FROM fast WHERE ended_at IS NULL").use { c ->
+                assertEquals(true, c.moveToFirst())
+                assertEquals(1000L, c.getLong(0))
+                assertEquals(2000L, c.getLong(1))
+            }
+            assertFailsWith<SQLiteConstraintException> { db.execSQL(active) }
+        } finally {
+            room.close()
         }
     }
 
