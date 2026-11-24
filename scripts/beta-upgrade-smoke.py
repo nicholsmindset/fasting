@@ -250,16 +250,18 @@ class Screen:
 
         def open_selected_day():
             self.device.app_stop(PACKAGE)
-            self.device.app_start(PACKAGE, activity=ACTIVITY)
-            self.click("tab_history")
+            self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+            # Wait for the freshly loaded Timer, then activate the navigation item itself.
+            # A text match for "History" can also be the title on the previous screen.
+            self.find("timer_start")
+            self.device(resourceId="tab_history", packageName=PACKAGE).click(timeout=15)
+            if not self.device(resourceId="history-list", packageName=PACKAGE).wait(timeout=15):
+                raise AssertionError("The History tab did not open from Timer")
             shown = date.fromisoformat(adb("shell", "date", "+%F"))
             if (selected.year, selected.month) != (shown.year, shown.month):
                 previous = self.device(description=self.strings["a11y_prev_month"], packageName=PACKAGE)
                 self.find_node(previous, "Previous month", scroll=True).click()
-            # Calendar cells announce localized long dates; use English date parts rather
-            # than a day number which also appears in adjacent rows and summary metrics.
-            pattern = rf"(?i)(?=.*\b{selected:%B}\b)(?=.*\b{selected.day}\b)(?=.*\b{selected.year}\b).*"
-            cell = self.device(descriptionMatches=pattern, packageName=PACKAGE)
+            cell = self.device(resourceId=f"history-day-{selected}", packageName=PACKAGE)
             self.find_node(cell, selected.isoformat(), scroll=True).click(offset=(0.5, 0.2))
 
         open_selected_day()

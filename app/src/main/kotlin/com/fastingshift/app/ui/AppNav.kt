@@ -22,7 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
@@ -101,6 +105,7 @@ private val tabs = listOf(
     Tab(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
 )
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit, nav: NavHostController = rememberNavController()) {
     // Changing the graph when screening completes would reset its back stack during navigation.
@@ -125,6 +130,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
     val toTimer: () -> Unit = { if (!nav.popBackStack(Routes.TIMER, inclusive = false)) nav.navigate(Routes.TIMER) }
 
     Scaffold(
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (tabs.any { it.route == current }) {
@@ -134,6 +140,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.94f), tonalElevation = 0.dp) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
+                            modifier = Modifier.testTag("tab_${tab.route}"),
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
