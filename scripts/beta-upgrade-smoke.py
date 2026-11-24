@@ -140,10 +140,21 @@ class Screen:
         picker = {"packageNameMatches": ".*documentsui"}
         # On a fresh install OpenDocument often starts in Recent. Select the same
         # Downloads root explicitly in both CreateDocument and OpenDocument.
-        if self.device(text="Downloads", resourceIdMatches=".*:id/toolbar_title", **picker).exists:
-            return
-        self.device(descriptionMatches="(?i)(show roots|open navigation drawer|show navigation drawer)", **picker).click(timeout=10)
-        self.device(text="Downloads", **picker).click(timeout=10)
+        files = self.device(text="Files in Downloads", **picker)
+        drawer = self.device(textMatches="(?i)Open from|Save to", **picker)
+        if not drawer.exists:
+            if files.exists or self.device(text="Downloads", resourceIdMatches=".*:id/toolbar_title", **picker).exists:
+                return
+            self.device(descriptionMatches="(?i)(show roots|open navigation drawer|show navigation drawer)", **picker).click(timeout=10)
+        # The drawer is drawn after the toolbar and breadcrumb. Both can have
+        # the same Downloads label behind it, especially on a fresh install.
+        choices = self.device(text="Downloads", **picker)
+        if not choices.wait(timeout=10):
+            raise AssertionError("Downloads root missing from the Android picker")
+        choices[choices.count - 1].click()
+        if not drawer.wait_gone(timeout=10):
+            raise AssertionError("Android picker navigation drawer remained open")
+
 
     def export_backup(self, name, downloads=False):
         self.open_settings()
