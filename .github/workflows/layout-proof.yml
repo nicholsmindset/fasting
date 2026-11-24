@@ -1,0 +1,41 @@
+name: Inspect Fasting Shift layouts
+on:
+  push:
+    branches:
+      - codex/fasting-layout-proof
+permissions:
+  contents: read
+  actions: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Capture fixed-clock app screens
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
+        run: ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.MoatsCaptureTest.dailyLayout*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-review-originals
+          path: app/build/moats-captures/en/layout-*.png
+          if-no-files-found: error
+      - name: Encode synthetic review images
+        run: |
+          python -c 'import PIL' || python -m pip install Pillow
+          python scripts/layout-proof.py app/build/moats-captures/en

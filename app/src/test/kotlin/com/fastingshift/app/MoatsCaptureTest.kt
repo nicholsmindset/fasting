@@ -43,6 +43,7 @@ import com.fastingshift.domain.model.MetricUnit
 import com.fastingshift.domain.ramadan.PrayerMethod
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
@@ -156,6 +157,46 @@ class MoatsCaptureTest {
         captureScreenRoboImage(file.absolutePath)
         check(file.length() > 0) { "Missing screenshot: $file" }
         return file
+    }
+
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
+    @Test fun dailyLayoutLight() = dailyLayout("light")
+
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-night-xxhdpi")
+    @Test fun dailyLayoutDark() = dailyLayout("dark")
+
+    /** Render the same real destinations with exactly the same records, clock and viewport. */
+    private fun dailyLayout(mode: String) {
+        runBlocking {
+            // Leave enough time after the previous fast for both the idle and active fixtures.
+            fasts.delete(fasts.getAll().maxBy { it.startAt }.id)
+            settings.recordSchedule(today.minusDays(14), PlanHistory.EVERY_DAY)
+        }
+        waitFor(s(R.string.daily_header_ready))
+        waitFor(s(R.string.timer_start))
+        shoot("layout-ready-$mode")
+
+        runBlocking {
+            val start = moatsNow.minus(Duration.ofHours(13)).minus(Duration.ofMinutes(40))
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8"))
+        }
+        waitFor(s(R.string.timer_end))
+        shoot("layout-active-$mode")
+
+        compose.onNodeWithTag("tab_history").performClick()
+        click(s(R.string.history_period_month))
+        compose.waitUntil(20_000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasContentDescription(s(R.string.history_fasted_month), substring = true))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        shoot("layout-history-$mode")
+
+        compose.onNodeWithTag("tab_log").performClick()
+        waitFor(s(R.string.log_water))
+        shoot("layout-log-$mode")
+        compose.onNodeWithTag("tab_settings").performClick()
+        waitFor(s(R.string.appearance_title))
+        shoot("layout-settings-$mode")
     }
 
     @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
