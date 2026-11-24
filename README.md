@@ -89,6 +89,9 @@ In the GitHub environment `internal-beta`, configure a dedicated test keystore a
 
 ### Before launch (not code)
 
+Step-by-step browser prompts for Vercel, Play Console, RevenueCat, GitHub and Google Ads:
+`docs/launch/codex-browser-setup.md`.
+
 - [ ] Clinician review of all safety copy (`strings*.xml`) and thresholds (`domain/safety`)
 - [ ] Legal review of claims, disclaimers and `docs/privacy-policy.md`
 - [ ] Publish the privacy policy at https://fastingshift.com/privacy
