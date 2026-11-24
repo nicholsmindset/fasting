@@ -2,9 +2,9 @@ package com.fastingshift.app.ui.settings
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,6 +19,9 @@ import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.SwitchGroupRow
+import com.fastingshift.app.ui.onboarding.CheckGroupRow
+import com.fastingshift.app.ui.ramadan.GroupedSheet
+import com.fastingshift.app.ui.ramadan.RadioChoiceRow
 import com.fastingshift.data.settings.AppSettings
 import com.fastingshift.domain.ramadan.SunnahType
 
@@ -39,12 +42,12 @@ internal fun SunnahSettingsGroup(s: AppSettings, vm: SettingsViewModel, onOpenHu
             GroupRow(
                 stringResource(R.string.sunnah_days),
                 subtitle = s.sunnahTypes.sortedBy { it.ordinal }.map { stringResource(typeTitle(it)) }.joinToString(" · "),
-                showChevron = true, onClick = { choosingDays = true },
+                showChevron = true, opensPicker = true, onClick = { choosingDays = true },
             )
         }
         GroupDivider()
         GroupRow(stringResource(R.string.sunnah_offset), value = offsetLabel(s.hijriOffsetDays),
-            showChevron = true, onClick = { choosingOffset = true })
+            showChevron = true, opensPicker = true, onClick = { choosingOffset = true })
         GroupDivider()
         GroupRow(stringResource(R.string.muslim_hub_entry), showChevron = true, onClick = onOpenHub)
     }
@@ -56,7 +59,7 @@ internal fun SunnahSettingsGroup(s: AppSettings, vm: SettingsViewModel, onOpenHu
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     SunnahType.entries.forEach { type ->
-                        SwitchGroupRow(stringResource(typeTitle(type)), type.name in draft, { enabled ->
+                        CheckGroupRow(stringResource(typeTitle(type)), type.name in draft, { enabled ->
                             draft = ArrayList(if (enabled) draft + type.name else draft - type.name)
                         })
                     }
@@ -78,22 +81,21 @@ internal fun SunnahSettingsGroup(s: AppSettings, vm: SettingsViewModel, onOpenHu
         )
     }
     if (choosingOffset) {
-        AlertDialog(
-            onDismissRequest = { choosingOffset = false },
-            title = { Text(stringResource(R.string.sunnah_offset)) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(stringResource(R.string.sunnah_offset_hint))
-                    (-2..2).forEach { days ->
-                        FilterChip(selected = days == s.hijriOffsetDays, onClick = {
-                            vm.set { setHijriOffsetDays(days) }
-                            choosingOffset = false
-                        }, label = { Text(offsetLabel(days)) })
-                    }
+        GroupedSheet(
+            title = stringResource(R.string.sunnah_offset),
+            onDismiss = { choosingOffset = false },
+            dismissLabel = R.string.qada_cancel,
+        ) {
+            InsetGroup(modifier = Modifier.selectableGroup(), footer = stringResource(R.string.sunnah_offset_hint)) {
+                for (days in -2..2) {
+                    if (days > -2) GroupDivider()
+                    RadioChoiceRow(offsetLabel(days), selected = days == s.hijriOffsetDays, onClick = {
+                        vm.set { setHijriOffsetDays(days) }
+                        choosingOffset = false
+                    })
                 }
-            },
-            confirmButton = { TextButton(onClick = { choosingOffset = false }) { Text(stringResource(R.string.qada_cancel)) } },
-        )
+            }
+        }
     }
 }
 

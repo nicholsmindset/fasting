@@ -61,7 +61,8 @@
     <string name="settings_eating_window_subtitle">After long fasts</string>
     <string name="settings_schedules_title">@string/week_title</string>
     <string name="settings_schedules_subtitle">Plan your usual days or change a single date</string>
-    <string name="settings_data_footer">Restoring a backup replaces your current records. Full backups and ZIP exports contain sensitive records in readable files. Choose a storage location you trust.</string>
+    <string name="settings_data_footer">Full backups and ZIP exports contain sensitive records in readable files. Choose a storage location you trust.</string>
+    <string name="settings_restore_summary">Restoring a backup replaces your current records.</string>
     <string name="settings_language">Language</string>
     <string name="settings_app_language">App language</string>
     <string name="settings_language_system">System default</string>

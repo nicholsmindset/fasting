@@ -60,11 +60,11 @@ jobs:
         env:
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: |
-          rm -f docs/screenshots/{2-history,2a-recent,2b-calendar,4-settings,4a-reminders}-{light,dark}.png
+          rm -f docs/screenshots/{2-history,2a-recent,2b-calendar,4-settings,4a-reminders,4b-milestone-picker}-{light,dark}.png
           ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.StoreScreenshotTest' --tests '*MoatsCaptureTest'
           mkdir -p app/build/moats-captures/{history,settings}
           cp docs/screenshots/{2-history,2a-recent,2b-calendar}-{light,dark}.png app/build/moats-captures/history/
-          cp docs/screenshots/{4-settings,4a-reminders}-{light,dark}.png app/build/moats-captures/settings/
+          cp docs/screenshots/{4-settings,4a-reminders,4b-milestone-picker}-{light,dark}.png app/build/moats-captures/settings/
 
       - name: Upload moats screenshots
         if: success() && github.event_name == 'pull_request'

@@ -285,10 +285,14 @@ internal fun SettingsRoute(
                         ActionRow(stringResource(R.string.settings_export)) { exportLauncher.launch("fasting-shift-export.zip") }
                         GroupDivider()
                         ActionRow(stringResource(R.string.settings_backup)) { backupLauncher.launch("fasting-shift-backup.json") }
-                        GroupDivider()
-                        ActionRow(stringResource(R.string.settings_restore)) {
-                            restoreLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
-                        }
+                    }
+                    InsetGroup {
+                        GroupRow(
+                            stringResource(R.string.settings_restore),
+                            subtitle = stringResource(R.string.settings_restore_summary),
+                            titleColor = MaterialTheme.colorScheme.error,
+                            onClick = { restoreLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) },
+                        )
                     }
                 }
                 SettingsSection.SAFETY -> {

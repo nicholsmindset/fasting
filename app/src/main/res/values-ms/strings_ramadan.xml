@@ -61,7 +61,8 @@
     <string name="settings_eating_window_subtitle">Selepas puasa panjang</string>
     <string name="settings_schedules_title">@string/week_title</string>
     <string name="settings_schedules_subtitle">Rancang rutin mingguan atau ubah satu hari sahaja</string>
-    <string name="settings_data_footer">Memulihkan sandaran akan menggantikan rekod semasa anda. Sandaran penuh dan eksport ZIP mengandungi rekod sensitif dalam fail yang boleh dibaca. Pilih lokasi simpanan yang anda percayai.</string>
+    <string name="settings_data_footer">Sandaran penuh dan eksport ZIP mengandungi rekod sensitif dalam fail yang boleh dibaca. Pilih lokasi simpanan yang anda percayai.</string>
+    <string name="settings_restore_summary">Memulihkan sandaran akan menggantikan rekod semasa anda.</string>
     <string name="settings_language">Bahasa</string>
     <string name="settings_app_language">Bahasa apl</string>
     <string name="settings_language_system">Lalai sistem</string>

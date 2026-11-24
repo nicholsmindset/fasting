@@ -1,5 +1,7 @@
 package com.fastingshift.app.ui.ramadan
 
+import androidx.annotation.StringRes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -62,6 +64,7 @@ fun GroupedSheet(
     onDismiss: () -> Unit,
     fullHeight: Boolean = false,
     scrollable: Boolean = true,
+    @StringRes dismissLabel: Int = R.string.settings_done,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -75,7 +78,7 @@ fun GroupedSheet(
         ) {
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).semantics { heading() })
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_done)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(dismissLabel)) }
             }
             Column(
                 Modifier.fillMaxWidth()

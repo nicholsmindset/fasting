@@ -60,7 +60,8 @@
     <string name="settings_eating_window_subtitle">Setelah puasa panjang</string>
     <string name="settings_schedules_title">@string/week_title</string>
     <string name="settings_schedules_subtitle">Atur rutinitas mingguan atau ubah satu hari saja</string>
-    <string name="settings_data_footer">Memulihkan cadangan akan mengganti catatan Anda saat ini. Cadangan lengkap dan ekspor ZIP berisi catatan sensitif dalam file yang dapat dibaca. Pilih lokasi penyimpanan tepercaya.</string>
+    <string name="settings_data_footer">Cadangan lengkap dan ekspor ZIP berisi catatan sensitif dalam file yang dapat dibaca. Pilih lokasi penyimpanan tepercaya.</string>
+    <string name="settings_restore_summary">Memulihkan cadangan akan mengganti catatan Anda saat ini.</string>
     <string name="settings_language">Bahasa</string>
     <string name="settings_app_language">Bahasa aplikasi</string>
     <string name="settings_language_system">Default sistem</string>

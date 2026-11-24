@@ -195,6 +195,11 @@ class StoreScreenshotTest {
         openReminders()
         waitForState(endReminder and isOn())
         shoot("4a-reminders", mode)
+        compose.onNode(hasText(s(R.string.settings_milestones)) and hasClickAction()).performScrollTo().performClick()
+        val checkBox = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+        compose.waitUntil(15_000) { compose.onAllNodes(checkBox and isOn()).fetchSemanticsNodes().size == 2 }
+        shoot("4b-milestone-picker", mode)
+        compose.onNodeWithText(s(R.string.settings_done)).performClick()
         compose.onNode(endReminder).performScrollTo().assertIsDisplayed().performClick()
         waitForState(endReminder and isOff())
         backToOverview()
