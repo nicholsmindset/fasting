@@ -85,7 +85,8 @@ internal fun SettingsOverview(
         }
         InsetGroup(header = stringResource(R.string.settings_group_app)) {
             GroupRow(
-                stringResource(R.string.appearance_title), value = stringResource(appearanceLabel(appearance)),
+                stringResource(R.string.appearance_title), modifier = Modifier.testTag("settings_open_appearance"),
+                value = stringResource(appearanceLabel(appearance)),
                 showChevron = true, opensPicker = true, onClick = onAppearance,
             )
             GroupDivider()

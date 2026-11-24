@@ -197,9 +197,10 @@ class Screen:
     def verify_appearance(self, original_fasts):
         def choose(key):
             self.open_settings()
-            title = self.strings["appearance_title"]
-            self.find_node(self.device(textContains=title, packageName=PACKAGE), title, scroll=True).click()
-            self.click(key)
+            # The section "Appearance and language" and its Appearance row are both
+            # visible on larger screens. Only the tagged row opens the choices.
+            self.open_settings_category("settings_open_appearance")
+            self.click(key, scroll=True)
 
         def expect_palette(dark):
             # Sample the app content, excluding system bars. Both Timer and Settings
