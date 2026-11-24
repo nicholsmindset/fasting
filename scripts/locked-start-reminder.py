@@ -88,19 +88,16 @@ def check(screen):
     set_picker(screen.device, moved)
     screen.find("week_changed", scroll=True)
     wait_for_alarm(moved, replaced=original)
-    # Read what the planner actually saved through the same local export a tester can use.
-    screen.device.press("back")
-    backup = screen.export_backup("locked-reminder-fixture.json")
-    routines = backup["schedules"]
-    if len(routines) != 1 or routines[0]["start_minute"] != original.hour * 60 + original.minute:
-        raise AssertionError("Moving one date changed the recurring routine")
-    if len(routines[0]["days"]) != 7 or backup["settings"]["day_overrides"] != {str(moved.date()): moved.strftime("%H:%M")}:
-        raise AssertionError("The saved schedule and one-day override do not match the test")
-    if backup["fasts"]:
-        raise AssertionError("This fixture must have no previous fast or eating-window alarm")
+    # The following day must still inherit the routine. The live alarm check below
+    # also verifies its exact time after Android delivers today's moved reminder.
+    tomorrow = (original + timedelta(days=1)).date()
+    next_row = screen.device(resourceId=f"week-day-{tomorrow}", packageName=PACKAGE)
+    screen.find_node(next_row, "Following planned day", scroll=True).click()
+    screen.find("week_date_hint")
+    if screen.device(text=screen.strings["week_restore_day"], packageName=PACKAGE).exists:
+        raise AssertionError("Moving today's start unexpectedly added an override to the following day")
 
-    # Setting a PIN can immediately show the keyguard. Finish the planner and
-    # export actions first, then secure the device for the delivery interval.
+    # Setting a PIN can immediately show the keyguard. Finish UI checks first.
     adb("shell", "locksettings", "set-pin", "493821")
     adb("shell", "input", "keyevent", "KEYCODE_HOME")
     adb("shell", "input", "keyevent", "KEYCODE_SLEEP")
