@@ -1,0 +1,28 @@
+name: Inspect tab label failure
+on:
+  push:
+    branches: [codex/fasting-tab-diagnostics]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 45463593378
+          name: reports
+          path: captured
+      - name: Read failed tab assertion
+        run: |
+          python3 - <<'PY'
+          import html, re
+          from pathlib import Path
+          (p,)=Path('captured').rglob('*BottomTabsTest*.html')
+          s=p.read_text()
+          for text in re.findall(r'<pre[^>]*>(.*?)</pre>',s,re.S):
+              if 'AssertionError' in text:
+                  print('TAB-FAIL',html.unescape(re.sub(r'<[^>]*>','',text))[:2800])
+          PY
