@@ -99,6 +99,9 @@ def check(screen):
     if backup["fasts"]:
         raise AssertionError("This fixture must have no previous fast or eating-window alarm")
 
+    # Setting a PIN can immediately show the keyguard. Finish the planner and
+    # export actions first, then secure the device for the delivery interval.
+    adb("shell", "locksettings", "set-pin", "493821")
     adb("shell", "input", "keyevent", "KEYCODE_HOME")
     adb("shell", "input", "keyevent", "KEYCODE_SLEEP")
     for _ in range(12):
@@ -140,8 +143,8 @@ def main():
     adb("shell", "settings", "put", "system", "time_12_24", "24")
     adb("shell", "settings", "put", "secure", "show_ime_with_hard_keyboard", "0")
     adb("shell", "settings", "put", "secure", "lock_screen_lock_after_timeout", "0")
+    adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     adb("shell", "wm", "dismiss-keyguard")
-    adb("shell", "locksettings", "set-pin", "493821")
     adb("install", sys.argv[1])
     # Exercise Android's exact-alarm-permitted delivery path only on this test device.
     adb("shell", "appops", "set", PACKAGE, "SCHEDULE_EXACT_ALARM", "allow")

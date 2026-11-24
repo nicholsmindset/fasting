@@ -322,8 +322,21 @@ class Screen:
                 raise AssertionError(f"Invite intent did not resolve: {result}")
 
         def check_title():
-            if not self.device(text=name, packageName=PACKAGE).wait(timeout=20):
-                raise AssertionError(f"Missing challenge title: {name}")
+            # Compose replaces its accessibility nodes as the join card gives way
+            # to the detail toolbar. Read a fresh visible hierarchy on each poll.
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                for node in ET.fromstring(self.device.dump_hierarchy()).iter("node"):
+                    attrs = node.attrib
+                    if attrs.get("package") != PACKAGE or name not in (attrs.get("text"), attrs.get("content-desc")):
+                        continue
+                    bounds = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", attrs.get("bounds", ""))
+                    if bounds and attrs.get("visible-to-user") != "false":
+                        left, top, right, bottom = map(int, bounds.groups())
+                        if right > left and bottom > top:
+                            return
+                time.sleep(0.25)
+            raise AssertionError(f"Missing visible challenge title: {name}")
 
         open_invite()
         self.onboard("challenge_join_title", allow_notifications=False)
