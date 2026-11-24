@@ -19,6 +19,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -36,12 +37,15 @@ import com.fastingshift.app.ui.Routes
 import com.fastingshift.app.ui.theme.FastingShiftTheme
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], application = Application::class, qualifiers = "en-rSG-w320dp-h720dp")
 class BottomTabsTest {
     @get:Rule val compose = createComposeRule()
@@ -61,14 +65,27 @@ class BottomTabsTest {
         for ((route, resource) in tabs) {
             val label = app.getString(resource)
             val tag = "tab_$route"
-            compose.onNodeWithTag(tag).assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
+            val tab = compose.onNodeWithTag(tag)
+            tab.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
                 .assert(hasText(label)).assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
                 .assertIsDisplayed().performClick().assertIsSelected()
             val results = mutableListOf<TextLayoutResult>()
-            compose.onNode(hasText(label) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true)
-                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(results) }
-            assertEquals(1, results.single().lineCount, label)
-            assertFalse(results.single().hasVisualOverflow, label)
+            val text = compose.onNode(hasText(label) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true)
+            text.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(results) }
+            val layout = results.single()
+            assertEquals(1, layout.lineCount, label)
+            assertFalse(layout.isLineEllipsized(0), label)
+            assertEquals(label.length, layout.getLineEnd(0, visibleEnd = true), label)
+            // The accessibility query rebuilds the paragraph at the tab's available width.
+            // Measure the actual line, which can be narrower than that paragraph.
+            val lineWidth = layout.getLineRight(0) - layout.getLineLeft(0)
+            val lineHeight = layout.getLineBottom(0) - layout.getLineTop(0)
+            assertTrue(lineWidth <= layout.size.width + 1f, "$label width $lineWidth in ${layout.size}")
+            assertTrue(lineHeight <= layout.size.height + 1f, "$label height $lineHeight in ${layout.size}")
+            val labelBounds = text.getUnclippedBoundsInRoot()
+            val tabBounds = tab.getUnclippedBoundsInRoot()
+            assertTrue(labelBounds.left >= tabBounds.left && labelBounds.right <= tabBounds.right &&
+                labelBounds.top >= tabBounds.top && labelBounds.bottom <= tabBounds.bottom, "$label at $labelBounds in $tabBounds")
         }
     }
 }

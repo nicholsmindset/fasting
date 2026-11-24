@@ -4,25 +4,38 @@ on:
     branches: [codex/fasting-tab-diagnostics]
 permissions:
   contents: read
-  actions: read
 jobs:
   inspect:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          github-token: ${{ github.token }}
-          run-id: 45463593378
-          name: reports
-          path: captured
-      - name: Read failed tab assertion
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Verify actual glyphs and hit targets at double font scale
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
+        run: ./gradlew :app:testDebugUnitTest --tests '*.BottomTabsTest'
+      - name: Output tab regression result
+        if: always()
         run: |
           python3 - <<'PY'
-          import html, re
+          import xml.etree.ElementTree as ET
           from pathlib import Path
-          (p,)=Path('captured').rglob('*BottomTabsTest*.html')
-          s=p.read_text()
-          for text in re.findall(r'<pre[^>]*>(.*?)</pre>',s,re.S):
-              if 'AssertionError' in text:
-                  print('TAB-FAIL',html.unescape(re.sub(r'<[^>]*>','',text))[:2800])
+          reports=list(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*BottomTabsTest.xml'))
+          assert len(reports)==1
+          suite=ET.parse(reports[0]).getroot()
+          print("TAB-RESULT",suite.attrib)
+          for failure in suite.iter('failure'):
+              print('TAB-FAIL',failure.get('message'),(failure.text or '')[:1500])
           PY
