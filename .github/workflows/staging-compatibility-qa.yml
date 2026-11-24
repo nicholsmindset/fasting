@@ -1,0 +1,39 @@
+name: Compare downloadable staging APKs
+on:
+  push:
+    branches: [codex/staging-apk-compatibility-nov25]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '14939255464'
+          run-id: 45426876881
+          github-token: ${{ github.token }}
+          path: previous
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '14954214093'
+          run-id: 45466145864
+          github-token: ${{ github.token }}
+          path: redesign
+      - name: Inspect the release manifests and public signers
+        shell: bash
+        run: |
+          set -euo pipefail
+          buildtools=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          for version in previous redesign; do
+            mapfile -t apks < <(find "$version" -type f -name '*.apk')
+            test "${#apks[@]}" -eq 1
+            echo "$version"
+            "$buildtools/aapt" dump badging "${apks[0]}" > "$version.manifest"
+            head -n1 "$version.manifest"
+            "$buildtools/apksigner" verify --print-certs "${apks[0]}" > "$version.signers"
+            grep -F 'certificate SHA-256 digest:' "$version.signers" | tee "$version.sha256"
+          done
+          if cmp -s previous.sha256 redesign.sha256; then echo "STAGING_SIGNER_MATCH"; else echo "STAGING_SIGNER_DIFFERENT"; fi
