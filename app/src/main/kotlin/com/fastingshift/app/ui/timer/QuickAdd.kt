@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.theme.pickerDialogTheme
+import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.weightUnitLabel
 import com.fastingshift.domain.model.Electrolyte
 import com.fastingshift.domain.model.WeightUnit
@@ -175,18 +176,20 @@ fun electrolyteLabel(e: Electrolyte) = when (e) {
 /** "Started earlier?": pick today or yesterday, then a time. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun StartEarlierDialog(initial: Instant?, onDismiss: () -> Unit, onPick: (Instant) -> Unit) {
+fun StartEarlierDialog(initial: Instant?, now: Instant, onDismiss: () -> Unit, onPick: (Instant) -> Unit,
+    zone: ZoneId = ZoneId.systemDefault()) {
     val context = LocalContext.current
     val pickerTheme = pickerDialogTheme()
-    val zone = ZoneId.systemDefault()
-    val today = LocalDate.now(zone)
-    val start = initial?.atZone(zone)
-    var yesterday by rememberSaveable { mutableStateOf(start != null && start.toLocalDate() != today) }
-    var minutes by rememberSaveable {
-        mutableStateOf(start?.toLocalTime()?.let { it.hour * 60 + it.minute } ?: LocalTime.now(zone).minusHours(1).let { it.hour * 60 + it.minute })
-    }
+    val format = rememberWeekFormat()
+    val today = now.atZone(zone).toLocalDate()
+    val seedMillis = rememberSaveable(initial) { (initial ?: now.minusSeconds(3600)).toEpochMilli() }
+    val seed = Instant.ofEpochMilli(seedMillis).atZone(zone)
+    var day by rememberSaveable { mutableStateOf(seed.toLocalDate().toEpochDay()) }
+    var minutes by rememberSaveable { mutableStateOf(seed.hour * 60 + seed.minute) }
     val time = LocalTime.of(minutes / 60, minutes % 60)
-    val picked = (if (yesterday) today.minusDays(1) else today).atTime(time).atZone(zone).toInstant()
+    val local = LocalDate.ofEpochDay(day).atTime(time)
+    val picked = java.time.ZonedDateTime.ofLocal(local, zone, seed.offset)
+    val valid = picked.toLocalDateTime() == local && !picked.toInstant().isAfter(now)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.timer_start_earlier_title)) },
@@ -194,18 +197,19 @@ fun StartEarlierDialog(initial: Instant?, onDismiss: () -> Unit, onPick: (Instan
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SegmentedControl(
                     listOf(stringResource(R.string.today), stringResource(R.string.yesterday)),
-                    if (yesterday) 1 else 0,
-                    { yesterday = it == 1 },
+                    if (day == today.toEpochDay()) 0 else 1,
+                    { day = today.minusDays(it.toLong()).toEpochDay() },
                 )
                 SecondaryButton(
-                    java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(time),
+                    format.time.format(time),
                     onClick = {
                         TimePickerDialog(context, pickerTheme, { _, h, m -> minutes = h * 60 + m }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
                     },
                 )
+                if (!valid) Text(stringResource(R.string.plan_past_time), color = MaterialTheme.colorScheme.error)
             }
         },
-        confirmButton = { TextButton(onClick = { onPick(picked) }) { Text(stringResource(R.string.ok)) } },
+        confirmButton = { TextButton(enabled = valid, onClick = { onPick(picked.toInstant()) }) { Text(stringResource(R.string.ok)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

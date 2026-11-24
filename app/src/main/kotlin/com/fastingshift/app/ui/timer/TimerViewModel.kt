@@ -93,7 +93,9 @@ data class TimerUiState(
     val today: TodaySummary = TodaySummary(),
     val plannedStart: Instant? = null,
     val startReminder: Instant? = null,
-)
+) {
+    val selectedTargetEnd: Instant get() = (startAt ?: now).plus(Duration.ofHours(selected.fastHours.toLong()))
+}
 
 private data class DailyInputs(
     val waterMl: Double,

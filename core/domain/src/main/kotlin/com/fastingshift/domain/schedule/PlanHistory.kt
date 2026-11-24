@@ -33,9 +33,11 @@ data class PlanHistory(
     fun isBreak(day: LocalDate): Boolean = History.weekStart(day) in breakWeeks
 
     /** Unknown history has no denominator. A week off also has no planned days. */
-    fun isPlanned(day: LocalDate): Boolean {
+    fun isPlanned(day: LocalDate): Boolean = isRoutineDay(day) && dayOverrides[day]?.isSkipped != true
+
+    /** This date was in the recurring plan before a possible one-day move or skip. */
+    fun isRoutineDay(day: LocalDate): Boolean {
         val mask = masks.floorEntry(day)?.value ?: return false
-        if (dayOverrides[day]?.isSkipped == true) return false
         return !isBreak(day) && mask and bit(day.dayOfWeek) != 0
     }
 

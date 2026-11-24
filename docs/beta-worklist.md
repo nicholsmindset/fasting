@@ -15,6 +15,25 @@ The [staging APK](https://github.com/nicholsmindset/fasting/actions/runs/4546614
 
 [Candidate changes and automated checks](https://github.com/nicholsmindset/fasting/pull/14) · [Design findings and sources](layout-review.md)
 
+## Timer, one-date edits and the paid review
+
+The next beta connects three decisions. On Timer, the selected window shows the local date and time it would finish, including a backdated start. After midnight, “Started earlier?” defaults to the previous date when an hour ago fell yesterday. The picker rejects future times and local times skipped by a clock change. In My week, opening a date shows its effective starts. A changed date also shows the usual times. Choosing the original first time clears its one-day adjustment. In Shift+, the four-week review totals completed planned days and identifies weekdays moved or skipped in at least two different weeks. Tapping a weekday shows the dates and the revised start time or skip for each. A reader can open My week directly from the summary.
+
+Easy Fast offers a free timer and paid trends. Zero offers journaling and statistics. Our paid hypothesis is narrower: a person who repeatedly changes Tuesday might value seeing that pattern when planning next week. The example uses fictional records so a first-time user can evaluate it immediately. [Easy Fast](https://easyfastapp.com/) · [Zero](https://play.google.com/store/apps/details?id=com.zerofasting.zero)
+
+Purrweb’s fasting concept separates the timer from the journal. Mobbin documents how onboarding sequences give people a sense of progress. We applied those observations by putting the preview at the moment someone selects a fast and the schedule comparison at the moment they edit a date. [Dribbble concept](https://dribbble.com/shots/22392705-Intermittent-Fasting-Tracker-Mobile-iOS-App) · [Mobbin onboarding study](https://mobbin.com/blog/the-long-onboarding-a-study-of-1-460-flows)
+
+| Priority | Work and completion check |
+| --- | --- |
+| P0 | Verify the selected target crosses midnight correctly, responds to duration and earlier-start edits, and matches the timer after Start. |
+| P0 | Move, skip and restore one date. Compare the usual and effective starts on a date with two routines. Verify the following date and any active timer. |
+| P0 | Check that one-off edits, weeks off and dates before tracking cannot create a recurring weekday pattern. Check that free preview and personal data remain separate. |
+| P1 | Ask testers to explain the repeated weekday in the example and choose what to do next. Record whether they can explain it without assistance and whether it changes a real scheduling decision. |
+| P1 | Complete physical-device, accessibility, upgrade and Play billing checks below before broader distribution. |
+| P2 | Validate the local offer with returning users and finish the first approved book lesson before expanding the paid tier. |
+
+BodyFast already supports rescheduling a single fasting period, so flexibility alone is a weak reason to subscribe. Oura pairs reports with a choice of date range and detailed insights. Test whether a dated explanation helps someone decide to change their own routine. [BodyFast scheduling](https://help.bodyfast.app/hc/en-001/articles/34652209248914-How-do-I-adjust-my-fasting-plan) · [Oura reports](https://support.ouraring.com/hc/en-us/articles/360046061373-Oura-Reports)
+
 ## 1. Watch five people use the app
 
 The **beta facilitator** recruits five Android users who have not seen the redesign. Give them five tasks without a walkthrough. Record completion unaided, first wrong tap, and any wording they misunderstood. For accessibility, repeat the main paths on a physical phone with large text and TalkBack.

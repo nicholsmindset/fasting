@@ -1,0 +1,11 @@
+<resources>
+    <string name="plan_target_time">Sasaran tamat · %1$s</string>
+    <string name="plan_this_date">Waktu mula pada tarikh ini</string>
+    <string name="plan_usual_times">Jadual biasa · %1$s</string>
+    <string name="plan_review_empty">Tiada hari yang dirancang dalam empat minggu ini.</string>
+    <string name="plan_repeat_heading">Hari yang anda ubah atau langkau lebih daripada sekali</string>
+    <string name="plan_repeat_count">%1$s · %2$d minggu</string>
+    <string name="plan_past_time">Pilih waktu tempatan yang sah pada masa lalu.</string>
+    <string name="plan_review_new">Ulasan pertama akan dipaparkan selepas minggu yang mempunyai rekod rancangan berakhir pada hari Ahad.</string>
+    <string name="plan_moved_to">Diubah kepada %1$s</string>
+</resources>

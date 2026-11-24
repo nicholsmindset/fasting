@@ -160,6 +160,7 @@ class WeekPlannerMoatsCaptureTest {
 
         tap(row, scroll = true)
         waitFor(label(R.string.week_restore_day))
+        waitFor(label(R.string.plan_usual_times, format.time.format(recurring.startTime)))
         capture("my-week-one-day")
         tap(label(R.string.week_restore_day))
         waitFor(row and hasText(format.time.format(recurring.startTime)))

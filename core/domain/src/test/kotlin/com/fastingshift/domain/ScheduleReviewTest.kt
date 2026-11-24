@@ -48,6 +48,21 @@ class ScheduleReviewTest {
         assertNull(result[2].reflection)
     }
 
+    @Test fun repeatedChangesUseDistinctRoutineDatesInFinishedWeeks() {
+        val tue = monday.plusDays(1)
+        val plan = PlanHistory(revisions = mapOf(tue.minusWeeks(2) to 2),
+            choices = mapOf(monday.minusWeeks(1) to WeekChoice.BREAK),
+            dayOverrides = mapOf(
+                tue to DayOverride(), tue.minusWeeks(2) to DayOverride(LocalTime.NOON),
+                tue.minusWeeks(1) to DayOverride(), tue.minusWeeks(3) to DayOverride(),
+                tue.plusWeeks(1) to DayOverride(), monday to DayOverride(),
+            ))
+        val weeks = ScheduleReview.finishedWeeks(emptyList(), plan, emptyMap(), zone, today)
+        assertEquals(mapOf(tue.dayOfWeek to 2), ScheduleReview.repeatedChanges(weeks))
+        assertEquals(2, weeks.sumOf { it.changes.size })
+        assertEquals(emptyMap(), ScheduleReview.repeatedChanges(weeks.take(1)))
+    }
+
     @Test fun allSkippedIsDifferentFromZeroOfOneAndPreTracking() {
         val plan = PlanHistory(mapOf(monday.minusWeeks(1) to 1), dayOverrides = mapOf(monday to DayOverride()))
         val review = ScheduleReview.finishedWeeks(emptyList(), plan, emptyMap(), zone, today)
