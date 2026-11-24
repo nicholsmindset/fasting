@@ -1,50 +1,41 @@
 name: Inspect Fasting Shift layouts
 on:
   push:
-    branches:
-      - codex/fasting-layout-proof
+    branches: [codex/fasting-layout-proof]
 permissions:
-  contents: read
   actions: read
+  contents: read
 jobs:
-  capture:
+  read:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          ref: 40838f3d2e3feee2b96b9b74f2ad0dd7689f2db3
-          path: review-app
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools platforms;android-36 build-tools;36.0.0
-      - uses: gradle/actions/setup-gradle@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository/org/robolectric/android-all-instrumented
-          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
-      - name: Capture fixed-clock app screens
-        env:
-          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
-        working-directory: review-app
-        run: |
-          ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.MoatsCaptureTest.dailyLayout*' --tests '*.MoatsCaptureTest.changeTimerViewAtDoubleFontSize' --tests '*.StoreScreenshotTest'
-          mkdir -p app/build/moats-captures/settings
-          cp docs/screenshots/{4a-reminders,4b-milestone-picker}-{light,dark}.png app/build/moats-captures/settings/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: layout-review-originals
-          path: review-app/app/build/moats-captures/
-          if-no-files-found: error
-      - name: Encode synthetic review images
+          github-token: ${{ github.token }}
+          run-id: 45462458723
+          name: fasting-shift-moats-screens
+          path: captured
+      - name: Read the two weekly review fixtures
         run: |
           python -c 'import PIL' || python -m pip install Pillow
-          python scripts/layout-proof.py review-app/app/build/moats-captures/en light dark
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import base64, io
+          from PIL import Image
+          for key in ('example', 'personal', 'reminders'):
+              path = (Path('captured/settings/4a-reminders-light.png') if key == 'reminders' else
+                      Path('captured/en/schedule-review-' + key + '.png'))
+              with Image.open(path) as src:
+                  assert src.format == 'PNG' and src.width >= 411 and src.height > src.width
+                  im = src.convert('RGB')
+                  im.thumbnail((460, 920), Image.Resampling.LANCZOS)
+                  out = io.BytesIO()
+                  im.save(out, format='JPEG', quality=92, optimize=True, subsampling=0)
+              raw = out.getvalue()
+              print('FSREVIEW|BEGIN|' + key + '|' + str(len(raw)) + '|' + sha256(raw).hexdigest())
+              for i in range(0, len(raw), 1800):
+                  print('FSREVIEW|PART|' + key + '|' + str(i//1800) + '|' + base64.b64encode(raw[i:i+1800]).decode('ascii'))
+              print('FSREVIEW|END|' + key)
+          PY
