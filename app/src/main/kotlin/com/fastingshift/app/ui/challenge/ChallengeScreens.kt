@@ -384,7 +384,7 @@ fun JoinChallengeRoute(onBack: () -> Unit, onJoined: (Long) -> Unit, vm: JoinCha
                     Text(stringResource(R.string.challenge_join_already), style = MaterialTheme.typography.bodyMedium)
                     SecondaryButton(stringResource(R.string.challenge_open), onClick = { onJoined(existing) })
                 } else {
-                    PrimaryButton(stringResource(R.string.challenge_join), onClick = { vm.join(i, onJoined) }, haptic = true)
+                    PrimaryButton(stringResource(R.string.challenge_join), onClick = { vm.join(onJoined) }, haptic = true)
                 }
             }
         }

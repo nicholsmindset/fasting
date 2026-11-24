@@ -88,7 +88,7 @@ object AppModule {
     fun qadaRepository(db: FastingDatabase): com.fastingshift.data.repo.QadaRepository = com.fastingshift.data.repo.QadaRepository(db.qadaDao())
 
     @Provides @Singleton
-    fun challengeRepository(db: FastingDatabase): com.fastingshift.data.repo.ChallengeRepository = com.fastingshift.data.repo.ChallengeRepository(db.challengeDao())
+    fun challengeRepository(db: FastingDatabase): com.fastingshift.data.repo.ChallengeRepository = com.fastingshift.data.repo.ChallengeRepository(db)
 
     @Provides @Singleton
     fun fastService(fasts: FastRepository, screening: ScreeningRepository, clock: Clock): FastService =

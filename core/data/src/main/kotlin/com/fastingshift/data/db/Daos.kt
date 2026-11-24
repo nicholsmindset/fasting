@@ -226,6 +226,9 @@ abstract class QadaDao {
 
 @Dao
 interface ChallengeDao {
+    @Query("SELECT * FROM challenge WHERE start_date = :date AND left_at IS NULL ORDER BY id DESC")
+    suspend fun joinedStartingOn(date: LocalDate): List<ChallengeEntity>
+
     @Query("SELECT * FROM challenge ORDER BY start_date DESC, id DESC") fun observeAll(): Flow<List<ChallengeEntity>>
     @Query("SELECT * FROM challenge WHERE id = :id") suspend fun get(id: Long): ChallengeEntity?
     @Insert suspend fun insert(entity: ChallengeEntity): Long

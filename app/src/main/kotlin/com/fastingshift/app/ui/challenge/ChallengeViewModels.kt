@@ -13,12 +13,13 @@ import com.fastingshift.domain.challenge.ChallengeTemplate
 import com.fastingshift.domain.challenge.Challenges
 import com.fastingshift.domain.challenge.InviteResult
 import com.fastingshift.domain.model.Challenge
-import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -50,8 +51,9 @@ private fun minutes(clock: Clock): Flow<Instant> = flow {
 }
 
 /** Challenges are for people the safety screening allows to fast (never education-only, SR-1). */
-private fun ScreeningRepository.allowsChallenges(): Flow<Boolean> =
-    observeLatest().map { it != null && it.gateResult != GateResult.BLOCK }
+private fun ScreeningRepository.challengeLimit(): Flow<Duration?> = observeLatest().map {
+    FastPolicy.maxAllowed(it?.gateResult, it?.clinicianAcknowledged == true)
+}
 
 private fun itemsFlow(
     challenges: Flow<List<Challenge>>,
@@ -74,11 +76,11 @@ class ChallengeListViewModel @Inject constructor(
     clock: Clock,
 ) : ViewModel() {
     val state: StateFlow<ChallengeListState?> =
-        combine(itemsFlow(challenges.observeAll(), fasts, settings, clock), screening.allowsChallenges()) { items, allowed ->
+        combine(itemsFlow(challenges.observeAll(), fasts, settings, clock), screening.challengeLimit()) { items, limit ->
             ChallengeListState(
                 current = items.filter { it.current }.sortedBy { it.challenge.startDate },
                 past = items.filterNot { it.current },
-                allowed = allowed,
+                allowed = limit != null,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 }
@@ -98,7 +100,7 @@ class CreateChallengeViewModel @Inject constructor(
     screening: ScreeningRepository,
     private val clock: Clock,
 ) : ViewModel() {
-    val allowed: StateFlow<Boolean?> = screening.allowsChallenges().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val allowed: StateFlow<Boolean?> = screening.challengeLimit().map { it != null }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun today(): LocalDate = clock.instant().atZone(ZoneId.systemDefault()).toLocalDate()
 
@@ -111,7 +113,7 @@ class CreateChallengeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val id = challenges.join(template.create(start.date(today()), clock.instant(), name))
-                onCreated(id)
+                if (id != null) onCreated(id)
             } finally {
                 creating = false
             }
@@ -160,25 +162,31 @@ class JoinChallengeViewModel @Inject constructor(
     savedState: SavedStateHandle,
     private val clock: Clock,
 ) : ViewModel() {
-    private val code: String = savedState.get<String>("code").orEmpty()
+    private val decoded = ChallengeLinks.decode(savedState.get<String>("code").orEmpty())
     private val joining = MutableStateFlow(false)
 
-    val state: StateFlow<JoinState> = combine(challenges.observeAll(), screening.allowsChallenges()) { list, allowed ->
-        when (val r = ChallengeLinks.decode(code)) {
+    val state: StateFlow<JoinState> = combine(challenges.observeAll(), screening.challengeLimit()) { list, limit ->
+        when (val r = decoded) {
             InviteResult.Invalid -> JoinState.Invalid
             InviteResult.NewerVersion -> JoinState.NewerVersion
-            is InviteResult.Valid -> if (!allowed) {
+            is InviteResult.Valid -> if (!r.invite.allowsEnrollment(limit)) {
                 JoinState.NotAllowed
             } else {
-                val same = list.firstOrNull { it.leftAt == null && ChallengeInvite.of(it) == r.invite }
+                val same = list.firstOrNull(r.invite::matchesJoined)
                 JoinState.Ready(r.invite, same?.id)
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), JoinState.Loading)
 
-    fun join(invite: ChallengeInvite, onJoined: (Long) -> Unit) {
-        if (joining.value) return
-        joining.value = true
-        viewModelScope.launch { onJoined(challenges.join(invite.toChallenge(clock.instant()))) }
+    fun join(onJoined: (Long) -> Unit) {
+        val invite = (decoded as? InviteResult.Valid)?.invite ?: return
+        if (!joining.compareAndSet(false, true)) return
+        viewModelScope.launch {
+            try {
+                challenges.join(invite.toChallenge(clock.instant()))?.let(onJoined)
+            } finally {
+                joining.value = false
+            }
+        }
     }
 }

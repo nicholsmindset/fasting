@@ -1,14 +1,17 @@
 package com.fastingshift.data.repo
 
-import com.fastingshift.data.db.ChallengeDao
+import androidx.room.withTransaction
+import com.fastingshift.data.db.FastingDatabase
 import com.fastingshift.data.db.MetricDao
 import com.fastingshift.data.db.QadaDao
+import com.fastingshift.data.db.QadaRepaymentEntity
+import com.fastingshift.domain.challenge.ChallengeInvite
 import com.fastingshift.domain.model.Challenge
 import com.fastingshift.domain.model.MetricLog
 import com.fastingshift.domain.model.QadaDebt
-import com.fastingshift.data.db.QadaRepaymentEntity
-import java.time.LocalDate
+import com.fastingshift.domain.safety.FastPolicy
 import java.time.Instant
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -44,10 +47,20 @@ class QadaRepository(private val dao: QadaDao) {
 }
 
 /** Challenges joined on this device. */
-class ChallengeRepository(private val dao: ChallengeDao) {
+class ChallengeRepository(private val db: FastingDatabase) {
+    private val dao = db.challengeDao()
     fun observeAll(): Flow<List<Challenge>> = dao.observeAll().map { l -> l.map { it.toDomain() } }
     suspend fun get(id: Long): Challenge? = dao.get(id)?.toDomain()
-    suspend fun join(challenge: Challenge): Long = dao.insert(challenge.copy(id = 0).toEntity())
+    /** Read screening, resolve existing enrollment, and insert under the same database transaction. */
+    suspend fun join(challenge: Challenge): Long? = db.withTransaction {
+        val invite = ChallengeInvite.of(challenge)
+        val screening = db.screeningDao().getLatest()
+        val limit = FastPolicy.maxAllowed(screening?.gateResult, screening?.clinicianAcknowledged == true)
+        if (!invite.allowsEnrollment(limit)) return@withTransaction null
+        val existing = dao.joinedStartingOn(invite.startDate).firstOrNull { invite.matchesJoined(it.toDomain()) }
+        existing?.id ?: dao.insert(invite.toChallenge(challenge.joinedAt).toEntity())
+    }
+
     suspend fun update(challenge: Challenge) = dao.update(challenge.toEntity())
     suspend fun delete(id: Long) = dao.delete(id)
 }

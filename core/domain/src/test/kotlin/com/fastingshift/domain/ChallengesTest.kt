@@ -31,6 +31,18 @@ class ChallengesTest {
     private val joined = Instant.parse("2026-11-20T00:00:00Z")
     private val monday = LocalDate.of(2026, 11, 23) // also 13 Jumada al-Akhirah 1448
 
+    @Test fun enrollmentRespectsTheScreenedLimitAndSupportedDailyProtocols() {
+        val daily = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", monday, 7, null)
+        val sunnah = ChallengeInvite(ChallengeType.SUNNAH_MON_THU, null, monday, 28, null)
+        assertFalse(daily.allowsEnrollment(null))
+        assertFalse(sunnah.allowsEnrollment(null))
+        assertFalse(daily.allowsEnrollment(Duration.ofHours(15)))
+        assertTrue(daily.allowsEnrollment(Duration.ofHours(16)))
+        assertTrue(sunnah.allowsEnrollment(Duration.ofHours(24)))
+        assertFalse(daily.copy(protocolId = "duration_36").allowsEnrollment(Duration.ofHours(120)))
+        assertFalse(daily.copy(protocolId = "unknown").allowsEnrollment(Duration.ofHours(120)))
+    }
+
     private fun at(day: LocalDate, time: LocalTime) = day.atTime(time).atZone(zone).toInstant()
 
     /** A fast starting at [startTime] on [day], planned for [planned] hours and ended after [actual] hours. */
