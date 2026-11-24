@@ -9,8 +9,10 @@ import com.fastingshift.data.repo.BackupRepository
 import com.fastingshift.data.repo.RoomFastRepository
 import com.fastingshift.data.repo.RoomScreeningRepository
 import com.fastingshift.data.repo.RoomStreakFreezeRepository
+import com.fastingshift.data.settings.AppAppearance
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.backup.Backup
+import com.fastingshift.domain.backup.BackupCodec
 import com.fastingshift.domain.backup.BackupFormatException
 import com.fastingshift.domain.backup.FastRecord
 import com.fastingshift.domain.backup.ScreeningRecordDto
@@ -134,6 +136,31 @@ class DataHardeningTest {
         assertTrue(s.hideWeight)
         assertEquals(TimerDisplayMode.BREAK_AT, s.timerMode)
         assertEquals(listOf(12L, 18L), s.reminders.milestones.map { it.toHours() })
+    }
+
+    @Test fun appearancePersistsAndRoundTripsThroughBackup() = runTest {
+        val settings = SettingsRepository(context)
+        assertEquals(AppAppearance.SYSTEM, settings.current().appearance)
+        for (mode in listOf(AppAppearance.LIGHT, AppAppearance.DARK, AppAppearance.SYSTEM)) {
+            settings.setAppearance(mode)
+            assertEquals(mode, SettingsRepository(context).current().appearance)
+            val backup = BackupCodec.decode(BackupCodec.encode(Backup(exportedAt = 1, settings = settings.toRecord())))
+            assertEquals(mode.name, backup.settings?.appearance)
+            settings.setAppearance(if (mode == AppAppearance.DARK) AppAppearance.LIGHT else AppAppearance.DARK)
+            settings.restore(requireNotNull(backup.settings))
+            assertEquals(mode, settings.current().appearance)
+        }
+    }
+
+    @Test fun restoringMissingOrUnknownAppearanceKeepsCurrentPreference() = runTest {
+        val settings = SettingsRepository(context)
+        settings.setAppearance(AppAppearance.LIGHT)
+        val older = BackupCodec.decode("""{"version":5,"exported_at":1,"settings":{}}""")
+        settings.restore(requireNotNull(older.settings))
+        assertEquals(AppAppearance.LIGHT, settings.current().appearance)
+        settings.restore(SettingsRecord(appearance = "unknown"))
+        assertEquals(AppAppearance.LIGHT, settings.current().appearance)
+        settings.setAppearance(AppAppearance.SYSTEM)
     }
 
     @Test fun undoWorksThroughTheRealDatabase() = runTest {

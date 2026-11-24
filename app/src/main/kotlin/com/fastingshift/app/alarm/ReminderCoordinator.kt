@@ -8,6 +8,7 @@ import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.app.widget.WidgetUpdater
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.AppSettings
+import com.fastingshift.data.settings.AppAppearance
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
@@ -65,8 +66,8 @@ class ReminderCoordinator @Inject constructor(
         if (!started.compareAndSet(false, true)) return
         scope.launch {
             combine(fasts.observeAll(), settings.settings, schedules.observeAll(), screening.observeLatest()) { all, s, sch, scr ->
-                // Answering the weekly recap changes no alarms.
-                listOf(all, s.copy(weekReflections = emptyMap()), sch, maximumScheduledDuration(scr))
+                // Weekly reflections and appearance do not affect alarms.
+                listOf(all, s.copy(weekReflections = emptyMap(), appearance = AppAppearance.SYSTEM), sch, maximumScheduledDuration(scr))
             }
                 .distinctUntilChanged()
                 .collect { reschedule() }

@@ -12,8 +12,7 @@ body { margin: 0; background: var(--wash); color: var(--ink); }
 .brand { display: grid; line-height: 1.2; gap: .18rem; }
 .brand strong { font-size: 1.08rem; }
 .brand span { color: var(--muted); font-size: .87rem; }
-.brand-mark { width: 2.15rem; height: 2.15rem; background: var(--hero); border-radius: .65rem; display:grid; place-items:center; }
-.brand-mark::before { content: ""; width: 1rem; height: 1rem; border: .19rem solid white; border-left-color: #64968c; border-radius: 50%; transform:rotate(-35deg); }
+.brand-mark { width: 2.15rem; height: 2.15rem; flex: none; background: url("./nichols-n.svg") center / contain no-repeat; }
 main { padding-bottom: 2.5rem; }
 .invite { background: var(--surface); border-radius: 1.25rem; border: 1px solid var(--rule); overflow: hidden; }
 .intro { padding: clamp(1.5rem, 6vw, 2.5rem); background: var(--hero); color: white; }

@@ -74,6 +74,18 @@ jobs:
           path: app/build/moats-captures/
           if-no-files-found: error
 
+      - name: Upload light and dark previews
+        if: success() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fasting-shift-appearance
+          path: |
+            app/build/moats-captures/en/appearance-light.png
+            app/build/moats-captures/en/appearance-dark.png
+            app/build/moats-captures/en/welcome-light.png
+            app/build/moats-captures/en/welcome-dark.png
+          if-no-files-found: error
+
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug
 

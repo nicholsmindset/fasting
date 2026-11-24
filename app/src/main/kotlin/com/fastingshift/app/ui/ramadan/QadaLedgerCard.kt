@@ -30,6 +30,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.theme.pickerDialogTheme
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.data.repo.QadaRepository
 import com.fastingshift.data.repo.QadaYear
@@ -187,6 +188,7 @@ private fun QadaDayDialog(
     onSave: (LocalDate, Int) -> Unit, onUndo: () -> Unit,
 ) {
     val context = LocalContext.current
+    val pickerTheme = pickerDialogTheme()
     var selectedYear by rememberSaveable { mutableStateOf(originalYear) }
     var dateText by rememberSaveable { mutableStateOf((original ?: today).toString()) }
     val date = LocalDate.parse(dateText)
@@ -199,7 +201,7 @@ private fun QadaDayDialog(
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(stringResource(R.string.qada_observed))
                 TextButton(onClick = {
-                    DatePickerDialog(context, { _, y, m, d -> dateText = LocalDate.of(y, m + 1, d).toString() },
+                    DatePickerDialog(context, pickerTheme, { _, y, m, d -> dateText = LocalDate.of(y, m + 1, d).toString() },
                         date.year, date.monthValue - 1, date.dayOfMonth).apply {
                         datePicker.maxDate = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
                     }.show()

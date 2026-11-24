@@ -70,6 +70,7 @@ data class Backup(
     @SerialName("week_choices") val weekChoices: Map<String, String> = emptyMap(),
     @SerialName("day_overrides") val dayOverrides: Map<String, String> = emptyMap(),
     @SerialName("week_reflections") val weekReflections: Map<String, String> = emptyMap(),
+    val appearance: String? = null,
 )
 
 @Serializable data class FastRecord(

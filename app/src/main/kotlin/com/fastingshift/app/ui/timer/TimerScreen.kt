@@ -78,6 +78,7 @@ import com.fastingshift.app.ui.components.formatTime
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.GroupHeader
+import com.fastingshift.app.ui.design.NicholsMark
 import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
@@ -287,7 +288,10 @@ private fun TimerHeader(state: TimerUiState) {
     }
     Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f)) {
-            Text(date.uppercase(Locale.getDefault()), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NicholsMark(Modifier.size(24.dp), compact = true)
+                Text(date.uppercase(Locale.getDefault()), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
         }
         if (state.today.streak > 0) {

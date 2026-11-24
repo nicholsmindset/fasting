@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -37,9 +38,29 @@ import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.rememberHaptics
 import com.fastingshift.app.ui.ramadan.CheckRow
 import com.fastingshift.app.ui.ramadan.GroupedSheet
+import com.fastingshift.app.ui.onboarding.SelectGroupRow
+import com.fastingshift.data.settings.AppAppearance
 
 val MILESTONE_HOURS = listOf(12, 14, 16, 18, 20, 24, 36, 48)
 val FORGOT_HOURS = listOf(0, 2, 4, 6, 8)
+
+internal fun appearanceLabel(mode: AppAppearance): Int = when (mode) {
+    AppAppearance.SYSTEM -> R.string.appearance_system
+    AppAppearance.LIGHT -> R.string.appearance_light
+    AppAppearance.DARK -> R.string.appearance_dark
+}
+
+@Composable
+internal fun AppearanceSheet(selected: AppAppearance, onPick: (AppAppearance) -> Unit, onDismiss: () -> Unit) {
+    GroupedSheet(title = stringResource(R.string.appearance_title), onDismiss = onDismiss) {
+        InsetGroup(modifier = Modifier.selectableGroup()) {
+            AppAppearance.entries.forEachIndexed { index, mode ->
+                if (index > 0) GroupDivider()
+                SelectGroupRow(stringResource(appearanceLabel(mode)), selected == mode, onClick = { onPick(mode) })
+            }
+        }
+    }
+}
 
 /** iOS-style − | + stepper. */
 @Composable

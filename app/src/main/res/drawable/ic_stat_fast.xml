@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Nichols Mindset master artwork: Logos/mono-white/nm-symbol.svg -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.5" android:strokeLineCap="round"
-        android:pathData="M12,4 A8,8 0 1,1 4,12" />
+    android:viewportWidth="100" android:viewportHeight="100">
+    <path android:fillColor="#FFFFFF" android:pathData="M14 83V16L32 9V77Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M14 16L32 9 85 80 67 89Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M67 89V23L85 13V80Z" />
 </vector>

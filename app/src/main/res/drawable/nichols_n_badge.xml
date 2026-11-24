@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nichols Mindset master artwork: Icons/favicon.svg -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="100" android:viewportHeight="100">
+    <path android:fillColor="#071F1C"
+        android:pathData="M18,0 H82 A18,18 0,0 1,100,18 V82 A18,18 0,0 1,82,100 H18 A18,18 0,0 1,0,82 V18 A18,18 0,0 1,18,0 Z" />
+    <path android:fillColor="#F2EDE4" android:pathData="M14 83V16L32 9V77Z" />
+    <path android:fillColor="#007A56" android:pathData="M14 16L32 9 85 80 67 89Z" />
+    <path android:fillColor="#F2EDE4" android:pathData="M67 89V23L85 13V80Z" />
+</vector>

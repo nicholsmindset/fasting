@@ -31,6 +31,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.theme.pickerDialogTheme
 import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.app.ui.components.hoursMinutes
@@ -163,6 +164,7 @@ fun AddPastFastRoute(onDone: () -> Unit, vm: AddPastFastViewModel = hiltViewMode
     }
     val st by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val pickerTheme = pickerDialogTheme()
     SecondaryScaffold(title = stringResource(R.string.add_past_title), onBack = onDone) {
         var pickProtocol by remember { mutableStateOf(false) }
         Text(stringResource(R.string.add_past_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -186,9 +188,9 @@ fun AddPastFastRoute(onDone: () -> Unit, vm: AddPastFastViewModel = hiltViewMode
         }
         val length = Duration.between(st.start, st.end)
         InsetGroup(header = stringResource(R.string.add_past_times)) {
-            GroupRow(stringResource(R.string.edit_start), value = st.start.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, st.start, vm::setStart) })
+            GroupRow(stringResource(R.string.edit_start), value = st.start.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, pickerTheme, st.start, vm::setStart) })
             GroupDivider()
-            GroupRow(stringResource(R.string.edit_end), value = st.end.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, st.end, vm::setEnd) })
+            GroupRow(stringResource(R.string.edit_end), value = st.end.formatDateTime(), showChevron = true, onClick = { pickDateTime(context, pickerTheme, st.end, vm::setEnd) })
             if (!length.isNegative) {
                 GroupDivider()
                 GroupRow(stringResource(R.string.add_past_length), value = length.hoursMinutes())

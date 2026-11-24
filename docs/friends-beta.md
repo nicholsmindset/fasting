@@ -10,7 +10,9 @@ Staging and internal beta generate a link to the [beta invite page](https://nich
 4. Reopen the invitation and tap **Open challenge**. Your choice and progress should survive relaunch. Try **Send encouragement**. The messaging preview should contain only “Cheering you on this week!” You decide whether to send it. A progress card is a separate action.
 5. On **History**, find “Did this schedule fit your week?” and try **Skip this week**. Use **Add a reflection** to answer later or **Change answer** to revise it. Check the week’s date range and confirm that changing the answer leaves next week’s plan alone.
 
-Ask each tester what they expected the other person to see and where they got stuck. Record the step, phone model, Android version and app build. Avoid recording personal fasting times, health readings or real invite codes. At the end of the week, ask whether they would choose to do another week together and why.
+On each phone, try **Settings → Appearance**, relaunch the app and check that the selected appearance is still in use. Use sample records to correct yesterday’s fast, move one planned start and find its next reminder. Lock the phone before that reminder is due and record whether it arrived.
+
+Ask each tester what they expected the other person to see and where they got stuck. Record the step, phone model, Android version and app build. Avoid recording personal fasting times, health readings or real invite codes. After two weeks, count how many participants with 14 days of follow-up returned during days 8–14 to review History or adjust a plan. Ask each pair whether they would do another week together and why.
 
 ## Maintainer notes
 
