@@ -59,6 +59,14 @@ class ScheduleReviewMoatsCaptureTest {
         compose.onNodeWithText("Personal signals fixture").assertDoesNotExist()
         compose.onNodeWithText(app.getString(R.string.plan_repeat_count, "Tuesday", 2)).assertExists()
         capture("schedule-review-example")
+        compose.onNodeWithText(app.getString(R.string.plan_repeat_count, "Tuesday", 2)).performScrollTo().performClick()
+        val format = com.fastingshift.app.ui.components.WeekFormat(app.resources.configuration.locales[0],
+            android.text.format.DateFormat.is24HourFormat(app))
+        listOf(LocalTime.of(21, 0), LocalTime.of(21, 30)).forEach { time ->
+            compose.onNodeWithText(app.getString(R.string.plan_moved_to, format.time.format(time))).assertExists()
+        }
+        capture("schedule-review-dated-changes")
+        compose.onNodeWithText(app.getString(R.string.settings_done)).performClick()
         compose.onNodeWithText(app.getString(R.string.review_open_week)).performScrollTo().performClick()
         compose.onNodeWithText(app.getString(R.string.plan_see_plus)).performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, plans); assertEquals(1, offers) }

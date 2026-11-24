@@ -7,4 +7,5 @@
     <string name="plan_repeat_count">%1$s · %2$d minggu</string>
     <string name="plan_past_time">Pilih waktu lokal yang valid dan sudah berlalu.</string>
     <string name="plan_review_new">Ulasan pertama akan muncul setelah minggu dengan riwayat rencana berakhir pada hari Minggu.</string>
+    <string name="plan_moved_to">Diubah menjadi %1$s</string>
 </resources>

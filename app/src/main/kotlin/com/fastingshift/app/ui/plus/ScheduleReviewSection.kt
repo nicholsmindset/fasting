@@ -9,7 +9,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -25,9 +29,13 @@ import com.fastingshift.domain.history.ScheduleFit
 import com.fastingshift.domain.insights.PlanCoverage
 import com.fastingshift.domain.insights.ReviewWeek
 import com.fastingshift.domain.insights.WeeklyConsistency
+import com.fastingshift.app.ui.components.rememberWeekFormat
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.ramadan.GroupedSheet
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.domain.insights.ScheduleReview
 import com.fastingshift.domain.schedule.DayOverride
+import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
 import java.time.LocalDate
@@ -50,6 +58,20 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
     val date = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale) }
     val full = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMd"), locale) }
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val repeated = remember(weeks) { ScheduleReview.repeatedChanges(weeks) }
+    var selectedDay by rememberSaveable(example) { mutableStateOf<DayOfWeek?>(null) }
+    selectedDay?.takeIf { it in repeated }?.let { weekday ->
+        val format = rememberWeekFormat()
+        GroupedSheet(weekday.getDisplayName(TextStyle.FULL, locale), onDismiss = { selectedDay = null }) {
+            Text(stringResource(if (example) R.string.review_example_label else R.string.review_period), color = secondary)
+            weeks.flatMap { it.changes.entries }.filter { it.key.dayOfWeek == weekday }
+                .sortedByDescending { it.key }.forEach { (day, change) ->
+                    val detail = change.startTime?.let { stringResource(R.string.plan_moved_to, format.time.format(it)) }
+                        ?: stringResource(R.string.week_skipped)
+                    GroupRow(day.format(full), value = detail)
+                }
+        }
+    }
     Column(Modifier.fillMaxWidth().testTag(if (example) "schedule-review-example" else "schedule-review-personal"),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.review_title), Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
@@ -66,13 +88,12 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
                     else R.string.plan_review_empty
                 Text(stringResource(message), style = MaterialTheme.typography.titleMedium)
             }
-            val repeated = remember(weeks) { ScheduleReview.repeatedChanges(weeks) }
             if (repeated.isNotEmpty()) {
                 Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.plan_repeat_heading), style = MaterialTheme.typography.labelLarge, color = secondary)
                     repeated.forEach { (weekday, count) ->
-                        Text(stringResource(R.string.plan_repeat_count, weekday.getDisplayName(TextStyle.FULL, locale), count),
-                            style = MaterialTheme.typography.bodyLarge)
+                        GroupRow(stringResource(R.string.plan_repeat_count, weekday.getDisplayName(TextStyle.FULL, locale), count),
+                            showChevron = true, onClick = { selectedDay = weekday })
                     }
                 }
             }
