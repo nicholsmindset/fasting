@@ -152,6 +152,7 @@ class FastServiceTest {
         assertEquals(FastStatus.COMPLETED, r.fast.status)
         assertIs<EditResult.Invalid>(service.addPastFast(Presets.W16_8, start.plus(hours(2)), start.plus(hours(10))), "overlaps")
         assertIs<EditResult.Invalid>(service.addPastFast(Presets.W16_8, t0.minus(hours(1)), t0.plus(hours(5))), "in the future")
+        assertIs<EditResult.Invalid>(service.addPastFast(Presets.W16_8, t0.minus(hours(1)), t0.plusSeconds(1)), "a history record must already have ended")
     }
 
     @Test fun `fakes reject a second active fast`() = runTest {

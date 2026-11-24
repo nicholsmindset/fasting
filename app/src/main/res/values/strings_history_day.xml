@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_day_open">View day</string>
+    <string name="history_day_total">%1$s fasted on this day</string>
+    <string name="history_day_empty">No fasts recorded on this day.</string>
+    <string name="history_day_recorded">Recorded fasts</string>
+    <string name="history_day_ongoing">Ongoing</string>
+    <string name="history_day_slice">%1$s on this day · %2$s</string>
+    <string name="history_day_interval">%1$s – %2$s</string>
+    <string name="history_day_break">Week off</string>
+    <string name="history_day_unknown">No plan history for this date</string>
+    <string name="history_day_planned">Counted as a planned day</string>
+    <string name="history_day_starts">Start times · %1$s</string>
+    <string name="history_day_plan">Plan</string>
+</resources>

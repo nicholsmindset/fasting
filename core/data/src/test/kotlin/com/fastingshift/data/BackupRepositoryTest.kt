@@ -128,7 +128,7 @@ class BackupRepositoryTest {
         val qada = QadaRepository(db.qadaDao())
         qada.setOwed(QadaDebt(1447, 6))
         assertTrue(qada.record(LocalDate.of(2026, 11, 17), 1447))
-        ChallengeRepository(db.challengeDao()).join(
+        ChallengeRepository(db).join(
             Challenge(type = ChallengeType.SUNNAH_MON_THU, startDate = LocalDate.of(2026, 11, 23), lengthDays = 28, name = "Family", joinedAt = t0),
         )
 

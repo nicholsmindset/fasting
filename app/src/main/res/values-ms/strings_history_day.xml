@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_day_open">Lihat hari</string>
+    <string name="history_day_total">Tempoh berpuasa pada hari ini: %1$s</string>
+    <string name="history_day_empty">Tiada puasa direkodkan pada hari ini.</string>
+    <string name="history_day_recorded">Puasa yang direkodkan</string>
+    <string name="history_day_ongoing">Sedang berlangsung</string>
+    <string name="history_day_slice">%1$s pada hari ini · %2$s</string>
+    <string name="history_day_interval">%1$s – %2$s</string>
+    <string name="history_day_break">Minggu rehat</string>
+    <string name="history_day_unknown">Tiada rekod rancangan untuk tarikh ini</string>
+    <string name="history_day_planned">Dikira sebagai hari yang dirancang</string>
+    <string name="history_day_starts">Waktu mula yang dijadualkan · %1$s</string>
+    <string name="history_day_plan">Rancangan</string>
+</resources>

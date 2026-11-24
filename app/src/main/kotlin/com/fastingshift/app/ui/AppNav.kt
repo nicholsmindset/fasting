@@ -22,7 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
@@ -87,6 +91,7 @@ object Routes {
     const val REFEEDING = "refeeding?tier={tier}&fastId={fastId}"
     fun checkIn(fastId: Long) = "checkin/$fastId"
     fun editFast(fastId: Long) = "fast/$fastId"
+    fun addPastFast(day: LocalDate?) = if (day == null) ADD_PAST_FAST else "$ADD_PAST_FAST?date=$day"
     fun refeeding(tier: RefeedingTier?, fastId: Long? = null) =
         "refeeding?tier=${tier?.name ?: ""}&fastId=${fastId ?: -1L}"
 }
@@ -100,6 +105,7 @@ private val tabs = listOf(
     Tab(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
 )
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit, nav: NavHostController = rememberNavController()) {
     // Changing the graph when screening completes would reset its back stack during navigation.
@@ -124,6 +130,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
     val toTimer: () -> Unit = { if (!nav.popBackStack(Routes.TIMER, inclusive = false)) nav.navigate(Routes.TIMER) }
 
     Scaffold(
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (tabs.any { it.route == current }) {
@@ -133,6 +140,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.94f), tonalElevation = 0.dp) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
+                            modifier = Modifier.testTag("tab_${tab.route}"),
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -195,7 +203,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onEditFast = { nav.navigate(Routes.editFast(it)) },
                     onOpenInsights = { nav.navigate(Routes.INSIGHTS) },
                     onOpenSchedules = { nav.navigate(Routes.SCHEDULES) },
-                    onAddPastFast = { nav.navigate(Routes.ADD_PAST_FAST) },
+                    onAddPastFast = { day -> nav.navigate(Routes.addPastFast(day)) },
                     onOpenChallenges = { nav.navigate(Routes.CHALLENGES) },
                 )
             }
@@ -258,7 +266,10 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
             composable(Routes.MUSLIM) {
                 com.fastingshift.app.ui.ramadan.MuslimHubRoute(onBack = back, onOpenTimer = toTimer)
             }
-            composable(Routes.ADD_PAST_FAST) { AddPastFastRoute(onDone = back) }
+            composable(
+                "${Routes.ADD_PAST_FAST}?date={date}",
+                arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { AddPastFastRoute(onDone = back) }
             composable(
                 Routes.REFEEDING,
                 arguments = listOf(

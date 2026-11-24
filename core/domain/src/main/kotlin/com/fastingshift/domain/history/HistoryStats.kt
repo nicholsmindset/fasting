@@ -40,6 +40,15 @@ data class FastBar(val fast: Fast, val length: Duration, val completed: Boolean)
 
 data class RecentFasts(val bars: List<FastBar>, val average: Duration?)
 
+/** One day's slice of a fast. The original record is retained for editing. */
+data class DayFast(val fast: Fast, val from: Instant, val to: Instant) {
+    val duration: Duration get() = Duration.between(from, to)
+}
+
+data class DayDetail(val entries: List<DayFast>) {
+    val totalFasting: Duration = entries.fold(Duration.ZERO) { total, entry -> total + entry.duration }
+}
+
 /**
  * One fast drawn in one calendar week row. Positions are in days from the row's Monday
  * (0.0–7.0), at time-of-day precision. A fast crossing rows is split; only its widest piece
@@ -58,6 +67,21 @@ data class WeekSegment(
 
 /** Calendar and summary statistics for the History screen (PRD F5). */
 object HistoryStats {
+
+    fun dayDetail(fasts: List<Fast>, zone: ZoneId, day: LocalDate, now: Instant): DayDetail {
+        if (day > now.atZone(zone).toLocalDate()) return DayDetail(emptyList())
+        val midnight = day.atStartOfDay(zone).toInstant()
+        val nextMidnight = day.plusDays(1).atStartOfDay(zone).toInstant()
+        val entries = fasts.mapNotNull { fast ->
+            val end = minOf(fast.endedAt ?: now, now)
+            val from = maxOf(fast.startAt, midnight)
+            val to = minOf(end, nextMidnight)
+            // Immediate stops are legal records. Keep them editable on the date they started.
+            val startsHereWithNoElapsedTime = fast.startAt == end && fast.startAt >= midnight && fast.startAt < nextMidnight
+            if (from < to || startsHereWithNoElapsedTime) DayFast(fast, from, to) else null
+        }.sortedWith(compareBy<DayFast> { it.fast.startAt }.thenBy { it.fast.id })
+        return DayDetail(entries)
+    }
 
     fun periodRange(period: Period, today: LocalDate): DateRange = when (period) {
         Period.WEEK -> History.weekStart(today).let { DateRange(it, it.plusWeeks(1)) }

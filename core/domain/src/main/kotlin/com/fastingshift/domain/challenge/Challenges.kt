@@ -207,6 +207,16 @@ data class ChallengeInvite(
     val lengthDays: Int,
     val name: String?,
 ) {
+    /** A dated observance has no fixed duration; the normal start-time gate still applies. */
+    fun allowsEnrollment(maxDuration: Duration?): Boolean {
+        if (maxDuration == null || !ChallengeLinks.validProtocol(type, protocolId.orEmpty())) return false
+        if (type != ChallengeType.DAILY_PROTOCOL) return true
+        val protocol = protocolId?.let(Presets::byId) ?: return false
+        return Duration.ofHours(protocol.fastHours.toLong()) <= maxDuration
+    }
+
+    fun matchesJoined(challenge: Challenge): Boolean = challenge.leftAt == null && of(challenge) == this
+
     fun toChallenge(joinedAt: Instant): Challenge =
         Challenge(type = type, protocolId = protocolId, startDate = startDate, lengthDays = lengthDays, name = name, joinedAt = joinedAt)
 
@@ -320,7 +330,7 @@ object ChallengeLinks {
         return if (encode(invite) == code) InviteResult.Valid(invite) else InviteResult.Invalid
     }
 
-    private fun validProtocol(type: ChallengeType, id: String): Boolean = when (type) {
+    internal fun validProtocol(type: ChallengeType, id: String): Boolean = when (type) {
         ChallengeType.DAILY_PROTOCOL -> {
             val p = Presets.byId(id)
             p != null && !p.isCustom && p.type == ProtocolType.WINDOW && p.fastHours <= MAX_DAILY_FAST_HOURS

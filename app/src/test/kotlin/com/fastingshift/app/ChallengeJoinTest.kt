@@ -23,6 +23,7 @@ import com.fastingshift.domain.challenge.ChallengeInvite
 import com.fastingshift.domain.challenge.ChallengeLinks
 import com.fastingshift.domain.model.ChallengeType
 import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.safety.Medication
 import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
@@ -33,6 +34,9 @@ import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -145,6 +149,47 @@ class ChallengeJoinTest {
         waitFor("Walking group")
         compose.onNodeWithText(s(R.string.challenge_join)).assertExists()
         assertEquals(0, runBlocking { challenges.observeAll().first() }.size)
+    }
+
+    @Test fun changedScreeningClosesTheInviteAndBlocksAStaleEnrollment() {
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.now().plusDays(1), 7, "Friends")
+        open(ChallengeLinks.link(invite))
+        waitFor("Friends")
+
+        val soft = runBlocking {
+            val prior = requireNotNull(screening.getLatest())
+            prior.copy(
+                answeredAt = prior.answeredAt.plusSeconds(1),
+                answers = prior.answers.copy(medications = setOf(Medication.GLP1)),
+                gateResult = GateResult.SOFT,
+                clinicianAcknowledged = false,
+            ).also { screening.save(it) }
+        }
+        waitFor(s(R.string.challenges_not_allowed))
+        compose.onNodeWithText(s(R.string.challenge_join)).assertDoesNotExist()
+        val pending = invite.toChallenge(Instant.now())
+        runBlocking {
+            assertNull(challenges.join(pending))
+            assertEquals(0, challenges.observeAll().first().size)
+            screening.save(soft.copy(answeredAt = soft.answeredAt.plusSeconds(1), clinicianAcknowledged = true))
+        }
+        waitFor("Friends")
+        compose.onNodeWithText(s(R.string.challenge_join)).performScrollTo().performClick()
+        waitFor(s(R.string.challenge_leave))
+        assertEquals(invite, ChallengeInvite.of(runBlocking { challenges.observeAll().first().single() }))
+    }
+
+    @Test fun concurrentEnrollmentsReuseOneRecordAndALeftChallengeCanBeRejoined() = runBlocking {
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.now(), 7, "Friends")
+        val challenge = invite.toChallenge(Instant.now())
+        val ids = List(2) { async { challenges.join(challenge) } }.awaitAll()
+        val original = challenges.observeAll().first().single()
+        assertEquals(listOf(original.id, original.id), ids)
+        challenges.update(original.copy(leftAt = Instant.now()))
+        val rejoined = challenges.join(challenge)
+        val records = challenges.observeAll().first()
+        assertEquals(2, records.size)
+        assertEquals(rejoined, records.single { it.leftAt == null }.id)
     }
 
     @Test fun malformedLinkIsRejectedCalmly() {
