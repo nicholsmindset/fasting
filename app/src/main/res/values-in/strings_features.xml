@@ -16,9 +16,9 @@
 
     <!-- Timer: eating window, quick add, start earlier, undo -->
     <string name="eating_title">Jendela makan</string>
-    <string name="eating_next_in">Puasa berikutnya dalam %1$s</string>
-    <string name="eating_next_at">Puasa berikutnya pukul %1$s</string>
-    <string name="eating_a11y">Jendela makan. Puasa berikutnya dalam %1$s, pukul %2$s</string>
+    <string name="eating_next_in">Tersisa %1$s</string>
+    <string name="eating_next_at">Berakhir pukul %1$s</string>
+    <string name="eating_a11y">Jendela makan berakhir dalam %1$s, pukul %2$s.</string>
     <string name="quick_add_title">Tambah cepat</string>
     <string name="quick_water">+250 ml air</string>
     <string name="quick_weight">Berat</string>
@@ -120,12 +120,13 @@
     <string name="history_fasted_week">berpuasa minggu ini</string>
     <string name="history_fasted_month">berpuasa bulan ini</string>
     <string name="history_fasted_year">berpuasa tahun ini</string>
-    <string name="history_stat_fasts">Puasa</string>
+    <string name="history_stat_fasts">Puasa dimulai</string>
     <string name="history_stat_average">Rata-rata</string>
     <string name="history_stat_planned_days">Hari terencana selesai</string>
     <string name="history_recent">Puasa terakhir</string>
-    <string name="history_average">Rata-rata %1$s · %2$d puasa terakhir</string>
-    <string name="history_ring_a11y">%1$s %2$s. %3$d dari %4$d hari terencana selesai.</string>
+    <plurals name="history_ring_a11y">
+        <item quantity="other">%1$s %2$s. %3$d dari %4$d hari terencana selesai.</item>
+    </plurals>
     <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
     <string name="status_active">Berlangsung</string>
     <string name="status_completed">Selesai sesuai rencana</string>
@@ -255,8 +256,6 @@
     <string name="settings_privacy_policy">Kebijakan privasi</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">Jadwal mingguan</string>
-    <string name="schedules_body">Pilih hari puasa Anda. Hari di luar jadwal tidak pernah memutus streak Anda.</string>
     <string name="schedules_add_52">Tambah jadwal 5:2</string>
     <string name="schedules_add_adf">Tambah jadwal selang-seling</string>
 

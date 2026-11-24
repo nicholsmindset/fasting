@@ -113,7 +113,10 @@ object BodySignals {
      * The evening a sleep session belongs to: sleep starting before noon counts for the
      * previous day, so 23:00 and 01:00 starts are the same night.
      */
-    fun nightOf(session: SleepSession, zone: ZoneId): LocalDate = session.start.minus(Duration.ofHours(12)).atZone(zone).toLocalDate()
+    fun nightOf(session: SleepSession, zone: ZoneId): LocalDate {
+        val start = session.start.atZone(zone)
+        return if (start.hour < 12) start.toLocalDate().minusDays(1) else start.toLocalDate()
+    }
 
     /** Total sleep per night, merging overlapping sessions (two devices) and leaving out naps. */
     fun sleepPerNight(sleep: List<SleepSession>, zone: ZoneId): Map<LocalDate, Duration> =

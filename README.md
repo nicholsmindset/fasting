@@ -1,30 +1,12 @@
 # Fasting Shift for Android
 
-The honest fasting tracker: a timer that always works, free widgets, real safety guidance for
-long fasts, and data that stays on your phone. See [docs/PRD.md](docs/PRD.md).
+A private Android fasting tracker from Nichols Mindset. Start a timer, review your fasting history, or invite a friend to follow a plan together. [Product requirements](docs/PRD.md) · [Competitor research and beta priorities](docs/moats.md).
 
 ## Status
 
-All MVP features (F1–F10) are built, audited twice and fixed. The whole project builds (debug,
-staging, release AAB) with 0 lint errors and 325 tests passing.
+My Week lets you schedule your usual fasting window, preview the next seven days and change a single date. Timer shows the next planned start. Settings also contains reminders. Health logs, doctor reports, Health Connect insights, and the Ramadan and Sunnah hub are optional. Glucose writes use the same persistent retry queue as weight and water. An invitation shares the challenge settings. Sharing a progress card is a separate action.
 
-Moats (see `docs/moats.md`): Muslim fasting hub (Hijri date, Sunnah calendar, qada ledger, start a
-fast until maghrib), doctor report PDF, trust center with delete-all, Ramadan safety card,
-serverless challenges with invite links, share cards, glucose/ketone logging and Body signals
-(sleep and resting heart rate from Health Connect). Needs device checks: PDF output, delete-all
-restart, Health Connect reads/writes, invite links opening the app. A review pass fixed: winter Sunnah
-fasts counting, notification-route allow-list, Ramadan safety card for type 1 diabetes, per-install
-Health Connect record ids, wipe ordering, hidden-weight BMI in the report, unique report files,
-hidden characters in challenge names, glucose retries.
-
-Earlier test breakdown:
-
-- `:core:domain`: 80 JVM tests (timer, safety gates and edit rules, streaks, reminders, insights,
-  backup format and hardening, history stats)
-- `:core:data`: 15 Robolectric tests (single-active-fast index, restore safety, settings in
-  backups, export → wipe → restore round trip, undo through Room)
-- `:app`: 36 tests incl. end-to-end UI flows (onboarding and gates, tappable timer modes,
-  education-only), view-model tests (undo, refeeding), widget/billing decision logic
+Android CI runs the domain, data and app unit suites. Pull requests also run lint, build the staging APK and release AAB, and capture History and the moats screens. Each pull request has a downloadable staging APK and screenshots. The Android 15 upgrade check verifies that a completed fast and an active timer survive an update. It also opens a friend invite on a clean install, finishes screening, joins once and reopens the same challenge. The release bundle built in CI is unsigned unless a release upload key is configured.
 
 Highlights beyond the PRD: tappable timer (fasted / time left / break-fast time), eating-window
 countdown, quick-add on the Timer, undo after ending, add a past fast, "started earlier",
@@ -37,8 +19,16 @@ Languages: English, Bahasa Melayu, Bahasa Indonesia, Simplified Chinese (per-app
 picker on Android 13+). The three translations are drafts and need a native-speaker review,
 especially the safety and refeeding copy.
 
-Not yet done: testing on real devices (alarm timing, widgets, OEM battery settings) — the cloud
-build environment has no emulator.
+The beta screenshot pack contains 28 captures, including light and dark History and Settings, private challenges, health screens, share cards, a doctor-report page and Malay examples. [Reviewed store screenshots](docs/screenshots/) · [Two-phone beta guide](docs/friends-beta.md) · [Beta build and CI checks](https://github.com/nicholsmindset/fasting/pull/5/checks).
+
+### Physical device checks
+
+- Plan weekday starts, move tomorrow only, restart, and check that Timer and the next reminder agree. Check the next weekday still has its usual time. Repeat after a time-zone change.
+- Open a doctor report in a PDF viewer and check that hidden weight stays hidden when sharing.
+- Delete all data, restart, and verify that records, reminders and cached reports are gone.
+- Grant and revoke Health Connect access, retry a failed glucose write, and check sleep and resting heart rate reads.
+- Open an invite from a messaging app, complete onboarding if needed, and join the intended challenge.
+- Check reminder delivery with the phone locked, home-screen widgets and battery restrictions on Pixel, Samsung and Xiaomi phones.
 
 | Feature | Where |
 | --- | --- |
@@ -62,6 +52,8 @@ build environment has no emulator.
   "Redeem" button opens Play's redeem page.
 
 ### Uploading to Play internal testing
+
+[Internal-track publishing workflow and setup](docs/play-internal-testing.md)
 
 1. Create an upload key once (keep it and its passwords safe, outside the repo):
    `keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`
@@ -99,7 +91,7 @@ Step-by-step browser prompts for Vercel, Play Console, RevenueCat, GitHub and Go
       declarations (`docs/health-connect-justifications.md`), listing (`docs/store-listing.md`)
 - [ ] Rewrite body-timeline and program lesson copy in Robert's voice; map book chapters
 - [ ] Verify every helpline and emergency number
-- [ ] Device tests on Samsung, Xiaomi and Pixel (alarm timing, widgets, OEM battery settings)
+- [ ] Complete the physical device checks above
 - [ ] Replace the placeholder launcher icon
 - [ ] Native-speaker review of `values-ms`, `values-in`, `values-zh-rCN` (safety copy first)
 

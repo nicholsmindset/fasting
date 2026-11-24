@@ -124,13 +124,17 @@
     <string name="challenges_open_link">Buka tautan</string>
     <string name="challenges_link_invalid">Itu bukan tautan tantangan.</string>
     <string name="challenges_not_allowed">Tantangan tersedia setelah pertanyaan keamanan menunjukkan puasa cocok untuk Anda.</string>
-    <string name="challenge_progress">%1$d dari %2$d hari</string>
+    <plurals name="challenge_progress">
+        <item quantity="other">%1$d dari %2$d hari</item>
+    </plurals>
     <string name="challenge_dates">%1$s – %2$s</string>
     <string name="challenge_status_upcoming">Mulai %1$s</string>
     <string name="challenge_status_active">Berakhir %1$s</string>
     <string name="challenge_status_finished">Selesai</string>
     <string name="challenge_status_left">Sudah keluar</string>
-    <string name="challenge_daily_title">%1$s selama %2$d hari</string>
+    <plurals name="challenge_daily_title">
+        <item quantity="other">%1$s selama %2$d hari</item>
+    </plurals>
     <string name="challenge_monthu_title">Puasa Senin dan Kamis</string>
     <string name="challenge_white_title">Ayyamul Bidh (hari putih)</string>
     <string name="challenge_tmpl_16_8">Puasa 16 jam sehari selama satu minggu.</string>
@@ -148,12 +152,15 @@
     <string name="challenge_create">Mulai tantangan</string>
     <string name="challenge_create_note">Setelan keamanan Anda tetap berlaku untuk setiap puasa. Beristirahatlah kapan pun Anda perlu.</string>
     <string name="challenge_how_daily">Satu hari dihitung jika puasa minimal %1$d jam dimulai pada hari itu.</string>
-    <string name="challenge_how_sunnah">Satu hari dihitung jika puasa minimal %1$d jam dimulai pada hari itu dan selesai sesuai rencana. Hari raya dan hari tasyrik bukan hari puasa.</string>
-    <string name="challenge_grid_a11y">%1$d dari %2$d hari puasa selesai</string>
+    <string name="challenge_how_sunnah">Hari terjadwal dihitung jika puasa Ramadan, qada, atau sunah dimulai pada hari itu dan selesai sesuai rencana. Puasa biasa juga dihitung jika dimulai pada hari itu dan selesai sesuai durasi yang direncanakan, yaitu minimal %1$d jam. Hari raya dan hari tasyrik dikecualikan.</string>
+    <plurals name="challenge_grid_a11y">
+        <item quantity="other">%1$d dari %2$d hari puasa selesai</item>
+    </plurals>
     <string name="challenge_legend_done">Selesai</string>
     <string name="challenge_legend_ahead">Mendatang</string>
     <string name="challenge_legend_rest">Bukan hari puasa</string>
-    <string name="challenge_invite">Undang dan bagikan kemajuan</string>
+    <string name="challenge_invite">Undang seseorang</string>
+    <string name="challenge_share_progress">Bagikan progres saya</string>
     <string name="challenge_leave">Keluar dari tantangan</string>
     <string name="challenge_leave_confirm_title">Keluar dari tantangan ini?</string>
     <string name="challenge_leave_confirm_body">Puasa Anda tetap ada di riwayat. Anda bisa bergabung lagi dengan tautan kapan saja.</string>

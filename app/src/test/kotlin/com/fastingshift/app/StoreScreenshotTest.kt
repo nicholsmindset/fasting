@@ -152,6 +152,9 @@ class StoreScreenshotTest {
         waitForDescription(s(R.string.a11y_mode_elapsed))
         compose.onNodeWithText(s(R.string.tab_history)).performClick()
         waitFor(s(R.string.history_stat_fasts))
+        // The seeded month includes both planned and early-ended fasts on every capture day.
+        compose.onNodeWithText(s(R.string.history_period_month)).performClick()
+        waitForDescription(s(R.string.history_fasted_month))
         shoot("2-history", mode)
         val history = compose.onNode(hasScrollToNodeAction())
         history.performScrollToIndex(3)

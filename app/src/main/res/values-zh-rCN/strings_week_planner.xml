@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="week_title">我的一周</string>
+    <string name="week_edit_routine">每周计划</string>
+    <string name="week_routines">我的计划</string>
+    <string name="week_create">安排我的 %1$s 计划</string>
+    <string name="week_weekdays">周一至周五</string>
+    <string name="week_every_day">每天</string>
+    <string name="week_choose_days">自选日期</string>
+    <string name="week_repeat">重复</string>
+    <string name="week_save">保存计划</string>
+    <string name="week_delete">删除计划</string>
+    <string name="week_preview">未来七天</string>
+    <string name="week_alert_off">开始提醒已关闭。</string>
+    <string name="week_active">本次断食结束后将恢复开始提醒。</string>
+    <string name="week_next_reminder">下次开始提醒 · %1$s %2$s</string>
+    <string name="week_no_reminder">每周计划中暂无即将开始的时段。</string>
+    <string name="week_skipped">已跳过</string>
+    <string name="week_rest">未安排</string>
+    <string name="week_paused">已暂停</string>
+    <string name="week_changed">仅此日已调整</string>
+    <string name="week_date_hint">更改当天首个开始时间，或跳过当天所有安排。每周计划保持不变。</string>
+    <string name="week_change_time">更改开始时间</string>
+    <string name="week_skip_day">跳过这一天</string>
+    <string name="week_restore_day">恢复原定安排</string>
+    <string name="week_future_time">请选择今天稍后的时间。</string>
+    <string name="week_save_failed">无法保存更改。请检查计划后重试。</string>
+</resources>

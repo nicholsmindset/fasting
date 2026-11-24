@@ -1,13 +1,16 @@
 package com.fastingshift.app
 
-import com.fastingshift.app.alarm.eligibleToStart
+import com.fastingshift.app.alarm.maximumScheduledDuration
 import com.fastingshift.app.alarm.matchesBroadcast
 import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.service.ScreeningRecord
+import java.time.Duration
 import java.time.Instant
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -18,10 +21,10 @@ class ReminderDeliveryTest {
 
     @Test fun eligibilityChangesWithAcknowledgementOnSameGate() {
         val soft = ScreeningRecord(at, answers, GateResult.SOFT, clinicianAcknowledged = false)
-        assertFalse(eligibleToStart(null))
-        assertFalse(eligibleToStart(soft))
-        assertTrue(eligibleToStart(soft.copy(clinicianAcknowledged = true)))
-        assertFalse(eligibleToStart(soft.copy(gateResult = GateResult.BLOCK, clinicianAcknowledged = true)))
+        assertNull(maximumScheduledDuration(null))
+        assertNull(maximumScheduledDuration(soft))
+        assertEquals(Duration.ofHours(24), maximumScheduledDuration(soft.copy(clinicianAcknowledged = true)))
+        assertNull(maximumScheduledDuration(soft.copy(gateResult = GateResult.BLOCK, clinicianAcknowledged = true)))
     }
 
     @Test fun matchingRequiresSameCurrentPlanEventAtAndroidPrecision() {

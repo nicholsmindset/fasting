@@ -72,8 +72,9 @@ class DatabaseKeyProvider internal constructor(private val context: Context) {
 
     /** Removes the stored key and the Keystore entry (used with deleting the database). */
     fun reset() {
-        prefs().edit().remove(KEY_WRAPPED).commit()
-        runCatching { KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }.deleteEntry(ALIAS) }
+        val store = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        if (store.containsAlias(ALIAS)) store.deleteEntry(ALIAS)
+        check(prefs().edit().remove(KEY_WRAPPED).commit()) { "Could not remove wrapped database key" }
     }
 
     private fun prefs() = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

@@ -159,7 +159,8 @@ private val date = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 private val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 /** Formats in the device's current zone, read at call time so zone changes show correctly. */
-fun Instant.formatDateTime(): String = dateTime.format(atZone(ZoneId.systemDefault()))
+fun Instant.formatDateTime(locale: Locale = Locale.getDefault(Locale.Category.FORMAT)): String =
+    dateTime.withLocale(locale).format(atZone(ZoneId.systemDefault()))
 fun Instant.formatDate(): String = date.format(atZone(ZoneId.systemDefault()))
 fun Instant.formatTime(): String = time.format(atZone(ZoneId.systemDefault()))
 

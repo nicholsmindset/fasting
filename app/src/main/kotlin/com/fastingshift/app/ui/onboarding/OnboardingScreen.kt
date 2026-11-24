@@ -58,6 +58,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -98,14 +99,18 @@ import kotlinx.coroutines.launch
 @Composable
 fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: OnboardingViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
-    val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.next() }
+    val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.completeNotifications() }
+    if (st.step == Step.COMPLETE) {
+        LaunchedEffect(vm) { vm.finish(onFinished) }
+        return
+    }
     // On the first step of a re-run, system back leaves onboarding and returns to Settings.
     val canGoBack = st.step != Step.WELCOME && !(st.rerun && st.step == Step.SCREENING)
     BackHandler(enabled = canGoBack) { vm.back() }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.safeDrawingPadding().imePadding()) {
-            ProgressHeader(st.step, st.rerun, canGoBack, vm::back)
+            ProgressHeader(stepProgress(st.step, st.rerun, vm.offerAvailable), canGoBack, vm::back)
             AnimatedContent(
                 targetState = st.step,
                 transitionSpec = {
@@ -127,13 +132,14 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
                     Step.NOTIFICATIONS -> StepPage(
                         actions = {
                             PrimaryButton(stringResource(R.string.onb_notif_allow), onClick = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notif.launch(Manifest.permission.POST_NOTIFICATIONS) else vm.next()
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notif.launch(Manifest.permission.POST_NOTIFICATIONS) else vm.completeNotifications()
                             })
-                            PlainButton(stringResource(R.string.onb_not_now), onClick = vm::next, modifier = Modifier.fillMaxWidth())
+                            PlainButton(stringResource(R.string.onb_not_now), onClick = vm::completeNotifications, modifier = Modifier.fillMaxWidth())
                         },
                     ) {
                         CenteredHero(Icons.Filled.Notifications, R.string.onb_notif_title, R.string.onb_notif_body)
                     }
+                    Step.COMPLETE -> Unit
                     Step.OFFER -> Offer(onSeePlans = { vm.finish { onFinished(); onShowPaywall() } }, onFree = { vm.finish(onFinished) })
                 }
             }
@@ -143,8 +149,7 @@ fun OnboardingRoute(onFinished: () -> Unit, onShowPaywall: () -> Unit, vm: Onboa
 
 /** Back chevron, "Step n of N" and a thin bar that animates as the user moves through. */
 @Composable
-private fun ProgressHeader(step: Step, rerun: Boolean, canGoBack: Boolean, onBack: () -> Unit) {
-    val progress = stepProgress(step, rerun)
+private fun ProgressHeader(progress: Pair<Int, Int>?, canGoBack: Boolean, onBack: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

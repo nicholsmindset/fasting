@@ -2,153 +2,193 @@ package com.fastingshift.app.ui.settings
 
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fastingshift.app.R
+import com.fastingshift.app.ui.components.WeekFormat
+import com.fastingshift.app.ui.components.rememberWeekFormat
+import com.fastingshift.app.ui.components.LoadingBox
+import com.fastingshift.app.ui.components.SecondaryScaffold
+import com.fastingshift.app.ui.components.startReminderNotificationsEnabled
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
-import com.fastingshift.app.ui.design.SwitchGroupRow
-import com.fastingshift.app.ui.design.rememberHaptics
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import com.fastingshift.app.R
-import com.fastingshift.app.ui.components.SecondaryScaffold
-import androidx.compose.runtime.remember
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import com.fastingshift.data.repo.ScheduleRepository
-import com.fastingshift.domain.model.Schedule
+import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.domain.protocol.Presets
-import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.DayOfWeek
+import com.fastingshift.domain.schedule.DayOverride
+import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.TextStyle
-import java.util.Locale
-import javax.inject.Inject
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
-@HiltViewModel
-class SchedulesViewModel @Inject constructor(
-    private val repo: ScheduleRepository,
-    screening: com.fastingshift.domain.service.ScreeningRepository,
-) : ViewModel() {
-    val schedules = repo.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    /** Schedules only make sense for people who may start a fast (SR-1/SR-2). */
-    val canSchedule = screening.observeLatest()
-        .map { r -> r != null && com.fastingshift.domain.safety.FastPolicy.maxAllowed(r.gateResult, r.clinicianAcknowledged) != null }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
-    fun add(protocolId: String, days: Set<DayOfWeek>) = viewModelScope.launch {
-        repo.save(Schedule(protocolId = protocolId, days = days, startTime = LocalTime.of(20, 0)))
-    }
-    fun save(s: Schedule) = viewModelScope.launch { repo.save(s) }
-    fun delete(id: Long) = viewModelScope.launch { repo.delete(id) }
-}
-
-/** Weekly schedules for 5:2, ADF or any fasting days (PRD F2). */
 @Composable
-fun SchedulesRoute(onBack: () -> Unit, vm: SchedulesViewModel = hiltViewModel()) {
-    val list by vm.schedules.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val timeFormat = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
-    SecondaryScaffold(title = stringResource(R.string.schedules_title), onBack = onBack) {
-        Text(
-            stringResource(R.string.schedules_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        list.forEach { s ->
-            InsetGroup(header = Presets.byId(s.protocolId)?.name ?: s.protocolId) {
-                SwitchGroupRow(stringResource(R.string.schedules_enabled), s.enabled, { vm.save(s.copy(enabled = it)) })
-                GroupDivider()
-                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(stringResource(R.string.schedules_days), style = MaterialTheme.typography.bodyLarge)
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        DayOfWeek.entries.forEach { d ->
-                            DayToggle(d, selected = d in s.days) { vm.save(s.copy(days = if (d in s.days) s.days - d else s.days + d)) }
+fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: SchedulesViewModel = hiltViewModel()) {
+    val loaded by vm.state.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val failure = stringResource(R.string.week_save_failed)
+    LaunchedEffect(vm) {
+        vm.failed.collect { error ->
+            if (error) {
+                snackbar.showSnackbar(failure)
+                vm.failed.value = false
+            }
+        }
+    }
+    val format = rememberWeekFormat()
+    val notifications = startReminderNotificationsEnabled()
+
+    var editProtocol by rememberSaveable { mutableStateOf<String?>(null) }
+    var editId by rememberSaveable { mutableStateOf(0L) }
+    var removeId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var dateText by rememberSaveable(initialDate) { mutableStateOf(initialDate?.toString()) }
+    val closeEditor = { editProtocol = null }
+    val editing = editProtocol
+    val state = loaded
+    BackHandler(enabled = editing != null) { if (!busy) closeEditor() }
+
+    SecondaryScaffold(title = stringResource(if (editing == null) R.string.week_title else R.string.week_edit_routine),
+        onBack = { if (!busy) { if (editing != null) closeEditor() else onBack() } }, snackbarHostState = snackbar) {
+        when {
+            state == null -> LoadingBox()
+            editing != null -> {
+                val original = state.routines.firstOrNull { it.id == editId }
+                if (editId != 0L && original == null || !state.allows(editing)) {
+                    LaunchedEffect(editId, editing) { closeEditor() }
+                } else {
+                    RoutineEditor(state, original, editing, format, notifications, busy,
+                        onSave = { vm.save(it, closeEditor) }, onDelete = { vm.delete(editId, closeEditor) })
+                }
+            }
+            else -> {
+                fun edit(id: Long, protocol: String) { editId = id; editProtocol = protocol }
+                val daily = state.dailyPlan
+                if (daily != null && state.routines.none { it.protocolId == daily.id }) {
+                    PrimaryButton(stringResource(R.string.week_create, daily.name), onClick = { edit(0, daily.id) })
+                }
+                if (state.routines.isNotEmpty()) {
+                    InsetGroup(header = stringResource(R.string.week_routines)) {
+                        state.routines.forEachIndexed { index, routine ->
+                            if (index > 0) GroupDivider()
+                            GroupRow(Presets.byId(routine.protocolId)?.name ?: routine.protocolId,
+                                subtitle = if (routine.enabled) format.days(routine.days) else stringResource(R.string.week_paused),
+                                value = format.time.format(routine.startTime), showChevron = state.allows(routine.protocolId),
+                                onClick = if (state.allows(routine.protocolId)) ({ edit(routine.id, routine.protocolId) }) else null)
+                            if (!state.allows(routine.protocolId)) {
+                                GroupRow(stringResource(R.string.week_delete), onClick = { removeId = routine.id })
+                            }
                         }
                     }
                 }
-                GroupDivider()
-                GroupRow(
-                    stringResource(R.string.schedules_start_time),
-                    value = timeFormat.format(s.startTime),
-                    showChevron = true,
-                    onClick = {
-                        TimePickerDialog(context, { _, h, m -> vm.save(s.copy(startTime = LocalTime.of(h, m))) },
-                            s.startTime.hour, s.startTime.minute, DateFormat.is24HourFormat(context)).show()
-                    },
-                )
-                GroupDivider()
-                GroupRow(stringResource(R.string.delete), titleColor = MaterialTheme.colorScheme.error, onClick = { vm.delete(s.id) })
+                if (state.maxDuration == null) {
+                    Text(stringResource(R.string.schedules_locked))
+                } else {
+                    WeekPreview(state, format, notifications, onDate = { dateText = it.toString() })
+                    val anotherDaily = daily?.takeIf { state.routines.any { routine -> routine.protocolId == it.id } }
+                    val presets = listOf(
+                        Presets.FIVE_TWO to R.string.schedules_add_52,
+                        Presets.ADF to R.string.schedules_add_adf,
+                    ).filter { (preset, _) -> state.allows(preset.id) }
+                    if (anotherDaily != null || presets.isNotEmpty()) {
+                        InsetGroup(header = stringResource(R.string.schedules_new)) {
+                            if (anotherDaily != null) {
+                                GroupRow(stringResource(R.string.week_create, anotherDaily.name), showChevron = true,
+                                    onClick = { edit(0, anotherDaily.id) })
+                            }
+                            presets.forEachIndexed { index, (preset, label) ->
+                                if (index > 0 || anotherDaily != null) GroupDivider()
+                                GroupRow(stringResource(label), showChevron = true, onClick = { edit(0, preset.id) })
+                            }
+                        }
+                    }
+                }
             }
         }
-        val canSchedule by vm.canSchedule.collectAsStateWithLifecycle()
-        if (canSchedule) {
-            InsetGroup(header = stringResource(R.string.schedules_new)) {
-                GroupRow(stringResource(R.string.schedules_add_52), titleColor = MaterialTheme.colorScheme.primary, onClick = {
-                    vm.add(Presets.FIVE_TWO.id, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY))
-                })
-                GroupDivider()
-                GroupRow(stringResource(R.string.schedules_add_adf), titleColor = MaterialTheme.colorScheme.primary, onClick = {
-                    vm.add(Presets.ADF.id, setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY))
-                })
-            }
+    }
+    val idToRemove = removeId
+    if (idToRemove != null) {
+        AlertDialog(onDismissRequest = { removeId = null }, title = { Text(stringResource(R.string.week_delete)) },
+            confirmButton = { TextButton(enabled = !busy, onClick = { vm.delete(idToRemove) { removeId = null } }) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { removeId = null }) { Text(stringResource(android.R.string.cancel)) } })
+    }
+    val day = dateText?.let(LocalDate::parse)
+    if (day != null && state != null) {
+        val original = state.starts(day, original = true)
+        if (day < state.today || original.isEmpty()) {
+            LaunchedEffect(day, state.today) { dateText = null }
         } else {
-            Text(
-                stringResource(R.string.schedules_locked),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
+            DateEditor(day, state.settings.planHistory.dayOverrides[day]?.startTime
+                ?: original.first().second.atZone(state.zone).toLocalTime(), state.today, state.now.atZone(state.zone).toLocalTime(),
+                state.settings.planHistory.dayOverrides.containsKey(day), format, busy,
+                onChange = { vm.changeDate(day, it) { dateText = null } }, onClose = { dateText = null })
         }
     }
 }
 
-/** A round day toggle (filled when it's a fasting day), like iOS's repeat-day picker. */
 @Composable
-private fun DayToggle(day: DayOfWeek, selected: Boolean, onToggle: () -> Unit) {
-    val haptics = rememberHaptics()
-    val full = day.getDisplayName(TextStyle.FULL, Locale.getDefault())
-    Box(
-        Modifier.size(40.dp).clip(CircleShape)
-            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-            .toggleable(value = selected, role = Role.Checkbox, onValueChange = { haptics.tick(); onToggle() })
-            .semantics { contentDescription = full },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            day.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
-            style = MaterialTheme.typography.titleSmall,
-            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-        )
+internal fun WeekPreview(state: PlannerState, format: WeekFormat, notifications: Boolean, onDate: ((LocalDate) -> Unit)? = null) {
+    val next = state.nextStartAlert()?.atZone(state.zone)
+    val summary = when {
+        !state.settings.reminders.fastStartEnabled || !notifications -> stringResource(R.string.week_alert_off)
+        state.active -> stringResource(R.string.week_active)
+        next != null -> stringResource(R.string.week_next_reminder, format.date.format(next), format.time.format(next))
+        else -> stringResource(R.string.week_no_reminder)
     }
+    InsetGroup(header = stringResource(R.string.week_preview), footer = summary) {
+        for (offset in 0L..6L) {
+            val day = state.today.plusDays(offset)
+            val starts = state.starts(day)
+            val original = state.starts(day, original = true)
+            val override = state.settings.planHistory.dayOverrides[day]
+            val editable = onDate != null && original.isNotEmpty()
+            val value = when {
+                starts.isNotEmpty() -> starts.joinToString(" · ") { format.time.format(it.second.atZone(state.zone)) }
+                original.isNotEmpty() && override != null -> stringResource(R.string.week_skipped)
+                else -> stringResource(R.string.week_rest)
+            }
+            if (offset > 0) GroupDivider()
+            GroupRow(format.date.format(day), modifier = Modifier.testTag("week-day-$day"),
+                subtitle = if (starts.isNotEmpty() && override?.startTime != null) stringResource(R.string.week_changed) else null,
+                value = value, showChevron = editable, onClick = if (editable) ({ onDate?.invoke(day); Unit }) else null)
+        }
+    }
+}
+
+@Composable
+private fun DateEditor(day: LocalDate, time: LocalTime, today: LocalDate, now: LocalTime, changed: Boolean,
+    format: WeekFormat, busy: Boolean, onChange: (DayOverride?) -> Unit, onClose: () -> Unit) {
+    val context = LocalContext.current
+    var invalid by rememberSaveable(day) { mutableStateOf(false) }
+    AlertDialog(onDismissRequest = onClose, title = { Text(format.date.format(day)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.week_date_hint))
+                TextButton(enabled = !busy, onClick = {
+                    TimePickerDialog(context, { _, hour, minute ->
+                        val selected = LocalTime.of(hour, minute)
+                        invalid = day == today && !selected.isAfter(now)
+                        if (!invalid) onChange(DayOverride(selected))
+                    }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
+                }) { Text(stringResource(R.string.week_change_time)) }
+                TextButton(enabled = !busy, onClick = { onChange(DayOverride()) }) { Text(stringResource(R.string.week_skip_day)) }
+                if (changed) TextButton(enabled = !busy, onClick = { onChange(null) }) { Text(stringResource(R.string.week_restore_day)) }
+                if (invalid) Text(stringResource(R.string.week_future_time))
+            }
+        },
+        confirmButton = { TextButton(onClick = onClose) { Text(stringResource(android.R.string.cancel)) } })
 }

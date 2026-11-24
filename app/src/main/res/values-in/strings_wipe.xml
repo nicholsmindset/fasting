@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wipe_retry_error">Sebagian data mungkin masih tersimpan di ponsel ini. Coba lagi. Jika penghapusan terus gagal, hapus penyimpanan aplikasi di setelan Android.</string>
+</resources>

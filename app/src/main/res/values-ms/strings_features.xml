@@ -20,9 +20,9 @@
 
     <!-- Timer: eating window, quick add, start earlier, undo -->
     <string name="eating_title">Tempoh makan</string>
-    <string name="eating_next_in">Puasa seterusnya dalam %1$s</string>
-    <string name="eating_next_at">Puasa seterusnya pada %1$s</string>
-    <string name="eating_a11y">Tempoh makan. Puasa seterusnya dalam %1$s, pada %2$s</string>
+    <string name="eating_next_in">Baki %1$s</string>
+    <string name="eating_next_at">Tamat pada %1$s</string>
+    <string name="eating_a11y">Tempoh makan tamat dalam %1$s, pada %2$s.</string>
     <string name="quick_add_title">Tambah pantas</string>
     <string name="quick_water">+250 ml air</string>
     <string name="quick_weight">Berat</string>
@@ -124,12 +124,13 @@
     <string name="history_fasted_week">berpuasa minggu ini</string>
     <string name="history_fasted_month">berpuasa bulan ini</string>
     <string name="history_fasted_year">berpuasa tahun ini</string>
-    <string name="history_stat_fasts">Puasa</string>
+    <string name="history_stat_fasts">Puasa dimulakan</string>
     <string name="history_stat_average">Purata</string>
     <string name="history_stat_planned_days">Hari dirancang selesai</string>
     <string name="history_recent">Puasa terkini</string>
-    <string name="history_average">Purata %1$s · %2$d puasa terakhir</string>
-    <string name="history_ring_a11y">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</string>
+    <plurals name="history_ring_a11y">
+        <item quantity="other">%1$s %2$s. %3$d daripada %4$d hari yang dirancang selesai.</item>
+    </plurals>
     <string name="a11y_fast_bar">Puasa, %1$s, %2$s</string>
     <string name="status_active">Sedang berjalan</string>
     <string name="status_completed">Ikut rancangan</string>
@@ -259,8 +260,6 @@
     <string name="settings_privacy_policy">Dasar privasi</string>
 
     <!-- Schedules -->
-    <string name="schedules_title">Jadual mingguan</string>
-    <string name="schedules_body">Pilih hari puasa anda. Hari di luar jadual tidak akan memutuskan rentetan anda.</string>
     <string name="schedules_add_52">Tambah jadual 5:2</string>
     <string name="schedules_add_adf">Tambah jadual selang hari</string>
 

@@ -2,12 +2,16 @@ package com.fastingshift.app
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -94,6 +98,53 @@ class ChallengeJoinTest {
         val joined = runBlocking { challenges.observeAll().first() }
         assertEquals(1, joined.size)
         assertEquals(ChallengeInvite.of(joined.single()), invite)
+    }
+
+    @Test fun freshInstallInviteCanBeJoinedAfterFinishingScreening() {
+        runBlocking { settings.setOnboardingComplete(false) }
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.now().plusDays(1), 7, "Welcome challenge")
+        open(ChallengeLinks.link(invite))
+
+        fun tap(label: Int) {
+            waitFor(s(label))
+            val node = compose.onNodeWithText(s(label))
+            runCatching { node.performScrollTo() }
+            node.performClick()
+        }
+        fun enter(label: Int, value: String) {
+            compose.onNode(hasSetTextAction() and hasAnyDescendant(hasText(s(label))), useUnmergedTree = true)
+                .performScrollTo().performTextReplacement(value)
+        }
+
+        tap(R.string.onb_get_started)
+        tap(R.string.onb_skip)
+        tap(R.string.goal_consistency)
+        tap(R.string.onb_next)
+        waitFor(s(R.string.onb_screen_title))
+        enter(R.string.onb_age, "40")
+        enter(R.string.onb_height, "175")
+        enter(R.string.onb_weight, "70")
+        tap(R.string.onb_next)
+        waitFor(s(R.string.onb_ok_title))
+        tap(R.string.onb_next)
+        waitFor(s(R.string.onb_protocol_title))
+        tap(R.string.onb_next)
+        tap(R.string.onb_not_now)
+
+        // A briefly visible Join screen is insufficient: completion used to pop it back to Timer.
+        waitFor("Welcome challenge")
+        compose.waitForIdle()
+        tap(R.string.challenge_join)
+        waitFor(s(R.string.challenge_leave))
+        assertEquals(invite, ChallengeInvite.of(runBlocking { challenges.observeAll().first().single() }))
+    }
+
+    @Test fun pilotInviteShowsJoinPreviewBeforeCreatingAnything() {
+        val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.now().plusDays(1), 7, "Walking group")
+        open(ChallengeLinks.link(invite, pilot = true))
+        waitFor("Walking group")
+        compose.onNodeWithText(s(R.string.challenge_join)).assertExists()
+        assertEquals(0, runBlocking { challenges.observeAll().first() }.size)
     }
 
     @Test fun malformedLinkIsRejectedCalmly() {

@@ -1,0 +1,10 @@
+<resources>
+    <string name="week_timer_planned">Next planned start · %1$s</string>
+    <string name="week_timer_reminder">Start reminder · %1$s</string>
+    <string name="week_timer_reminder_off">Start reminders are off</string>
+    <string name="week_timer_plan">Plan my week</string>
+    <string name="week_timer_change">Change this start</string>
+    <string name="week_timer_change_today">Change today</string>
+    <string name="week_timer_reminder_on">Start reminder on</string>
+    <string name="week_timer_selected">Selected fast</string>
+</resources>

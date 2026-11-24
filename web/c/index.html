@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0b4e48">
+  <title>Challenge invitation · Fasting Shift</title>
+  <link rel="stylesheet" href="./challenge.css">
+  <script type="module" src="./challenge.mjs"></script>
+</head>
+<body>
+  <header class="mast"><span class="brand-mark" aria-hidden="true"></span>
+    <div class="brand"><strong>Fasting Shift</strong><span>by Nichols Mindset</span></div></header>
+  <main>
+    <section class="invite" aria-labelledby="page-title">
+      <div class="intro"><p class="kicker">Challenge invitation</p>
+        <h1 id="page-title">Open your challenge</h1>
+        <p id="description">Open this link in Fasting Shift on Android to review the invitation.</p>
+      </div>
+      <div id="invitation" class="content" hidden>
+        <dl class="details">
+          <div id="schedule-row" hidden><dt>Schedule</dt><dd id="schedule"></dd></div>
+          <div><dt>Dates</dt><dd id="dates"></dd></div>
+          <div><dt>Duration</dt><dd id="duration"></dd></div>
+        </dl>
+        <div class="actions">
+          <div id="android-actions" hidden>
+            <label for="build">Installed app</label>
+            <select id="build">
+              <option value="staging">Fasting Shift (staging)</option>
+              <option value="beta">Fasting Shift (beta)</option>
+              <option value="release">Fasting Shift</option>
+            </select>
+            <a id="open-app" class="button primary">Open in Fasting Shift</a>
+          </div>
+          <div class="copy-actions">
+            <button type="button" id="copy-link">Copy invite link</button>
+            <button type="button" id="copy-code">Copy code</button>
+          </div>
+          <p id="status" role="status" aria-live="polite"></p>
+          <div id="manual-copy" hidden><label for="copy-value">Select and copy</label>
+            <textarea id="copy-value" rows="3" readonly spellcheck="false"></textarea></div>
+        </div>
+      </div>
+      <noscript><p class="noscript">To join without JavaScript, copy the code after the # or /c/ in your address bar. Open History → Challenges in Fasting Shift and paste it under “Have an invite link?”</p></noscript>
+    </section>
+    <section id="install-help" class="help" aria-labelledby="help-title" hidden>
+      <h2 id="help-title">Joining for the first time?</h2>
+      <p>Fasting Shift is in Android beta. A public Google Play download is pending.</p>
+      <ol>
+        <li>Copy your invite link or code.</li>
+        <li>If you need the app, <a href="https://github.com/nicholsmindset/fasting/actions/runs/45192230204/artifacts/14827665029" rel="noreferrer">download the staging build from GitHub</a> (sign-in required). Open the downloaded APK to install it. If GitHub gives you a ZIP, extract the APK first. If the link has expired, ask the sender for the current build.</li>
+        <li>Return to this invite on your Android phone and tap <strong>Open in Fasting Shift</strong>. On your first visit, finish screening to see the invitation. To enter it manually, go to <strong>History → Challenges → Have an invite link?</strong> and paste the code.</li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>

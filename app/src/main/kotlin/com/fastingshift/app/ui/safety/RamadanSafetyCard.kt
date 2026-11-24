@@ -87,7 +87,9 @@ fun RamadanSafetyContent(modifier: Modifier = Modifier) {
         Text(stringResource(R.string.ramadan_safety_allowed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(Icons.Filled.Call, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            PlainButton(stringResource(R.string.ramadan_safety_emergency, number), onClick = { dial(context, number) })
+            val action = if (number == null) stringResource(R.string.stop_local_emergency)
+                else stringResource(R.string.ramadan_safety_emergency, number)
+            PlainButton(action, onClick = { dial(context, number) })
         }
     }
 }

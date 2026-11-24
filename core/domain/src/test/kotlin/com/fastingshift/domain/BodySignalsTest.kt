@@ -59,6 +59,16 @@ class BodySignalsTest {
         assertEquals(mon.plusDays(1), BodySignals.nightOf(SleepSession(at(mon.plusDays(1), 21), at(mon.plusDays(2), 5)), zone))
     }
 
+    @Test fun `local noon divides sleep nights on both daylight saving transitions`() {
+        val newYork = ZoneId.of("America/New_York")
+        fun night(start: String): LocalDate {
+            val instant = Instant.parse(start)
+            return BodySignals.nightOf(SleepSession(instant, instant.plus(h(4))), newYork)
+        }
+        assertEquals(LocalDate.of(2026, 3, 8), night("2026-03-08T16:30:00Z")) // 12:30 EDT
+        assertEquals(LocalDate.of(2026, 10, 31), night("2026-11-01T16:30:00Z")) // 11:30 EST
+    }
+
     @Test fun `overlapping sessions are merged, split sessions added and naps ignored`() {
         val sessions = listOf(
             SleepSession(at(mon, 23), at(mon.plusDays(1), 6)), // watch: 7h

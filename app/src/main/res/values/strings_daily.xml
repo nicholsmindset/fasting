@@ -56,8 +56,14 @@
     <!-- Each message gets (completed planned days, planned days); not all use them. -->
     <string name="recap_msg_empty">A fresh week. Fast when it suits your plan.</string>
     <string name="recap_msg_empty_last">A quiet week. That\'s fine. Pick up whenever you\'re ready.</string>
-    <string name="recap_msg_all" tools:ignore="PluralsCandidate">%1$d of %2$d planned days went to plan. Steady is what counts.</string>
-    <string name="recap_msg_some" tools:ignore="PluralsCandidate">%1$d of %2$d planned days went to plan. Consistency matters more than length.</string>
+    <plurals name="recap_msg_all">
+        <item quantity="one">%1$d of %2$d planned day went to plan. Steady is what counts.</item>
+        <item quantity="other">%1$d of %2$d planned days went to plan. Steady is what counts.</item>
+    </plurals>
+    <plurals name="recap_msg_some">
+        <item quantity="one">%1$d of %2$d planned day went to plan. Consistency matters more than length.</item>
+        <item quantity="other">%1$d of %2$d planned days went to plan. Consistency matters more than length.</item>
+    </plurals>
     <string name="recap_msg_none">No planned days completed yet. Each day is a fresh start.</string>
     <string name="log_trend_a11y" tools:ignore="PluralsCandidate">Weight trend, %1$d entries in the last 90 days. From %2$s to %3$s. Lowest %4$s, highest %5$s.</string>
 </resources>

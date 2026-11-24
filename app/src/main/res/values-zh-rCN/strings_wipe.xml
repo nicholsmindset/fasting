@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wipe_retry_error">此手机上可能仍有部分数据。请重试。如果仍然无法删除，请在 Android 设置中清除应用存储空间。</string>
+</resources>

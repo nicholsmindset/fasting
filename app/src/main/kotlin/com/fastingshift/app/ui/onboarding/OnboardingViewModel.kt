@@ -3,6 +3,7 @@ package com.fastingshift.app.ui.onboarding
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.onboarding.Goal
@@ -24,13 +25,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, OFFER }
+enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, OFFER, COMPLETE }
+
+internal fun afterNotifications(offerAvailable: Boolean): Step = if (offerAvailable) Step.OFFER else Step.COMPLETE
 
 /** "Step n of N" for the progress bar; null on Welcome (no bar). A re-run only has its own steps. */
-fun stepProgress(step: Step, rerun: Boolean): Pair<Int, Int>? {
-    val steps = if (rerun) listOf(Step.SCREENING, Step.RESULT, Step.PROTOCOL) else Step.entries.drop(1)
-    val i = steps.indexOf(step)
-    return if (i < 0) null else (i + 1) to steps.size
+fun stepProgress(step: Step, rerun: Boolean, offerAvailable: Boolean): Pair<Int, Int>? {
+    val first = if (rerun) Step.SCREENING else Step.INTRO
+    val last = when {
+        rerun -> Step.PROTOCOL
+        offerAvailable -> Step.OFFER
+        else -> Step.NOTIFICATIONS
+    }
+    if (step !in first..last) return null
+    return (step.ordinal - first.ordinal + 1) to (last.ordinal - first.ordinal + 1)
 }
 
 /**
@@ -78,7 +86,9 @@ class OnboardingViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val clock: Clock,
     private val handle: SavedStateHandle,
+    billing: BillingManager,
 ) : ViewModel() {
+    val offerAvailable = billing.isConfigured
     private val _state = MutableStateFlow(restore() ?: OnboardingState())
     val state: StateFlow<OnboardingState> = _state
 
@@ -133,7 +143,11 @@ class OnboardingViewModel @Inject constructor(
         val outcome = form.toAnswers()?.let(ScreeningEvaluator::evaluate)
         val ack = handle[KEY_ACK] ?: false
         // Steps after the result need its outcome; without valid answers, go back to the form.
-        val safeStep = if (step > Step.SCREENING && outcome == null) Step.SCREENING else step
+        val safeStep = when {
+            step > Step.SCREENING && outcome == null -> Step.SCREENING
+            step == Step.OFFER -> afterNotifications(offerAvailable)
+            else -> step
+        }
         val allowed = outcome?.let { allowedProtocols(it.result, it.result == GateResult.SOFT && ack) }.orEmpty()
         return OnboardingState(
             step = safeStep,
@@ -153,6 +167,10 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun next() = _state.update { it.copy(step = Step.entries[it.step.ordinal + 1]) }
+    fun completeNotifications() = _state.update {
+        if (it.step == Step.NOTIFICATIONS) it.copy(step = afterNotifications(offerAvailable)) else it
+    }
+
     fun back() = _state.update { if (it.step.ordinal > 0 && !(it.rerun && it.step == Step.SCREENING)) it.copy(step = Step.entries[it.step.ordinal - 1]) else it }
 
     /** Choosing a goal also pre-selects its suggested protocol for the protocol step. */

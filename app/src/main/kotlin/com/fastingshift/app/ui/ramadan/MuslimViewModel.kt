@@ -70,14 +70,17 @@ data class MuslimUiState(
 ) {
     /** Kinds of fast the hub offers to start today. */
     val startKinds: List<FastKind>
-        get() = when (noFast) {
-            NoFastReason.RAMADAN -> listOf(FastKind.RAMADAN)
-            null -> listOfNotNull(FastKind.SUNNAH.takeIf { todayTypes.isNotEmpty() }, FastKind.QADA)
-            else -> emptyList()
-        }
+        get() = allowedKinds(noFast, todayTypes)
 
     companion object {
         const val UPCOMING_DAYS = 30
+
+        internal fun allowedKinds(noFast: NoFastReason?, todayTypes: Set<SunnahType>): List<FastKind> =
+            when (noFast) {
+                NoFastReason.RAMADAN -> listOf(FastKind.RAMADAN)
+                null -> listOfNotNull(FastKind.SUNNAH.takeIf { todayTypes.isNotEmpty() }, FastKind.QADA)
+                else -> emptyList()
+            }
     }
 }
 
@@ -112,18 +115,17 @@ class MuslimViewModel @Inject constructor(
     private var pendingKind: FastKind? = null
 
     val state: StateFlow<MuslimUiState?> = combine(settings.settings, fasts.observeAll(), minutes) { s, all, now ->
-        val zone = ZoneId.systemDefault()
-        val today = now.atZone(zone).toLocalDate()
+        val city = Cities.byId(s.ramadanCityId)
+        val today = now.atZone(city?.zone ?: ZoneId.systemDefault()).toLocalDate()
         val offset = s.hijriOffsetDays
         val hijri = Hijri.of(today, offset)
-        val city = Cities.byId(s.ramadanCityId)
         val active = all.firstOrNull { it.isActive }
         val todayFast = when {
             active != null -> TodayFast.Active(active)
             city == null -> TodayFast.NeedsCity
             else -> {
                 val method = s.ramadanMethod ?: Cities.defaultMethod(city)
-                val maghrib = RamadanPlanner.day(city, method, now.atZone(city.zone).toLocalDate()).maghrib
+                val maghrib = RamadanPlanner.day(city, method, today).maghrib
                 val length = maghrib?.let { Duration.between(now, it) }
                 when {
                     maghrib == null || length == null -> TodayFast.TimesUnavailable
@@ -159,7 +161,14 @@ class MuslimViewModel @Inject constructor(
         }
         val now = clock.instant()
         val method = s.ramadanMethod ?: Cities.defaultMethod(city)
-        val maghrib = RamadanPlanner.day(city, method, now.atZone(city.zone).toLocalDate()).maghrib
+        val today = now.atZone(city.zone).toLocalDate()
+        val offset = s.hijriOffsetDays
+        val allowed = MuslimUiState.allowedKinds(Sunnah.noFastReason(today, offset), Sunnah.typesFor(today, offset))
+        if (kind !in allowed) {
+            _events.update { it.copy(invalidStart = true) }
+            return@launch
+        }
+        val maghrib = RamadanPlanner.day(city, method, today).maghrib
         if (maghrib == null) {
             _events.update { it.copy(invalidStart = true) }
             return@launch

@@ -4,14 +4,27 @@ import com.fastingshift.domain.history.History
 import com.fastingshift.domain.model.Schedule
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.TreeMap
 
 enum class WeekChoice { KEEP, BREAK }
+
+/** A dated change to the recurrence. A null time means the whole date is skipped. */
+data class DayOverride(val startTime: LocalTime? = null) {
+    val isSkipped: Boolean get() = startTime == null
+    fun toRecord(): String = startTime?.toString() ?: "skip"
+
+    companion object {
+        fun fromRecord(raw: String): DayOverride? =
+            if (raw == "skip") DayOverride() else runCatching { DayOverride(LocalTime.parse(raw)) }.getOrNull()
+    }
+}
 
 /** Local civil dates match the calendar and schedule editor even across DST changes. */
 data class PlanHistory(
     val revisions: Map<LocalDate, Int> = emptyMap(),
     val choices: Map<LocalDate, WeekChoice> = emptyMap(),
+    val dayOverrides: Map<LocalDate, DayOverride> = emptyMap(),
 ) {
     private val masks = TreeMap(revisions)
     val trackedFrom: LocalDate? get() = masks.firstEntry()?.key
@@ -22,6 +35,7 @@ data class PlanHistory(
     /** Unknown history has no denominator. A week off also has no planned days. */
     fun isPlanned(day: LocalDate): Boolean {
         val mask = masks.floorEntry(day)?.value ?: return false
+        if (dayOverrides[day]?.isSkipped == true) return false
         return !isBreak(day) && mask and bit(day.dayOfWeek) != 0
     }
 
@@ -32,7 +46,7 @@ data class PlanHistory(
         next[day] = mask
         // Multiple edits on the same day may restore the previous week's plan.
         if (next.lowerEntry(day)?.value == mask) next.remove(day)
-        return PlanHistory(next, choices)
+        return copy(revisions = next)
     }
 
     companion object {
@@ -44,7 +58,11 @@ data class PlanHistory(
             return if (days.isEmpty()) EVERY_DAY else days.fold(0) { mask, day -> mask or bit(day) }
         }
 
-        fun fromRecords(revisions: Map<String, Int>, choices: Map<String, String>): PlanHistory {
+        fun fromRecords(
+            revisions: Map<String, Int>,
+            choices: Map<String, String>,
+            dayOverrides: Map<String, String> = emptyMap(),
+        ): PlanHistory {
             fun date(value: String): LocalDate? = runCatching { LocalDate.parse(value) }.getOrNull()
             return PlanHistory(
                 revisions.mapNotNull { (key, mask) ->
@@ -53,6 +71,10 @@ data class PlanHistory(
                 choices.mapNotNull { (key, value) ->
                     val day = date(key)?.takeIf { it.dayOfWeek == DayOfWeek.MONDAY } ?: return@mapNotNull null
                     WeekChoice.entries.find { it.name == value }?.let { day to it }
+                }.toMap(),
+                dayOverrides.mapNotNull { (key, raw) ->
+                    val day = date(key) ?: return@mapNotNull null
+                    DayOverride.fromRecord(raw)?.let { day to it }
                 }.toMap(),
             )
         }

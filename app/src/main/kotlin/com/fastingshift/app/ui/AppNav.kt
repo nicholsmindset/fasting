@@ -20,12 +20,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import java.time.LocalDate
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -101,11 +102,18 @@ private val tabs = listOf(
 
 @Composable
 fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit, nav: NavHostController = rememberNavController()) {
+    // Changing the graph when screening completes would reset its back stack during navigation.
+    val initialRoute = rememberSaveable { if (onboarded) Routes.TIMER else Routes.ONBOARDING }
     val entry by nav.currentBackStackEntryAsState()
     val current = entry?.destination?.route
 
-    LaunchedEffect(deepLink, onboarded) {
-        if (deepLink != null && onboarded) {
+    LaunchedEffect(onboarded, deepLink, entry) {
+        if (!onboarded || entry == null) return@LaunchedEffect
+        // Establish Timer as the root before opening an invite, including after process recreation.
+        if (nav.currentDestination?.route == Routes.ONBOARDING && nav.previousBackStackEntry == null) {
+            nav.navigate(Routes.TIMER) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+        }
+        if (deepLink != null) {
             // A malformed route must never crash the app.
             runCatching { nav.navigate(deepLink) }
             onDeepLinkHandled()
@@ -135,7 +143,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                             selected = current == tab.route,
                             onClick = {
                                 nav.navigate(tab.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(Routes.TIMER) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -152,17 +160,20 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
         // Consume the insets the scaffold padded for, so screens don't add the status bar twice.
         NavHost(
             nav,
-            startDestination = if (onboarded) Routes.TIMER else Routes.ONBOARDING,
+            startDestination = initialRoute,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
-            composable(Routes.ONBOARDING) {
+            composable(Routes.ONBOARDING) { screeningEntry ->
                 OnboardingRoute(
                     onFinished = {
-                        // Re-running the screening from Settings returns there; first run opens the Timer.
-                        if (nav.previousBackStackEntry != null) {
-                            nav.popBackStack()
-                        } else {
-                            nav.navigate(Routes.TIMER) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+                        // The persistence callback can arrive after an invite has already opened.
+                        if (nav.currentBackStackEntry === screeningEntry) {
+                            // Re-running the screening from Settings returns there; first run opens the Timer.
+                            if (nav.previousBackStackEntry != null) {
+                                nav.popBackStack()
+                            } else {
+                                nav.navigate(Routes.TIMER) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+                            }
                         }
                     },
                     onShowPaywall = { nav.navigate(Routes.PAYWALL) },
@@ -175,6 +186,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenCheckIn = { nav.navigate(Routes.checkIn(it)) },
                     onOpenRefeeding = { tier, id -> nav.navigate(Routes.refeeding(tier, id)) { launchSingleTop = true } },
                     onOpenScreening = { nav.navigate(Routes.ONBOARDING) },
+                    onOpenWeek = { day -> nav.navigate(if (day == null) Routes.SCHEDULES else "${Routes.SCHEDULES}?date=$day") },
                     onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
                 )
             }
@@ -222,7 +234,13 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     nav.navigate(Routes.challenge(id)) { popUpTo(Routes.CHALLENGE_JOIN) { inclusive = true } }
                 })
             }
-            composable(Routes.SCHEDULES) { SchedulesRoute(onBack = back) }
+            composable(
+                "${Routes.SCHEDULES}?date={date}",
+                arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null }),
+            ) { destination ->
+                val day = destination.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                SchedulesRoute(onBack = back, initialDate = day)
+            }
             composable(Routes.PAYWALL) { PaywallRoute(onClose = back, onOpenProgram = { nav.navigate(Routes.PROGRAM) { launchSingleTop = true } }) }
             composable(Routes.PROGRAM) { ProgramRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
             composable(Routes.INSIGHTS) { InsightsRoute(onBack = back, onUpgrade = { nav.navigate(Routes.PAYWALL) }) }
