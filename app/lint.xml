@@ -3,7 +3,6 @@
     <!-- The new recap falls back to English in the existing Chinese locale. Keep all other
          locales, files and categories checked while this feature is outside the Chinese rollout. -->
     <issue id="MissingTranslation">
-        <ignore path="src/main/res/values/strings_wrapped.xml"
-                regexp="is not translated in &quot;zh&quot; \(Chinese\)\s*$" />
+        <ignore regexp="(?:wrapped_[a-z_]+|recap_local_stats(?:_detail)?).{1,3} is not translated in .zh. \(Chinese\)\s*$" />
     </issue>
 </lint>
