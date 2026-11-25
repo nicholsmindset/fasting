@@ -106,6 +106,7 @@ private val leaves = listOf(
     Promise(R.string.trust_leaves_hc_title, R.string.trust_leaves_hc_body),
     Promise(R.string.trust_leaves_files_title, R.string.trust_leaves_files_body),
     Promise(R.string.trust_leaves_links_title, R.string.trust_leaves_links_body),
+    Promise(R.string.trust_leaves_partner_title, R.string.trust_leaves_partner_body),
 )
 
 @Composable

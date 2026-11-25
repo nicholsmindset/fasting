@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Exact end-of-fast alerts, requested in context. Never USE_EXACT_ALARM (Play policy). -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -67,6 +69,23 @@
                 <data android:host="fastingshift.com" />
                 <data android:host="www.fastingshift.com" />
                 <data android:pathPrefix="/c/" />
+            </intent-filter>
+            <!-- The invitation secret stays in the fragment, outside the web request. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="www.fastingshift.com" />
+                <data android:host="fastingshift.com" />
+                <data android:path="/partner/" />
+                <data android:path="/partner" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="fastingshift" android:host="partner" />
             </intent-filter>
             <!-- Pilot invites carry the code after #, outside the web request. -->
             <intent-filter android:autoVerify="false">

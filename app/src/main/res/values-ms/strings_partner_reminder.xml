@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_remind_set">Ingatkan saya sekali</string>
+    <string name="partner_remind_change">Ubah waktu peringatan</string>
+    <string name="partner_remind_cancel">Batalkan peringatan</string>
+    <string name="partner_remind_settings">Benarkan peringatan dalam tetapan Android</string>
+    <string name="partner_remind_scheduled">Peringatan peribadi sekitar %1$s</string>
+    <string name="partner_remind_notification">Peringatan untuk daftar masuk</string>
+    <string name="partner_remind_note">Anda meminta peringatan untuk daftar masuk. Hari rehat juga dikira.</string>
+</resources>
