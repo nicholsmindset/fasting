@@ -68,4 +68,5 @@
     <string name="partner_cheered">Kata semangat sudah dihantar hari ini</string>
     <string name="partner_last_checkin">%1$s memberi khabar pada %2$s.</string>
     <string name="partner_your_count">Anda sudah beri khabar %1$d daripada 3 kali</string>
+    <string name="partner_adult_only">Minggu bersama rakan hanya untuk orang dewasa berumur 18 tahun ke atas.</string>
 </resources>

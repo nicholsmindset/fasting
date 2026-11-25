@@ -9,4 +9,5 @@
     <string name="partner_service_offline">The partner service is unavailable. Try again when you’re connected.</string>
     <string name="partner_error_supporter_only">You can join a partner week to cheer someone on.</string>
     <string name="partner_error_display_name">Choose a display name with 1 to 32 visible characters.</string>
+    <string name="partner_error_adults_only">Partner weeks are available to screened adults aged 18 or older.</string>
 </resources>

@@ -9,4 +9,5 @@
     <string name="partner_service_offline">暂时无法连接伙伴周服务，请在联网后重试。</string>
     <string name="partner_error_supporter_only">你可以加入伙伴周，为伙伴加油。</string>
     <string name="partner_error_display_name">请输入 1 至 32 个可见字符作为昵称。</string>
+    <string name="partner_error_adults_only">伙伴周仅供已完成安全筛查且年满 18 岁的成年人使用。</string>
 </resources>
