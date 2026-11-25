@@ -1,5 +1,6 @@
 package com.fastingshift.app.ui.history
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -18,11 +19,13 @@ import androidx.core.view.drawToBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.fastingshift.app.R
@@ -82,7 +85,8 @@ internal fun AnnualStory(recap: AnnualRecap, onSeen: () -> Unit, onShared: () ->
             TextButton(onClick = onClose, modifier = Modifier.align(Alignment.End)) { Text(stringResource(R.string.wrapped_done), color = Mint) }
             HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { i ->
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center) {
-                    CapturedRecap(cards[i], period, stringResource(R.string.wrapped_share), onShared)
+                    CapturedRecap(cards[i], period, stringResource(R.string.wrapped_share), onShared, page = i + 1,
+                        novemberCoverage = if (i == 4) recap.novemberTimerPercent else null)
                 }
             }
             Text(stringResource(R.string.wrapped_slide_position, pager.currentPage + 1, cards.size),
@@ -123,7 +127,10 @@ internal fun SundayMini(recap: SundayRecap, onSeen: () -> Unit, onShared: () -> 
 
 /** Captures only the visible branded story artwork. Buttons and underlying History never enter the bitmap. */
 @Composable
-private fun CapturedRecap(slide: Slide, period: String, action: String, onShared: () -> Unit) {
+private fun CapturedRecap(
+    slide: Slide, period: String, action: String, onShared: () -> Unit,
+    page: Int? = null, novemberCoverage: Int? = null,
+) {
     val composition = rememberCompositionContext()
     var artwork by remember { mutableStateOf<ComposeView?>(null) }
     val latestSlide by rememberUpdatedState(slide)
@@ -138,7 +145,7 @@ private fun CapturedRecap(slide: Slide, period: String, action: String, onShared
         AndroidView(modifier = Modifier.fillMaxWidth().testTag("recap-artwork"), factory = { host ->
             ComposeView(host).also { view ->
                 view.setParentCompositionContext(composition)
-                view.setContent { RecapArtwork(latestSlide, latestPeriod) }
+                view.setContent { RecapArtwork(latestSlide, latestPeriod, page, novemberCoverage) }
                 artwork = view
             }
         })
@@ -177,17 +184,40 @@ private fun CapturedRecap(slide: Slide, period: String, action: String, onShared
 
 
 @Composable
-private fun RecapArtwork(slide: Slide, period: String) {
-    Column(Modifier.fillMaxWidth().background(Forest).padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(9.dp, 24.dp).background(Mint, RoundedCornerShape(2.dp)))
-            Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.wrapped_brand), color = Mint, style = MaterialTheme.typography.titleSmall)
+private fun RecapArtwork(slide: Slide, period: String, page: Int?, coverage: Int?) {
+    BoxWithConstraints(Modifier.fillMaxWidth().background(Forest)) {
+        val minHeight = if (page == null) 0.dp else maxWidth * 1.25f
+        Column(
+            Modifier.fillMaxWidth().heightIn(min = minHeight).padding(if (page == null) 20.dp else 26.dp),
+            verticalArrangement = if (page == null) Arrangement.spacedBy(14.dp) else Arrangement.SpaceBetween,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Image(painterResource(R.drawable.nichols_n_badge), contentDescription = null, modifier = Modifier.size(32.dp))
+                    Text(stringResource(R.string.wrapped_brand), color = Cream, style = MaterialTheme.typography.titleMedium)
+                }
+                Text(period, color = Cream, style = MaterialTheme.typography.bodyMedium)
+            }
+            Column(Modifier.fillMaxWidth().padding(vertical = if (page == null) 0.dp else 28.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(slide.label, Modifier.semantics { heading() }, color = Cream, style = MaterialTheme.typography.titleMedium)
+                val largeValue = page != null && slide.value.length <= 8
+                Text(slide.value, color = Mint, style = MaterialTheme.typography.displaySmall,
+                    fontSize = if (largeValue) 60.sp else 36.sp, lineHeight = if (largeValue) 65.sp else 41.sp,
+                    fontFamily = FontFamily.Serif)
+                if (coverage != null) {
+                    LinearProgressIndicator(progress = { coverage / 100f }, modifier = Modifier.fillMaxWidth(),
+                        color = Mint, trackColor = Color(0xFF35534A))
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(slide.note, color = Cream, style = MaterialTheme.typography.bodyLarge)
+                if (page != null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    repeat(7) { index ->
+                        Box(Modifier.weight(1f).height(3.dp).background(
+                            if (index < page) Mint else Color(0xFF35534A)))
+                    }
+                }
+            }
         }
-        Text(period, color = Cream, style = MaterialTheme.typography.bodyMedium)
-        HorizontalDivider(color = Mint.copy(alpha = .5f))
-        Text(slide.label, Modifier.semantics { heading() }, color = Cream, style = MaterialTheme.typography.titleMedium)
-        Text(slide.value, color = Mint, style = MaterialTheme.typography.displaySmall, fontFamily = FontFamily.Serif)
-        Text(slide.note, color = Cream, style = MaterialTheme.typography.bodyLarge)
     }
 }

@@ -21,7 +21,7 @@
     <string name="wrapped_protocol">Your most-used plan</string>
     <string name="wrapped_varied">A mix of plans</string>
     <string name="wrapped_private_plan">Personal plan</string>
-    <string name="wrapped_protocol_note">From the plans attached to your recorded sessions. Private plan names stay off the slide.</string>
+    <string name="wrapped_protocol_note">Based on the plans attached to your finished timer sessions.</string>
     <string name="wrapped_streak">Best run of planned days</string>
     <string name="wrapped_streak_note">Days off leave room between the days you planned.</string>
     <string name="wrapped_november">November on your timer</string>

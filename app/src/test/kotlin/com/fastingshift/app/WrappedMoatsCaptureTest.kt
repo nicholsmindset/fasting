@@ -60,6 +60,7 @@ class WrappedMoatsCaptureTest {
         val bytes = requireNotNull(app.contentResolver.openInputStream(uri)).use { it.readBytes() }
         val image = requireNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
         assertTrue(image.width > 100 && image.height > 100)
+        if (name.startsWith("annual-")) assertTrue("Annual exports use a portrait layout", image.height > image.width)
         if (System.getProperty("fastingshift.screenshotDir") != null) {
             moatsOutput("wrapped").resolve("$name.png").writeBytes(bytes)
         }
