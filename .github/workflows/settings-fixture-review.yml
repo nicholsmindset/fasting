@@ -27,6 +27,6 @@ jobs:
                   keys=['text','content-desc','resource-id','class','clickable','enabled','scrollable','bounds']
                   for n in tree.iter('node'):
                       label=(n.get('text','')+' '+n.get('content-desc','')).lower()
-                      if 'partly' in label or '?' in label:
-                          print('MATCH:',json.dumps({k:n.get(k,'') for k in keys}))
+                      if 'partly' in label or 'did this schedule fit your week' in label or 'change answer' in label:
+                          print('MATCH:',json.dumps(n.attrib))
           PY
