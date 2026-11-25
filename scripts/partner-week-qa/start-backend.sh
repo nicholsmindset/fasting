@@ -47,6 +47,11 @@ error_log $fixture/proxy.log warn;
 events {}
 http {
   access_log off;
+  client_body_temp_path $fixture/body;
+  proxy_temp_path $fixture/proxy;
+  fastcgi_temp_path $fixture/fastcgi;
+  uwsgi_temp_path $fixture/uwsgi;
+  scgi_temp_path $fixture/scgi;
   server {
     listen 127.0.0.1:18481;
     location /rest/v1/ { proxy_pass http://127.0.0.1:18480/; }

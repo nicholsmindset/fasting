@@ -67,7 +67,13 @@ class PartnerScreen:
 
     def resume(self):
         self.launch()
-        if self.node("partner_open").wait(timeout=2):
+        # Pair controls may be below the fold on the timer after Android restores
+        # the activity. A visible partner-page app bar also covers scrolled views.
+        if not self.device(packageName=self.package, text="Partner week").wait(timeout=2) or not any(
+            self.node(tag).exists for tag in ("partner_refresh", "partner_alias", "partner_self_marks",
+                                             "partner_leave", "partner_checkin", "partner_cheer", "partner_copy",
+                                             "partner_create", "partner_paste")
+        ):
             self.open()
 
     def assert_marks(self, tag, count):
@@ -143,10 +149,6 @@ def journey(device):
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_other_marks", 1)
     guest.tap("partner_cheer")
-    # UI may use an inline acknowledgement chooser; the fresh receipt on the other
-    # installation is the actual test of delivery.
-    if guest.node("partner_glad").wait(timeout=1):
-        guest.tap("partner_glad")
     host.resume()
     host.tap("partner_refresh", timeout=3)
     host.locate("partner_received")
