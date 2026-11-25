@@ -67,7 +67,8 @@ internal fun projectPartnerWeek(
     val start = data.optionalString("startDay")
     val end = data.optionalString("endDay")
     val date = today.toString()
-    val status = data.getString("status").let {
+    val serverStatus = data.getString("status")
+    val status = serverStatus.let {
         if (it == "active" && end != null && date > end) "finished" else it
     }
     val self = own.member(pendingDays)
@@ -83,7 +84,9 @@ internal fun projectPartnerWeek(
         incoming?.getString("kind")?.takeIf(partnerReactions::contains),
         active && self.role == "participant" && date !in self.days && self.days.size < 3,
         active && otherMember != null && !sentToday,
-        status == "finished" && !voted, voted, otherMember?.optBoolean("renewed") == true,
+        // The other person may still have a local day left. Only the server knows when
+        // both seven-day windows have ended and a renewal vote can be recorded.
+        serverStatus == "finished" && !voted, voted, otherMember?.optBoolean("renewed") == true,
         data.optionalString("expiresAt"), date,
     )
 }

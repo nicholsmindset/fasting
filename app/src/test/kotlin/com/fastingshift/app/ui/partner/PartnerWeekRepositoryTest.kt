@@ -193,6 +193,20 @@ class PartnerWeekRepositoryTest {
         assertEquals(1, calls.size)
     }
 
+    @Test fun localEndOfWeekWaitsForOtherTimeZoneBeforeRenewal() = runBlocking {
+        val repo = repository("2026-11-30T01:00:00Z")
+        service = { sample("active") }
+        repo.create("Host")
+        val recap = assertNotNull(repo.cachedWeek())
+        assertEquals("finished", recap.status)
+        assertFalse(recap.canRenew)
+        repo.renew()
+        assertEquals(1, calls.size)
+        service = { sample("finished") }
+        repo.refresh()
+        assertTrue(repo.cachedWeek()!!.canRenew)
+    }
+
     @Test fun onlyIncomingReactionsDisplayAndRenewNeedsASecondVote() = runBlocking {
         val repo = repository()
         service = { sample("finished").also { payload ->

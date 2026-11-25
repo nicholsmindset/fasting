@@ -109,7 +109,8 @@ class PartnerWeekRepository internal constructor(
     private fun prepareMembership(alias: String) {
         val name = alias.trim()
         require(name.codePointCount(0, name.length) in 1..32 &&
-            name.none { it.isISOControl() || it in '\u202a'..'\u202e' || it in '\u2066'..'\u2069' }) {
+            name.none { it.isISOControl() || it == '\u061c' || it in '\u200e'..'\u200f' ||
+                it in '\u202a'..'\u202e' || it in '\u2066'..'\u2069' }) {
             INVALID_ALIAS
         }
         if (leavingId != null) flushLeave()
