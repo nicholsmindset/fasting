@@ -59,7 +59,9 @@ device = uiautomator2.connect()
 try:
     run()
 except Exception:
+    with (proof / "app-crash.txt").open("w") as target:
+        subprocess.run(["adb", "logcat", "-b", "crash", "-d"], stdout=target, check=False)
     with (proof / "failure-logcat.txt").open("w") as target:
-        subprocess.run(["adb", "logcat", "-d", "-t", "1200"], stdout=target, check=False)
+        subprocess.run(["adb", "logcat", "-d", "-s", "ActivityManager", "AndroidRuntime", "DEBUG"], stdout=target, check=False)
     capture("failure")
     raise
