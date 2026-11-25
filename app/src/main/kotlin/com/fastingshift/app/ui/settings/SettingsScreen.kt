@@ -424,6 +424,7 @@ private fun ReminderGroups(
             )
         }
     }
+    com.fastingshift.app.ui.revival.RevivalAlertSetting()
     val reminders = settings.reminders
     InsetGroup(header = stringResource(R.string.settings_fast_timing)) {
         SwitchGroupRow(stringResource(R.string.settings_start_alert), reminders.fastStartEnabled, { v -> vm.set { setFastStartReminder(v) } })

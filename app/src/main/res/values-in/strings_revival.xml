@@ -1,0 +1,22 @@
+<resources>
+  <string name="revival_title">Pemulihan runtunan</string>
+  <string name="revival_invite">Rekor terbaik Anda adalah %1$d hari sesuai rencana. Pulihkan rekor itu dengan %2$d hari sesuai rencana paling lambat %3$s.</string>
+  <string name="revival_fresh">Mulai kembali dengan %1$d hari sesuai rencana paling lambat %2$s. Jadwal biasa Anda berlaku.</string>
+  <string name="revival_join">Ikuti acara ini</string>
+  <string name="revival_skip">Lewati acara ini</string>
+  <string name="revival_progress">%1$d dari %2$d hari sesuai rencana · hingga %3$s</string>
+  <string name="revival_award">Anda meraih kembali runtunan %1$d hari.</string>
+  <string name="revival_view">Lihat pencapaian saya</string>
+  <string name="revival_finish_title">Selamat datang kembali.</string>
+  <string name="revival_finish">Anda menjalani %2$d hari sesuai rencana dan meraih kembali runtunan %1$d hari. Hari berikutnya dapat menambah runtunan ini. Riwayat puasa asli Anda tetap akurat.</string>
+  <string name="revival_done">Selesai</string>
+  <string name="revival_history_award">Penghargaan pemulihan terakhir · %1$d hari</string>
+  <string name="revival_history_current">Runtunan yang dipulihkan saat ini · %1$d hari</string>
+  <string name="revival_local_counts">Di ponsel ini · %1$d dari %2$d acara yang diikuti selesai</string>
+  <string name="revival_alert_setting">Undangan acara musiman</string>
+  <string name="revival_alert_details">Satu pengingat saat acara baru dimulai jika runtunan Anda sebelumnya telah berakhir.</string>
+  <string name="revival_open_notifications">Buka setelan notifikasi</string>
+  <string name="revival_notification_title">Kesempatan untuk memulai lagi</string>
+  <string name="revival_notification_body">Acara pemulihan runtunan baru tersedia saat Anda merasa siap kembali ke rencana biasa.</string>
+    <string name="revival_award_unit">hari dalam runtunan yang Anda pulihkan</string>
+</resources>

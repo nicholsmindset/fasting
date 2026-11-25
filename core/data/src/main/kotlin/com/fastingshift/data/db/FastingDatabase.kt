@@ -30,13 +30,15 @@ import java.nio.file.Files
         QadaDebtEntity::class,
         QadaRepaymentEntity::class,
         ChallengeEntity::class,
+        RevivalEventEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5, spec = FastingDatabase.MigrateToV5::class),
+        AutoMigration(from = 5, to = 6, spec = FastingDatabase.MigrateToV6::class),
     ],
 )
 @TypeConverters(Converters::class)
@@ -52,6 +54,7 @@ abstract class FastingDatabase : RoomDatabase() {
     abstract fun backupDao(): BackupDao
     abstract fun metricDao(): MetricDao
     abstract fun qadaDao(): QadaDao
+    abstract fun revivalDao(): RevivalDao
     abstract fun challengeDao(): ChallengeDao
 
     companion object {
@@ -85,7 +88,9 @@ abstract class FastingDatabase : RoomDatabase() {
         }
     }
 
-    class MigrateToV5 : AutoMigrationSpec {
+    class MigrateToV6 : MigrateToV5()
+
+    open class MigrateToV5 : AutoMigrationSpec {
         override fun onPostMigrate(connection: SQLiteConnection) {
             // Room validates the entity indexes before onOpen recreates our partial index.
             connection.execSQL("DROP INDEX IF EXISTS index_fast_single_active")

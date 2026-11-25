@@ -338,6 +338,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
                     Text(pluralStringResource(R.plurals.history_streak, st.streak.current, st.streak.current),
                         Modifier.weight(1f), textAlign = TextAlign.End, style = MaterialTheme.typography.titleLarge.merge(TabularNumbers))
                 }
+                com.fastingshift.app.ui.revival.RevivalHistory()
                 st.freezeableDay?.let { day ->
                     Text(stringResource(R.string.history_streak_missed), style = MaterialTheme.typography.bodyMedium)
                     SecondaryButton(stringResource(R.string.history_use_freeze), onClick = { vm.freeze(day) })

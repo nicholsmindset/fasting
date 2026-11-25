@@ -51,6 +51,9 @@ import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.safety.StartDecision
+import com.fastingshift.data.db.RevivalEventEntity
+import com.fastingshift.domain.backup.RevivalRecord
+import java.time.ZoneId
 import java.time.Duration
 import com.fastingshift.data.settings.SettingsRepository
 import java.time.DayOfWeek
@@ -88,6 +91,10 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             qadaRepayments = ledger.flatMap { it.repayments }.sortedBy { it.observedOn }
                 .map { QadaRepaymentRecord(it.observedOn.toString(), it.hijriYear) },
             metrics = b.metrics().map { MetricRecord(it.id, it.at.ms, it.type.name, it.value, it.unit.name, it.source.name, it.note) },
+            revivalEvents = db.revivalDao().all().filter { it.joined != null || it.dismissed || it.notified }.map {
+                RevivalRecord(it.id, it.starts, it.ends, it.zone, it.target, it.threshold, it.joined, it.baselineBest,
+                    it.restored, it.awardDay, it.restoredDays, it.dismissed, it.notified)
+            },
             challenges = b.challenges().map {
                 ChallengeRecord(it.id, it.type.name, it.protocolId, it.startDate.toString(), it.lengthDays, it.name, it.joinedAt.ms, it.leftAt?.ms, it.followsOwnPlan)
             },
@@ -127,6 +134,8 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             b.insertQada(mapped.qada)
             b.insertRepayments(mapped.repayments)
             b.insertChallenges(mapped.challenges)
+            db.revivalDao().clear()
+            db.revivalDao().seed(mapped.revivals)
         }
         settings?.clearFirstEvening()
         backup.settings?.let { settings?.restore(it) }
@@ -206,6 +215,19 @@ class BackupRepository(private val db: FastingDatabase, private val settings: Se
             }
         }
 
+        val revivals = b.revivalEvents.map {
+            require(it.id.isNotBlank() && it.target.isNotBlank() && it.starts < it.ends && it.threshold in 1..366)
+            ZoneId.of(it.zone)
+            require((it.joined == null) == (it.baselineBest == null))
+            require(it.joined == null || (requireNotNull(it.joined) in it.starts until it.ends && (it.baselineBest ?: -1) >= 0))
+            require((it.restored == null) == (it.awardDay == null) && (it.restored == null) == (it.restoredDays == null))
+            if (it.restored != null) {
+                require(it.joined != null && requireNotNull(it.restored) in requireNotNull(it.joined) until it.ends && (it.restoredDays ?: 0) >= it.threshold)
+                require(LocalDate.ofEpochDay(requireNotNull(it.awardDay)) == requireNotNull(it.restored).inst.atZone(ZoneId.of(it.zone)).toLocalDate())
+            }
+            RevivalEventEntity(it.id, it.starts, it.ends, it.zone, it.target, it.threshold, it.joined, it.baselineBest,
+                it.restored, it.awardDay, it.restoredDays, it.dismissed, it.notified)
+        }
         val challenges = b.challenges.map {
             Challenge(it.id, ChallengeType.valueOf(it.type), it.protocolId, LocalDate.parse(it.startDate), it.lengthDays, it.name, it.joinedAt.inst, it.leftAt?.inst, it.followsOwnPlan).toEntity()
         }

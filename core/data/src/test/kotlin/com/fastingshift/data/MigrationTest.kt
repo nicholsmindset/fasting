@@ -19,6 +19,24 @@ import org.robolectric.annotation.Config
 class MigrationTest {
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), FastingDatabase::class.java)
 
+    @Test fun v5ToV6KeepsTheActiveTimerAndStartsWithNoRevivalEnrollments() {
+        val name = "revival-migration"
+        helper.createDatabase(name, 5).use { db ->
+            FastingDatabase.Constraints.onCreate(db)
+            db.execSQL("INSERT INTO fast(start_at,target_end_at,protocol_id,status) VALUES (1000,2000,'window_16_8','ACTIVE')")
+        }
+        val room = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, FastingDatabase::class.java, name)
+            .addCallback(FastingDatabase.Constraints).allowMainThreadQueries().build()
+        try {
+            val db = room.openHelper.writableDatabase
+            db.query("SELECT count(*) FROM revival_event").use { it.moveToFirst(); assertEquals(0, it.getInt(0)) }
+            db.query("SELECT start_at FROM fast WHERE ended_at IS NULL").use { it.moveToFirst(); assertEquals(1000L, it.getLong(0)) }
+            assertFailsWith<SQLiteConstraintException> {
+                db.execSQL("INSERT INTO fast(start_at,target_end_at,protocol_id,status) VALUES (3000,4000,'window_16_8','ACTIVE')")
+            }
+        } finally { room.close() }
+    }
+
     @Test fun v4ToV5KeepsTheRunningTimerItsConstraintAndAnExistingEnrollment() {
         val name = "friend-plan-migration"
         val active = "INSERT INTO fast(start_at,target_end_at,protocol_id,status) VALUES (1000,2000,'window_16_8','ACTIVE')"

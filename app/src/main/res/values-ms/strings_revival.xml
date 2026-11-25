@@ -1,0 +1,22 @@
+<resources>
+  <string name="revival_title">Acara rentetan</string>
+  <string name="revival_invite">Rekod terbaik anda ialah %1$d hari mengikut pelan. Pulihkan rekod itu dengan %2$d hari yang dirancang sebelum atau pada %3$s.</string>
+  <string name="revival_fresh">Mulakan semula dengan %1$d hari yang dirancang sebelum atau pada %2$s. Jadual biasa anda dikira.</string>
+  <string name="revival_join">Sertai acara ini</string>
+  <string name="revival_skip">Langkau acara ini</string>
+  <string name="revival_progress">%1$d daripada %2$d hari yang dirancang · sehingga %3$s</string>
+  <string name="revival_award">Anda mendapat semula rentetan %1$d hari.</string>
+  <string name="revival_view">Lihat pencapaian saya</string>
+  <string name="revival_finish_title">Selamat kembali.</string>
+  <string name="revival_finish">Anda mengikut pelan selama %2$d hari dan memperoleh rentetan semula %1$d hari. Hari seterusnya mengikut pelan boleh menambah rentetan ini. Sejarah puasa asal anda kekal tepat.</string>
+  <string name="revival_done">Selesai</string>
+  <string name="revival_history_award">Pencapaian pemulihan terakhir · %1$d hari</string>
+  <string name="revival_history_current">Rentetan dipulihkan semasa · %1$d hari</string>
+  <string name="revival_local_counts">Pada telefon ini · %1$d daripada %2$d acara yang disertai telah selesai</string>
+  <string name="revival_alert_setting">Jemputan acara bermusim</string>
+  <string name="revival_alert_details">Satu peringatan apabila acara baharu bermula jika rentetan terdahulu anda telah tamat.</string>
+  <string name="revival_open_notifications">Buka tetapan pemberitahuan</string>
+  <string name="revival_notification_title">Peluang untuk bermula semula</string>
+  <string name="revival_notification_body">Acara rentetan baharu dibuka apabila anda bersedia kembali kepada pelan biasa anda.</string>
+    <string name="revival_award_unit">hari dalam rentetan yang anda pulihkan</string>
+</resources>

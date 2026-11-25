@@ -126,6 +126,7 @@ fun TimerRoute(
         } else {
             TimerScreen(
                 state = state,
+                revival = { com.fastingshift.app.ui.revival.RevivalCard() },
                 actions = TimerActions(
                     onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = { viewModel.start() }, onEnd = viewModel::end,
                     onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
@@ -195,7 +196,7 @@ class TimerActions(
 )
 
 @Composable
-fun TimerScreen(state: TimerUiState, actions: TimerActions) {
+fun TimerScreen(state: TimerUiState, actions: TimerActions, revival: @Composable () -> Unit = {}) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(
@@ -229,6 +230,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
                                 }
                             }
                             actions.onOpenPartner?.let { PartnerTimerEntry(it) }
+                            revival()
                             ExactAlarmBanner()
                             RamadanCard(onOpenHub = actions.onOpenMuslimHub)
                             CoachingTipCard(active)
@@ -236,7 +238,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
                             QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)
                             BodyTimelineCard(timer.elapsed)
                         } else {
-                            NotFasting(state, actions)
+                            NotFasting(state, actions, revival)
                         }
                     }
                 }
@@ -310,7 +312,7 @@ private fun FactColumn(label: String, value: String, modifier: Modifier) {
 }
 
 @Composable
-private fun NotFasting(state: TimerUiState, actions: TimerActions) {
+private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Composable () -> Unit) {
     // Place any required screening action before the routine or time controls.
     when {
         state.gate == GateResult.BLOCK -> {
@@ -352,6 +354,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
         StartTimeRow(state, actions.onStartAt)
     }
     actions.onOpenPartner?.let { PartnerTimerEntry(it) }
+    revival()
     val alertsAvailable = startReminderNotificationsEnabled()
     if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable)
     RamadanCard(onOpenHub = actions.onOpenMuslimHub)

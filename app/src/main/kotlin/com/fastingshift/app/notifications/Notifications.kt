@@ -147,6 +147,11 @@ object Notifications {
         notify(context, id, base(context, channel, title, body, route))
     }
 
+    fun showRevival(context: Context) {
+        notify(context, 1024, base(context, CHANNEL_REMINDERS, context.getString(R.string.revival_notification_title),
+            context.getString(R.string.revival_notification_body)))
+    }
+
     fun coachingTitle(tip: CoachingTip): Int = when (tip) {
         CoachingTip.HUNGER_WAVES -> R.string.coach_hunger_title
         CoachingTip.HYDRATE -> R.string.coach_hydrate_title
