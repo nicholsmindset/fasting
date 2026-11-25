@@ -76,7 +76,7 @@
     <string name="trust_title">信任中心</string>
     <string name="trust_intro">Fasting Shift 的设计让你的健康数据始终属于你。具体如下。</string>
     <string name="trust_on_device_title">你的断食和健康记录</string>
-    <string name="trust_on_device_body">您的禁食时间、健康日志和安全筛查答案保存在本设备上。此应用已关闭 Android 自动备份。</string>
+    <string name="trust_on_device_body">您的断食时间、健康日志和安全筛查答案保存在本设备上。此应用已关闭 Android 自动备份。</string>
     <string name="trust_encrypted_title">已加密</string>
     <string name="trust_encrypted_body">数据库使用 SQLCipher 加密，密钥由本机的 Android Keystore 保护。</string>
     <string name="trust_no_account_title">无需账号</string>
