@@ -11,11 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.drawToBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
@@ -125,37 +124,39 @@ internal fun SundayMini(recap: SundayRecap, onSeen: () -> Unit, onShared: () -> 
 /** Captures only the visible branded story artwork. Buttons and underlying History never enter the bitmap. */
 @Composable
 private fun CapturedRecap(slide: Slide, period: String, action: String, onShared: () -> Unit) {
-    val layer = rememberGraphicsLayer()
+    val composition = rememberCompositionContext()
+    var artwork by remember { mutableStateOf<ComposeView?>(null) }
+    val latestSlide by rememberUpdatedState(slide)
+    val latestPeriod by rememberUpdatedState(period)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column(Modifier.fillMaxWidth().testTag("recap-artwork").drawWithContent {
-            layer.record { this@drawWithContent.drawContent() }
-            drawLayer(layer)
-        }.background(Forest).padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(9.dp, 24.dp).background(Mint, RoundedCornerShape(2.dp)))
-                Spacer(Modifier.width(10.dp))
-                Text(stringResource(R.string.wrapped_brand), color = Mint, style = MaterialTheme.typography.titleSmall)
+        // Keep one dedicated ComposeView for the artwork. Capture its complete laid-out
+        // bounds, including on narrow displays where the surrounding story can scroll.
+        AndroidView(modifier = Modifier.fillMaxWidth().testTag("recap-artwork"), factory = { host ->
+            ComposeView(host).also { view ->
+                view.setParentCompositionContext(composition)
+                view.setContent { RecapArtwork(latestSlide, latestPeriod) }
+                artwork = view
             }
-            Text(period, color = Cream, style = MaterialTheme.typography.bodyMedium)
-            HorizontalDivider(color = Mint.copy(alpha = .5f))
-            Text(slide.label, Modifier.semantics { heading() }, color = Cream, style = MaterialTheme.typography.titleMedium)
-            Text(slide.value, color = Mint, style = MaterialTheme.typography.displaySmall, fontFamily = FontFamily.Serif)
-            Text(slide.note, color = Cream, style = MaterialTheme.typography.bodyLarge)
-        }
+        })
         FilledTonalButton(enabled = !busy, onClick = {
             if (busy) return@FilledTonalButton
             scope.launch {
                 busy = true
                 failed = false
                 try {
-                    val bitmap = layer.toImageBitmap().asAndroidBitmap()
+                    val view = requireNotNull(artwork)
+                    val bitmap = view.drawToBitmap()
                     val file = withContext(Dispatchers.IO) {
                         val out = FileSharing.newFile(context, "recap-${UUID.randomUUID()}.png")
-                        out.outputStream().use { check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)) }
+                        try {
+                            out.outputStream().use { check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)) }
+                        } finally {
+                            bitmap.recycle()
+                        }
                         out
                     }
                     context.startActivity(FileSharing.intent(context, file, "image/png"))
@@ -171,5 +172,22 @@ private fun CapturedRecap(slide: Slide, period: String, action: String, onShared
             }
         }) { Text(action) }
         if (failed) Text(stringResource(R.string.wrapped_share_error), color = MaterialTheme.colorScheme.error)
+    }
+}
+
+
+@Composable
+private fun RecapArtwork(slide: Slide, period: String) {
+    Column(Modifier.fillMaxWidth().background(Forest).padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(9.dp, 24.dp).background(Mint, RoundedCornerShape(2.dp)))
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(R.string.wrapped_brand), color = Mint, style = MaterialTheme.typography.titleSmall)
+        }
+        Text(period, color = Cream, style = MaterialTheme.typography.bodyMedium)
+        HorizontalDivider(color = Mint.copy(alpha = .5f))
+        Text(slide.label, Modifier.semantics { heading() }, color = Cream, style = MaterialTheme.typography.titleMedium)
+        Text(slide.value, color = Mint, style = MaterialTheme.typography.displaySmall, fontFamily = FontFamily.Serif)
+        Text(slide.note, color = Cream, style = MaterialTheme.typography.bodyLarge)
     }
 }

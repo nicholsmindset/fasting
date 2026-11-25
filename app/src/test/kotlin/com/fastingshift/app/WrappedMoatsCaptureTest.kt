@@ -8,7 +8,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.captureRoboImage
 import com.fastingshift.app.ui.history.AnnualStory
 import com.fastingshift.app.ui.history.SundayMini
 import com.fastingshift.app.ui.theme.FastingShiftTheme
@@ -33,10 +32,6 @@ class WrappedMoatsCaptureTest {
     private val demo = AnnualRecap(2026, LocalDate.of(2026,12,6), 18, Duration.ofHours(16), "16:8", false, true, 4, 12, 20)
 
     private fun export(action: String, opened: () -> Int, expected: Int, name: String): Int {
-        // Render the artwork to the host surface before touching the share button, as a real
-        // Android display does every frame. Robolectric does not run a hardware renderer loop.
-        val drawn = java.io.File.createTempFile("recap-render-", ".png")
-        try { compose.onNodeWithTag("recap-artwork").captureRoboImage(drawn.absolutePath) } finally { drawn.delete() }
         compose.onNodeWithText(action).performClick()
         try {
             compose.waitUntil(12_000) { opened() == expected }
