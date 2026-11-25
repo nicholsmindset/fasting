@@ -163,6 +163,8 @@ data class HistoryState(
     val now: Instant = Instant.now(),
     val zone: ZoneId = ZoneId.systemDefault(),
     val calendarPlan: CalendarPlan = CalendarPlan(),
+    val wrappedEnabled: Boolean = false,
+    val frozenDays: Set<LocalDate> = emptySet(),
 )
 
 @HiltViewModel
@@ -196,11 +198,11 @@ class HistoryViewModel @Inject constructor(
 
     private val plans = combine(settings.settings, schedules.observeAll(), screening.observeLatest()) { settings, rows, record ->
         val max = FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true)
-        CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening()) to settings.weekReflections
+        CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening()).let { Triple(it, settings.weekReflections, settings.wrappedEnabled) }
     }
 
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */
-    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), plans, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, (calendarPlan, reflections), (m, p), timedHydration ->
+    val state: StateFlow<HistoryState?> = combine(fasts.observeAll(), freezes.observeFrozenDays(), plans, view, combine(hydration, minuteClock) { hydration, now -> hydration to now }) { all, frozen, (calendarPlan, reflections, wrappedEnabled), (m, p), timedHydration ->
         val (hydrationValues, now) = timedHydration
         val (water, goal) = hydrationValues
         val zone = ZoneId.systemDefault()
@@ -224,6 +226,8 @@ class HistoryViewModel @Inject constructor(
             now = now,
             zone = zone,
             calendarPlan = calendarPlan,
+            wrappedEnabled = wrappedEnabled,
+            frozenDays = frozen,
             trackedFrom = history.trackedFrom,
             nextWeekChoice = history.choices[History.weekStart(today).plusWeeks(1)],
             summary = HistoryStats.periodSummary(all, zone, p, today, now, planned),
@@ -255,6 +259,10 @@ class HistoryViewModel @Inject constructor(
         settings.setWeekReflection(week, fit, LocalDate.now(clock.withZone(ZoneId.systemDefault())))
     }
 
+    fun recordRecap(annual: Boolean, period: Long, shared: Boolean) = viewModelScope.launch {
+        settings.recordRecap(annual, period, shared)
+    }
+
     fun shiftMonth(by: Long) = month.update { it.plusMonths(by) }
     fun setPeriod(p: Period) = period.update { p }
     fun freeze(day: LocalDate) = viewModelScope.launch {
@@ -271,6 +279,19 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         return
     }
     var selectedEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
+    var wrappedOpen by rememberSaveable { mutableStateOf(false) }
+    val annualAvailable = st.wrappedEnabled && remember(st.fasts, st.zone, st.today) {
+        com.fastingshift.domain.history.FastingWrapped.hasStory(st.fasts, st.zone, st.now)
+    }
+    if (annualAvailable && wrappedOpen) {
+        val annual = remember(st.fasts, st.frozenDays, st.calendarPlan.history, st.zone, st.today) {
+            com.fastingshift.domain.history.FastingWrapped.annual(st.fasts, st.zone, st.now, st.frozenDays, st.calendarPlan.history::isPlanned)
+        }
+        if (annual != null) {
+            AnnualStory(annual, onSeen = { vm.recordRecap(true, annual.year.toLong(), false) },
+                onShared = { vm.recordRecap(true, annual.year.toLong(), true) }, onClose = { wrappedOpen = false })
+        }
+    }
     var recordsOpen by rememberSaveable { mutableStateOf(false) }
     if (recordsOpen) {
         FastRecordsSheet(st.fasts, st.now, onEditFast, onClose = { recordsOpen = false })
@@ -337,6 +358,15 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
                 GroupDivider()
                 GroupRow(stringResource(R.string.history_challenges), showChevron = true, onClick = onOpenChallenges)
             }
+        }
+        if (annualAvailable) section(key = "annual-wrapped") {
+            WrappedEntry(com.fastingshift.domain.history.FastingWrapped.latestYear(st.today)) { wrappedOpen = true }
+        }
+        if (st.today.dayOfWeek == DayOfWeek.SUNDAY) section(key = "sunday-mini") {
+            val mini = remember(st.fasts, st.zone, st.today) { com.fastingshift.domain.history.FastingWrapped.sunday(st.fasts, st.zone, st.now) }
+            if (mini != null) SundayMini(mini,
+                onSeen = { vm.recordRecap(false, mini.weekStart.toEpochDay(), false) },
+                onShared = { vm.recordRecap(false, mini.weekStart.toEpochDay(), true) })
         }
         val review = st.recaps.firstOrNull { !it.recap.isEmpty || it.recap.plannedDays > 0 } ?: st.recaps.lastOrNull()
         st.recaps.forEach { item ->

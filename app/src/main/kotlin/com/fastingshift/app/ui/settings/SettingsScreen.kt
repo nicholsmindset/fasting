@@ -294,6 +294,12 @@ internal fun SettingsRoute(
                     InsetGroup {
                         GroupRow(stringResource(R.string.trust_row), showChevron = true, onClick = onOpenTrust)
                         GroupDivider()
+                        SwitchGroupRow(stringResource(R.string.wrapped_title), s.wrappedEnabled, { v -> vm.set { setWrapped(v) } },
+                            subtitle = stringResource(R.string.wrapped_setting_note))
+                        GroupDivider()
+                        GroupRow(stringResource(R.string.recap_local_stats), subtitle = stringResource(R.string.recap_local_stats_detail,
+                            s.annualRecapsShared, s.annualRecapsViewed, s.weeklyRecapsShared, s.weeklyRecapsViewed))
+                        GroupDivider()
                         SwitchGroupRow(stringResource(R.string.settings_hide_weight), s.hideWeight, { v -> vm.set { setHideWeight(v) } })
                         if (vm.health.isAvailable()) {
                             GroupDivider()
