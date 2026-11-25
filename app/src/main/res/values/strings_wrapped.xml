@@ -30,7 +30,7 @@
     <string name="wrapped_familiar">The %1$s regular</string>
     <string name="wrapped_flexible">The flexible planner</string>
     <string name="wrapped_style_note">A snapshot of the routines you recorded this year.</string>
-    <string name="wrapped_return">Days you made time to check in</string>
+    <string name="wrapped_return">Days with a timer entry</string>
     <string name="wrapped_return_note">Starting again counts. This includes sessions you ended early.</string>
     <string name="wrapped_week">Sunday mini-recap</string>
     <string name="wrapped_week_dates">%1$s – %2$s</string>

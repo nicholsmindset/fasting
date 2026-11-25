@@ -372,7 +372,7 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         val review = st.recaps.firstOrNull { !it.recap.isEmpty || it.recap.plannedDays > 0 } ?: st.recaps.lastOrNull()
         st.recaps.forEach { item ->
             section(key = "recap-${item.recap.weekStart}") {
-                WeeklyRecapCard(item, onReflect = if (item == review || item.fit != null) {
+                WeeklyRecapCard(item, showShare = st.today.dayOfWeek != DayOfWeek.SUNDAY, onReflect = if (item == review || item.fit != null) {
                     { fit -> vm.reflect(item.recap.weekStart, fit) }
                 } else null)
             }
