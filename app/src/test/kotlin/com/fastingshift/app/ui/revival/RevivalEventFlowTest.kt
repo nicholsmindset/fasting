@@ -83,6 +83,16 @@ class RevivalEventFlowTest {
             assertEquals(1, backup.revivalEvents.size)
             backupRepo.restore(backup, at("2027-01-18", 12))
             assertEquals(4, db.revivalDao().all().single().restoredDays)
+            // A custom Room event spanning Eid cannot invite, enroll or prompt on a prohibited day.
+            val eidEvent = enrolled.copy(id = "spring-week", starts = at("2027-03-10", 0).toEpochMilli(),
+                ends = at("2027-03-17", 0).toEpochMilli(), joined = null, baselineBest = null, notified = false)
+            db.revivalDao().seed(listOf(eidEvent))
+            val eid = during("2027-03-10")
+            assertFalse(eid.claimStartAlert(eidEvent.id))
+            eid.join(eidEvent.id)
+            assertNull(db.revivalDao().all().single { it.id == eidEvent.id }.joined)
+            val onEid = withTimeout(10_000) { eid.observe().first { it.joinedCount == 1 } }
+            assertNull(onEid.event)
         } finally {
             prefs.clearAll()
             db.close()

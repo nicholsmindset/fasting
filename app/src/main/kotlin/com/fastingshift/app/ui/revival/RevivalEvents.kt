@@ -79,7 +79,10 @@ class RevivalEvents @Inject constructor(
     internal fun observe(): Flow<RevivalState> = combine(dao.observe(), personal, ticks()) { events, person, now ->
         if (!person.eligible) return@combine RevivalState()
         val supported = events.filter { it.target == Revival.DAYS_ON_PLAN && it.threshold > 0 }
-        val visible = supported.firstOrNull { now.toEpochMilli() in it.starts until it.ends && !it.dismissed }
+        val visible = supported.firstOrNull {
+            now.toEpochMilli() in it.starts until it.ends && !it.dismissed &&
+                RevivalCalendar.eligibleDay(now.atZone(ZoneId.of(it.zone)).toLocalDate(), person.offset)
+        }
         var visibleMarks = 0
         for (event in supported.filter { it.joined != null && it.restored == null && !it.dismissed }) {
             val window = event.window()
@@ -114,7 +117,9 @@ class RevivalEvents @Inject constructor(
         val person = personal.first()
         if (!person.eligible) return
         val zone = event.window().zone
-        val best = StreakCalculator.calculate(person.fasts, zone, now.atZone(zone).toLocalDate(), person.frozen, person.plan::isPlanned).longest
+        val today = now.atZone(zone).toLocalDate()
+        if (!RevivalCalendar.eligibleDay(today, person.offset)) return
+        val best = StreakCalculator.calculate(person.fasts, zone, today, person.frozen, person.plan::isPlanned).longest
         dao.join(id, now.toEpochMilli(), best)
     }
 
