@@ -724,6 +724,7 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
                     Brush.horizontalGradient(0f to color, 0.65f to color, 1f to color.copy(alpha = 0.1f)),
                 ) else Modifier.background(color),
             )
+            .then(if (seg.fast.isActive) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
             .clickable { onEditFast(seg.fast.id) }
             .semantics { contentDescription = desc },
         contentAlignment = Alignment.Center,
