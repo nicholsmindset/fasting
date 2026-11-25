@@ -43,6 +43,7 @@
     <string name="first_fast_tomorrow">明天 %1$s 提醒我</string>
     <string name="first_fast_planned_tonight">我们会在今晚 %1$s 提醒你。</string>
     <string name="first_fast_planned_tomorrow">我们会在明天 %1$s 提醒你。</string>
+    <string name="first_fast_one_off">%1$s 的单次计划</string>
     <string name="first_fast_cancel_plan">取消提醒</string>
 
     <!-- Coaching tip card -->

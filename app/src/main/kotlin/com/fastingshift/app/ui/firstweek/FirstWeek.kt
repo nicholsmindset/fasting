@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ThumbUp
@@ -63,6 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
 import com.fastingshift.app.notifications.Notifications
+import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.GroupHeader
@@ -78,10 +78,7 @@ import com.fastingshift.domain.coaching.CoachingTip
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastStatus
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import kotlinx.coroutines.launch
 
 /*
@@ -89,40 +86,39 @@ import kotlinx.coroutines.launch
  * its own (through its view model) whether to show anything.
  */
 
-private val eveningLabel: String
-    get() = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(FirstWeekRules.EVENING_START)
-
 /** One-off reminder before the first fast. The Timer provides the start action. */
 @Composable
-fun FirstFastCard(vm: FirstFastViewModel = hiltViewModel()) {
+fun FirstFastCard(
+    now: Instant,
+    offer: EveningOffer,
+    remindersAvailable: Boolean,
+    onOpenReminders: () -> Unit,
+    vm: FirstFastViewModel = hiltViewModel(),
+) {
     val st by vm.state.collectAsStateWithLifecycle()
-    AnimatedVisibility(st != null, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+    val visible = st != null && (st?.planned != null || offer == EveningOffer.AVAILABLE ||
+        (offer == EveningOffer.COVERED && !remindersAvailable))
+    AnimatedVisibility(visible, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
         val ui = st ?: return@AnimatedVisibility
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
+        val format = rememberWeekFormat()
         AppCard(Modifier.animateContentSize(), padding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
             Text(stringResource(R.string.first_fast_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
             val plan = ui.planned
-            if (plan == null) {
-                val tonight = FirstWeekRules.nextEvening(Instant.now(), zone).toLocalDate() == today
+            if (plan != null) {
+                Text(stringResource(R.string.first_fast_one_off, format.date.format(plan.date)), style = MaterialTheme.typography.bodyMedium)
+                PlainButton(stringResource(R.string.first_fast_cancel_plan), onClick = vm::cancelPlan)
+            }
+            if (!remindersAvailable) {
+                Text(stringResource(R.string.week_alert_off), style = MaterialTheme.typography.bodyMedium)
+                SecondaryButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
+            } else if (plan == null && offer == EveningOffer.AVAILABLE) {
+                val zone = ZoneId.systemDefault()
+                val tonight = FirstWeekRules.nextEvening(now, zone).toLocalDate() == now.atZone(zone).toLocalDate()
                 SecondaryButton(
-                    stringResource(if (tonight) R.string.first_fast_tonight else R.string.first_fast_tomorrow, eveningLabel),
+                    stringResource(if (tonight) R.string.first_fast_tonight else R.string.first_fast_tomorrow,
+                        format.time.format(FirstWeekRules.EVENING_START)),
                     onClick = vm::planTonight,
                 )
-            } else {
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Icon(Icons.Filled.DateRange, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    Text(
-                        stringResource(if (plan.date == today) R.string.first_fast_planned_tonight else R.string.first_fast_planned_tomorrow, eveningLabel),
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.weight(1f),
-                    )
-                    PlainButton(stringResource(R.string.first_fast_cancel_plan), onClick = vm::cancelPlan)
-                }
             }
         }
     }

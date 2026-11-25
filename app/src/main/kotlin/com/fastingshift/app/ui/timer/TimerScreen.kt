@@ -110,6 +110,7 @@ fun TimerRoute(
     onOpenMuslimHub: () -> Unit = {},
     viewModel: TimerViewModel = hiltViewModel(),
     onOpenWeek: (LocalDate?) -> Unit = {},
+    onOpenReminders: () -> Unit = {},
 ) {
     val loaded by viewModel.state.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
@@ -131,6 +132,7 @@ fun TimerRoute(
                     onWeight = { v, u -> viewModel.addWeight(v, u) }, onElectrolyte = { e, mg -> viewModel.addElectrolyte(e, mg) },
                     onOpenMuslimHub = onOpenMuslimHub,
                     onOpenWeek = onOpenWeek,
+                    onOpenReminders = onOpenReminders,
                 ),
             )
         }
@@ -185,6 +187,7 @@ class TimerActions(
     /** Sunnah & qada hub, from the Ramadan card. */
     val onOpenMuslimHub: () -> Unit = {},
     val onOpenWeek: (LocalDate?) -> Unit = {},
+    val onOpenReminders: () -> Unit = {},
 )
 
 @Composable
@@ -343,9 +346,10 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
         PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
         StartTimeRow(state, actions.onStartAt)
     }
-    if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek)
+    val alertsAvailable = startReminderNotificationsEnabled()
+    if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable)
     RamadanCard(onOpenHub = actions.onOpenMuslimHub)
-    FirstFastCard()
+    FirstFastCard(state.now, state.eveningOffer, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
     state.programTargetHours?.let {
         SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
     }
@@ -355,11 +359,10 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
 }
 
 @Composable
-private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Unit) {
+private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Unit, notificationsEnabled: Boolean) {
     val format = rememberWeekFormat()
     val planned = state.plannedStart
     val reminder = state.startReminder
-    val notificationsEnabled = startReminderNotificationsEnabled()
     val zone = ZoneId.systemDefault()
     val day = planned?.atZone(zone)?.toLocalDate()
     val today = state.now.atZone(zone).toLocalDate()

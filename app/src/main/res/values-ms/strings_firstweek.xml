@@ -43,6 +43,7 @@
     <string name="first_fast_tomorrow">Ingatkan saya esok pukul %1$s</string>
     <string name="first_fast_planned_tonight">Kami akan mengingatkan anda malam ini pukul %1$s.</string>
     <string name="first_fast_planned_tomorrow">Kami akan mengingatkan anda esok pukul %1$s.</string>
+    <string name="first_fast_one_off">Rancangan sekali sahaja untuk %1$s</string>
     <string name="first_fast_cancel_plan">Batalkan peringatan</string>
 
     <!-- Coaching tip card -->
