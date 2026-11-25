@@ -32,12 +32,19 @@ data class Backup(
     /** v4+: challenges joined on this device. */
     val challenges: List<ChallengeRecord> = emptyList(),
     @SerialName("qada_repayments") val qadaRepayments: List<QadaRepaymentRecord> = emptyList(),
+    @SerialName("revival_events") val revivalEvents: List<RevivalRecord> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "fasting-shift-backup"
-        const val VERSION = 5
+        const val VERSION = 6
     }
 }
+
+@Serializable data class RevivalRecord(
+    val id: String, val starts: Long, val ends: Long, val zone: String,
+    val target: String, val threshold: Int, val joined: Long?, val baselineBest: Int?,
+    val restored: Long?, val awardDay: Long?, val restoredDays: Int?, val dismissed: Boolean, val notified: Boolean,
+)
 
 /** User preferences carried in a backup so a restore on a new phone feels the same (F8). */
 @Serializable data class SettingsRecord(
@@ -169,6 +176,7 @@ object BackupCodec {
         unique("qada year", backup.qadaDebts.map { it.hijriYear })
         unique("metric", backup.metrics.map { it.id })
         unique("challenge", backup.challenges.map { it.id })
+        unique("revival event", backup.revivalEvents.map { it.id })
         backup.schedules.forEach {
             if (it.startMinute !in 0 until 24 * 60) throw BackupFormatException("Schedule ${it.id} has an invalid start time.")
         }

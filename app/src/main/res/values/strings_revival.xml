@@ -1,0 +1,22 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- Existing Chinese localization is outside this release. Android falls back to English. -->
+    <string name="revival_title">Streak Revival</string>
+    <string name="revival_invite">Your best was %1$d days on plan. Bring it back with %2$d planned days by %3$s.</string>
+    <string name="revival_fresh">Start fresh with %1$d planned days by %2$s. Your usual schedule counts.</string>
+    <string name="revival_join">Join this event</string>
+    <string name="revival_skip">Skip this event</string>
+    <string name="revival_progress">%1$d of %2$d planned days · through %3$s</string>
+    <string name="revival_award">You earned a %1$d-day revival.</string>
+    <string name="revival_view">See my revival</string>
+    <string name="revival_finish_title">Welcome back.</string>
+    <string name="revival_finish">You showed up on %2$d planned days and earned a %1$d-day revived streak. Future planned days can build on it. Your original fasting history stays accurate.</string>
+    <string name="revival_done">Done</string>
+    <string name="revival_history_award">Last revival award · %1$d days</string>
+    <string name="revival_history_current">Current revived streak · %1$d days</string>
+    <string name="revival_local_counts">On this phone · %1$d of %2$d joined events completed</string>
+    <string name="revival_alert_setting">Seasonal event invitation</string>
+    <string name="revival_alert_details">One reminder when a new event opens, if your earlier streak has ended.</string>
+    <string name="revival_open_notifications">Open notification settings</string>
+    <string name="revival_notification_title">A fresh start is here</string>
+    <string name="revival_notification_body">A new Streak Revival is open whenever you feel ready to return to your usual plan.</string>
+</resources>

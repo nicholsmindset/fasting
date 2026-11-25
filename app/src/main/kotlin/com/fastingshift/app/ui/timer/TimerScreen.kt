@@ -124,6 +124,7 @@ fun TimerRoute(
         } else {
             TimerScreen(
                 state = state,
+                revival = { com.fastingshift.app.ui.revival.RevivalCard() },
                 actions = TimerActions(
                     onSelect = viewModel::select, onSelectCustom = viewModel::selectCustom, onStart = { viewModel.start() }, onEnd = viewModel::end,
                     onEdit = { state.active?.let { onEditFast(it.id) } }, onCheckIn = { state.active?.let { onOpenCheckIn(it.id) } },
@@ -191,7 +192,7 @@ class TimerActions(
 )
 
 @Composable
-fun TimerScreen(state: TimerUiState, actions: TimerActions) {
+fun TimerScreen(state: TimerUiState, actions: TimerActions, revival: @Composable () -> Unit = {}) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(
@@ -235,6 +236,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions) {
                         }
                     }
                 }
+                revival()
             }
         }
     }
