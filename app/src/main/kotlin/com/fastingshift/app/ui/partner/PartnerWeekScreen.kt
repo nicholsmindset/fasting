@@ -131,6 +131,11 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
             }
         }
         when {
+            state.leaving -> {
+                Notice(stringResource(R.string.partner_leaving))
+                SecondaryButton(stringResource(R.string.partner_retry), vm::refresh, Modifier.testTag("partner_refresh"),
+                    enabled = !state.busy)
+            }
             week != null && week.status != "left" -> {
                 if (token != null && !joining) {
                     Notice(stringResource(R.string.partner_existing))
@@ -314,8 +319,16 @@ private fun WeekProgress(week: PartnerWeek, state: PartnerUiState, vm: PartnerWe
     if (state.pendingDays.isNotEmpty()) Notice(stringResource(R.string.partner_queued))
     else if (state.offline) Notice(stringResource(R.string.partner_offline))
     week.lastCheer?.let { cheer ->
-        Text(cheer, Modifier.testTag("partner_received").semantics { liveRegion = LiveRegionMode.Polite },
-            style = MaterialTheme.typography.titleMedium)
+        val message = when (cheer) {
+            "here" -> R.string.partner_reaction_here
+            "thanks" -> R.string.partner_reaction_thanks
+            else -> R.string.partner_reaction_glad
+        }
+        week.partner?.let { sender ->
+            Text(stringResource(R.string.partner_encouragement_from, sender.alias, stringResource(message)),
+                Modifier.testTag("partner_received").semantics { liveRegion = LiveRegionMode.Polite },
+                style = MaterialTheme.typography.titleMedium)
+        }
     }
 
     if (finished) {
@@ -350,7 +363,10 @@ private fun WeekProgress(week: PartnerWeek, state: PartnerUiState, vm: PartnerWe
             if (!checked && !full) Notice(stringResource(R.string.partner_checkin_hint))
         }
         if (week.partner != null) {
-            SecondaryButton(stringResource(R.string.partner_cheer), { vm.cheer("glad") }, Modifier.testTag("partner_cheer"),
+            val sentToday = !week.canCheer && week.startDate?.let { week.today >= it } == true &&
+                week.endDate?.let { week.today <= it } == true
+            SecondaryButton(stringResource(if (sentToday) R.string.partner_cheered else R.string.partner_cheer),
+                { vm.cheer("glad") }, Modifier.testTag("partner_cheer"),
                 enabled = week.canCheer && !state.busy)
         }
         if (week.self.role == "participant" && state.participantAllowed == true && week.self.days.distinct().size < 3) {

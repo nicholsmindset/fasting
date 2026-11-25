@@ -60,4 +60,10 @@
     <string name="partner_renew_wait">You’ve asked to do another week together. Your partner can join when they’re ready.</string>
     <string name="partner_renew_invited">Your partner would like to do another week together.</string>
     <string name="partner_renew_accept">Accept another week</string>
+    <string name="partner_leaving">You’ve left on this phone. Reconnect to close the shared week for both people.</string>
+    <string name="partner_encouragement_from">%1$s says “%2$s”</string>
+    <string name="partner_reaction_glad">Glad you’re here.</string>
+    <string name="partner_reaction_here">I’m here with you.</string>
+    <string name="partner_reaction_thanks">Thanks for checking in.</string>
+    <string name="partner_cheered">Encouragement sent today</string>
 </resources>
