@@ -66,4 +66,6 @@
     <string name="partner_reaction_here">我在这里陪你。</string>
     <string name="partner_reaction_thanks">谢谢你来签到。</string>
     <string name="partner_cheered">今天已送上鼓励</string>
+    <string name="partner_last_checkin">%1$s于%2$s签到。</string>
+    <string name="partner_your_count">你已签到 %1$d 次，共 3 次</string>
 </resources>

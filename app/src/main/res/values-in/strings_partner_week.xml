@@ -66,4 +66,6 @@
     <string name="partner_reaction_here">Saya di sini bersama Anda.</string>
     <string name="partner_reaction_thanks">Terima kasih sudah memberi kabar.</string>
     <string name="partner_cheered">Semangat sudah dikirim hari ini</string>
+    <string name="partner_last_checkin">%1$s memberi kabar pada %2$s.</string>
+    <string name="partner_your_count">Anda sudah memberi kabar %1$d dari 3 kali</string>
 </resources>
