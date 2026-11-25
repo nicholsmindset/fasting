@@ -6,6 +6,8 @@ The system controls promotion. The app requests it only while an opted-in timer 
 
 Android documents a 96 dp chip with about seven available characters. The chip carries elapsed time and the notification provides the full planned end in the person's device time format. [Android Live Updates](https://developer.android.com/develop/ui/views/notifications/live-update)
 
+The Android 16 Robolectric tests run on Java 21. The app still targets Java 17 bytecode.
+
 ## Device verification
 
 Run the same scenarios on these physical devices. Record OS build, screenshots and both battery configurations. Emulator tests cannot establish manufacturer behavior.

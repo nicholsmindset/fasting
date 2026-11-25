@@ -19,7 +19,8 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          # Robolectric needs Java 21 to execute Android 16 (API 36) tests.
+          java-version: "21"
 
       - uses: android-actions/setup-android@v3
         with:
