@@ -32,4 +32,8 @@
     <string name="plan_date_finish">Perkiraan selesai</string>
     <string name="plan_date_only">Hanya tanggal ini yang berubah.</string>
     <string name="plan_date_next_unchanged">Hanya tanggal ini yang berubah. Waktu mulai pada %1$s tetap %2$s.</string>
+    <string name="plan_date_reminder_removed">Pengingat pada %1$s akan dibatalkan.</string>
+    <string name="plan_date_reminder_added">Pengingat mulai baru: %1$s.</string>
+    <string name="plan_date_reminder_same">Pengingat mulai berikutnya tetap pada %1$s.</string>
+    <string name="plan_date_reminder_moved">Pengingat mulai berikutnya berubah dari %1$s menjadi %2$s.</string>
 </resources>

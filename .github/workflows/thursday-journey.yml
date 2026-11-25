@@ -26,8 +26,6 @@ jobs:
           persist-credentials: false
       - name: Apply identical test to unchanged base
         if: matrix.variant == 'before'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           test_file=app/src/test/kotlin/com/fastingshift/app/ThursdayJourneyScreenshotTest.kt
           cp "$test_file" "$RUNNER_TEMP/ThursdayJourneyScreenshotTest.kt"
@@ -63,3 +61,48 @@ jobs:
           name: thursday-journey-${{ matrix.variant }}
           path: app/build/moats-captures/thursday/
           if-no-files-found: warn
+  gallery:
+    name: Compare the same screens
+    needs: compare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: thursday-journey-*
+          path: evidence
+      - name: Build the before-and-after gallery
+        run: |
+          python -c 'from PIL import Image' || python -m pip install Pillow
+          python - <<'PYTHON'
+          from pathlib import Path
+          from PIL import Image, ImageDraw, ImageFont, ImageOps
+          root = Path('evidence')
+          output = root / 'comparison'
+          output.mkdir()
+          headings = ['Timer at 21:40', 'Date editor', 'After choosing 22:00', 'Updated plan']
+          steps = ['02-timer', '03-date-editor', '04-picker-result', '05-saved']
+          for mode in ['light', 'dark', 'compact-200pct']:
+              for title, step in zip(headings, steps):
+                  thumbs = []
+                  for state in ['before', 'after']:
+                      path = root / ('thursday-journey-' + state) / f'{mode}-{step}.png'
+                      with Image.open(path) as screen:
+                          thumbs.append(ImageOps.contain(screen.convert('RGB'), (440, 875)))
+                  canvas = Image.new('RGB', (924, max(im.height for im in thumbs) + 100), '#f7f6f0')
+                  draw = ImageDraw.Draw(canvas)
+                  font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 22)
+                  draw.text((14, 9), f'{title}  |  {mode}', font=font, fill='#142b25')
+                  for i, (label, screen) in enumerate(zip(['Before', 'After'], thumbs)):
+                      x = 14 + 456*i
+                      draw.text((x, 43), label, font=font, fill='#40544c')
+                      canvas.paste(screen, (x, 82))
+                  canvas.save(output / f'{mode}-{step}.jpg', quality=91)
+              for state in ['before', 'after']:
+                  data = (root / ('thursday-journey-' + state) / f'{mode}-results.txt').read_text()
+                  (output / f'{mode}-{state}.txt').write_text(data)
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thursday-before-and-after
+          path: evidence/comparison/
+          if-no-files-found: error

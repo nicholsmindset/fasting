@@ -260,19 +260,21 @@ private fun DateEditor(day: LocalDate, usualTimes: List<LocalTime>, currentTimes
 @Composable
 private fun DatePreview(day: LocalDate, state: PlannerState, preview: DateChangePreview, notifications: Boolean, format: WeekFormat) {
     Column(Modifier.testTag("plan-date-preview"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (preview.start != null && preview.finish != null) {
-            PreviewTime(stringResource(R.string.plan_date_start), format.dateTime.format(preview.start.atZone(state.zone)))
-            PreviewTime(stringResource(R.string.plan_date_finish), format.dateTime.format(preview.finish.atZone(state.zone)))
-        } else {
+        preview.start?.let { PreviewTime(stringResource(R.string.plan_date_start), format.dateTime.format(it.atZone(state.zone))) }
+        preview.finish?.let { PreviewTime(stringResource(R.string.plan_date_finish), format.dateTime.format(it.atZone(state.zone))) }
+        if (preview.skipped) {
             Text(stringResource(R.string.week_skipped), style = MaterialTheme.typography.titleLarge)
         }
+        val before = preview.previousAlert?.atZone(state.zone)?.let(format.dateTime::format)
+        val after = preview.nextAlert?.atZone(state.zone)?.let(format.dateTime::format)
         val reminder = when {
             !state.settings.reminders.fastStartEnabled || !notifications -> stringResource(R.string.week_alert_off)
             state.active -> stringResource(R.string.week_active)
-            preview.nextAlert == null -> stringResource(R.string.week_no_reminder)
-            else -> preview.nextAlert.atZone(state.zone).let {
-                stringResource(R.string.week_next_reminder, format.date.format(it), format.time.format(it))
-            }
+            after == null && before != null -> stringResource(R.string.plan_date_reminder_removed, before)
+            after == null -> stringResource(R.string.week_no_reminder)
+            before == null -> stringResource(R.string.plan_date_reminder_added, after)
+            preview.previousAlert == preview.nextAlert -> stringResource(R.string.plan_date_reminder_same, after)
+            else -> stringResource(R.string.plan_date_reminder_moved, before, after)
         }
         Text(reminder, style = MaterialTheme.typography.bodyMedium)
         val tomorrow = day.plusDays(1)

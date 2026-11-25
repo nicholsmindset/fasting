@@ -156,6 +156,10 @@ class ThursdayJourneyScreenshotTest {
             val direct = hasTestTag("timer-move-missed-start")
             compose.waitUntil(15_000) { visibleNode(nextAction) || visibleNode(direct) }
             val directRoute = visibleNode(direct)
+            // Compile the same test against both revisions. An updated build must actually expose
+            // its new route and review, even if fallback navigation would also reach Thursday.
+            val previewBuild = app.resources.getIdentifier("plan_date_save", "string", app.packageName) != 0
+            if (previewBuild) check(directRoute) { "Timer must expose today's missed planned start" }
             val action = if (directRoute) direct else nextAction
             compose.onNode(action).performScrollTo().assertIsDisplayed()
             capture("$mode-02-timer")
@@ -180,12 +184,16 @@ class ThursdayJourneyScreenshotTest {
             val changed = hasTestTag("week-day-$day") and label(R.string.week_changed)
             compose.waitUntil(15_000) { visibleNode(save) || visibleNode(changed) }
             val hasPreview = visibleNode(save)
+            if (previewBuild) check(hasPreview) { "Choosing a time must leave it uncommitted for review" }
             if (hasPreview) {
                 assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[day] })
                 waitFor(hasTestTag("plan-date-preview"))
                 val start = day.atTime(moved).atZone(moatsZone)
                 waitFor(hasText(format.dateTime.format(start.plusHours(16))))
-                waitFor(label(R.string.week_next_reminder, format.date.format(start), format.time.format(start)))
+                val previousReminder = day.plusDays(1).atTime(usual).atZone(moatsZone)
+                val changedReminder = hasText(format.dateTime.format(previousReminder), substring = true) and
+                    hasText(format.dateTime.format(start), substring = true)
+                waitFor(changedReminder)
                 capture("$mode-04-picker-result")
                 tap(save, scroll = true)
             }

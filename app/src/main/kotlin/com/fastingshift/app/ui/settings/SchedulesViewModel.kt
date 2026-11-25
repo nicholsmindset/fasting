@@ -73,14 +73,22 @@ internal data class PlannerState(
         val finish = planned?.let { (schedule, instant) ->
             Presets.byId(schedule.protocolId)?.let { instant.plus(Duration.ofHours(it.fastHours.toLong())) }
         }
-        return DateChangePreview(start, finish, if (active) null else draft.nextStartAlert())
+        return DateChangePreview(start, finish, replacement?.isSkipped == true,
+            previousAlert = if (active) null else nextStartAlert(),
+            nextAlert = if (active) null else draft.nextStartAlert())
     }
 
     fun nextStartAlert(): Instant? = idleReminders(now, zone, settings, eligible, lastFast, firstEvening)
         .firstOrNull { it.kind == ReminderKind.FAST_START }?.triggerAt
 }
 
-internal data class DateChangePreview(val start: Instant?, val finish: Instant?, val nextAlert: Instant?)
+internal data class DateChangePreview(
+    val start: Instant?,
+    val finish: Instant?,
+    val skipped: Boolean,
+    val previousAlert: Instant?,
+    val nextAlert: Instant?,
+)
 
 @HiltViewModel
 class SchedulesViewModel @Inject constructor(

@@ -32,4 +32,8 @@
     <string name="plan_date_finish">Expected finish</string>
     <string name="plan_date_only">Only this date changes.</string>
     <string name="plan_date_next_unchanged">Only this date changes. %1$s stays at %2$s.</string>
+    <string name="plan_date_reminder_removed">The upcoming reminder for %1$s will be removed.</string>
+    <string name="plan_date_reminder_added">New start reminder: %1$s.</string>
+    <string name="plan_date_reminder_same">Next start reminder stays at %1$s.</string>
+    <string name="plan_date_reminder_moved">Next start reminder moves from %1$s to %2$s.</string>
 </resources>

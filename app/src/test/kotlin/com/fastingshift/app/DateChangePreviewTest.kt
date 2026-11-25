@@ -30,6 +30,7 @@ class DateChangePreviewTest {
         val moved = plan.preview(day, DayOverride(LocalTime.of(22, 0)))
         assertEquals(Instant.parse("2026-11-26T14:00:00Z"), moved.start)
         assertEquals(Instant.parse("2026-11-27T06:00:00Z"), moved.finish)
+        assertEquals(Instant.parse("2026-11-27T12:00:00Z"), moved.previousAlert)
         assertEquals(moved.start, moved.nextAlert)
         assertEquals(Instant.parse("2026-11-27T12:00:00Z"), plan.starts(day.plusDays(1)).single().second)
         val skip = plan.preview(day, DayOverride())
@@ -37,6 +38,17 @@ class DateChangePreviewTest {
         assertNull(skip.finish)
         assertEquals(plan.starts(day.plusDays(1)).single().second, skip.nextAlert)
         assertNull(plan.settings.planHistory.dayOverrides[day])
+    }
+
+    @Test fun whenAnotherRoutineStartsFirstTheNextAlertStaysAtItsOwnTime() {
+        val plan = plan("Asia/Singapore", "2026-11-26T13:40:00Z")
+        val later = Schedule(2, Presets.W12_12.id, setOf(DayOfWeek.THURSDAY), LocalTime.of(21, 50))
+        val both = plan.copy(schedules = plan.schedules + later)
+        val preview = both.preview(plan.today, DayOverride(LocalTime.of(22, 0)))
+        assertEquals(Instant.parse("2026-11-26T13:50:00Z"), preview.previousAlert)
+        assertEquals(preview.previousAlert, preview.nextAlert)
+        assertEquals(Instant.parse("2026-11-26T14:00:00Z"), preview.start)
+        assertEquals(Instant.parse("2026-11-27T06:00:00Z"), preview.finish)
     }
 
     @Test fun projectedFinishUsesElapsedHoursAcrossTheSpringClockChange() {
