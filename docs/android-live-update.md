@@ -20,7 +20,7 @@ Run the same scenarios on these physical devices. Record OS build, screenshots a
 
 1. Grant notifications and enable **Settings → Reminders → Show a live timer notification**. Start a regular 16:8 fast. With a shorter backdated start, verify the title, live chronometer, target and End fast action. The only internal landmark for a 16-hour plan is hour 12.
 2. Cross a 15-minute boundary while awake. Verify that progress and displayed elapsed time advance without a second notification or sound. Test screen off, app process death, restart, a clock or timezone change and reboot. Check both exact-alarm settings.
-3. Disable system Live Updates for this app during the fast. Check that only the ordinary notification remains and there are no prompts. Turn off the in-app ongoing notification. It should disappear, along with the live tick.
+3. Disable system Live Updates for this app during the fast. Check that only the ordinary progress notification in the shade remains and there are no prompts. Turn off the in-app ongoing notification. It should disappear, along with the live tick.
 4. Dismiss the notification on Android 16. Return to the app and wait past a refresh boundary. It should remain dismissed until a new fast or deliberate in-app re-enable.
 5. Let the planned time pass. Confirm that progress stops at the original target. End the fast and confirm the live timer and its scheduled update disappear. Repeat on Android 15 to check the unchanged chronometer and its End fast action.
 

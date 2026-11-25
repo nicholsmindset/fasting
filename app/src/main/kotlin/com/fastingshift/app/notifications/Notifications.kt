@@ -171,13 +171,16 @@ object Notifications {
             cancelOngoing(context)
             return false
         }
-        val promoted = Build.VERSION.SDK_INT >= 36 && now >= fast.startAt && now < fast.targetEndAt &&
-            LiveFastUpdate.eligible(context)
-        notify(context, ID_ONGOING, ongoingBuilder(context, fast, now, promoted))
-        return promoted
+        val tracking = Build.VERSION.SDK_INT >= 36 && now >= fast.startAt && now < fast.targetEndAt &&
+            LiveFastUpdate.channelEnabled(context)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val promoted = Build.VERSION.SDK_INT >= 36 && tracking && manager.canPostPromotedNotifications() &&
+            manager.getNotificationChannel(CHANNEL_ONGOING).importance > NotificationManager.IMPORTANCE_MIN
+        notify(context, ID_ONGOING, ongoingBuilder(context, fast, now, tracking, promoted))
+        return tracking
     }
 
-    internal fun ongoingBuilder(context: Context, fast: Fast, now: Instant, promoted: Boolean): NotificationCompat.Builder {
+    internal fun ongoingBuilder(context: Context, fast: Fast, now: Instant, tracking: Boolean, promoted: Boolean): NotificationCompat.Builder {
         val builder = NotificationCompat.Builder(context, CHANNEL_ONGOING)
             .setSmallIcon(R.drawable.ic_stat_fast)
             .setContentTitle(context.getString(R.string.notif_ongoing_title))
@@ -193,7 +196,7 @@ object Notifications {
             .addAction(0, context.getString(R.string.action_end_fast), endFastIntent(context))
         if (Build.VERSION.SDK_INT >= 36) {
             builder.setDeleteIntent(LiveFastUpdate.dismissIntent(context, fast.id))
-            if (promoted) LiveFastUpdate.decorate(context, builder, fast, now)
+            if (tracking) LiveFastUpdate.decorate(context, builder, fast, now, promoted)
         }
         return builder
     }

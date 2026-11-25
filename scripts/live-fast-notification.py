@@ -49,8 +49,7 @@ def main():
             "System promotion and OEM status-bar placement are device controlled.")
     print(note, flush=True)
     (directory / "observed.txt").write_text(note + "\n")
-    if sdk == 35:
-        assert not style, "Android 15 must retain its plain notification"
+    assert style == (sdk >= 36), f"Unexpected active timer notification on API {sdk}: {label}"
     adb("shell", "input", "keyevent", "KEYCODE_HOME")
     time.sleep(1)
     with (directory / f"api-{sdk}-{label}-status.png").open("wb") as image:

@@ -112,8 +112,8 @@ class ReminderCoordinator @Inject constructor(
             LiveFastUpdate.schedule(context, null)
             LiveFastUpdate.clearDismissal(context)
         } else {
-            val promoted = Notifications.showOngoing(context, active, now)
-            LiveFastUpdate.schedule(context, if (promoted) LiveFastUpdate.nextUpdate(active.startAt, active.targetEndAt, now) else null)
+            val tracking = Notifications.showOngoing(context, active, now)
+            LiveFastUpdate.schedule(context, if (tracking) LiveFastUpdate.nextUpdate(active.startAt, active.targetEndAt, now) else null)
         }
     }
 

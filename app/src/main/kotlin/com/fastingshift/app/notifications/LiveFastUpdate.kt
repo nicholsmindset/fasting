@@ -45,15 +45,14 @@ internal object LiveFastUpdate {
     }
 
     @RequiresApi(36)
-    fun eligible(context: Context): Boolean {
+    fun channelEnabled(context: Context): Boolean {
         val manager = context.getSystemService(NotificationManager::class.java)
         val importance = manager.getNotificationChannel(Notifications.CHANNEL_ONGOING)?.importance ?: return false
-        return importance > NotificationManager.IMPORTANCE_MIN &&
-            NotificationManagerCompat.from(context).areNotificationsEnabled() && manager.canPostPromotedNotifications()
+        return importance != NotificationManager.IMPORTANCE_NONE && NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
     @RequiresApi(36)
-    fun decorate(context: Context, builder: NotificationCompat.Builder, fast: Fast, now: Instant) {
+    fun decorate(context: Context, builder: NotificationCompat.Builder, fast: Fast, now: Instant, requestPromotion: Boolean) {
         val elapsed = Duration.between(fast.startAt, now).coerceAtLeast(Duration.ZERO)
         val scale = FastProgressScale.forFast(fast.plannedDuration, elapsed)
         val colors = stageColors
@@ -73,7 +72,7 @@ internal object LiveFastUpdate {
         val end = DateFormat.getTimeFormat(context).format(Date.from(fast.targetEndAt))
         builder.setContentTitle(context.getString(R.string.live_fast_title, label, elapsed.toHours(), elapsed.toMinutes() % 60))
             .setContentText(context.getString(R.string.live_fast_ends, end))
-            .setRequestPromotedOngoing(true)
+            .setRequestPromotedOngoing(requestPromotion)
             .setShortCriticalText(context.getString(R.string.live_fast_chip, elapsed.toHours(), elapsed.toMinutes() % 60))
             .setStyle(style)
     }

@@ -31,7 +31,7 @@ class LiveFastUpdateTest {
         Notifications.createChannels(app)
         val manager = app.getSystemService(NotificationManager::class.java)
         assertTrue(manager.getNotificationChannel(Notifications.CHANNEL_ONGOING).importance > NotificationManager.IMPORTANCE_MIN)
-        val n = Notifications.ongoingBuilder(app, fast, now, promoted = true).build()
+        val n = Notifications.ongoingBuilder(app, fast, now, tracking = true, promoted = true).build()
         assertTrue(n.hasPromotableCharacteristics())
         assertEquals("android.app.Notification\$ProgressStyle", n.extras.getString(Notification.EXTRA_TEMPLATE))
         assertEquals("16:8 fast · 12h 04m", n.extras.getCharSequence(Notification.EXTRA_TITLE))
@@ -42,8 +42,8 @@ class LiveFastUpdateTest {
         assertNull(n.contentView)
     }
 
-    @Test fun optOutUsesStandardChronometerAndDismissalLastsForThisFastOnly() {
-        val n = Notifications.ongoingBuilder(app, fast, now, promoted = false).build()
+    @Test fun optOutKeepsProgressInTheDrawerAndDismissalLastsForThisFastOnly() {
+        val n = Notifications.ongoingBuilder(app, fast, now, tracking = true, promoted = false).build()
         assertFalse(NotificationCompat.isRequestPromotedOngoing(n))
         assertTrue(n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER))
         LiveFastUpdate.rememberDismissal(app, fast.id)
@@ -54,7 +54,7 @@ class LiveFastUpdateTest {
     }
 
     @Test @Config(sdk = [35]) fun android15RetainsThePlainOngoingNotification() {
-        val n = Notifications.ongoingBuilder(app, fast, now, promoted = true).build()
+        val n = Notifications.ongoingBuilder(app, fast, now, tracking = true, promoted = true).build()
         assertEquals(app.getString(R.string.notif_ongoing_title), n.extras.getCharSequence(Notification.EXTRA_TITLE))
         assertTrue(n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER))
         assertNull(n.extras.getString(Notification.EXTRA_TEMPLATE))
