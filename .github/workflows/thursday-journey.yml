@@ -1,0 +1,65 @@
+name: Thursday schedule journey
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'core/**'
+      - '.github/workflows/thursday-journey.yml'
+permissions:
+  contents: read
+concurrency:
+  group: thursday-journey-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  compare:
+    name: Capture ${{ matrix.variant }}
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [before, after]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Apply identical test to unchanged base
+        if: matrix.variant == 'before'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          test_file=app/src/test/kotlin/com/fastingshift/app/ThursdayJourneyScreenshotTest.kt
+          cp "$test_file" "$RUNNER_TEMP/ThursdayJourneyScreenshotTest.kt"
+      - uses: actions/checkout@v4
+        if: matrix.variant == 'before'
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - name: Restore comparison fixture
+        if: matrix.variant == 'before'
+        run: cp "$RUNNER_TEMP/ThursdayJourneyScreenshotTest.kt" app/src/test/kotlin/com/fastingshift/app/
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Run the fixed-clock app journey
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
+        run: ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.ThursdayJourneyScreenshotTest'
+      - name: Report measured controls
+        run: cat app/build/moats-captures/thursday/light-results.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thursday-journey-${{ matrix.variant }}
+          path: app/build/moats-captures/thursday/
+          if-no-files-found: warn
