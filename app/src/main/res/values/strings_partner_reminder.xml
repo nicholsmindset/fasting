@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_remind_set">Remind me once</string>
+    <string name="partner_remind_change">Change reminder time</string>
+    <string name="partner_remind_cancel">Cancel reminder</string>
+    <string name="partner_remind_settings">Enable reminders in Android settings</string>
+    <string name="partner_remind_scheduled">Personal reminder around %1$s</string>
+    <string name="partner_remind_notification">Your check-in reminder</string>
+    <string name="partner_remind_note">You asked for a reminder to check in. A rest day counts too.</string>
+</resources>
