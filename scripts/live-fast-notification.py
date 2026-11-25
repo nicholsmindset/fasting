@@ -19,6 +19,16 @@ def ongoing():
     return next((line for line in adb("shell", "cmd", "notification", "list").splitlines()
                  if f"|{package}|1004|" in line), None)
 
+def capture(device, expect, target):
+    """Wait for the requested system surface and discard the emulator's previous buffered frame."""
+    if not expect.wait(timeout=30):
+        target.with_suffix(".xml").write_text(device.dump_hierarchy())
+        raise AssertionError(f"Missing system surface for {target.name}")
+    subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=subprocess.DEVNULL, check=True)
+    time.sleep(2)
+    with target.open("wb") as image:
+        subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=image, check=True)
+
 def main():
     sdk = int(adb("shell", "getprop", "ro.build.version.sdk"))
     emulator = any(adb("shell", "getprop", prop) == "1" for prop in ("ro.boot.qemu", "ro.kernel.qemu"))
@@ -57,13 +67,10 @@ def main():
     (directory / "observed.txt").write_text(note + "\n")
     assert style == (sdk >= 36), f"Unexpected active timer notification on API {sdk}: {label}"
     adb("shell", "input", "keyevent", "KEYCODE_HOME")
-    time.sleep(1)
-    with (directory / f"api-{sdk}-{label}-status.png").open("wb") as image:
-        subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=image, check=True)
+    capture(device, device(packageNameMatches=".*launcher.*"), directory / f"api-{sdk}-{label}-status.png")
     adb("shell", "cmd", "statusbar", "expand-notifications")
-    time.sleep(1)
-    with (directory / f"api-{sdk}-{label}-shade.png").open("wb") as image:
-        subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=image, check=True)
+    capture(device, device(packageName="com.android.systemui", textMatches="(?i).*fast.*"),
+            directory / f"api-{sdk}-{label}-shade.png")
     adb("shell", "cmd", "statusbar", "collapse")
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
     screen.click("timer_end", scroll=True)
