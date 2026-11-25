@@ -198,7 +198,8 @@ class HistoryViewModel @Inject constructor(
 
     private val plans = combine(settings.settings, schedules.observeAll(), screening.observeLatest()) { settings, rows, record ->
         val max = FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true)
-        CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening()).let { Triple(it, settings.weekReflections, settings.wrappedEnabled) }
+        val plan = CalendarPlan(settings.planHistory, eligibleSchedules(rows, max), schedules.firstEvening())
+        Triple(plan, settings.weekReflections, settings.wrappedEnabled)
     }
 
     /** Null until loaded, so an empty history never flashes before the fasts arrive. */

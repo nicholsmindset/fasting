@@ -31,7 +31,8 @@ object FastingWrapped {
 
     fun hasStory(fasts: List<Fast>, zone: ZoneId, now: Instant): Boolean {
         val year = latestYear(now.atZone(zone).toLocalDate())
-        return fasts.any { endedBy(it, now) && it.startAt.atZone(zone).year == year }
+        val cutoff = minOf(now, LocalDate.of(year + 1, 1, 1).atStartOfDay(zone).toInstant())
+        return fasts.any { endedBy(it, cutoff) && it.startAt.atZone(zone).year == year }
     }
 
     /** Sessions and streaks belong to their local start date, matching History. */
@@ -39,8 +40,9 @@ object FastingWrapped {
         val today = now.atZone(zone).toLocalDate()
         val year = latestYear(today)
         val through = minOf(today, LocalDate.of(year, 12, 31))
-        val inYear = fasts.filter { it.startAt.atZone(zone).year == year && it.startAt <= now }
-        val ended = inYear.filter { endedBy(it, now) }
+        val cutoff = minOf(now, LocalDate.of(year + 1, 1, 1).atStartOfDay(zone).toInstant())
+        val inYear = fasts.filter { it.startAt.atZone(zone).year == year && it.startAt <= cutoff }
+        val ended = inYear.filter { endedBy(it, cutoff) }
         if (ended.isEmpty()) return null
         val dates = ended.map { it.startAt.atZone(zone).toLocalDate() }.toSet()
         // Collapse custom / religious records into an unnamed personal-plan category.
@@ -68,7 +70,7 @@ object FastingWrapped {
             }
         }
         val percent = (100.0 * recorded.toMillis() / Duration.between(from, until).toMillis()).roundToInt()
-        val streakRows = inYear.filter { it.isActive || endedBy(it, now) }
+        val streakRows = inYear.filter { it.isActive || endedBy(it, cutoff) }
         return AnnualRecap(year, through, ended.count { it.status == FastStatus.COMPLETED },
             ended.maxOf { requireNotNull(it.actualDuration) }, preset?.name, top?.key == personal,
             preset?.type == com.fastingshift.domain.model.ProtocolType.WINDOW && (top?.value ?: 0) >= 2,
