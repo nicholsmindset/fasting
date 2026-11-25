@@ -23,7 +23,7 @@ HONEST ABOUT THE SCIENCE
 The body timeline shows how much evidence supports each entry, including when findings come from animal studies.
 
 YOUR RECORDS
-Your fasting and health records are encrypted in the app database. With your permission, Health Connect can import weight and save weight, water and glucose readings you log. In Shift+ Body signals, you can also allow read access to sleep and resting heart rate to compare trends. You can export fasting history or save a full backup to a file you choose. No account is required.
+Your fasting and health records are encrypted in the app database. With your permission, Health Connect can import weight and save weight, water and glucose readings you log. In Shift+ Body signals, you can also allow read access to sleep and resting heart rate to compare trends. You can export fasting history or save a full backup to a file you choose. No account is required. The free plan can show a Google ad in Settings. Shift+ is ad-free.
 
 FAST WITH A FRIEND
 Invite someone to a challenge with a link. Each of you tracks progress on your own phone and chooses when to share a progress card. Streaks count days you completed your plan.

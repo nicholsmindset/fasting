@@ -149,7 +149,7 @@
 
     <!-- Onboarding -->
     <string name="onb_welcome_title">Welcome to Fasting Shift</string>
-    <string name="onb_welcome_body">A simple, honest fasting timer. No account, and your data stays on your phone.</string>
+    <string name="onb_welcome_body">A fasting timer with no sign-up. Your fasting history is stored on this phone.</string>
     <string name="onb_get_started">Get started</string>
     <string name="onb_next">Next</string>
     <string name="onb_continue">Continue</string>

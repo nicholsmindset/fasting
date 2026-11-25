@@ -17,6 +17,10 @@ val uploadKeyAlias = setting("fastingshift.upload.keyAlias", "FS_UPLOAD_KEY_ALIA
 val uploadKeyPassword = setting("fastingshift.upload.keyPassword", "FS_UPLOAD_KEY_PASSWORD")
 val hasUploadKey = listOf(uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword).all { it != null }
 
+val testAdsAppId = "ca-app-pub-3940256099942544~3347511713"
+val testBannerId = "ca-app-pub-3940256099942544/9214589741"
+val liveAdsEnabled = setting("fastingshift.adsEnabled", "FS_ADS_ENABLED") == "true"
+
 android {
     namespace = "com.fastingshift.app"
     compileSdk = 36
@@ -34,6 +38,9 @@ android {
         val revenueCatKey = (project.findProperty("revenuecat.apiKey") as String?).orEmpty()
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
         buildConfigField("boolean", "USE_PILOT_INVITES", "false")
+        manifestPlaceholders["admobAppId"] = testAdsAppId
+        buildConfigField("String", "SETTINGS_BANNER_ID", "\"$testBannerId\"")
+        buildConfigField("boolean", "ADS_ENABLED", "true")
     }
 
     signingConfigs {
@@ -49,6 +56,9 @@ android {
 
     buildTypes {
         release {
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-6742867363191087~8408799900"
+            buildConfigField("String", "SETTINGS_BANNER_ID", "\"ca-app-pub-6742867363191087/8081496844\"")
+            buildConfigField("boolean", "ADS_ENABLED", liveAdsEnabled.toString())
             // Signed with the upload key when it is configured; otherwise the build is unsigned.
             if (hasUploadKey) signingConfig = signingConfigs.getByName("upload")
             isMinifyEnabled = true
@@ -59,6 +69,9 @@ android {
         // app id and name so it can sit next to the Play build. Never upload this to Play.
         create("staging") {
             initWith(getByName("release"))
+            manifestPlaceholders["admobAppId"] = testAdsAppId
+            buildConfigField("String", "SETTINGS_BANNER_ID", "\"$testBannerId\"")
+            buildConfigField("boolean", "ADS_ENABLED", "true")
             buildConfigField("boolean", "USE_PILOT_INVITES", "true")
             signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".staging"
@@ -68,6 +81,9 @@ android {
         // Signed after the build with the internal-testing certificate.
         create("internalBeta") {
             initWith(getByName("release"))
+            manifestPlaceholders["admobAppId"] = testAdsAppId
+            buildConfigField("String", "SETTINGS_BANNER_ID", "\"$testBannerId\"")
+            buildConfigField("boolean", "ADS_ENABLED", "true")
             buildConfigField("boolean", "USE_PILOT_INVITES", "true")
             signingConfig = null
             applicationIdSuffix = ".beta"
@@ -123,6 +139,8 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.health.connect)
     implementation(libs.revenuecat.purchases)
+    implementation(libs.google.mobile.ads)
+    implementation(libs.google.ump)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(libs.hilt.android)

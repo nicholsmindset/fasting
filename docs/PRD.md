@@ -180,7 +180,7 @@ Safety is a P0 launch requirement, and no safety feature is ever paywalled. A cl
 
 ## Monetization
 
-Generous freemium with no ads, plus Shift+ at US$34.99 a year, about half what Zero and BodyFast charge. Trust is the product, so billing must never produce a 1★ review.
+The free plan supports a non-personalized banner in Settings. Shift+ is ad-free. The planned price is US$34.99 a year, about half what Zero and BodyFast charge. Trust is the product, so billing must never produce a 1★ review.
 
 | Plan | Price (US) | Notes |
 | --- | --- | --- |

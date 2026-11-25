@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import com.fastingshift.app.BuildConfig
+import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.Package
 import com.revenuecat.purchases.PackageType
@@ -122,6 +123,18 @@ class BillingManager @Inject constructor(
         }
     }
 
+    /** A cached free result can predate a purchase on another device. Ads require a fresh result. */
+    suspend fun confirmFreeForAds(): Boolean {
+        if (!isConfigured) return false
+        return try {
+            val info = Purchases.sharedInstance.awaitCustomerInfo(CacheFetchPolicy.FETCH_CURRENT)
+            publish(info)
+            info.entitlements[ENTITLEMENT_ID]?.isActive != true && loadedEntitlement.value == Entitlement.FREE
+        } catch (_: PurchasesException) {
+            false
+        }
+    }
+
     override suspend fun offers(): List<PlanOffer> {
         if (!isConfigured) return emptyList()
         val current = Purchases.sharedInstance.awaitOfferings().current ?: return emptyList()
@@ -186,6 +199,8 @@ class BillingManager @Inject constructor(
 
     @Synchronized
     private fun publish(info: CustomerInfo) {
+        // A slow refresh must not overwrite a purchase or restore that completed in the meantime.
+        if (latestInfo?.requestDate?.after(info.requestDate) == true) return
         latestInfo = info
         _managementUrl.value = info.managementURL
         val e = info.entitlements[ENTITLEMENT_ID]

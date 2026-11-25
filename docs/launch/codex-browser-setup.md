@@ -68,14 +68,14 @@ Phase 1: Vercel website for fastingshift.com, from the repo's web/ folder.
    - web/index.html: a one-page landing using the title, short description and the
      free/safety/privacy points from docs/store-listing.md, a link to /privacy and a Google Play
      link placeholder (https://play.google.com/store/apps/details?id=com.fastingshift.app).
-   - web/privacy/index.html: docs/privacy-policy.md converted to HTML word for word. Keep the
-     "[monitored ...]" contact placeholder and the draft note visible, and add both to
-     "Needs Robert" (the policy must be final before Play review).
+   - web/privacy/index.html is prepared for the ad-supported release. Review the policy and
+     support address before deployment. Serve web/app-ads.txt at the root of the developer
+     website listed on Play. If a file already exists there, merge the Google publisher line.
    - web/.well-known/assetlinks.json containing [] for now (Phase 2 fills it).
    Commit on branch claude/friendly-cray-p3fgxg and push.
 3. In Vercel: create a project from the GitHub repo with root directory `web`, framework
    "Other", no build command, no environment variables. Deploy and show me the preview URL.
-   Check /, /privacy and /c/ on the preview.
+   Check /, /privacy, /app-ads.txt and /c/ on the preview.
 4. Ask me before adding the domain. When I confirm, add fastingshift.com and
    www.fastingshift.com and show me the DNS records Vercel asks for; I set them at my registrar.
 5. Once DNS works, check https://fastingshift.com/privacy and https://fastingshift.com/c/ load.
@@ -118,7 +118,7 @@ Phase 2: Google Play Console for com.fastingshift.app.
    Add translations for ms, id, zh-CN only if I give you reviewed text; otherwise skip.
 5. App content (Policy → App content). Fill from the repo; STOP before submitting each one:
    - Privacy policy: https://fastingshift.com/privacy
-   - Ads: No ads.
+   - Ads: select “Yes, my app contains ads” for the release that includes the free-tier banner.
    - App access: all functionality available without special access.
    - Content rating questionnaire: Health/fitness reference app, no violence, no user-generated
      content shared with others, no gambling. Show me the answers before submitting.
@@ -208,7 +208,7 @@ Phase 5: Google Ads for Fasting Shift. Everything stays PAUSED until I approve.
    - Budget and bid: leave empty and ask me.
    - Headlines (≤30 chars) and descriptions (≤90), wellness only, from docs/store-listing.md and
      docs/moats.md, e.g. "Free fasting timer & widgets", "Sunnah & qada fast tracker",
-     "Private: no account, no ads", "Safety check-ins built in", "Ramadan suhoor & iftar times".
+     "No account required", "Safety check-ins built in", "Ramadan suhoor & iftar times".
      No weight-loss promises, no medical or disease claims, no before/after, no "detox".
    - Assets: use the docs/screenshots images; ask me for a logo and any video.
 4. Before saving, show me the full campaign summary and a policy self-check against Google Ads

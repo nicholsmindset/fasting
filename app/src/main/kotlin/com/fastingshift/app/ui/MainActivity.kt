@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.fastingshift.app.ads.AdPrivacySession
 import com.fastingshift.app.alarm.ReminderCoordinator
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.notifications.Notifications
@@ -41,6 +42,8 @@ class MainActivity : ComponentActivity() {
 
     // Opens the database: only ever used after the key check, off the main thread.
     @Inject lateinit var coordinator: Lazy<ReminderCoordinator>
+
+    internal val adPrivacy by lazy { AdPrivacySession(this) }
 
     private var deepLink by mutableStateOf<String?>(null)
 

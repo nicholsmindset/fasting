@@ -39,7 +39,7 @@ Keep four familiar destinations. Use **Timer** for today, **History** for review
 
 **Design and competitive evidence.** Simple documents adding a past fast from its calendar and requires a running fast to finish before its times can be edited. Give a tester an incorrect start time while their timer is running and observe whether they find the correction. The Ritmo design study offers a reference for clear timer hierarchy and consistent icons. Keep our teal, text labels, neutral early endings and a consistency-based ring. [Simple help](https://help.simple.life/en/articles/9887903-how-to-log-and-edit-fasts) · [Ritmo design study](https://dribbble.com/shots/27884137-Ritmo-Intermittent-Fasting-App)
 
-**Android beta scope.** Focus on the timer, flexible planning, weekly review and private invitations. Keep sharing voluntary and the app ad-free. Google Ads acquisition is a separate launch decision. Confirm that people can install, start and return before budgeting for it.
+**Android beta scope.** Focus on the timer, flexible planning, weekly review and private invitations. Keep sharing voluntary. The free plan can show a non-personalized banner in Settings. Shift+ is ad-free. Google Ads acquisition is a separate launch decision. Confirm that people can install, start and return before budgeting for it.
 
 ### Reliability, safety and trust
 
