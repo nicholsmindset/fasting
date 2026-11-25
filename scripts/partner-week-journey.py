@@ -137,6 +137,25 @@ class PartnerScreen:
         self.locate("partner_create", timeout=10)
 
 
+def open_copied_invite_from_browser(guest):
+    # The Chrome handoff uses this custom scheme and the installed app's package.
+    # Read only the fake invitation pasted into the guest's field. Keep the link and
+    # native activity-launch output out of CI logs, including on failures.
+    field = guest.device(packageName=guest.package, className="android.widget.EditText")
+    link = field.get_text()
+    match = re.fullmatch(r"https://www\.fastingshift\.com/partner/#([a-f0-9]{64})", link or "")
+    if not match:
+        raise AssertionError("Host copy did not produce a branded invitation")
+    adb("shell", "am", "force-stop", guest.package)
+    result = subprocess.run([
+        "adb", "shell", "am", "start", "-W", "-a", "android.intent.action.VIEW",
+        "-c", "android.intent.category.BROWSABLE", "-p", guest.package,
+        "-d", "fastingshift://partner/#" + match.group(1),
+    ], capture_output=True, text=True, timeout=30)
+    if result.returncode or "Error:" in result.stdout or result.stderr.strip().startswith("Error:"):
+        raise AssertionError("Android could not launch the private partner invitation")
+
+
 def invite(host, guest, supporter):
     host.edit("partner_alias", "Rowan")
     host.tap("partner_create")
@@ -144,7 +163,10 @@ def invite(host, guest, supporter):
     guest.resume()
     guest.tap("partner_paste", timeout=3)
     guest.edit("partner_link")
-    guest.tap("partner_preview")
+    if supporter:
+        guest.tap("partner_preview")
+    else:
+        open_copied_invite_from_browser(guest)
     if not guest.device(packageName=guest.package, text="Rowan invited you").wait(timeout=12):
         raise AssertionError("Invitation preview did not identify the host")
     guest.edit("partner_alias", "Jamie")
@@ -239,7 +261,9 @@ def journey(device):
     guest.assert_marks("partner_self_marks", 0)
     print("A new week required both members' consent and reset their progress.")
     guest.leave()
-    print("The guest could also end the renewed partnership.")
+    host.resume()
+    host.expect_unpaired()
+    print("The guest could also end the renewed partnership, and the host lost access.")
 
 
 def main():
