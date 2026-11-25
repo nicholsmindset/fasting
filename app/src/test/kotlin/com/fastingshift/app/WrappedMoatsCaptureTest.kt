@@ -2,6 +2,9 @@ package com.fastingshift.app
 
 import android.app.Application
 import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.content.FileProvider
+import com.fastingshift.app.share.FileSharing
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.ui.test.*
@@ -16,6 +19,7 @@ import com.fastingshift.domain.history.SundayRecap
 import java.time.Duration
 import java.time.LocalDate
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +34,13 @@ class WrappedMoatsCaptureTest {
     @get:Rule val compose = createComposeRule()
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
     private val demo = AnnualRecap(2026, LocalDate.of(2026,12,6), 18, Duration.ofHours(16), "16:8", false, true, 4, 12, 20)
+
+    @Before fun attachFileProviderToThisTestInstallation() {
+        // Robolectric gives each test a new private filesystem in the same JVM. Attach the
+        // manifest provider, as Android does at startup, to discard the previous test's root.
+        val info = requireNotNull(app.packageManager.resolveContentProvider(FileSharing.authority(app), PackageManager.GET_META_DATA))
+        FileProvider().attachInfo(app, info)
+    }
 
     private fun export(action: String, opened: () -> Int, expected: Int, name: String): Int {
         compose.onNodeWithText(action).performClick()
