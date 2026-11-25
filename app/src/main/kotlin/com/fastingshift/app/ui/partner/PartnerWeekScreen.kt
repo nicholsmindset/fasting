@@ -124,7 +124,7 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
         state.message?.let { message ->
             Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
                 Column(Modifier.fillMaxWidth().padding(14.dp)) {
-                    Text(message, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    Text(stringResource(message), Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         color = MaterialTheme.colorScheme.onErrorContainer)
                     TextButton(onClick = vm::dismissMessage) { Text(stringResource(R.string.partner_dismiss)) }
                 }
