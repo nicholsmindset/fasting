@@ -3,7 +3,6 @@ package com.fastingshift.app.ui.partner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
-import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
@@ -12,7 +11,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONException
@@ -36,8 +34,11 @@ class PartnerWeekViewModel @Inject constructor(
         }
         viewModelScope.launch {
             screening.observeLatest().collect {
-                val allowed = FastPolicy.maxAllowed(it?.gateResult, it?.clinicianAcknowledged == true) != null
-                ui.update { state -> state.copy(participantAllowed = allowed) }
+                val allowed = it.partnerEligibility()
+                ui.update { state ->
+                    state.copy(adultAllowed = allowed.adult, participantAllowed = allowed.participant,
+                        preview = state.preview.takeIf { allowed.adult })
+                }
             }
         }
         viewModelScope.launch { handled { repository.load() } }
@@ -47,7 +48,9 @@ class PartnerWeekViewModel @Inject constructor(
         if (updating?.isActive == true) return
         updating = viewModelScope.launch {
             handled(silentOffline = true) {
-                repository.refresh()
+                val allowed = screening.getLatest().partnerEligibility()
+                if (allowed.adult) repository.refresh(allowed.participant)
+                else repository.syncPending(participationAllowed = false)
                 ui.update { it.copy(offline = false) }
             }
         }
@@ -59,8 +62,9 @@ class PartnerWeekViewModel @Inject constructor(
         previewJob = viewModelScope.launch {
             try {
                 handled {
+                    if (!permitted(participating = false)) return@handled
                     val result = repository.preview(code)
-                    ui.update { it.copy(preview = result, offline = false) }
+                    if (permitted(participating = false)) ui.update { it.copy(preview = result, offline = false) }
                 }
             } finally {
                 ui.update { it.copy(busy = acting) }
@@ -75,34 +79,40 @@ class PartnerWeekViewModel @Inject constructor(
     }
 
     fun create(alias: String) = action {
-        if (participantPermitted()) repository.create(alias)
+        if (permitted(participating = true)) repository.create(alias)
     }
 
     fun join(code: String, alias: String, supporter: Boolean) = action {
-        if (supporter || participantPermitted()) {
+        if (permitted(participating = !supporter)) {
             repository.join(code, alias, supporter)
             ui.update { it.copy(preview = null) }
         }
     }
 
     fun checkIn() = action {
-        if (participantPermitted()) repository.checkIn()
+        if (permitted(participating = true)) repository.checkIn()
     }
 
-    fun cheer(kind: String = "glad") = action { repository.cheer(kind) }
+    fun cheer(kind: String = "glad") = action { if (permitted(participating = false)) repository.cheer(kind) }
 
     fun renew() = action {
-        if (state.value.week?.self?.role == "supporter" || participantPermitted()) repository.renew()
+        if (permitted(participating = state.value.week?.self?.role != "supporter")) repository.renew()
     }
 
     fun leave() = action { repository.leave() }
     fun dismissMessage() = ui.update { it.copy(message = null) }
 
-    private suspend fun participantPermitted(): Boolean {
-        val latest = screening.observeLatest().first()
-        val allowed = FastPolicy.maxAllowed(latest?.gateResult, latest?.clinicianAcknowledged == true) != null
-        if (!allowed) ui.update { it.copy(message = R.string.partner_error_supporter_only) }
-        return allowed
+    private suspend fun permitted(participating: Boolean): Boolean {
+        val allowed = screening.getLatest().partnerEligibility()
+        if (!allowed.adult) {
+            ui.update { it.copy(message = R.string.partner_error_adults_only) }
+            return false
+        }
+        if (participating && !allowed.participant) {
+            ui.update { it.copy(message = R.string.partner_error_supporter_only) }
+            return false
+        }
+        return true
     }
 
     private fun action(block: suspend () -> Unit) {

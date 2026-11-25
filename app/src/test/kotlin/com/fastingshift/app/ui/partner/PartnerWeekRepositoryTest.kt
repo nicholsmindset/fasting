@@ -3,6 +3,9 @@ package com.fastingshift.app.ui.partner
 import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.service.ScreeningRecord
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
@@ -53,6 +56,32 @@ class PartnerWeekRepositoryTest {
             put("endDay", if (status == "pending") JSONObject.NULL else "2026-11-29")
             put("cheers", JSONArray())
         })
+
+    @Test fun ageAndFastingEligibilityAreCheckedIndependently() {
+        fun record(age: Int, gate: GateResult) = ScreeningRecord(
+            Instant.EPOCH, ScreeningAnswers(age, false, false, false, emptySet(), 172.0, 73.0), gate, false,
+        )
+        assertEquals(PartnerEligibility(false, false), null.partnerEligibility())
+        assertEquals(PartnerEligibility(false, false), record(17, GateResult.OK).partnerEligibility())
+        assertEquals(PartnerEligibility(true, false), record(18, GateResult.BLOCK).partnerEligibility())
+        assertEquals(PartnerEligibility(true, true), record(18, GateResult.OK).partnerEligibility())
+    }
+
+    @Test fun revokedParticipationDropsUnsentCheckInButPermitsQueuedLeave() = runBlocking {
+        val repo = repository()
+        service = { sample() }
+        repo.create("Host")
+        service = { throw IOException("offline") }
+        assertFailsWith<IOException> { repo.checkIn() }
+        val requestsBefore = calls.size
+        repo.syncPending(participationAllowed = false)
+        assertEquals(requestsBefore, calls.size)
+        assertTrue(repo.snapshot.value.pendingDays.isEmpty())
+        assertFailsWith<IOException> { repo.leave() }
+        service = { JSONObject().put("week", JSONObject.NULL) }
+        repo.syncPending(participationAllowed = false)
+        assertTrue(prefs.all.isEmpty())
+    }
 
     @Test fun neverEnrolledReadsAndRefreshGenerateNoIdentityOrTraffic() = runBlocking {
         val repo = repository()

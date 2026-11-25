@@ -1,6 +1,9 @@
 package com.fastingshift.app.ui.partner
 
 import androidx.annotation.StringRes
+import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.safety.ScreeningEvaluator
+import com.fastingshift.domain.service.ScreeningRecord
 import java.time.LocalDate
 import org.json.JSONObject
 
@@ -34,6 +37,7 @@ data class PartnerUiState(
     val pendingDays: Set<String> = emptySet(),
     @StringRes val message: Int? = null,
     val participantAllowed: Boolean? = null,
+    val adultAllowed: Boolean? = null,
     val leaving: Boolean = false,
 )
 
@@ -82,4 +86,12 @@ internal fun projectPartnerWeek(
         status == "finished" && !voted, voted, otherMember?.optBoolean("renewed") == true,
         data.optionalString("expiresAt"), date,
     )
+}
+
+internal data class PartnerEligibility(val adult: Boolean, val participant: Boolean)
+
+internal fun ScreeningRecord?.partnerEligibility(): PartnerEligibility {
+    val adult = this != null && answers.ageYears >= ScreeningEvaluator.MIN_AGE
+    val participant = adult && FastPolicy.maxAllowed(this?.gateResult, this?.clinicianAcknowledged == true) != null
+    return PartnerEligibility(adult, participant)
 }

@@ -218,17 +218,22 @@ class PartnerWeekRepository internal constructor(
         save { clear() }
     }
 
-    internal suspend fun refresh() = serialized {
+    internal suspend fun refresh(participationAllowed: Boolean = true) = serialized {
         publish()
         if (key == null) return@serialized
         if (leavingId != null) flushLeave() else {
-            flushDays()
+            syncDays(participationAllowed)
             if (key != null) accept(request("get"))
         }
     }
 
-    internal suspend fun syncPending() = serialized {
-        if (leavingId != null) flushLeave() else flushDays()
+    internal suspend fun syncPending(participationAllowed: Boolean = true) = serialized {
+        if (leavingId != null) flushLeave() else syncDays(participationAllowed)
+    }
+
+    private fun syncDays(participationAllowed: Boolean) {
+        if (participationAllowed) flushDays()
+        else if (days.isNotEmpty()) save { remove("days") }
     }
 
     private fun validateToken(code: String) {
