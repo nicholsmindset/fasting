@@ -115,7 +115,13 @@ class PartnerScreen:
 
     def leave(self):
         self.tap("partner_leave", timeout=2)
-        self.tap("partner_confirm_leave")
+        # Compose creates a separate modal window for AlertDialog. Its accessibility
+        # labels remain available even though the parent NavHost's resource-ID export
+        # does not apply inside that window.
+        title = self.device(packageName=self.package, text="Leave this partner week?")
+        if not title.wait(timeout=8):
+            raise AssertionError("Leave confirmation did not open")
+        self.device(packageName=self.package, text="Leave partner week").click()
         self.locate("partner_create", timeout=10)
 
 
