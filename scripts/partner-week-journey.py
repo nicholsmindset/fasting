@@ -104,6 +104,15 @@ class PartnerScreen:
             self.tap("partner_refresh", timeout=2)
         self.locate("partner_create", timeout=10)
 
+    def capture(self, label):
+        # Only established synthetic memberships are photographed. The invitation token,
+        # clipboard, onboarding fields and device key never appear in these artifacts.
+        if not self.device(packageName=self.package).exists:
+            raise AssertionError("Partner app is not in the foreground")
+        destination = ROOT / "partner-week-evidence"
+        destination.mkdir(exist_ok=True)
+        self.device.screenshot(str(destination / f"{label}.png"))
+
     def leave(self):
         self.tap("partner_leave", timeout=2)
         self.tap("partner_confirm_leave")
@@ -161,11 +170,13 @@ def journey(device):
     guest.resume()
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_other_marks", 1)
+    guest.capture("supporter-with-host-check-in")
     guest.tap("partner_cheer")
     host.resume()
     host.tap("partner_refresh", timeout=3)
     host.locate("partner_received")
     host.assert_marks("partner_self_marks", 1)
+    host.capture("participant-with-encouragement")
     print("Offline check-in survived a process restart, synchronized as one mark, and received encouragement.")
     host.leave()
     guest.resume()
@@ -201,6 +212,8 @@ def journey(device):
         raise AssertionError("Guest's invitation restarted the week without host consent")
     host.resume()
     host.tap("partner_refresh", timeout=3)
+    host.locate("partner_renew")
+    host.capture("recap-with-renewal-invitation")
     host.tap("partner_renew")
     host.assert_marks("partner_self_marks", 0)
     guest.resume()

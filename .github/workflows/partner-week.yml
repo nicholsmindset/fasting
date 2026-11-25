@@ -83,3 +83,10 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: python -u scripts/partner-week-journey.py
+      - name: Save the two partner views and weekly recap
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: partner-week-android-screens
+          path: partner-week-evidence/*.png
+          if-no-files-found: ignore
