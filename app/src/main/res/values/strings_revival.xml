@@ -1,5 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <!-- Existing Chinese localization is outside this release. Android falls back to English. -->
+<resources>
     <string name="revival_title">Streak Revival</string>
     <string name="revival_invite">Your best was %1$d days on plan. Bring it back with %2$d planned days by %3$s.</string>
     <string name="revival_fresh">Start fresh with %1$d planned days by %2$s. Your usual schedule counts.</string>

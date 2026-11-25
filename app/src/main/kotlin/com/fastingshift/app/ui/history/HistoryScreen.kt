@@ -707,12 +707,12 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
         topEnd = if (seg.continuesAfter || seg.fast.isActive) 0.dp else r, bottomEnd = if (seg.continuesAfter || seg.fast.isActive) 0.dp else r,
     )
     val color = when {
-        seg.fast.isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+        seg.fast.isActive -> MaterialTheme.colorScheme.primaryContainer
         seg.fast.status == FastStatus.COMPLETED -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.secondary
     }
     val onColor = when (seg.fast.status) {
-        FastStatus.ACTIVE -> MaterialTheme.colorScheme.onSurface
+        FastStatus.ACTIVE -> MaterialTheme.colorScheme.onPrimaryContainer
         FastStatus.COMPLETED -> MaterialTheme.colorScheme.onPrimary
         FastStatus.ENDED_EARLY -> MaterialTheme.colorScheme.onSecondary
     }
@@ -724,6 +724,7 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
                     Brush.horizontalGradient(0f to color, 0.65f to color, 1f to color.copy(alpha = 0.1f)),
                 ) else Modifier.background(color),
             )
+            .then(if (seg.fast.isActive) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
             .clickable { onEditFast(seg.fast.id) }
             .semantics { contentDescription = desc },
         contentAlignment = Alignment.Center,

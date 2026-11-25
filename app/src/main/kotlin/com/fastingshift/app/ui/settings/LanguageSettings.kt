@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.LocaleList
 import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +45,15 @@ internal fun LanguageRow() {
 }
 
 object AppLanguage {
+    /** Preserve remaining preferences in their original order. An empty list follows the phone. */
+    fun migrateRetiredLanguage(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val manager = context.getSystemService(LocaleManager::class.java) ?: return
+        val locales = manager.applicationLocales
+        val kept = (0 until locales.size()).map { locales[it] }.filterNot { it.language == "zh" }
+        if (kept.size != locales.size()) manager.applicationLocales = LocaleList(*kept.toTypedArray())
+    }
+
     /** The app's own language on Android 13+, or null when it follows the system. */
     fun current(context: Context): Locale? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
@@ -51,7 +61,7 @@ object AppLanguage {
         return if (locales.isEmpty) null else locales[0]
     }
 
-    /** "Bahasa Melayu", "中文 (中国)": each language named in itself, as language pickers do. */
+    /** Show the selected language in its own language. */
     fun displayName(locale: Locale): String = locale.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) }
 
     fun openSystemSettings(context: Context) {

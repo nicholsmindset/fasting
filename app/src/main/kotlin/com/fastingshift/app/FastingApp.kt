@@ -5,6 +5,7 @@ import com.fastingshift.app.alarm.ReminderCoordinator
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.di.ApplicationScope
 import com.fastingshift.app.notifications.Notifications
+import com.fastingshift.app.ui.settings.AppLanguage
 import com.fastingshift.data.db.DatabaseKeyProvider
 import com.fastingshift.data.db.FastingDatabase
 import dagger.Lazy
@@ -24,6 +25,7 @@ class FastingApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppLanguage.migrateRetiredLanguage(this)
         Notifications.createChannels(this)
         scope.launch(Dispatchers.IO) { com.fastingshift.app.share.FileSharing.purgeOld(this@FastingApp) }
         billing.configure()

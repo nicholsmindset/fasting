@@ -2,6 +2,7 @@ package com.fastingshift.app
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,12 +23,16 @@ import com.fastingshift.app.export.DoctorReportPdf
 import com.fastingshift.app.export.DoctorReports
 import com.fastingshift.app.share.ShareCard
 import com.fastingshift.app.share.ShareCards
+import com.fastingshift.app.ui.history.CalendarCard
+import com.fastingshift.app.ui.history.HistoryState
+import com.fastingshift.app.ui.history.WeekRow
 import com.fastingshift.app.ui.plus.BodySignalsSection
 import com.fastingshift.app.ui.plus.BodySignalsState
 import com.fastingshift.app.ui.safety.RamadanSafetyContent
 import com.fastingshift.app.ui.theme.FastingShiftTheme
 import com.fastingshift.domain.challenge.ChallengeInvite
 import com.fastingshift.domain.challenge.ChallengeLinks
+import com.fastingshift.domain.history.HistoryStats
 import com.fastingshift.domain.insights.BodySignalsReport
 import com.fastingshift.domain.insights.GlucoseComparison
 import com.fastingshift.domain.insights.RestingHeartRateComparison
@@ -38,10 +44,12 @@ import com.fastingshift.domain.model.WeightUnit
 import com.github.takahirom.roborazzi.captureRoboImage
 import java.time.Duration
 import java.time.LocalDate
+import java.time.YearMonth
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -52,6 +60,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [30], application = Application::class, qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
 class ComponentMoatsCaptureTest {
     @get:Rule val compose = createComposeRule()
+    @get:Rule val temporary = TemporaryFolder()
     private val res get() = ApplicationProvider.getApplicationContext<Application>().resources
     private val monday = LocalDate.of(2026, 11, 16)
 
@@ -59,9 +68,9 @@ class ComponentMoatsCaptureTest {
         assumeTrue("captures require -Pscreenshots", System.getProperty("fastingshift.screenshotDir") != null)
     }
 
-    private fun captureCard(name: String, content: @Composable () -> Unit) {
+    private fun captureCard(name: String, darkTheme: Boolean = false, content: @Composable () -> Unit) {
         compose.setContent {
-            FastingShiftTheme(darkTheme = false) {
+            FastingShiftTheme(darkTheme = darkTheme) {
                 Surface(Modifier.fillMaxWidth().testTag("capture"), color = MaterialTheme.colorScheme.background) {
                     Box(Modifier.padding(16.dp)) { content() }
                 }
@@ -72,6 +81,45 @@ class ComponentMoatsCaptureTest {
         if (file.exists()) check(file.delete())
         compose.onNodeWithTag("capture").captureRoboImage(file.absolutePath)
         check(file.length() > 0) { "Missing screenshot: $file" }
+    }
+
+    @Test fun lightCalendarLabelContrast() = verifyCalendarLabelContrast(dark = false)
+
+    @Test fun darkCalendarLabelContrast() = verifyCalendarLabelContrast(dark = true)
+
+    private fun verifyCalendarLabelContrast(dark: Boolean) {
+        val start = monday.atStartOfDay(moatsZone).toInstant()
+        fun fast(day: Long): Fast {
+            val from = start.plus(Duration.ofDays(day))
+            return Fast(startAt = from, targetEndAt = from.plus(Duration.ofHours(16)), protocolId = "window_16_8")
+        }
+        val completed = fast(0).let { it.end(it.targetEndAt) }
+        val endedEarly = fast(1).let { it.end(it.startAt.plus(Duration.ofHours(12))) }
+        val active = fast(2)
+        val now = active.startAt.plus(Duration.ofHours(13))
+        val segments = HistoryStats.weekSegments(listOf(completed, endedEarly, active), moatsZone, monday, now)
+        val state = HistoryState(month = YearMonth.from(monday), today = monday.plusDays(2), weeks = listOf(WeekRow(monday, segments)))
+        val mode = if (dark) "dark" else "light"
+        captureCard("history-calendar-contrast-$mode", darkTheme = dark) {
+            CalendarCard(state, onShift = {}, onEditFast = {})
+        }
+        for (hours in listOf(16L, 12L, 13L)) {
+            val label = res.getString(R.string.duration_h, hours)
+            val file = temporary.root.resolve("$hours.png")
+            compose.onNodeWithText(label, useUnmergedTree = true).captureRoboImage(file.absolutePath)
+            val bitmap = requireNotNull(BitmapFactory.decodeFile(file.path))
+            try {
+                // The middle third contains solid glyphs over the bar fill, clear of rounded
+                // corners and the active bar's fading end. Compare ink and fill in the same column.
+                val contrast = (bitmap.width / 3 until 2 * bitmap.width / 3).maxOf { x ->
+                    val luminances = (0 until bitmap.height).map { y -> Color.luminance(bitmap.getPixel(x, y)) }
+                    (luminances.max() + 0.05f) / (luminances.min() + 0.05f)
+                }
+                check(contrast >= 4.5f) { "$mode calendar $label contrast was $contrast:1" }
+            } finally {
+                bitmap.recycle()
+            }
+        }
     }
 
     @Test fun bodySignals() {
