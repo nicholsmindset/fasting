@@ -86,6 +86,11 @@ data class AppSettings(
     val planHistory: PlanHistory = PlanHistory(),
     val weekReflections: Map<LocalDate, ScheduleFit> = emptyMap(),
     val appearance: AppAppearance = AppAppearance.SYSTEM,
+    val wrappedEnabled: Boolean = true,
+    val annualRecapsViewed: Int = 0,
+    val annualRecapsShared: Int = 0,
+    val weeklyRecapsViewed: Int = 0,
+    val weeklyRecapsShared: Int = 0,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -112,6 +117,11 @@ class SettingsRepository(context: Context) {
 
     val settings: Flow<AppSettings> = store.data.map { p ->
         AppSettings(
+            wrappedEnabled = p[WRAPPED] ?: true,
+            annualRecapsViewed = p[ANNUAL_VIEWS] ?: 0,
+            annualRecapsShared = p[ANNUAL_SHARES] ?: 0,
+            weeklyRecapsViewed = p[WEEK_VIEWS] ?: 0,
+            weeklyRecapsShared = p[WEEK_SHARES] ?: 0,
             appearance = AppAppearance.fromRecord(p[APPEARANCE]) ?: AppAppearance.SYSTEM,
             reminders = ReminderSettings(
                 fastEndEnabled = p[FAST_END] ?: true,
@@ -197,6 +207,27 @@ class SettingsRepository(context: Context) {
         if (ml == null) it.remove(WATER_GOAL) else it[WATER_GOAL] = ml.coerceIn(500, 6_000)
     }
     suspend fun setCoaching(enabled: Boolean) = store.edit { it[COACHING] = enabled }
+    suspend fun setWrapped(enabled: Boolean) = store.edit { it[WRAPPED] = enabled }
+
+    /** Counts distinct recap periods seen and periods whose Android chooser opened, on-device only. */
+    suspend fun recordRecap(annual: Boolean, period: Long, shared: Boolean) {
+        val views = if (annual) ANNUAL_VIEWS else WEEK_VIEWS
+        val shares = if (annual) ANNUAL_SHARES else WEEK_SHARES
+        val lastView = if (annual) LAST_ANNUAL_VIEW else LAST_WEEK_VIEW
+        val lastShare = if (annual) LAST_ANNUAL_SHARE else LAST_WEEK_SHARE
+        store.edit { values ->
+            if (annual && values[WRAPPED] == false) return@edit
+            if (period > (values[lastView] ?: Long.MIN_VALUE)) {
+                values[views] = (values[views] ?: 0) + 1
+                values[lastView] = period
+            }
+            if (shared && period > (values[lastShare] ?: Long.MIN_VALUE)) {
+                values[shares] = (values[shares] ?: 0) + 1
+                values[lastShare] = period
+            }
+        }
+    }
+
     suspend fun setWeeklyRecap(enabled: Boolean) = store.edit { it[WEEKLY_RECAP] = enabled }
     suspend fun setOnboardedAt(millis: Long) = store.edit { p ->
         p[ONBOARDED_AT] = millis
@@ -310,6 +341,7 @@ class SettingsRepository(context: Context) {
             hydrationNudges = s.reminders.hydrationEnabled,
             coaching = s.coachingEnabled,
             weeklyRecap = s.weeklyRecapEnabled,
+            wrappedEnabled = s.wrappedEnabled,
             ramadanEnabled = s.ramadanEnabled,
             ramadanCityId = s.ramadanCityId,
             ramadanMethod = s.ramadanMethod?.name,
@@ -345,6 +377,7 @@ class SettingsRepository(context: Context) {
         it[WINDOW_CLOSING] = r.windowClosingAlert
         it[HYDRATION] = r.hydrationNudges
         it[COACHING] = r.coaching
+        r.wrappedEnabled?.let { enabled -> it[WRAPPED] = enabled }
         it[WEEKLY_RECAP] = r.weeklyRecap
         it[RAMADAN] = r.ramadanEnabled
         r.ramadanCityId?.let { c -> it[RAMADAN_CITY] = c }
@@ -371,6 +404,15 @@ class SettingsRepository(context: Context) {
         val WEEK_CHOICES = stringSetPreferencesKey("week_choices")
         val WEEK_REFLECTIONS = stringSetPreferencesKey("week_reflections")
         val DAY_OVERRIDES = stringSetPreferencesKey("day_overrides")
+        val WRAPPED = booleanPreferencesKey("wrapped_enabled")
+        val ANNUAL_VIEWS = intPreferencesKey("annual_recaps_viewed")
+        val ANNUAL_SHARES = intPreferencesKey("annual_recaps_shared")
+        val WEEK_VIEWS = intPreferencesKey("weekly_recaps_viewed")
+        val WEEK_SHARES = intPreferencesKey("weekly_recaps_shared")
+        val LAST_ANNUAL_VIEW = longPreferencesKey("annual_recap_last_view")
+        val LAST_ANNUAL_SHARE = longPreferencesKey("annual_recap_last_share")
+        val LAST_WEEK_VIEW = longPreferencesKey("weekly_recap_last_view")
+        val LAST_WEEK_SHARE = longPreferencesKey("weekly_recap_last_share")
         val WEEKLY_RECAP = booleanPreferencesKey("weekly_recap")
         val ONBOARDED_AT = longPreferencesKey("onboarded_at")
         val RAMADAN = booleanPreferencesKey("ramadan_enabled")
