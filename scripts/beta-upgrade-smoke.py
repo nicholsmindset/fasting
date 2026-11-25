@@ -64,6 +64,22 @@ class Screen:
     def click(self, key, scroll=False):
         self.find(key, scroll).click()
 
+    def advance_onboarding(self, source_key, next_key):
+        # AnimatedContent briefly exposes two copies of Next. Wait for the
+        # outgoing title to leave before allowing the next screen to use it.
+        source = self.find(source_key)
+        target = self.device(text=self.strings[next_key], packageName=PACKAGE)
+        for _ in range(3):
+            if target.exists:
+                break
+            if not source.exists:
+                break
+            self.click("onb_next")
+            if target.wait(timeout=3):
+                break
+        if not target.wait(timeout=12) or not source.wait_gone(timeout=5):
+            raise AssertionError(f"Onboarding did not advance from {source_key} to {next_key}")
+
     def finish_free_onboarding(self, destination, allow_notifications):
         # Ads and billing services are not needed. Older baselines display an offer before
         # entering the app; current free builds go directly to the timer or pending invite.
@@ -93,18 +109,15 @@ class Screen:
             self.click("onb_skip")
         self.find("onb_goal_title")
         self.click("goal_consistency")
-        self.click("onb_next")
-        self.find("onb_screen_title")
+        self.advance_onboarding("onb_goal_title", "onb_screen_title")
         fields = self.device(className="android.widget.EditText", packageName=PACKAGE)
         if fields.count != 3:
             raise AssertionError(f"Expected three screening inputs, found {fields.count}")
         for index, value in enumerate(("40", "175", "70")):
             fields[index].set_text(value)
-        self.click("onb_next")
-        self.find("onb_ok_title")
-        self.click("onb_next")
-        self.find("onb_protocol_title")
-        self.click("onb_next")
+        self.advance_onboarding("onb_screen_title", "onb_ok_title")
+        self.advance_onboarding("onb_ok_title", "onb_protocol_title")
+        self.advance_onboarding("onb_protocol_title", "onb_notif_title")
         self.click("onb_notif_allow" if allow_notifications else "onb_not_now")
         self.finish_free_onboarding(destination, allow_notifications)
 
@@ -172,8 +185,19 @@ class Screen:
         if downloads:
             self.open_downloads_folder()
         field.set_text(name)
-        self.device(packageNameMatches=".*documentsui", textMatches="(?i)save").click(timeout=10)
-        if not self.device(packageName=PACKAGE).wait(timeout=15):
+        save = self.device(packageNameMatches=".*documentsui", textMatches="(?i)save", enabled=True)
+        named_field = self.device(className="android.widget.EditText", packageNameMatches=".*documentsui", text=name)
+        if not named_field.wait(timeout=8):
+            raise AssertionError(f"Files did not accept the requested filename {name}")
+        # Gboard can shift Save between locating and tapping it. Resolve its
+        # position again only while this same document is still being created.
+        for _ in range(3):
+            if not named_field.exists:
+                break
+            save.click(timeout=8)
+            if named_field.wait_gone(timeout=3):
+                break
+        if named_field.exists or not self.device(packageName=PACKAGE).wait(timeout=15):
             raise AssertionError("The picker did not return to Fasting Shift")
         for _ in range(40):
             # The Android shell cannot enumerate some scoped Android/data subdirectories.
@@ -406,10 +430,7 @@ class Screen:
             self.find_node(self.device(textContains=label, packageName=PACKAGE), label, scroll=True).click()
 
         def open_date(day):
-            # Android's English localized abbreviation and punctuation can vary by API.
-            # Match the date label without relying on a time or the position of a row.
-            pattern = rf"(?s).*\b{day:%a}\b.*\b{day:%b}\.?\s+{day.day}\b.*"
-            row = self.device(textMatches=pattern, packageName=PACKAGE)
+            row = self.device(resourceId=f"week-day-{day.isoformat()}", packageName=PACKAGE)
             self.find_node(row, day.isoformat(), scroll=True).click()
             self.find("week_date_hint")
 
