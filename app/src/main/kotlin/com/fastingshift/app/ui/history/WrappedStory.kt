@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -130,7 +131,7 @@ private fun CapturedRecap(slide: Slide, period: String, action: String, onShared
     var busy by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column(Modifier.fillMaxWidth().drawWithContent {
+        Column(Modifier.fillMaxWidth().testTag("recap-artwork").drawWithContent {
             layer.record { this@drawWithContent.drawContent() }
             drawLayer(layer)
         }.background(Forest).padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -161,7 +162,8 @@ private fun CapturedRecap(slide: Slide, period: String, action: String, onShared
                     onShared()
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (error: Exception) {
+                    android.util.Log.w("RecapShare", "Could not render or open the recap image", error)
                     failed = true
                 } finally {
                     busy = false
