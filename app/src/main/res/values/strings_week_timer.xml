@@ -7,4 +7,5 @@
     <string name="week_timer_change_today">Change today</string>
     <string name="week_timer_reminder_on">Start reminder on</string>
     <string name="week_timer_selected">Selected fast</string>
+    <string name="week_timer_move_earlier_today">Move today’s %1$s start</string>
 </resources>

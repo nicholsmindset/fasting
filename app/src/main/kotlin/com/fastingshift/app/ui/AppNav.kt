@@ -320,7 +320,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                 InsightsRoute(onBack = back, onUpgrade = {
                     if (nav.previousBackStackEntry?.destination?.route == Routes.PAYWALL) nav.popBackStack()
                     else nav.navigate(Routes.PAYWALL) { launchSingleTop = true }
-                }, onOpenWeek = { nav.navigate(Routes.SCHEDULES) })
+                }, onOpenWeek = { day -> nav.navigate(if (day == null) Routes.SCHEDULES else "${Routes.SCHEDULES}?date=$day") })
             }
             composable(Routes.STOP) { StopFastRoute(onDone = { nav.popBackStack(Routes.TIMER, inclusive = false) }) }
             composable(Routes.CHECKIN, arguments = listOf(navArgument("fastId") { type = NavType.LongType })) { e ->

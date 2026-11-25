@@ -8,6 +8,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -154,11 +155,13 @@ class WeekPlannerMoatsCaptureTest {
             val announcement = SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)
             compose.onNode(label(R.string.week_future_time) and announcement).performScrollTo().assertIsDisplayed()
             tap(label(R.string.week_skip_day), scroll = true)
+            tap(hasTestTag("plan-date-save"), scroll = true)
             waitFor(row and label(R.string.week_skipped))
             tap(row, scroll = true)
             compose.onNode(starts and label(R.string.week_skipped) and label(R.string.plan_usual_times, time))
                 .performScrollTo().assertIsDisplayed()
             tap(label(R.string.week_restore_day), scroll = true)
+            tap(hasTestTag("plan-date-save"), scroll = true)
             waitFor(row and hasText(time))
             assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[day] })
         } finally {
@@ -199,6 +202,9 @@ class WeekPlannerMoatsCaptureTest {
             picker.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
         }
         val format = WeekFormat(app.resources.configuration.locales[0], DateFormat.is24HourFormat(app))
+        waitFor(label(R.string.week_active) and hasAnyAncestor(hasTestTag("plan-date-preview")))
+        assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[tomorrow] })
+        tap(hasTestTag("plan-date-save"), scroll = true)
         val changedRow = row and hasText(format.time.format(moved)) and label(R.string.week_changed)
         waitFor(changedRow)
         assertEquals(moved, runBlocking { settings.current().planHistory.dayOverrides[tomorrow]?.startTime })
@@ -215,6 +221,7 @@ class WeekPlannerMoatsCaptureTest {
         waitFor(label(R.string.plan_usual_times, format.time.format(recurring.startTime)))
         capture("my-week-one-day")
         tap(label(R.string.week_restore_day))
+        tap(hasTestTag("plan-date-save"), scroll = true)
         waitFor(row and hasText(format.time.format(recurring.startTime)))
         assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[tomorrow] })
         assertEquals(recurring, runBlocking { schedules.getAll().single() })

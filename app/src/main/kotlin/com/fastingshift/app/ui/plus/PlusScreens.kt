@@ -81,6 +81,7 @@ import java.time.Clock
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
+import com.fastingshift.app.ui.settings.SchedulesViewModel
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
@@ -363,13 +364,24 @@ class InsightsViewModel @Inject constructor(
 }
 
 @Composable
-fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, onOpenWeek: () -> Unit, vm: InsightsViewModel = hiltViewModel()) {
+fun InsightsRoute(onBack: () -> Unit, onUpgrade: () -> Unit, onOpenWeek: (LocalDate?) -> Unit, vm: InsightsViewModel = hiltViewModel()) {
     val loaded by vm.state.collectAsStateWithLifecycle()
-    InsightsScreen(loaded, onBack, onUpgrade, onOpenWeek) { BodySignalsRoute() }
+    val upcoming = if (loaded is InsightsState.Personal) {
+        val planner by hiltViewModel<SchedulesViewModel>().state.collectAsStateWithLifecycle()
+        remember(planner) {
+            planner?.let { week ->
+                (0L..6L).map { week.today.plusDays(it) }
+                    .filter { day -> week.starts(day, original = true).isNotEmpty() }
+                    .associateBy { it.dayOfWeek }
+            }.orEmpty()
+        }
+    } else emptyMap()
+    InsightsScreen(loaded, onBack, onUpgrade, onOpenWeek, upcoming) { BodySignalsRoute() }
 }
 
 @Composable
-internal fun InsightsScreen(st: InsightsState?, onBack: () -> Unit, onUpgrade: () -> Unit, onOpenWeek: () -> Unit,
+internal fun InsightsScreen(st: InsightsState?, onBack: () -> Unit, onUpgrade: () -> Unit, onOpenWeek: (LocalDate?) -> Unit,
+    upcoming: Map<DayOfWeek, LocalDate> = emptyMap(),
     bodySignals: @Composable () -> Unit) {
     SecondaryScaffold(title = stringResource(R.string.insights_title), onBack = onBack) {
         when (st) {
@@ -380,7 +392,7 @@ internal fun InsightsScreen(st: InsightsState?, onBack: () -> Unit, onUpgrade: (
                 PrimaryButton(stringResource(R.string.plan_see_plus), onClick = onUpgrade)
             }
             is InsightsState.Personal -> {
-                ScheduleReviewSection(st.review, example = false, onOpenWeek = onOpenWeek)
+                ScheduleReviewSection(st.review, example = false, onOpenWeek = onOpenWeek, upcoming = upcoming)
                 AppCard {
                     Text(stringResource(R.string.insights_consistency), style = MaterialTheme.typography.titleMedium)
                     Bars(st.consistency)

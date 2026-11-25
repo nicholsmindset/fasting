@@ -93,6 +93,7 @@ data class TimerUiState(
     val today: TodaySummary = TodaySummary(),
     val plannedStart: Instant? = null,
     val startReminder: Instant? = null,
+    val earlierPlannedStartToday: Instant? = null,
 ) {
     val selectedTargetEnd: Instant get() = (startAt ?: now).plus(Duration.ofHours(selected.fastHours.toLong()))
 }
@@ -211,6 +212,15 @@ class TimerViewModel @Inject constructor(
         val plannedStart = if (s.active == null) {
             ScheduleCalculator.nextStart(eligible, zone, s.now, plan.breakWeeks, plan.dayOverrides, firstEvening)?.second
         } else null
+        // Once today's start passes, nextStart points to another day. Keep today's editable
+        // plan reachable without presenting it as an upcoming reminder or a running fast.
+        val earlierPlannedStartToday = if (s.active == null && plannedStart?.atZone(zone)?.toLocalDate() != todayDate) {
+            val starts = ScheduleCalculator.startsOn(eligible, todayDate, zone, plan.breakWeeks, plan.dayOverrides, firstEvening)
+            // A moved start can fall after a second routine; the date editor changes the moved one.
+            val movedStart = plan.dayOverrides[todayDate]?.startTime?.atDate(todayDate)?.atZone(zone)?.toInstant()
+            val editableStart = starts.firstOrNull { movedStart == null || it.second == movedStart }?.second
+            editableStart?.takeIf { start -> start <= s.now && (last == null || last.endedAt!! < start) }
+        } else null
         // A start can be shown even when the user has muted its notification.
         val candidate = if (s.active == null && s.maxHours != null) {
             val withStart = appSettings.copy(reminders = appSettings.reminders.copy(fastStartEnabled = true))
@@ -230,6 +240,7 @@ class TimerViewModel @Inject constructor(
         s.copy(
             programTargetHours = target, eatingWindow = window, today = today,
             plannedStart = plannedStart, startReminder = candidate.takeIf { appSettings.reminders.fastStartEnabled },
+            earlierPlannedStartToday = earlierPlannedStartToday,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

@@ -12,4 +12,5 @@
     <string name="review_skipped">Skipped dates · %1$d</string>
     <string name="review_fit">Schedule fit · %1$s</string>
     <string name="review_open_week">Open My week</string>
+    <string name="review_open_date">Review %1$s in My week</string>
 </resources>

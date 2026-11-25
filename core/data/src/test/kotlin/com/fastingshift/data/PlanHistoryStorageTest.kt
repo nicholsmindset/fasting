@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -82,6 +83,22 @@ class PlanHistoryStorageTest {
         assertTrue(settings.current().planHistory.choices.isEmpty())
         settings.recordSchedule(nextWeek, PlanHistory.EVERY_DAY)
         assertFalse(settings.current().planHistory.isPlanned(wed))
+    }
+
+    @Test fun undoRestoresThePreviousMoveAndRejectsAnInterveningEdit() = runBlocking {
+        val settings = SettingsRepository(ApplicationProvider.getApplicationContext())
+        val day = LocalDate.of(2026, 11, 26)
+        val prior = DayOverride(LocalTime.of(21, 0))
+        val moved = DayOverride(LocalTime.of(22, 0))
+        settings.restore(SettingsRecord())
+        settings.replaceDayOverride(day, null, prior, day)
+        settings.replaceDayOverride(day, prior, moved, day)
+        settings.replaceDayOverride(day, moved, prior, day)
+        assertEquals(prior, settings.current().planHistory.dayOverrides[day])
+
+        settings.replaceDayOverride(day, prior, DayOverride(), day)
+        assertFailsWith<IllegalStateException> { settings.replaceDayOverride(day, moved, prior, day) }
+        assertEquals(DayOverride(), settings.current().planHistory.dayOverrides[day])
     }
 
     @Test fun movedAndSkippedDatesSurviveBackupAndPastDatesCannotBeRewritten() = runBlocking {

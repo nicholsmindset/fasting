@@ -7,4 +7,5 @@
     <string name="week_timer_change_today">更改今天的计划</string>
     <string name="week_timer_reminder_on">已开启开始提醒</string>
     <string name="week_timer_selected">已选断食计划</string>
+    <string name="week_timer_move_earlier_today">调整今天 %1$s 的计划开始时间</string>
 </resources>

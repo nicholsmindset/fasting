@@ -25,4 +25,15 @@
     <string name="week_restore_day">恢复原定安排</string>
     <string name="week_future_time">请选择今天稍后的时间。</string>
     <string name="week_save_failed">无法保存更改。请检查计划后重试。</string>
+    <string name="plan_date_save">保存当天安排</string>
+    <string name="plan_date_undo">撤销</string>
+    <string name="plan_date_saved">当天安排已更新</string>
+    <string name="plan_date_start">计划开始</string>
+    <string name="plan_date_finish">预计结束</string>
+    <string name="plan_date_only">仅更改当天的安排。</string>
+    <string name="plan_date_next_unchanged">仅更改当天的安排。%1$s 仍在 %2$s 开始。</string>
+    <string name="plan_date_reminder_removed">将取消原定于 %1$s 的开始提醒。</string>
+    <string name="plan_date_reminder_added">新增开始提醒：%1$s。</string>
+    <string name="plan_date_reminder_same">下次开始提醒仍为 %1$s。</string>
+    <string name="plan_date_reminder_moved">下次开始提醒将从 %1$s 改为 %2$s。</string>
 </resources>
