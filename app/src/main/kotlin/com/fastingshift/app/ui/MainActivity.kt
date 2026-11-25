@@ -19,6 +19,7 @@ import com.fastingshift.app.alarm.ReminderCoordinator
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.app.recovery.KeyLostScreen
+import com.fastingshift.app.ui.partner.PartnerLinks
 import com.fastingshift.app.ui.theme.FastingShiftTheme
 import com.fastingshift.data.db.DatabaseKeyProvider
 import com.fastingshift.data.db.FastingDatabase
@@ -104,7 +105,7 @@ class MainActivity : ComponentActivity() {
         consumeRoute(intent)
     }
 
-    private fun isNotificationRoute(route: String): Boolean = route == "history" || route == "settings" || Regex("checkin/\\d{1,18}").matches(route)
+    private fun isNotificationRoute(route: String): Boolean = route == Routes.partner() || route == "history" || route == "settings" || Regex("checkin/\\d{1,18}").matches(route)
 
     /** Reads the notification route once, then removes it so it can't open the screen again. */
     private fun consumeRoute(intent: Intent?) {
@@ -115,8 +116,12 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra(Notifications.EXTRA_ROUTE)
         // Challenge invite links (https://fastingshift.com/c/...): opened once, never from Recents.
         if (!fromHistory && intent.action == Intent.ACTION_VIEW) {
-            intent.dataString?.takeIf { it.contains("/c/") }?.let { url ->
-                deepLink = Routes.joinChallenge(ChallengeLinks.codeFrom(url) ?: "")
+            intent.dataString?.let { url ->
+                when {
+                    PartnerLinks.isPartnerUrl(url) -> deepLink = Routes.partner(PartnerLinks.token(url) ?: "invalid")
+                    url.contains("/c/") -> deepLink = Routes.joinChallenge(ChallengeLinks.codeFrom(url) ?: "")
+                    else -> Unit
+                }
             }
             intent.data = null
         }

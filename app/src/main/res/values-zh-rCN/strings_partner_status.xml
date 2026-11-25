@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_error_unavailable">这个邀请或伙伴周已失效。</string>
+    <string name="partner_error_changed">伙伴周有更新。请刷新以查看最新信息。</string>
+    <string name="partner_error_details">请检查邀请或昵称后再试。</string>
+    <string name="partner_error_retry">未能完成请求，请重试。</string>
+    <string name="partner_error_read">无法读取伙伴周信息，请刷新。</string>
+    <string name="partner_leaving_offline">退出请求已保存在本机。恢复网络连接后，将删除双方的伙伴周。</string>
+    <string name="partner_service_offline">暂时无法连接伙伴周服务，请在联网后重试。</string>
+    <string name="partner_error_supporter_only">你可以加入伙伴周，为伙伴加油。</string>
+    <string name="partner_error_display_name">请输入 1 至 32 个可见字符作为昵称。</string>
+    <string name="partner_error_adults_only">伙伴周仅供已完成安全筛查且年满 18 岁的成年人使用。</string>
+</resources>

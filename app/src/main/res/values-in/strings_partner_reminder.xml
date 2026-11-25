@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_remind_set">Ingatkan saya sekali</string>
+    <string name="partner_remind_change">Ubah waktu pengingat</string>
+    <string name="partner_remind_cancel">Batalkan pengingat</string>
+    <string name="partner_remind_settings">Aktifkan pengingat di setelan Android</string>
+    <string name="partner_remind_scheduled">Pengingat pribadi sekitar %1$s</string>
+    <string name="partner_remind_notification">Pengingat untuk memberi kabar</string>
+    <string name="partner_remind_note">Anda meminta pengingat untuk memberi kabar. Hari istirahat juga dihitung.</string>
+</resources>

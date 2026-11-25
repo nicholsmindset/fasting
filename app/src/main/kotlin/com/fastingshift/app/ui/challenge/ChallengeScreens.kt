@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.BuildConfig
+import com.fastingshift.app.ui.partner.PartnerLinks
 import com.fastingshift.app.R
 import com.fastingshift.app.share.ShareCards
 import com.fastingshift.app.ui.components.LoadingBox
@@ -122,6 +123,7 @@ fun ChallengeListRoute(
     onNew: () -> Unit,
     onJoinCode: (String) -> Unit,
     vm: ChallengeListViewModel = hiltViewModel(),
+    onPartner: ((String?) -> Unit)? = null,
 ) {
     val st by vm.state.collectAsStateWithLifecycle()
     var link by rememberSaveable { mutableStateOf("") }
@@ -132,6 +134,12 @@ fun ChallengeListRoute(
         if (s == null) {
             LoadingBox()
             return@SecondaryScaffold
+        }
+        onPartner?.let { open ->
+            InsetGroup {
+                GroupRow(stringResource(R.string.partner_title), modifier = Modifier.testTag("partner_open"),
+                    subtitle = stringResource(R.string.partner_entry_hint), showChevron = true, onClick = { open(null) })
+            }
         }
         if (!s.allowed) {
             AppCard { Text(stringResource(R.string.challenges_not_allowed), style = MaterialTheme.typography.bodyMedium) }
@@ -157,7 +165,12 @@ fun ChallengeListRoute(
                 GroupDivider()
                 GroupRow(stringResource(R.string.challenges_open_link), titleColor = MaterialTheme.colorScheme.primary, onClick = {
                     val code = ChallengeLinks.codeFrom(link)
-                    if (code == null) invalid = true else onJoinCode(code)
+                    val partnerCode = PartnerLinks.token(link)
+                    when {
+                        partnerCode != null && onPartner != null -> onPartner(partnerCode)
+                        code != null -> onJoinCode(code)
+                        else -> invalid = true
+                    }
                 })
             }
         }
