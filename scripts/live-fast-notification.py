@@ -1,6 +1,7 @@
 """Capture the actual posted fasting notification and the system shade on a disposable emulator."""
 import importlib.util
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import time
@@ -19,7 +20,8 @@ def ongoing():
 
 def main():
     sdk = int(adb("shell", "getprop", "ro.build.version.sdk"))
-    assert sdk in (35, 36) and adb("shell", "getprop", "ro.kernel.qemu") == "1"
+    emulator = any(adb("shell", "getprop", prop) == "1" for prop in ("ro.boot.qemu", "ro.kernel.qemu"))
+    assert sdk in (35, 36) and emulator
     adb("install", sys.argv[1])
     device = uiautomator2.connect()
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
@@ -38,7 +40,7 @@ def main():
             break
         time.sleep(1)
     assert ongoing(), "The opted-in active fast has no ongoing notification"
-    dump = adb("shell", "dumpsys", "notification", "--noredact")
+    dump = adb("shell", "cmd", "notification", "get", shlex.quote(ongoing()))
     style = "android.app.Notification$ProgressStyle" in dump
     label = "progress" if style else "plain"
     directory = Path("live-notification-proof")
