@@ -1,4 +1,4 @@
-name: Review dated History records
+name: Inspect emulator choice semantics
 on:
   push:
     branches: [codex/settings-review-fixtures]
@@ -6,37 +6,27 @@ permissions:
   actions: read
   contents: read
 jobs:
-  preview:
+  inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
-    strategy:
-      matrix:
-        screen: [history-records-chart, history-records-dates]
+    timeout-minutes: 3
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          run-id: 45523191506
-          name: fasting-shift-moats-screens
-          path: captured
-      - name: Read synthetic screenshots
+      - name: Inspect matching nodes in generated emulator hierarchy
         env:
-          SCREEN: ${{ matrix.screen }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python -c 'import PIL' || python -m pip install Pillow
+          curl --retry 3 -fsSL -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14981737219/zip" -o diag.zip
           python - <<'PY'
-          import base64, hashlib, io, os
-          from PIL import Image
-          from pathlib import Path
-          for key in (os.environ["SCREEN"],):
-              with Image.open(Path("captured/en") / (key + ".png")) as im:
-                  im = im.convert("RGB")
-                  im.thumbnail((600, 1200), Image.Resampling.LANCZOS)
-                  out = io.BytesIO()
-                  im.save(out, format="JPEG", quality=92, optimize=True, subsampling=0)
-              raw = out.getvalue()
-              print(f"FSQA|BEGIN|{key}|{len(raw)}|{hashlib.sha256(raw).hexdigest()}")
-              for offset in range(0, len(raw), 1800):
-                  print(f"FSQA|PART|{key}|{offset//1800}|{base64.b64encode(raw[offset:offset+1800]).decode()}")
-              print(f"FSQA|END|{key}")
+          from zipfile import ZipFile
+          from xml.etree import ElementTree as ET
+          import json
+          with ZipFile('diag.zip') as z:
+              files=[n for n in z.namelist() if n.endswith('screen.xml')]
+              print('Matching XML files:',len(files))
+              for file in files:
+                  tree=ET.fromstring(z.read(file)); print('Node count:',sum(1 for n in tree.iter('node')))
+                  keys=['text','content-desc','resource-id','class','clickable','enabled','scrollable','bounds']
+                  for n in tree.iter('node'):
+                      label=(n.get('text','')+' '+n.get('content-desc','')).lower()
+                      if 'partly' in label or '?' in label:
+                          print('MATCH:',json.dumps({k:n.get(k,'') for k in keys}))
           PY
