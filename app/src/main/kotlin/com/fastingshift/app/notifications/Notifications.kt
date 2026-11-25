@@ -20,6 +20,7 @@ import com.fastingshift.domain.reminders.Reminder
 import com.fastingshift.domain.reminders.ReminderKind
 import com.fastingshift.domain.coaching.CoachingTip
 import java.time.Duration
+import java.time.Instant
 
 object Notifications {
     const val CHANNEL_FAST_ALERTS = "fast_alerts"
@@ -164,7 +165,19 @@ object Notifications {
         java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(i.atZone(java.time.ZoneId.systemDefault()))
 
     /** Optional ongoing notification with a live chronometer (PRD F3). */
-    fun showOngoing(context: Context, fast: Fast) {
+    fun showOngoing(context: Context, fast: Fast, now: Instant): Boolean {
+        val modern = Build.VERSION.SDK_INT >= 36
+        if (modern && LiveFastUpdate.dismissed(context, fast.id)) {
+            cancelOngoing(context)
+            return false
+        }
+        val promoted = Build.VERSION.SDK_INT >= 36 && now >= fast.startAt && now < fast.targetEndAt &&
+            LiveFastUpdate.eligible(context)
+        notify(context, ID_ONGOING, ongoingBuilder(context, fast, now, promoted))
+        return promoted
+    }
+
+    internal fun ongoingBuilder(context: Context, fast: Fast, now: Instant, promoted: Boolean): NotificationCompat.Builder {
         val builder = NotificationCompat.Builder(context, CHANNEL_ONGOING)
             .setSmallIcon(R.drawable.ic_stat_fast)
             .setContentTitle(context.getString(R.string.notif_ongoing_title))
@@ -178,7 +191,11 @@ object Notifications {
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setContentIntent(openAppIntent(context, null))
             .addAction(0, context.getString(R.string.action_end_fast), endFastIntent(context))
-        notify(context, ID_ONGOING, builder)
+        if (Build.VERSION.SDK_INT >= 36) {
+            builder.setDeleteIntent(LiveFastUpdate.dismissIntent(context, fast.id))
+            if (promoted) LiveFastUpdate.decorate(context, builder, fast, now)
+        }
+        return builder
     }
 
     fun cancelOngoing(context: Context) = NotificationManagerCompat.from(context).cancel(ID_ONGOING)

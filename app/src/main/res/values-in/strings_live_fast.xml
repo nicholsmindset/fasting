@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_fast_protocol">Puasa %1$s</string>
+    <string name="live_fast_title">%1$s · %2$dj %3$02dm</string>
+    <string name="live_fast_ends">Berakhir pukul %1$s</string>
+    <string name="live_fast_chip">%1$d:%2$02d</string>
+</resources>
