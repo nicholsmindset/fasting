@@ -71,6 +71,7 @@ import kotlinx.coroutines.delay
 internal fun PartnerTimerEntry(onOpen: () -> Unit, vm: PartnerWeekViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val week = state.week
+    if (state.adultAllowed != true) return
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(week?.id, owner) {
         if (week != null) owner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { vm.refresh() }
@@ -125,8 +126,8 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
             }
         }
     }
-    LaunchedEffect(token) {
-        if (token != null && PartnerLinks.valid(token)) vm.preview(token)
+    LaunchedEffect(token, state.adultAllowed) {
+        if (state.adultAllowed == true && token != null && PartnerLinks.valid(token)) vm.preview(token)
     }
     LaunchedEffect(week?.id, week?.status, joining) {
         if (joining && week?.status == "active") {
@@ -159,6 +160,14 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
                 Notice(stringResource(R.string.partner_leaving))
                 SecondaryButton(stringResource(R.string.partner_retry), vm::refresh, Modifier.testTag("partner_refresh"),
                     enabled = !state.busy)
+            }
+            state.adultAllowed == null -> LoadingBox()
+            state.adultAllowed == false -> {
+                Notice(stringResource(R.string.partner_adult_only))
+                if (week != null) {
+                    SecondaryButton(stringResource(R.string.partner_leave), { confirmLeave = true },
+                        Modifier.testTag("partner_leave"), enabled = !state.busy)
+                }
             }
             week != null && week.status != "left" -> {
                 if (token != null && !joining) {
