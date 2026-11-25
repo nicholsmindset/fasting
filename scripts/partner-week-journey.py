@@ -1,5 +1,6 @@
 """Drive separate host and guest installations through the real partner week service in CI."""
 import importlib.util
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -178,8 +179,35 @@ def journey(device):
     guest.resume()
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_other_marks", 1)
+    print("Both participating members independently checked in on their own app installation.")
+
+    # Move the synthetic fixture through the end of its week without changing either
+    # device clock. Never run this against a remote database or a populated project.
+    if (os.environ.get("PGHOST"), os.environ.get("PGPORT")) != ("127.0.0.1", "18479"):
+        raise AssertionError("The end-of-week fixture requires the isolated CI database")
+    subprocess.run(["psql", "-v", "ON_ERROR_STOP=1"], input="""
+        DO $$ BEGIN
+          IF (SELECT count(*) FROM fasting_partners.weeks) <> 1 OR
+              (SELECT count(*) FROM fasting_partners.members WHERE alias IN ('Rowan','Jamie')) <> 2 THEN
+            RAISE EXCEPTION 'Unexpected QA population';
+          END IF;
+          UPDATE fasting_partners.weeks
+            SET started_at = now() - interval '8 days', finishes_at = now() - interval '1 day';
+        END $$;
+    """, text=True, check=True)
+    guest.tap("partner_refresh", timeout=3)
+    guest.tap("partner_renew")
+    if not device(packageName=GUEST, textContains="asked to do another week").wait(timeout=8):
+        raise AssertionError("Guest's invitation restarted the week without host consent")
+    host.resume()
+    host.tap("partner_refresh", timeout=3)
+    host.tap("partner_renew")
+    host.assert_marks("partner_self_marks", 0)
+    guest.resume()
+    guest.tap("partner_refresh", timeout=3)
+    guest.assert_marks("partner_self_marks", 0)
     guest.leave()
-    print("Both participating members could independently check in, and the guest could end sharing.")
+    print("A new week required both members' consent, reset their progress, and let the guest end sharing.")
 
 
 def main():
