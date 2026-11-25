@@ -47,6 +47,14 @@ class RevivalTest {
         assertTrue(Revival.marks(january.copy(target = "unknown"), joined, candidates, january.endExclusive, 0, { true }).isEmpty())
     }
 
+    @Test fun crossingIntoEidCannotEarnAMarkInACustomWindow() {
+        fun at(day: Int) = LocalDate.of(2027, 3, day).atStartOfDay(zone).toInstant()
+        val window = RevivalWindow("spring", at(1), at(16), zone)
+        val end = at(11)
+        val crossing = Fast(startAt = at(8), targetEndAt = end, protocolId = "test").end(end)
+        assertTrue(Revival.marks(window, at(1), listOf(crossing), at(15), 0, { true }).isEmpty())
+    }
+
     @Test fun restoredCountAdvancesOnlyAcrossRealPlannedDays() {
         val records = listOf(fast(6), fast(8))
         val plan: (LocalDate) -> Boolean = { it != date(7) }

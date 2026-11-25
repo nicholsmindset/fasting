@@ -51,9 +51,13 @@ object Revival {
         return fasts.asSequence().filter { fast ->
             val ended = fast.endedAt ?: return@filter false
             val day = fast.startAt.atZone(window.zone).toLocalDate()
-            fast.status == FastStatus.COMPLETED && fast.startAt >= maxOf(joinedAt, window.start) &&
-                ended <= now && ended < window.endExclusive &&
-                fast.actualDuration!! >= FastPolicy.MIN_FAST && planned(day) && RevivalCalendar.eligibleDay(day, hijriOffset)
+            if (fast.status != FastStatus.COMPLETED || fast.startAt < maxOf(joinedAt, window.start) ||
+                ended > now || ended >= window.endExclusive || fast.actualDuration!! < FastPolicy.MIN_FAST || !planned(day)) {
+                return@filter false
+            }
+            // If a fast crosses into Eid or tashreeq, it cannot earn a mark by spanning that day.
+            val last = ended.minusNanos(1).atZone(window.zone).toLocalDate()
+            generateSequence(day) { it.plusDays(1) }.takeWhile { it <= last }.all { RevivalCalendar.eligibleDay(it, hijriOffset) }
         }.sortedBy { it.endedAt }.distinctBy { it.startAt.atZone(window.zone).toLocalDate() }
             .take(window.requiredDays).toList()
     }

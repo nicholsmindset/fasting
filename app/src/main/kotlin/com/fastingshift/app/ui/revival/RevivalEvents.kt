@@ -92,8 +92,13 @@ class RevivalEvents @Inject constructor(
             if (marks.size == event.threshold) {
                 val last = marks.last()
                 val ended = requireNotNull(last.endedAt)
-                val days = maxOf(event.baselineBest ?: 0, event.threshold)
-                dao.finish(event.id, ended.toEpochMilli(), ended.atZone(window.zone).toLocalDate().toEpochDay(), days)
+                val awardDay = ended.atZone(window.zone).toLocalDate()
+                // A returning person can also surpass their old best naturally during the event.
+                val recordsAtAward = person.fasts.filter { it.endedAt?.let { end -> end <= ended } == true }
+                val earnedNaturally = StreakCalculator.calculate(recordsAtAward, window.zone, awardDay,
+                    person.frozen, person.plan::isPlanned).current
+                val days = maxOf(event.baselineBest ?: 0, event.threshold, earnedNaturally)
+                dao.finish(event.id, ended.toEpochMilli(), awardDay.toEpochDay(), days)
             }
         }
         val award = supported.filter { it.restored != null }.maxByOrNull { requireNotNull(it.restored) }
