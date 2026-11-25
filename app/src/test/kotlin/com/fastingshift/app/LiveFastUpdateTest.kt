@@ -27,12 +27,17 @@ class LiveFastUpdateTest {
     private val fast = Fast(7, start, start.plusSeconds(16 * 3600L), protocolId = "window_16_8")
     private val now = start.plusSeconds((12 * 60 + 4) * 60L)
 
-    @Test fun android16NotificationQualifiesForPromotionAndKeepsEndAction() {
+    @Test fun android16RequestsPromotionWithAllDocumentedCharacteristicsAndKeepsEndAction() {
         Notifications.createChannels(app)
         val manager = app.getSystemService(NotificationManager::class.java)
         assertTrue(manager.getNotificationChannel(Notifications.CHANNEL_ONGOING).importance > NotificationManager.IMPORTANCE_MIN)
         val n = Notifications.ongoingBuilder(app, fast, now, tracking = true, promoted = true).build()
-        assertTrue(n.hasPromotableCharacteristics())
+        // Robolectric 4.16 uses the original Android 16 image. Its legacy predicate
+        // requires colorization, which the current Android Live Update specification forbids.
+        assertTrue(NotificationCompat.isRequestPromotedOngoing(n))
+        assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
+        assertFalse(n.flags and Notification.FLAG_GROUP_SUMMARY != 0)
+        assertFalse(n.extras.getBoolean(Notification.EXTRA_COLORIZED))
         assertEquals("android.app.Notification\$ProgressStyle", n.extras.getString(Notification.EXTRA_TEMPLATE))
         assertEquals("16:8 fast · 12h 04m", n.extras.getCharSequence(Notification.EXTRA_TITLE))
         assertEquals("12:04", NotificationCompat.getShortCriticalText(n))

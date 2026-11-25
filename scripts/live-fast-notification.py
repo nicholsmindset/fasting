@@ -1,6 +1,7 @@
 """Capture the actual posted fasting notification and the system shade on a disposable emulator."""
 import importlib.util
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -45,8 +46,12 @@ def main():
     label = "progress" if style else "plain"
     directory = Path("live-notification-proof")
     directory.mkdir(exist_ok=True)
-    note = (f"API {sdk}, posted ongoing slot 1004, actual notification style: {label}. "
-            "System promotion and OEM status-bar placement are device controlled.")
+    flag_bits = re.search(r"flags=0x([0-9a-f]+)", dump, re.IGNORECASE)
+    promoted = bool(flag_bits and int(flag_bits.group(1), 16) & 0x40000) or "FLAG_PROMOTED_ONGOING" in dump
+    fingerprint = adb("shell", "getprop", "ro.build.fingerprint")
+    note = (f"{fingerprint}\nAPI {sdk}, posted ongoing slot 1004, actual notification style: {label}. "
+            f"System promoted flag present: {promoted}.")
+    (directory / "timer-record.txt").write_text(dump)
     print(note, flush=True)
     (directory / "observed.txt").write_text(note + "\n")
     assert style == (sdk >= 36), f"Unexpected active timer notification on API {sdk}: {label}"

@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [35, 36]
+        api: ["35", "36", "36.1"]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
