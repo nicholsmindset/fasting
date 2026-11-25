@@ -124,10 +124,9 @@ class AppFlowTest {
         val notifications = shadowOf(application.getSystemService(NotificationManager::class.java))
         shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         notifications.setNotificationsEnabled(true)
-        val original = runBlocking { settings.current() }
+        val original = runBlocking { settings.toRecord() }
         runBlocking {
             screening.save(ScreeningRecord(Instant.now(), ScreeningAnswers(40, false, false, false, emptySet(), 175.0, 70.0), GateResult.OK, false))
-            settings.setDefaultProtocol(Presets.W16_8.id)
             settings.setFastStartReminder(true)
             settings.setOnboardingComplete(true)
         }
@@ -157,8 +156,7 @@ class AppFlowTest {
             notifications.setNotificationsEnabled(true)
             runBlocking {
                 routineId?.let { schedules.delete(it) }
-                settings.setFastStartReminder(original.reminders.fastStartEnabled)
-                settings.setOnboardingComplete(original.onboardingComplete)
+                settings.restore(original)
             }
         }
     }
