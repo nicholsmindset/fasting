@@ -1,0 +1,64 @@
+name: Live notification on Android 15 and 16
+on:
+  pull_request:
+    paths:
+      - 'app/src/main/kotlin/com/fastingshift/app/notifications/**'
+      - 'core/domain/src/main/kotlin/com/fastingshift/domain/timeline/**'
+      - 'scripts/live-fast-notification.py'
+      - '.github/workflows/live-fast-notification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-notification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        api: ["35", "36", "36.1"]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the installable staging app
+        run: ./gradlew :app:assembleStaging
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare the UI driver and emulator
+        run: |
+          python -m pip install 'uiautomator2==3.3.2'
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Check the ongoing timer and capture the system shade
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: python -u scripts/live-fast-notification.py app/build/outputs/apk/staging/app-staging.apk
+      - name: Save system UI and observed notification style
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-fast-api-${{ matrix.api }}
+          path: live-notification-proof/
+          if-no-files-found: warn

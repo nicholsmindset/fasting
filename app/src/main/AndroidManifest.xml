@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <!-- The free Settings banner uses no advertising ID, Topics, Attribution or protected audiences. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />

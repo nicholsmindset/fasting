@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.sp
 
 // The launcher mark uses the original emerald. The lightened shade keeps the
 // same actions legible on the dark reading surface.
-private val Emerald = Color(0xFF007A56)
-private val LightEmerald = Color(0xFF83DAB8)
+internal val Emerald = Color(0xFF007A56)
+internal val LightEmerald = Color(0xFF83DAB8)
 
 private val LightColors = lightColorScheme(
     primary = Emerald, onPrimary = Color.White,

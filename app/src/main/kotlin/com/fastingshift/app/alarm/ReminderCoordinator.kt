@@ -4,6 +4,7 @@ import android.content.Context
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.billing.BillingReminderScheduler
 import com.fastingshift.app.di.ApplicationScope
+import com.fastingshift.app.notifications.LiveFastUpdate
 import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.app.widget.WidgetUpdater
 import com.fastingshift.data.repo.ScheduleRepository
@@ -87,14 +88,33 @@ class ReminderCoordinator @Inject constructor(
         val active = fasts.getActive()
         scheduler.apply(planAt(now, appSettings, active, fasts.getAll()))
 
-        if (active != null && appSettings.ongoingNotification) Notifications.showOngoing(context, active)
-        else Notifications.cancelOngoing(context)
+        applyOngoing(active, appSettings.ongoingNotification, now)
         if (active == null) Notifications.cancelFastNotifications(context)
 
         // Alarms don't survive a reboot: restore the billing reminder too (no-op until loaded).
         billingReminders.apply(billing.loadedEntitlement.value, appSettings.billingRemindedFor, now)
 
         WidgetUpdater.updateAll(context)
+    }
+
+    /** Refreshing the progress track need not rebuild every alarm, widget and billing reminder. */
+    suspend fun refreshOngoing(dismissedFastId: Long? = null) = mutex.withLock {
+        val active = fasts.getActive()
+        if (dismissedFastId != null && active?.id == dismissedFastId) {
+            LiveFastUpdate.rememberDismissal(context, dismissedFastId)
+        }
+        applyOngoing(active, settings.current().ongoingNotification, clock.instant())
+    }
+
+    private fun applyOngoing(active: Fast?, enabled: Boolean, now: Instant) {
+        if (active == null || !enabled) {
+            Notifications.cancelOngoing(context)
+            LiveFastUpdate.schedule(context, null)
+            LiveFastUpdate.clearDismissal(context)
+        } else {
+            val tracking = Notifications.showOngoing(context, active, now)
+            LiveFastUpdate.schedule(context, if (tracking) LiveFastUpdate.nextUpdate(active.startAt, active.targetEndAt, now) else null)
+        }
     }
 
     /** Evaluate the same rules as scheduling, including settings changed since the alarm was armed. */
