@@ -30,6 +30,9 @@ data class PlanHistory(
     val trackedFrom: LocalDate? get() = masks.firstEntry()?.key
     val breakWeeks: Set<LocalDate> = choices.filterValues { it == WeekChoice.BREAK }.keys
 
+    fun withDayOverride(day: LocalDate, override: DayOverride?): PlanHistory =
+        copy(dayOverrides = if (override == null) dayOverrides - day else dayOverrides + (day to override))
+
     fun isBreak(day: LocalDate): Boolean = History.weekStart(day) in breakWeeks
 
     /** Unknown history has no denominator. A week off also has no planned days. */

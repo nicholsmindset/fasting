@@ -81,7 +81,7 @@ class TimerViewModelTest {
         }
     }
 
-    private fun vm() = TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, clock, schedules, freezes)
+    private fun vm(at: Clock = clock) = TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, at, schedules, freezes)
 
     /** viewModelScope runs on the main looper, which the test thread must keep turning. */
     private fun <T> await(read: () -> T?): T {
@@ -159,6 +159,39 @@ class TimerViewModelTest {
         activeFast(hoursIn = 2)
         val vm = vm()
         awaitState(vm) { s -> s.today.next.takeIf { it == NextFast.FastingNow } }
+    }
+
+    @Test fun lateDinnerKeepsTodaysPlanReachableWithoutChangingTheNextReminder() {
+        val thursday = LocalDate.of(2026, 11, 26)
+        val friday = thursday.plusDays(1)
+        val zone = ZoneId.systemDefault()
+        fun at(day: LocalDate, hour: Int, minute: Int = 0) = day.atTime(hour, minute).atZone(zone).toInstant()
+        val old = runBlocking { settings.current() }
+        val id = runBlocking {
+            settings.setFastStartReminder(true)
+            schedules.save(Schedule(protocolId = "window_16_8", days = setOf(thursday.dayOfWeek, friday.dayOfWeek),
+                startTime = LocalTime.of(20, 0)))
+        }
+        try {
+            val vm = vm(Clock.fixed(at(thursday, 21, 40), zone))
+            val late = awaitState(vm) { it.takeIf { state -> state.earlierPlannedStartToday == at(thursday, 20) } }
+            assertEquals(at(friday, 20), late.plannedStart)
+            assertEquals(at(friday, 20), late.startReminder)
+
+            runBlocking { settings.setDayOverride(thursday, DayOverride(LocalTime.of(22, 15)), thursday) }
+            val moved = awaitState(vm) { it.takeIf { state -> state.plannedStart == at(thursday, 22, 15) } }
+            assertNull(moved.earlierPlannedStartToday)
+            assertEquals(at(thursday, 22, 15), moved.startReminder)
+            runBlocking { settings.setDayOverride(thursday, DayOverride(), thursday) }
+            val skipped = awaitState(vm) { it.takeIf { state -> state.plannedStart == at(friday, 20) } }
+            assertNull(skipped.earlierPlannedStartToday)
+        } finally {
+            runBlocking {
+                settings.setDayOverride(thursday, old.planHistory.dayOverrides[thursday], thursday)
+                settings.setFastStartReminder(old.reminders.fastStartEnabled)
+                schedules.delete(id)
+            }
+        }
     }
 
     @Test fun changingOneStartUpdatesTimerAndReminderAndPreservesTheRecurringTime() {

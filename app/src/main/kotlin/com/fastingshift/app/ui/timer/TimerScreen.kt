@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -364,6 +365,12 @@ private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Un
     val today = state.now.atZone(zone).toLocalDate()
     Column(Modifier.fillMaxWidth()) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        state.earlierPlannedStartToday?.atZone(zone)?.let { earlier ->
+            TextButton(
+                onClick = { onOpenWeek(earlier.toLocalDate()) },
+                modifier = Modifier.testTag("timer-move-missed-start"),
+            ) { Text(stringResource(R.string.week_timer_move_earlier_today, format.time.format(earlier))) }
+        }
         if (planned != null) {
             Text(
                 stringResource(R.string.week_timer_planned, format.dateTime.format(planned.atZone(zone))),

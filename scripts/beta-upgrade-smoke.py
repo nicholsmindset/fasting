@@ -35,6 +35,29 @@ def notification_permission_granted():
     return permission.group(1) == "true"
 
 
+def visible_label_center(hierarchy, label):
+    merged_match = None
+    for node in ET.fromstring(hierarchy).iter("node"):
+        attrs = node.attrib
+        if attrs.get("package") != PACKAGE or attrs.get("visible-to-user") == "false":
+            continue
+        # Compose exposes both text and accessibility descriptions. A merged
+        # parent can contain a label that also has its own, more precise bounds.
+        values = (attrs.get("text", ""), attrs.get("content-desc", ""))
+        exact = any(" ".join(value.split()) == label for value in values)
+        if not exact and not any(" ".join(line.split()) == label for value in values for line in value.splitlines()):
+            continue
+        bounds = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", attrs.get("bounds", ""))
+        if bounds:
+            left, top, right, bottom = map(int, bounds.groups())
+            if right > left and bottom > top:
+                center = (left + right) // 2, (top + bottom) // 2
+                if exact:
+                    return center
+                merged_match = center
+    return merged_match
+
+
 class Screen:
     def __init__(self, device, source):
         self.device = device
@@ -475,10 +498,12 @@ class Screen:
             self.device(resourceId="android:id/toggle_mode").click(timeout=8)
         minute.set_text("15", timeout=8)
         self.device(resourceId="android:id/button1").click(timeout=8)
+        self.click("plan_date_save", scroll=True)
         self.find("week_changed", scroll=True)
 
         open_date(skipped)
         self.click("week_skip_day")
+        self.click("plan_date_save", scroll=True)
         self.find("week_skipped", scroll=True)
 
         open_week()
@@ -549,17 +574,17 @@ class Screen:
             # The recap follows the calendar. Keep consecutive viewports
             # overlapping so a fling cannot skip a question or its answers.
             label = self.strings[key]
-            node = self.device(text=label, packageName=PACKAGE)
-            for _ in range(8):
-                if node.wait(timeout=0.6):
-                    return node
+            for attempt in range(9):
+                center = visible_label_center(self.device.dump_hierarchy(), label)
+                if center:
+                    return center
+                if attempt == 8:
+                    break
                 adb("shell", "input", "swipe", str(x), str(start), str(x), str(end), "650")
-            if node.wait(timeout=1):
-                return node
             raise AssertionError(f"Missing {label} below the History calendar")
 
         recap_control("recap_fit_question")
-        recap_control("recap_fit_partly").click()
+        self.device.click(*recap_control("recap_fit_partly"))
         recap_control("recap_change_answer")
         self.device.app_stop(PACKAGE)
         self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)

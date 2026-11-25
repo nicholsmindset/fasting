@@ -7,4 +7,5 @@
     <string name="week_timer_change_today">Ubah hari ini</string>
     <string name="week_timer_reminder_on">Pengingat mulai aktif</string>
     <string name="week_timer_selected">Puasa yang dipilih</string>
+    <string name="week_timer_move_earlier_today">Ubah jadwal mulai hari ini pukul %1$s</string>
 </resources>

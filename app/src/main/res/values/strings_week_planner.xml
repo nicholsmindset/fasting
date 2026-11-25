@@ -25,4 +25,11 @@
     <string name="week_restore_day">Use usual schedule</string>
     <string name="week_future_time">Choose a time later today.</string>
     <string name="week_save_failed">Couldn’t save this change. Check your plan and try again.</string>
+    <string name="plan_date_save">Save this date</string>
+    <string name="plan_date_undo">Undo</string>
+    <string name="plan_date_saved">Date updated</string>
+    <string name="plan_date_start">Planned start</string>
+    <string name="plan_date_finish">Expected finish</string>
+    <string name="plan_date_only">Only this date changes.</string>
+    <string name="plan_date_next_unchanged">Only this date changes. %1$s stays at %2$s.</string>
 </resources>

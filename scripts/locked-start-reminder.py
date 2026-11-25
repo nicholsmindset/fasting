@@ -105,6 +105,7 @@ def check(screen):
     screen.find_node(day, "Scheduled day", scroll=True).click()
     screen.click("week_change_time")
     set_picker(screen.device, moved)
+    screen.click("plan_date_save", scroll=True)
     screen.find("week_changed", scroll=True)
     wait_for_alarm(moved, replaced=original)
     # The following day must still inherit the routine. The live alarm check below

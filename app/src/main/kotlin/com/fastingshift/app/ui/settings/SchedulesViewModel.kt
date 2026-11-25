@@ -65,9 +65,22 @@ internal data class PlannerState(
         ScheduleCalculator.startsOn(eligible, day, zone, settings.planHistory.breakWeeks,
             if (original) emptyMap() else settings.planHistory.dayOverrides, firstEvening)
 
+    fun preview(day: LocalDate, replacement: DayOverride?): DateChangePreview {
+        val draft = copy(settings = settings.copy(planHistory = settings.planHistory.withDayOverride(day, replacement)))
+        val original = starts(day, original = true).firstOrNull()
+        val planned = draft.starts(day).firstOrNull { it.first.id == original?.first?.id }
+        val start = planned?.second
+        val finish = planned?.let { (schedule, instant) ->
+            Presets.byId(schedule.protocolId)?.let { instant.plus(Duration.ofHours(it.fastHours.toLong())) }
+        }
+        return DateChangePreview(start, finish, if (active) null else draft.nextStartAlert())
+    }
+
     fun nextStartAlert(): Instant? = idleReminders(now, zone, settings, eligible, lastFast, firstEvening)
         .firstOrNull { it.kind == ReminderKind.FAST_START }?.triggerAt
 }
+
+internal data class DateChangePreview(val start: Instant?, val finish: Instant?, val nextAlert: Instant?)
 
 @HiltViewModel
 class SchedulesViewModel @Inject constructor(
@@ -122,7 +135,7 @@ class SchedulesViewModel @Inject constructor(
         repo.delete(id)
     }
 
-    internal fun changeDate(day: LocalDate, override: DayOverride?, done: () -> Unit) = write(done) {
+    internal fun changeDate(day: LocalDate, previous: DayOverride?, override: DayOverride?, done: () -> Unit) = write(done) {
         val zone = ZoneId.systemDefault()
         val now = clock.instant()
         val today = now.atZone(zone).toLocalDate()
@@ -136,6 +149,10 @@ class SchedulesViewModel @Inject constructor(
             require(base.isNotEmpty())
             override.startTime?.let { require(day.atTime(it).atZone(zone).toInstant().isAfter(now)) }
         }
-        settings.setDayOverride(day, override, today)
+        settings.replaceDayOverride(day, previous, override, today)
+    }
+
+    internal fun undoDate(day: LocalDate, saved: DayOverride?, previous: DayOverride?) = write({}) {
+        settings.replaceDayOverride(day, saved, previous, clock.instant().atZone(ZoneId.systemDefault()).toLocalDate())
     }
 }

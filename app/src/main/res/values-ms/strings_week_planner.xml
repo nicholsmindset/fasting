@@ -25,4 +25,11 @@
     <string name="week_restore_day">Guna jadual biasa</string>
     <string name="week_future_time">Pilih masa yang lebih lewat hari ini.</string>
     <string name="week_save_failed">Perubahan gagal disimpan. Semak pelan anda dan cuba lagi.</string>
+    <string name="plan_date_save">Simpan tarikh ini</string>
+    <string name="plan_date_undo">Urungkan</string>
+    <string name="plan_date_saved">Tarikh dikemas kini</string>
+    <string name="plan_date_start">Waktu mula dirancang</string>
+    <string name="plan_date_finish">Jangkaan tamat</string>
+    <string name="plan_date_only">Hanya tarikh ini berubah.</string>
+    <string name="plan_date_next_unchanged">Hanya tarikh ini berubah. Waktu mula pada %1$s kekal %2$s.</string>
 </resources>

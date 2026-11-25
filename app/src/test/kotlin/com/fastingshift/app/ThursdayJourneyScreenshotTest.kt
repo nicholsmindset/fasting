@@ -25,7 +25,6 @@ import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.ScreeningAnswers
-import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
 import com.github.takahirom.roborazzi.captureScreenRoboImage
@@ -64,12 +63,12 @@ class ThursdayJourneyScreenshotTest {
     @BindValue @JvmField val clock: Clock = Clock.fixed(java.time.Instant.parse("2026-11-26T13:40:00Z"), moatsZone)
     @Inject lateinit var settings: SettingsRepository
     @Inject lateinit var screening: ScreeningRepository
-    @Inject lateinit var fasts: FastRepository
     @Inject lateinit var schedules: ScheduleRepository
 
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
     private val originalZone = TimeZone.getDefault()
     private var scenario: ActivityScenario<MainActivity>? = null
+    private var controlActivations = 0
 
     @Before fun setUp() {
         assumeTrue(System.getProperty("fastingshift.screenshotDir") != null)
@@ -108,6 +107,7 @@ class ThursdayJourneyScreenshotTest {
         val node = compose.onNode(target)
         if (scroll) node.performScrollTo()
         node.performClick()
+        controlActivations++
     }
 
     private fun capture(name: String) {
@@ -174,6 +174,7 @@ class ThursdayJourneyScreenshotTest {
                 val picker = ShadowDialog.getLatestDialog() as TimePickerDialog
                 picker.updateTime(moved.hour, moved.minute)
                 picker.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+                controlActivations++
             }
             val save = hasTestTag("plan-date-save")
             val changed = hasTestTag("week-day-$day") and label(R.string.week_changed)
@@ -182,8 +183,11 @@ class ThursdayJourneyScreenshotTest {
             if (hasPreview) {
                 assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[day] })
                 waitFor(hasTestTag("plan-date-preview"))
+                val start = day.atTime(moved).atZone(moatsZone)
+                waitFor(hasText(format.dateTime.format(start.plusHours(16))))
+                waitFor(label(R.string.week_next_reminder, format.date.format(start), format.time.format(start)))
                 capture("$mode-04-picker-result")
-                compose.onNode(save).performScrollTo().assertIsDisplayed().performClick()
+                tap(save, scroll = true)
             }
             waitFor(changed)
             assertEquals(moved, runBlocking { settings.current().planHistory.dayOverrides[day]?.startTime })
@@ -193,12 +197,17 @@ class ThursdayJourneyScreenshotTest {
             capture("$mode-05-saved")
             // Count the confirmed UI activations. Setting the test time is one input action,
             // excluded here because taps differ by keyboard vs clock and Android version.
-            val controls = (if (directRoute) 1 else 3) + 2 + (if (hasPreview) 1 else 0)
             moatsOutput("thursday").resolve("$mode-results.txt").writeText(
                 "Route: " + (if (directRoute) "Timer > move today" else "Timer > Settings > My week > Thursday") +
-                "\nAction counts excluding time entry: $controls\nPreview before save: $hasPreview" +
+                "\nAction counts excluding time entry: $controlActivations\nPreview before save: $hasPreview" +
                 "\nThu 21:40, selected 22:00. Friday routine confirmed at 20:00.\n"
             )
+            if (hasPreview) {
+                tap(hasText("Undo"))
+                waitFor(hasTestTag("week-day-$day") and hasText(format.time.format(usual)))
+                assertEquals(null, runBlocking { settings.current().planHistory.dayOverrides[day] })
+                waitFor(friday)
+            }
             requireNotNull(scenario).close()
             scenario = ActivityScenario.launch(MainActivity::class.java)
             tap(hasTestTag("tab_history"))

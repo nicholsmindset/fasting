@@ -2,6 +2,7 @@ package com.fastingshift.data.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -238,11 +239,20 @@ class SettingsRepository(context: Context) {
 
     /** A null override restores the recurring plan. Past civil dates are read-only. */
     suspend fun setDayOverride(day: LocalDate, override: DayOverride?, today: LocalDate) = store.edit { p ->
-        if (day >= today) {
-            val overrides = p.planHistory().dayOverrides.toMutableMap()
-            if (override == null) overrides.remove(day) else overrides[day] = override
-            p[DAY_OVERRIDES] = overrides.entries.map { "${it.key}=${it.value.toRecord()}" }.toSet()
+        if (day >= today) p.writeDayOverride(day, override)
+    }
+
+    /** Check the value displayed to the user inside the same transaction as the write. */
+    suspend fun replaceDayOverride(day: LocalDate, expected: DayOverride?, replacement: DayOverride?, today: LocalDate) {
+        store.edit { p ->
+            check(day >= today && p.planHistory().dayOverrides[day] == expected)
+            p.writeDayOverride(day, replacement)
         }
+    }
+
+    private fun MutablePreferences.writeDayOverride(day: LocalDate, override: DayOverride?) {
+        val updated = planHistory().withDayOverride(day, override)
+        this[DAY_OVERRIDES] = updated.dayOverrides.entries.map { "${it.key}=${it.value.toRecord()}" }.toSet()
     }
 
     suspend fun clearPlanHistory() = store.edit {

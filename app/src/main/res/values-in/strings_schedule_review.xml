@@ -11,4 +11,5 @@
     <string name="review_skipped">Tanggal yang dilewati · %1$d</string>
     <string name="review_fit">Kecocokan jadwal · %1$s</string>
     <string name="review_open_week">Buka Minggu saya</string>
+    <string name="review_open_date">Tinjau %1$s di Minggu saya</string>
 </resources>

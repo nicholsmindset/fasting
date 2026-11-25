@@ -9,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.dp
 import com.fastingshift.app.ui.ramadan.GroupedSheet
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -17,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -43,12 +46,16 @@ import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.schedule.DayOverride
 import java.time.LocalDate
 import java.time.LocalTime
+import kotlinx.coroutines.launch
 
 @Composable
 fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: SchedulesViewModel = hiltViewModel()) {
     val loaded by vm.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val saved = stringResource(R.string.plan_date_saved)
+    val undoLabel = stringResource(R.string.plan_date_undo)
     val failure = stringResource(R.string.week_save_failed)
     LaunchedEffect(vm) {
         vm.failed.collect { error ->
@@ -143,8 +150,18 @@ fun SchedulesRoute(onBack: () -> Unit, initialDate: LocalDate? = null, vm: Sched
             val override = state.settings.planHistory.dayOverrides[day]
             val usualTimes = original.map { it.second.atZone(state.zone).toLocalTime() }
             val currentTimes = state.starts(day).map { it.second.atZone(state.zone).toLocalTime() }
-            DateEditor(day, usualTimes, currentTimes, override, state.today, state.now.atZone(state.zone).toLocalTime(), format, busy,
-                onChange = { vm.changeDate(day, it) { dateText = null } }, onClose = { dateText = null })
+            DateEditor(day, usualTimes, currentTimes, override, state, notifications, format, busy,
+                onChange = { replacement ->
+                    vm.changeDate(day, override, replacement) {
+                        dateText = null
+                        snackbar.currentSnackbarData?.dismiss()
+                        scope.launch {
+                            if (snackbar.showSnackbar(saved, undoLabel, duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
+                                vm.undoDate(day, replacement, override)
+                            }
+                        }
+                    }
+                }, onClose = { dateText = null })
         }
     }
 }
@@ -180,37 +197,96 @@ internal fun WeekPreview(state: PlannerState, format: WeekFormat, notifications:
 
 @Composable
 private fun DateEditor(day: LocalDate, usualTimes: List<LocalTime>, currentTimes: List<LocalTime>, override: DayOverride?,
-    today: LocalDate, now: LocalTime, format: WeekFormat, busy: Boolean, onChange: (DayOverride?) -> Unit, onClose: () -> Unit) {
+    state: PlannerState, notifications: Boolean, format: WeekFormat, busy: Boolean, onChange: (DayOverride?) -> Unit,
+    onClose: () -> Unit) {
     val context = LocalContext.current
     val pickerTheme = pickerDialogTheme()
+    // null means no pending edit. "usual" explicitly restores the routine, including after rotation.
+    var draft by rememberSaveable(day, override?.toRecord()) { mutableStateOf<String?>(null) }
     var invalid by rememberSaveable(day) { mutableStateOf(false) }
-    val time = override?.startTime ?: usualTimes.first()
-    GroupedSheet(format.date.format(day), onDismiss = { if (!busy) onClose() }) {
-        Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.plan_this_date), style = MaterialTheme.typography.labelLarge)
-            val value = if (currentTimes.isEmpty()) stringResource(R.string.week_skipped)
-                else currentTimes.joinToString(" · ") { format.time.format(it) }
-            Text(value, style = MaterialTheme.typography.headlineMedium)
-            if (override != null) {
-                Text(stringResource(R.string.plan_usual_times, usualTimes.joinToString(" · ") { format.time.format(it) }),
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val proposed = draft?.let(DayOverride::fromRecord)
+    val time = proposed?.startTime ?: override?.startTime ?: usualTimes.first()
+    val preview = draft?.let { state.preview(day, proposed) }
+    val expired = proposed?.startTime != null && preview?.start?.isAfter(state.now) != true
+    GroupedSheet(format.date.format(day), onDismiss = { if (!busy) onClose() }, dismissLabel = android.R.string.cancel) {
+        if (preview == null) {
+            Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.plan_this_date), style = MaterialTheme.typography.labelLarge)
+                val value = if (currentTimes.isEmpty()) stringResource(R.string.week_skipped)
+                    else currentTimes.joinToString(" · ") { format.time.format(it) }
+                Text(value, style = MaterialTheme.typography.headlineMedium)
+                if (override != null) {
+                    Text(stringResource(R.string.plan_usual_times, usualTimes.joinToString(" · ") { format.time.format(it) }),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
+            Text(stringResource(R.string.week_date_hint), style = MaterialTheme.typography.bodyMedium)
+        } else {
+            DatePreview(day, state, preview, notifications, format)
         }
-        Text(stringResource(R.string.week_date_hint), style = MaterialTheme.typography.bodyMedium)
-        PrimaryButton(stringResource(R.string.week_change_time), enabled = !busy, onClick = {
+        val pickTime = {
             TimePickerDialog(context, pickerTheme, { _, hour, minute ->
                 val selected = LocalTime.of(hour, minute)
-                invalid = day == today && !selected.isAfter(now)
-                if (!invalid) onChange(if (selected == usualTimes.first()) null else DayOverride(selected))
+                invalid = !day.atTime(selected).atZone(state.zone).toInstant().isAfter(state.now)
+                if (!invalid) {
+                    val replacement = if (selected == usualTimes.first()) null else DayOverride(selected)
+                    draft = if (replacement == override) null else replacement?.toRecord() ?: "usual"
+                }
             }, time.hour, time.minute, DateFormat.is24HourFormat(context)).show()
-        })
-        if (invalid) Text(stringResource(R.string.week_future_time),
+            Unit
+        }
+        if (invalid || expired) Text(stringResource(R.string.week_future_time),
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }, color = MaterialTheme.colorScheme.error)
-        if (override?.isSkipped != true) {
-            TextButton(enabled = !busy, onClick = { onChange(DayOverride()) }) { Text(stringResource(R.string.week_skip_day)) }
+        if (preview != null) {
+            PrimaryButton(stringResource(R.string.plan_date_save), onClick = { onChange(proposed) },
+                modifier = Modifier.testTag("plan-date-save"), enabled = !busy && !expired && !invalid)
+            TextButton(enabled = !busy, onClick = pickTime) { Text(stringResource(R.string.week_change_time)) }
+        } else {
+            PrimaryButton(stringResource(R.string.week_change_time), enabled = !busy, onClick = pickTime)
+            if (override?.isSkipped != true) {
+                TextButton(enabled = !busy, onClick = { invalid = false; draft = DayOverride().toRecord() }) {
+                    Text(stringResource(R.string.week_skip_day))
+                }
+            }
+            if (override != null) {
+                TextButton(enabled = !busy, onClick = { invalid = false; draft = "usual" }) {
+                    Text(stringResource(R.string.week_restore_day))
+                }
+            }
         }
-        if (override != null) {
-            TextButton(enabled = !busy, onClick = { onChange(null) }) { Text(stringResource(R.string.week_restore_day)) }
+    }
+}
+
+@Composable
+private fun DatePreview(day: LocalDate, state: PlannerState, preview: DateChangePreview, notifications: Boolean, format: WeekFormat) {
+    Column(Modifier.testTag("plan-date-preview"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (preview.start != null && preview.finish != null) {
+            PreviewTime(stringResource(R.string.plan_date_start), format.dateTime.format(preview.start.atZone(state.zone)))
+            PreviewTime(stringResource(R.string.plan_date_finish), format.dateTime.format(preview.finish.atZone(state.zone)))
+        } else {
+            Text(stringResource(R.string.week_skipped), style = MaterialTheme.typography.titleLarge)
         }
+        val reminder = when {
+            !state.settings.reminders.fastStartEnabled || !notifications -> stringResource(R.string.week_alert_off)
+            state.active -> stringResource(R.string.week_active)
+            preview.nextAlert == null -> stringResource(R.string.week_no_reminder)
+            else -> preview.nextAlert.atZone(state.zone).let {
+                stringResource(R.string.week_next_reminder, format.date.format(it), format.time.format(it))
+            }
+        }
+        Text(reminder, style = MaterialTheme.typography.bodyMedium)
+        val tomorrow = day.plusDays(1)
+        val times = state.starts(tomorrow).joinToString(" · ") { format.time.format(it.second.atZone(state.zone)) }
+        Text(if (times.isEmpty()) stringResource(R.string.plan_date_only)
+            else stringResource(R.string.plan_date_next_unchanged, format.date.format(tomorrow), times),
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun PreviewTime(label: String, value: String) {
+    Column(Modifier.semantics(mergeDescendants = true) {}) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleLarge)
     }
 }

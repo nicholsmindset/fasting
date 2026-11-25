@@ -96,11 +96,12 @@ class ScheduleReviewMoatsCaptureTest {
             ReviewWeek(WeeklyConsistency(older, 0, 0), PlanCoverage.NO_PLANNED_DAYS, changes = mapOf(older to DayOverride())),
         )
         val state = InsightsState.Personal(weeks, weeks.map { it.consistency }.reversed(), emptyMap(), null, WeightUnit.KG)
-        var openedWeek = false
+        val nextMonday = monday.plusWeeks(1)
+        var openedDate: LocalDate? = null
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
                 FastingShiftTheme(darkTheme = true) {
-                    InsightsScreen(state, {}, {}, { openedWeek = true }) {}
+                    InsightsScreen(state, {}, {}, { openedDate = it }, mapOf(DayOfWeek.MONDAY to nextMonday)) {}
                 }
             }
         }
@@ -112,9 +113,9 @@ class ScheduleReviewMoatsCaptureTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNode(hasText(older.format(dates)) and hasText(app.getString(R.string.week_skipped)))
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(app.getString(R.string.settings_done)).performClick()
-        compose.onNodeWithText(app.getString(R.string.review_open_week)).performScrollTo().assertIsDisplayed().performClick()
-        compose.runOnIdle { assertEquals(true, openedWeek) }
+        val nextDateLabel = WeekFormat(locale, DateFormat.is24HourFormat(app)).date.format(nextMonday)
+        compose.onNodeWithText(app.getString(R.string.review_open_date, nextDateLabel)).performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(nextMonday, openedDate) }
     }
 
     @Test fun personalReviewIncludesOnlyRecordedReflectionsAndHonorsHiddenWeight() {

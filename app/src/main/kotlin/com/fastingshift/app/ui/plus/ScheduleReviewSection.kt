@@ -53,7 +53,12 @@ internal val reviewExample = listOf(
 )
 
 @Composable
-internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, onOpenWeek: () -> Unit) {
+internal fun ScheduleReviewSection(
+    weeks: List<ReviewWeek>,
+    example: Boolean,
+    onOpenWeek: (LocalDate?) -> Unit,
+    upcoming: Map<DayOfWeek, LocalDate> = emptyMap(),
+) {
     val locale = LocalConfiguration.current.locales[0]
     val date = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale) }
     val full = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMd"), locale) }
@@ -70,6 +75,14 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
                         ?: stringResource(R.string.week_skipped)
                     GroupRow(day.format(full), modifier = Modifier.semantics(mergeDescendants = true) {}, value = detail)
                 }
+            if (!example) {
+                upcoming[weekday]?.let { upcomingDate ->
+                    SecondaryButton(stringResource(R.string.review_open_date, format.date.format(upcomingDate)), onClick = {
+                        selectedDay = null
+                        onOpenWeek(upcomingDate)
+                    })
+                }
+            }
         }
     }
     Column(Modifier.fillMaxWidth().testTag(if (example) "schedule-review-example" else "schedule-review-personal"),
@@ -97,7 +110,7 @@ internal fun ScheduleReviewSection(weeks: List<ReviewWeek>, example: Boolean, on
                     }
                 }
             }
-            SecondaryButton(stringResource(R.string.review_open_week), onClick = onOpenWeek)
+            SecondaryButton(stringResource(R.string.review_open_week), onClick = { onOpenWeek(null) })
         }
         weeks.forEach { week ->
             val counts = week.consistency
