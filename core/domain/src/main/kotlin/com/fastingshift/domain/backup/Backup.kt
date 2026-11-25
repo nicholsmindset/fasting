@@ -67,6 +67,7 @@ data class Backup(
     @SerialName("hydration_nudges") val hydrationNudges: Boolean = true,
     val coaching: Boolean = true,
     @SerialName("weekly_recap") val weeklyRecap: Boolean = true,
+    @SerialName("wrapped_enabled") val wrappedEnabled: Boolean? = null,
     @SerialName("ramadan_enabled") val ramadanEnabled: Boolean = false,
     @SerialName("ramadan_city") val ramadanCityId: String? = null,
     @SerialName("ramadan_method") val ramadanMethod: String? = null,

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- New Live Update copy intentionally falls back to English in the existing zh locale. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="live_fast_protocol">%1$s fast</string>
+    <string name="live_fast_title">%1$s · %2$dh %3$02dm</string>
+    <string name="live_fast_ends">Ends at %1$s</string>
+    <string name="live_fast_chip">%1$d:%2$02d</string>
+</resources>

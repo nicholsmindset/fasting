@@ -19,7 +19,8 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          # Robolectric needs Java 21 to execute Android 16 (API 36) tests.
+          java-version: "21"
 
       - uses: android-actions/setup-android@v3
         with:
@@ -39,6 +40,15 @@ jobs:
         env:
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: ./gradlew :core:data:testDebugUnitTest :app:testDebugUnitTest
+
+      - name: Preserve failed recap share diagnostics
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: recap-share-diagnostics
+          path: app/build/test-results/testDebugUnitTest/TEST-*.WrappedMoatsCaptureTest.xml
+          if-no-files-found: ignore
+          retention-days: 5
 
       - name: Report unit test totals
         if: github.event_name == 'pull_request'

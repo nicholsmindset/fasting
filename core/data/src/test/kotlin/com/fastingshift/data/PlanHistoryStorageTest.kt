@@ -26,6 +26,31 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [35])
 class PlanHistoryStorageTest {
+    @Test fun recapCountsAreLocalAndDeDuplicatedAndOptOutSurvivesOlderBackups() = runBlocking {
+        val settings = SettingsRepository(ApplicationProvider.getApplicationContext())
+        settings.clearAll()
+        try {
+            settings.recordRecap(true, 2026, false)
+            settings.recordRecap(true, 2026, true)
+            settings.recordRecap(true, 2026, true)
+            settings.recordRecap(false, 20001, false)
+            settings.recordRecap(false, 20008, true)
+            val counts = settings.current()
+            assertEquals(1, counts.annualRecapsViewed)
+            assertEquals(1, counts.annualRecapsShared)
+            assertEquals(2, counts.weeklyRecapsViewed)
+            assertEquals(1, counts.weeklyRecapsShared)
+            settings.setWrapped(false)
+            settings.recordRecap(true, 2027, true)
+            assertEquals(false, settings.toRecord().wrappedEnabled)
+            settings.restore(SettingsRecord())
+            assertFalse(settings.current().wrappedEnabled)
+            assertEquals(1, settings.current().annualRecapsViewed)
+        } finally {
+            settings.clearAll()
+        }
+    }
+
     @Test fun reflectionCanBeSkippedAndRevisedIndependentlyOfThePlan() = runBlocking {
         val settings = SettingsRepository(ApplicationProvider.getApplicationContext())
         val monday = LocalDate.of(2026, 11, 23)

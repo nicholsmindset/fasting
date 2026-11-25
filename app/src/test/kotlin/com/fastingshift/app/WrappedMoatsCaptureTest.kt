@@ -1,0 +1,97 @@
+package com.fastingshift.app
+
+import android.app.Application
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.content.FileProvider
+import com.fastingshift.app.share.FileSharing
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.ui.history.AnnualStory
+import com.fastingshift.app.ui.history.SundayMini
+import com.fastingshift.app.ui.theme.FastingShiftTheme
+import com.fastingshift.domain.history.AnnualRecap
+import com.fastingshift.domain.history.SundayRecap
+import java.time.Duration
+import java.time.LocalDate
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [33], application = Application::class, qualifiers = "en-rSG-w411dp-h822dp-xxhdpi")
+class WrappedMoatsCaptureTest {
+    @get:Rule val compose = createComposeRule()
+    private val app get() = ApplicationProvider.getApplicationContext<Application>()
+    private val demo = AnnualRecap(2026, LocalDate.of(2026,12,6), 18, Duration.ofHours(16), "16:8", false, true, 4, 12, 20)
+
+    @Before fun attachFileProviderToThisTestInstallation() {
+        // Robolectric gives each test a new private filesystem in the same JVM. Attach the
+        // manifest provider, as Android does at startup, to discard the previous test's root.
+        val info = requireNotNull(app.packageManager.resolveContentProvider(FileSharing.authority(app), PackageManager.GET_META_DATA))
+        FileProvider().attachInfo(app, info)
+    }
+
+    private fun export(action: String, opened: () -> Int, expected: Int, name: String): Int {
+        compose.onNodeWithText(action).performClick()
+        try {
+            compose.waitUntil(12_000) { opened() == expected }
+        } catch (error: Throwable) {
+            val warnings = org.robolectric.shadows.ShadowLog.getLogsForTag("RecapShare")
+            val message = "Chooser did not open; graphics errors: " + warnings.joinToString { it.throwable?.stackTraceToString().orEmpty() }
+            throw AssertionError(message + "\nVisible tree: " + compose.onAllNodes(isRoot()).fetchSemanticsNodes().joinToString { it.toString() }, error)
+        }
+        val chooser = requireNotNull(shadowOf(app).nextStartedActivity)
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        @Suppress("DEPRECATION") val send = requireNotNull(chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT))
+        @Suppress("DEPRECATION") val uri = requireNotNull(send.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
+        assertEquals("image/png", send.type)
+        assertEquals("content", uri.scheme)
+        val bytes = requireNotNull(app.contentResolver.openInputStream(uri)).use { it.readBytes() }
+        val image = requireNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+        assertTrue(image.width > 100 && image.height > 100)
+        if (name.startsWith("annual-")) assertTrue("Annual exports use a portrait layout", image.height > image.width)
+        if (System.getProperty("fastingshift.screenshotDir") != null) {
+            moatsOutput("wrapped").resolve("$name.png").writeBytes(bytes)
+        }
+        return bytes.contentHashCode()
+    }
+
+    @Test fun annualSharesEachSelectedSlideAsItsOwnPng() {
+        var views = 0
+        var opens = 0
+        compose.setContent { FastingShiftTheme {
+            AnnualStory(demo, { views++ }, { opens++ }, {})
+        } }
+        val hashes = mutableSetOf<Int>()
+        for (index in 1..7) {
+            compose.onNodeWithText("Slide $index of 7").assertExists()
+            hashes += export("Share this slide", { opens }, index, "annual-$index")
+            if (index < 7) {
+                compose.onNodeWithText("Next").performClick()
+                compose.waitForIdle()
+            }
+        }
+        assertEquals(1, views)
+        assertEquals(7, hashes.size)
+    }
+
+    @Test fun sundaySharesOnlyItsWeeklyArtwork() {
+        var opens = 0
+        compose.setContent { FastingShiftTheme {
+            SundayMini(SundayRecap(LocalDate.of(2026,11,30), 2, Duration.ofHours(12), Duration.ofHours(13)), {}, { opens++ })
+        } }
+        compose.onNodeWithText("shorter than last week.", substring = true).assertExists()
+        export("Share weekly recap", { opens }, 1, "sunday")
+    }
+}

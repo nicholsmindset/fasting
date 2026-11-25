@@ -62,7 +62,7 @@ object RecapCopy {
 }
 
 @Composable
-fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier, onReflect: ((ScheduleFit) -> Unit)? = null) {
+fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier, showShare: Boolean = true, onReflect: ((ScheduleFit) -> Unit)? = null) {
     val r = item.recap
     val range = remember(r.weekStart) {
         val f = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -88,7 +88,7 @@ fun WeeklyRecapCard(item: RecapItem, modifier: Modifier = Modifier, onReflect: (
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (onReflect != null) ScheduleFitQuestion(item, onReflect)
-        if (!r.isEmpty && r.fastsStarted > 0) {
+        if (showShare && !r.isEmpty && r.fastsStarted > 0) {
             val context = LocalContext.current
             PlainButton(stringResource(R.string.share), onClick = { ShareCards.shareWeek(context, r) })
         }

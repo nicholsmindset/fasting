@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.fastingshift.app.billing.BillingReminderDecision
 import com.fastingshift.app.di.ApplicationScope
+import com.fastingshift.app.notifications.LiveFastUpdate
 import com.fastingshift.app.notifications.Notifications
 import com.fastingshift.data.db.DatabaseKeyProvider
 import com.fastingshift.data.db.FastingDatabase
@@ -46,6 +47,8 @@ class AlarmReceiver : BroadcastReceiver() {
                     // The database can't be read after its key was lost; MainActivity explains.
                     if (FastingDatabase.keyStatus(context) == DatabaseKeyProvider.Status.LOST) return@withTimeoutOrNull
                     when (intent.action) {
+                        LiveFastUpdate.ACTION_TICK -> coordinator.get().refreshOngoing()
+                        LiveFastUpdate.ACTION_DISMISS -> coordinator.get().refreshOngoing(intent.getLongExtra(EXTRA_FAST_ID, -1))
                         ACTION_REMINDER -> onReminder(context, intent)
                         ACTION_END_FAST -> onEndFast(context)
                     }
