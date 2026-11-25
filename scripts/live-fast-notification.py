@@ -47,7 +47,8 @@ def main():
     directory = Path("live-notification-proof")
     directory.mkdir(exist_ok=True)
     flag_bits = re.search(r"flags=0x([0-9a-f]+)", dump, re.IGNORECASE)
-    promoted = bool(flag_bits and int(flag_bits.group(1), 16) & 0x40000) or "FLAG_PROMOTED_ONGOING" in dump
+    names = re.search(r"^\s*flags=(.*)$", dump, re.MULTILINE)
+    promoted = bool(flag_bits and int(flag_bits.group(1), 16) & 0x40000) or bool(names and "PROMOTED_ONGOING" in names.group(1))
     fingerprint = adb("shell", "getprop", "ro.build.fingerprint")
     note = (f"{fingerprint}\nAPI {sdk}, posted ongoing slot 1004, actual notification style: {label}. "
             f"System promoted flag present: {promoted}.")
