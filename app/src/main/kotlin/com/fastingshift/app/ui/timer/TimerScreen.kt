@@ -225,6 +225,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions, revival: @Composable
                                     }
                                 }
                             }
+                            revival()
                             ExactAlarmBanner()
                             RamadanCard(onOpenHub = actions.onOpenMuslimHub)
                             CoachingTipCard(active)
@@ -232,11 +233,10 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions, revival: @Composable
                             QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)
                             BodyTimelineCard(timer.elapsed)
                         } else {
-                            NotFasting(state, actions)
+                            NotFasting(state, actions, revival)
                         }
                     }
                 }
-                revival()
             }
         }
     }
@@ -307,7 +307,7 @@ private fun FactColumn(label: String, value: String, modifier: Modifier) {
 }
 
 @Composable
-private fun NotFasting(state: TimerUiState, actions: TimerActions) {
+private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Composable () -> Unit) {
     // Place any required screening action before the routine or time controls.
     when {
         state.gate == GateResult.BLOCK -> {
@@ -348,6 +348,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions) {
         PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
         StartTimeRow(state, actions.onStartAt)
     }
+    revival()
     val alertsAvailable = startReminderNotificationsEnabled()
     if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable)
     RamadanCard(onOpenHub = actions.onOpenMuslimHub)

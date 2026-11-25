@@ -30,8 +30,8 @@ interface RevivalDao {
     @Query("SELECT * FROM revival_event ORDER BY starts DESC") suspend fun all(): List<RevivalEventEntity>
     @Query("UPDATE revival_event SET joined=:at, baselineBest=:best WHERE id=:id AND joined IS NULL AND dismissed=0 AND starts<=:at AND ends>:at")
     suspend fun join(id: String, at: Long, best: Int): Int
-    @Query("UPDATE revival_event SET dismissed=1 WHERE id=:id AND joined IS NULL") suspend fun dismiss(id: String)
-    @Query("UPDATE revival_event SET restored=:at, awardDay=:day, restoredDays=:days WHERE id=:id AND joined IS NOT NULL AND restored IS NULL")
+    @Query("UPDATE revival_event SET dismissed=1 WHERE id=:id AND restored IS NULL") suspend fun dismiss(id: String)
+    @Query("UPDATE revival_event SET restored=:at, awardDay=:day, restoredDays=:days WHERE id=:id AND joined IS NOT NULL AND restored IS NULL AND dismissed=0")
     suspend fun finish(id: String, at: Long, day: Long, days: Int): Int
     @Query("UPDATE revival_event SET notified=1 WHERE id=:id AND notified=0 AND joined IS NULL AND dismissed=0")
     suspend fun claimNotification(id: String): Int

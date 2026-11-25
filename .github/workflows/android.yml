@@ -40,13 +40,6 @@ jobs:
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: ./gradlew :core:data:testDebugUnitTest :app:testDebugUnitTest
 
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: generated-revival-schema
-          path: core/data/schemas/com.fastingshift.data.db.FastingDatabase/6.json
-          if-no-files-found: ignore
-
       - name: Report unit test totals
         if: github.event_name == 'pull_request'
         run: |

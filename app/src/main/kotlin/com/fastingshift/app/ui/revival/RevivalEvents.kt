@@ -81,7 +81,7 @@ class RevivalEvents @Inject constructor(
         val supported = events.filter { it.target == Revival.DAYS_ON_PLAN && it.threshold > 0 }
         val visible = supported.firstOrNull { now.toEpochMilli() in it.starts until it.ends && !it.dismissed }
         var visibleMarks = 0
-        for (event in supported.filter { it.joined != null && it.restored == null }) {
+        for (event in supported.filter { it.joined != null && it.restored == null && !it.dismissed }) {
             val window = event.window()
             val marks = Revival.marks(window, Instant.ofEpochMilli(requireNotNull(event.joined)),
                 person.fasts, now, person.offset, person.plan::isPlanned)
@@ -119,6 +119,19 @@ class RevivalEvents @Inject constructor(
     }
 
     internal suspend fun dismiss(id: String) = dao.dismiss(id)
+
+    internal suspend fun nextAlert(afterEvent: String?): Pair<String, Instant>? {
+        val now = clock.instant()
+        seed(now)
+        return dao.all().asSequence().filter {
+            it.target == Revival.DAYS_ON_PLAN && it.id != afterEvent && !it.notified && !it.dismissed && it.joined == null
+        }.mapNotNull {
+            val start = Instant.ofEpochMilli(it.starts)
+            val zone = ZoneId.of(it.zone)
+            val at = maxOf(start, start.atZone(zone).toLocalDate().atTime(10, 0).atZone(zone).toInstant())
+            if (at <= now || at.toEpochMilli() >= it.ends) null else it.id to at
+        }.minByOrNull { it.second }
+    }
 
     /** A missed delivery is never replayed on a later day. Only users who once had a streak qualify. */
     internal suspend fun claimStartAlert(expectedId: String): Boolean {

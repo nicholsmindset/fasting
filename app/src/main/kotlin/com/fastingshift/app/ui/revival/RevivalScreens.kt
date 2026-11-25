@@ -55,6 +55,7 @@ internal fun RevivalCardContent(state: RevivalState, join: (String) -> Unit, dis
             } else if (event.joined != null) {
                 Text(stringResource(R.string.revival_progress, state.marks, event.threshold, deadline))
                 LinearProgressIndicator(progress = { state.marks.toFloat() / event.threshold }, modifier = Modifier.fillMaxWidth())
+                TextButton(onClick = { dismiss(event.id) }) { Text(stringResource(R.string.revival_skip)) }
             } else {
                 Text(if (state.best > 0) stringResource(R.string.revival_invite, state.best, event.threshold, deadline)
                     else stringResource(R.string.revival_fresh, event.threshold, deadline))
@@ -72,9 +73,9 @@ internal fun RevivalCardContent(state: RevivalState, join: (String) -> Unit, dis
 @Composable
 internal fun RevivalHistory(vm: RevivalViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
-    val award = state.award ?: return
+    if (state.joinedCount == 0) return
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(R.string.revival_history_award, award.restoredDays ?: 0))
+        state.award?.restoredDays?.let { Text(stringResource(R.string.revival_history_award, it)) }
         state.currentRevived?.let { Text(stringResource(R.string.revival_history_current, it)) }
         Text(stringResource(R.string.revival_local_counts, state.completedCount, state.joinedCount),
             style = MaterialTheme.typography.bodySmall)
