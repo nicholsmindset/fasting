@@ -75,6 +75,7 @@ import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.Spacing
 import com.fastingshift.app.ui.design.rememberHaptics
+import com.fastingshift.app.ui.partner.PartnerTimerEntry
 import com.fastingshift.app.ui.firstweek.CoachingTipCard
 import com.fastingshift.app.ui.firstweek.FastSummarySheet
 import com.fastingshift.app.ui.firstweek.FirstFastCard
@@ -111,6 +112,7 @@ fun TimerRoute(
     viewModel: TimerViewModel = hiltViewModel(),
     onOpenWeek: (LocalDate?) -> Unit = {},
     onOpenReminders: () -> Unit = {},
+    onOpenPartner: (() -> Unit)? = null,
 ) {
     val loaded by viewModel.state.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
@@ -134,6 +136,7 @@ fun TimerRoute(
                     onOpenMuslimHub = onOpenMuslimHub,
                     onOpenWeek = onOpenWeek,
                     onOpenReminders = onOpenReminders,
+                    onOpenPartner = onOpenPartner,
                 ),
             )
         }
@@ -189,6 +192,7 @@ class TimerActions(
     val onOpenMuslimHub: () -> Unit = {},
     val onOpenWeek: (LocalDate?) -> Unit = {},
     val onOpenReminders: () -> Unit = {},
+    val onOpenPartner: (() -> Unit)? = null,
 )
 
 @Composable
@@ -225,6 +229,7 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions, revival: @Composable
                                     }
                                 }
                             }
+                            actions.onOpenPartner?.let { PartnerTimerEntry(it) }
                             revival()
                             ExactAlarmBanner()
                             RamadanCard(onOpenHub = actions.onOpenMuslimHub)
@@ -348,6 +353,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
         PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
         StartTimeRow(state, actions.onStartAt)
     }
+    actions.onOpenPartner?.let { PartnerTimerEntry(it) }
     revival()
     val alertsAvailable = startReminderNotificationsEnabled()
     if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable)

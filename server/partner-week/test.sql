@@ -1,0 +1,74 @@
+-- Run in a disposable migrated database with Supabase roles, using psql -v ON_ERROR_STOP=1.
+begin;
+do $test$
+declare
+    hostkey text := repeat('a',64);
+    guestkey text := repeat('b',64);
+    thirdkey text := repeat('c',64);
+    inv text := repeat('e',64);
+    origin text := repeat('f',64);
+    req jsonb;
+    result jsonb;
+    wid text;
+    changed_wid text;
+    pair uuid;
+    day_value date;
+    i integer;
+begin
+    assert not has_schema_privilege('anon','fasting_partners','usage');
+    assert not has_function_privilege('anon','public.fasting_partner_week(jsonb)','execute');
+    assert not has_function_privilege('authenticated','public.fasting_partner_week(jsonb)','execute');
+    assert has_function_privilege('service_role','public.fasting_partner_week(jsonb)','execute');
+    req:=jsonb_build_object('action','create','deviceHash',hostkey,'inviteHash',inv,'originHash',origin,'alias','Maya','zone','Asia/Singapore');
+    result:=public.fasting_partner_week(req);
+    wid:=result#>>'{week,id}'; assert wid is not null and result#>>'{week,status}'='pending';
+    assert result#>'{week,guest}'='null'::jsonb;
+    assert public.fasting_partner_week(req)#>>'{week,id}'=wid;
+    assert public.fasting_partner_week(jsonb_build_object('action','preview','inviteHash',inv,'originHash',origin))->>'alias'='Maya';
+    req:=jsonb_build_object('action','join','deviceHash',guestkey,'inviteHash',inv,'alias','Jo','zone','America/Los_Angeles','role','supporter');
+    result:=public.fasting_partner_week(req);
+    assert result#>>'{week,id}'=wid and result#>>'{week,self}'='guest' and result#>>'{week,status}'='active';
+    assert public.fasting_partner_week(req)#>>'{week,id}'=wid;
+    assert public.fasting_partner_week(req||jsonb_build_object('deviceHash',thirdkey))->>'error'='gone';
+    assert public.fasting_partner_week(jsonb_build_object('action','preview','inviteHash',inv,'originHash',origin))->>'error'='gone';
+    assert public.fasting_partner_week(jsonb_build_object('action','get','deviceHash',thirdkey))->'week'='null'::jsonb;
+    day_value:=(statement_timestamp() at time zone 'Asia/Singapore')::date;
+    req:=jsonb_build_object('action','check_in','deviceHash',hostkey,'weekId',wid,'day',day_value);
+    assert public.fasting_partner_week(req)#>'{week,host,days}'=jsonb_build_array(day_value);
+    assert public.fasting_partner_week(req)#>'{week,host,days}'=jsonb_build_array(day_value);
+    assert public.fasting_partner_week(req||jsonb_build_object('day',day_value+1))->>'error'='conflict';
+    assert public.fasting_partner_week(req||jsonb_build_object('day','2025-02-31'))->>'error'='invalid';
+    assert public.fasting_partner_week(req||jsonb_build_object('deviceHash',guestkey,'day',(statement_timestamp() at time zone 'America/Los_Angeles')::date))->>'error'='conflict';
+    req:=jsonb_build_object('action','cheer','deviceHash',guestkey,'weekId',wid,'day',(statement_timestamp() at time zone 'America/Los_Angeles')::date,'kind','glad');
+    assert public.fasting_partner_week(req)#>>'{week,cheers,0,kind}'='glad';
+    assert jsonb_array_length(public.fasting_partner_week(req||'{"kind":"here"}')#>'{week,cheers}')=1;
+    assert public.fasting_partner_week(jsonb_build_object('action','renew','deviceHash',hostkey,'weekId',wid))->>'error'='conflict';
+    select pair_id into pair from fasting_partners.members where device_hash=hostkey;
+    update fasting_partners.weeks set started_at=now()-interval '4 days' where pair_id=pair;
+    req:=jsonb_build_object('action','check_in','deviceHash',hostkey,'weekId',wid);
+    for i in 1..2 loop
+       assert jsonb_array_length(public.fasting_partner_week(req||jsonb_build_object('day',day_value-i))#>'{week,host,days}')=i+1;
+    end loop;
+    assert public.fasting_partner_week(req||jsonb_build_object('day',day_value-3))->>'error'='conflict';
+    update fasting_partners.weeks set started_at=now()-interval '8 days',finishes_at=now()-interval '1 hour' where pair_id=pair;
+    req:=jsonb_build_object('action','renew','deviceHash',hostkey,'weekId',wid);
+    result:=public.fasting_partner_week(req);
+    assert result#>>'{week,id}'=wid and result#>>'{week,host,renewed}'='true' and result#>>'{week,guest,renewed}'='false';
+    result:=public.fasting_partner_week(req||jsonb_build_object('deviceHash',guestkey));
+    changed_wid:=result#>>'{week,id}';
+    assert changed_wid is not null and changed_wid<>wid;
+    assert result#>'{week,host,days}'='[]'::jsonb and result#>'{week,cheers}'='[]'::jsonb;
+    assert public.fasting_partner_week(jsonb_build_object('action','leave','weekId',wid,'deviceHash',hostkey))->>'error'='stale';
+    assert public.fasting_partner_week(jsonb_build_object('action','leave','weekId',changed_wid,'deviceHash',guestkey))->'week'='null'::jsonb;
+    assert not exists(select from fasting_partners.members where pair_id=pair);
+    assert public.fasting_partner_week(jsonb_build_object('action','get','deviceHash',hostkey))->'week'='null'::jsonb;
+    assert public.fasting_partner_week(jsonb_build_object('action','preview','inviteHash',inv,'originHash',origin))->>'error'='gone';
+    insert into fasting_partners.weeks(invite_hash,purge_at) values(repeat('9',64),now()-interval '1 minute');
+    perform fasting_partners.purge_expired();
+    assert not exists(select from fasting_partners.weeks where invite_hash=repeat('9',64));
+    for i in 1..30 loop
+       assert fasting_partners.allow_request('create',thirdkey,statement_timestamp());
+    end loop;
+    assert not fasting_partners.allow_request('create',thirdkey,statement_timestamp());
+end $test$;
+rollback;

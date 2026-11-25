@@ -76,11 +76,11 @@
     <string name="trust_title">信任中心</string>
     <string name="trust_intro">Fasting Shift 的设计让你的健康数据始终属于你。具体如下。</string>
     <string name="trust_on_device_title">你的断食和健康记录</string>
-    <string name="trust_on_device_body">断食、记录、症状记录和安全问答只保存在本设备上。没有 Fasting Shift 服务器，也没有云端副本，本应用也关闭了 Android 自动备份。</string>
+    <string name="trust_on_device_body">您的断食时间、健康日志和安全筛查答案保存在本设备上。此应用已关闭 Android 自动备份。</string>
     <string name="trust_encrypted_title">已加密</string>
     <string name="trust_encrypted_body">数据库使用 SQLCipher 加密，密钥由本机的 Android Keystore 保护。</string>
     <string name="trust_no_account_title">无需账号</string>
-    <string name="trust_no_account_body">无需注册或登录，没有可泄露的邮箱或个人资料。</string>
+    <string name="trust_no_account_body">无需帐号或电子邮件即可使用 Fasting Shift。发起或加入伙伴周时，请选择一个昵称。</string>
     <string name="trust_free_ads_title">免费版中的广告</string>
     <string name="trust_free_ads_body">免费版可能会在设置中显示 Google 广告。Shift+ 无广告。我们不会将你的断食记录、筛查回答、宗教习惯或 Health Connect 数据发送给 Google 用于广告。</string>
     <string name="trust_leaves_title">哪些数据会离开手机，何时离开</string>
@@ -99,7 +99,7 @@
     <string name="trust_export_subtitle">包含完整备份和表格文件的 zip</string>
     <string name="trust_delete">删除所有数据</string>
     <string name="trust_deleting">正在删除…</string>
-    <string name="trust_delete_footer">删除会清除本应用在这部手机上保存的所有内容，并重新启动应用。如需保留副本，请先导出。</string>
+    <string name="trust_delete_footer">此操作会删除本机数据。如需同时删除共享的伙伴周，请在清除应用数据之前联网退出伙伴周。如需保留副本，请先导出。</string>
     <string name="trust_delete_confirm_title">删除所有数据？</string>
     <string name="trust_delete_confirm_body">你的断食、记录、症状记录、安全问答、挑战和设置将从这部手机上永久删除。已导出的文件和 Health Connect 中的数据不受影响。Shift+ 购买仍绑定你的 Google Play 账号。此操作无法撤销。</string>
     <string name="trust_delete_confirm">全部删除</string>
@@ -191,4 +191,6 @@
     <string name="share_fast_text">用 Fasting Shift 完成了一次 %1$s 断食（%2$s）。</string>
     <string name="share_week_text">本周断食 %1$s，用 Fasting Shift 私密记录。</string>
     <string name="share_challenge_text">在 Fasting Shift 加入我的挑战“%1$s”：%2$s</string>
+    <string name="trust_leaves_partner_title">伙伴周</string>
+    <string name="trust_leaves_partner_body">当您发起或加入伙伴周时，此服务会使用您的昵称、角色、时区和应用生成的密钥。伙伴可以看到您的昵称、签到日期和预设回复。计时器和健康记录仅供您自己查看。</string>
 </resources>

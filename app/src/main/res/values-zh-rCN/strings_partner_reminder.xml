@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_remind_set">提醒我一次</string>
+    <string name="partner_remind_change">更改提醒时间</string>
+    <string name="partner_remind_cancel">取消提醒</string>
+    <string name="partner_remind_settings">在 Android 设置中启用提醒</string>
+    <string name="partner_remind_scheduled">个人提醒时间约为 %1$s</string>
+    <string name="partner_remind_notification">您的签到提醒</string>
+    <string name="partner_remind_note">这是您设置的签到提醒。休息日也可以签到。</string>
+</resources>
