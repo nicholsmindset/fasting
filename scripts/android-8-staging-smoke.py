@@ -21,8 +21,6 @@ def run():
     assert ui.adb("shell", "getprop", "ro.build.version.sdk") == "26"
     assert any(ui.adb("shell", "getprop", prop) == "1" for prop in ("ro.boot.qemu", "ro.kernel.qemu"))
     print("Android image:", ui.adb("shell", "getprop", "ro.build.fingerprint"), flush=True)
-    ui.adb("shell", "svc", "wifi", "disable")
-    ui.adb("shell", "svc", "data", "disable")
     ui.adb("install", "distributed-staging.apk")
     screen = ui.Screen(device, Path.cwd())
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
@@ -50,6 +48,13 @@ def run():
     capture("03-saved-fast")
     print("PASS: fresh onboarding, start, force-stop and resume, end and save, cold restart, saved fast in History.", flush=True)
 
+# Keep emulator networking away from outside services while retaining ADB and the
+# local automation channel. Native firewall commands also work on Android 8.
+ui.adb("root")
+ui.adb("wait-for-device")
+for table in ("iptables", "ip6tables"):
+    ui.adb("shell", table, "-I", "OUTPUT", "!", "-o", "lo", "-j", "REJECT")
+    ui.adb("shell", table, "-C", "OUTPUT", "!", "-o", "lo", "-j", "REJECT")
 device = uiautomator2.connect()
 try:
     run()
