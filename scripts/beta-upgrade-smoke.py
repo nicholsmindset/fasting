@@ -211,7 +211,9 @@ class Screen:
         for _ in range(3):
             if not named_field.exists:
                 break
-            save.click(timeout=8)
+            # Files can finish creating the document between the field check and
+            # this tap. The app return and the exported JSON are checked below.
+            save.click_exists(timeout=3)
             if named_field.wait_gone(timeout=3):
                 break
         if named_field.exists or not self.device(packageName=PACKAGE).wait(timeout=15):
@@ -532,9 +534,33 @@ class Screen:
         open_selected_day()
         self.find("history_day_recorded")
         self.click("settings_done", scroll=True)
-        self.find("recap_fit_question", scroll=True)
-        self.click("recap_fit_partly", scroll=True)
-        self.find("recap_change_answer", scroll=True)
+        if not self.device(resourceId="history-day-sheet", packageName=PACKAGE).wait_gone(timeout=8):
+            raise AssertionError("The History day sheet did not close")
+        history = self.device(resourceId="history-list", packageName=PACKAGE)
+        if not history.wait(timeout=8):
+            raise AssertionError("The History list did not return after closing the day")
+        bounds = history.info["visibleBounds"]
+        height = bounds["bottom"] - bounds["top"]
+        x = bounds["left"] + (bounds["right"] - bounds["left"]) // 6
+        start = bounds["top"] + height * 3 // 4
+        end = start - height // 3
+
+        def recap_control(key):
+            # The recap follows the calendar. Keep consecutive viewports
+            # overlapping so a fling cannot skip a question or its answers.
+            label = self.strings[key]
+            node = self.device(text=label, packageName=PACKAGE)
+            for _ in range(8):
+                if node.wait(timeout=0.6):
+                    return node
+                adb("shell", "input", "swipe", str(x), str(start), str(x), str(end), "650")
+            if node.wait(timeout=1):
+                return node
+            raise AssertionError(f"Missing {label} below the History calendar")
+
+        recap_control("recap_fit_question")
+        recap_control("recap_fit_partly").click()
+        recap_control("recap_change_answer")
         self.device.app_stop(PACKAGE)
         self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
         self.find("timer_start")
