@@ -3,6 +3,7 @@ package com.fastingshift.app
 import android.os.Looper
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.ui.firstweek.EveningOffer
 import com.fastingshift.app.ui.firstweek.FastSummaryViewModel
 import com.fastingshift.app.ui.firstweek.FirstFastPlanner
 import com.fastingshift.app.ui.firstweek.FirstWeekRules
@@ -14,6 +15,10 @@ import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.domain.coaching.CoachingTip
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.Schedule
+import com.fastingshift.domain.schedule.DayOverride
+import com.fastingshift.domain.schedule.PlanHistory
+import com.fastingshift.domain.schedule.WeekChoice
 import com.fastingshift.domain.onboarding.Goal
 import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.safety.GateResult
@@ -107,6 +112,32 @@ class FirstWeekTest {
         assertEquals(LocalDate.of(2026, 11, 20).atTime(20, 0).atZone(zone), FirstWeekRules.nextEvening(afternoon, zone))
         val late = LocalDate.of(2026, 11, 20).atTime(21, 30).atZone(zone).toInstant()
         assertEquals(LocalDate.of(2026, 11, 21).atTime(20, 0).atZone(zone), FirstWeekRules.nextEvening(late, zone))
+    }
+
+    @Test fun firstReminderRespectsTheActualTargetDateAndAllEligibleStarts() {
+        val zone = ZoneId.of("Asia/Singapore")
+        val friday = LocalDate.of(2026, 11, 27)
+        val now = friday.minusDays(1).atTime(21, 40).atZone(zone).toInstant()
+        val eight = Schedule(1, Presets.W16_8.id, setOf(DayOfWeek.FRIDAY), LocalTime.of(20, 0))
+        val six = eight.copy(id = 2, startTime = LocalTime.of(18, 0))
+        fun offer(vararg routines: Schedule, plan: PlanHistory = PlanHistory()) =
+            FirstWeekRules.eveningOffer(now, zone, routines.toList(), plan)
+
+        assertEquals(EveningOffer.AVAILABLE, offer())
+        assertEquals(EveningOffer.AVAILABLE, offer(six))
+        assertEquals(EveningOffer.COVERED, offer(six, eight))
+        assertEquals(EveningOffer.AVAILABLE, offer(eight.copy(enabled = false)))
+        assertEquals(EveningOffer.AVAILABLE, offer(eight.copy(days = setOf(DayOfWeek.THURSDAY))))
+
+        val skipped = PlanHistory().withDayOverride(friday, DayOverride())
+        val moved = PlanHistory().withDayOverride(friday, DayOverride(LocalTime.of(22, 0)))
+        assertEquals(EveningOffer.UNAVAILABLE, offer(eight, plan = skipped))
+        assertEquals(EveningOffer.UNAVAILABLE, offer(eight, plan = moved))
+        assertEquals(EveningOffer.COVERED, offer(eight, plan = moved.withDayOverride(friday, null)))
+        // An edit to the 6pm routine is preserved when a separate 8pm one-off can still be added.
+        assertEquals(EveningOffer.AVAILABLE, offer(six, plan = moved))
+        assertEquals(EveningOffer.COVERED, offer(six, plan = PlanHistory().withDayOverride(friday, DayOverride(eight.startTime))))
+        assertEquals(EveningOffer.UNAVAILABLE, offer(plan = PlanHistory(choices = mapOf(friday.minusDays(4) to WeekChoice.BREAK))))
     }
 
     @Test fun undoOnlyInsideTheWindow() {

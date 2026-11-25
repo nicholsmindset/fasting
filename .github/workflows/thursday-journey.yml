@@ -51,6 +51,7 @@ jobs:
           key: robolectric-runtime-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
       - name: Run the fixed-clock app journey
         env:
+          THURSDAY_CAPTURE_VARIANT: ${{ matrix.variant }}
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.ThursdayJourneyScreenshotTest'
       - name: Report measured controls

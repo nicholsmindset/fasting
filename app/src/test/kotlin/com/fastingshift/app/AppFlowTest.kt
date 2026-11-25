@@ -25,12 +25,22 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.program.GuidedPrograms
+import com.fastingshift.domain.protocol.Presets
+import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.service.ScreeningRecord
+import com.fastingshift.domain.service.ScreeningRepository
 import com.fastingshift.domain.service.FastRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalTime
 import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -55,6 +65,8 @@ class AppFlowTest {
     @get:Rule(order = 0) val hilt = HiltAndroidRule(this)
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
+    @Inject lateinit var screening: ScreeningRepository
+    @Inject lateinit var schedules: ScheduleRepository
     @Inject lateinit var fasts: FastRepository
     @Inject lateinit var settings: SettingsRepository
 
@@ -103,6 +115,48 @@ class AppFlowTest {
             runBlocking {
                 settings.setHydrationNudges(original.reminders.hydrationEnabled)
                 settings.setOnboardingComplete(original.onboardingComplete)
+            }
+        }
+    }
+
+    @Test fun firstReminderReflectsRoutineAndNotificationAvailabilityOnTimer() {
+        val application = compose.activity.application
+        val notifications = shadowOf(application.getSystemService(NotificationManager::class.java))
+        shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        notifications.setNotificationsEnabled(true)
+        val original = runBlocking { settings.toRecord() }
+        runBlocking {
+            screening.save(ScreeningRecord(Instant.now(), ScreeningAnswers(40, false, false, false, emptySet(), 175.0, 70.0), GateResult.OK, false))
+            settings.setFastStartReminder(true)
+            settings.setOnboardingComplete(true)
+        }
+        val heading = s(R.string.first_fast_title)
+        val offer = hasText(s(R.string.first_fast_tonight, "").trim(), substring = true) or
+            hasText(s(R.string.first_fast_tomorrow, "").trim(), substring = true)
+        var routineId: Long? = null
+        try {
+            // First observe a real offer. An empty loading state must never pass as de-duplication.
+            waitFor(heading)
+            compose.onNode(offer).performScrollTo().assertIsDisplayed()
+            routineId = runBlocking {
+                schedules.save(Schedule(protocolId = Presets.W16_8.id, days = DayOfWeek.entries.toSet(), startTime = LocalTime.of(20, 0)))
+            }
+            waitFor(s(R.string.week_timer_reminder_on))
+            compose.waitUntil(5_000) { compose.onAllNodesWithText(heading).fetchSemanticsNodes().isEmpty() }
+            compose.onNode(offer).assertDoesNotExist()
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            notifications.setNotificationsEnabled(false)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            waitFor(heading)
+            compose.onNode(offer).assertDoesNotExist()
+            click(s(R.string.settings_reminders))
+            waitFor(s(R.string.settings_start_alert))
+        } finally {
+            notifications.setNotificationsEnabled(true)
+            runBlocking {
+                routineId?.let { schedules.delete(it) }
+                settings.restore(original)
             }
         }
     }

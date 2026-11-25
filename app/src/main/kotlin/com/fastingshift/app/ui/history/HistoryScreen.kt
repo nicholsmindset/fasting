@@ -415,10 +415,21 @@ private fun PeriodOverview(period: Period, s: PeriodSummary, trackedFrom: LocalD
                 }
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Stat(stringResource(R.string.history_stat_fasts), s.fasts.toString(), Modifier.weight(1f))
-            Stat(stringResource(R.string.history_stat_average), s.average?.hoursMinutes() ?: "—", Modifier.weight(1f))
-            Stat(stringResource(R.string.status_completed), s.completed.toString(), Modifier.weight(1f))
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val metrics = listOf(
+                stringResource(R.string.history_stat_fasts) to s.fasts.toString(),
+                stringResource(R.string.history_stat_average) to (s.average?.hoursMinutes() ?: "—"),
+                stringResource(R.string.status_completed) to s.completed.toString(),
+            )
+            if (maxWidth < 300.dp || LocalDensity.current.fontScale > 1.25f) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    metrics.forEach { (label, value) -> Stat(label, value, Modifier.fillMaxWidth()) }
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    metrics.forEach { (label, value) -> Stat(label, value, Modifier.weight(1f)) }
+                }
+            }
         }
         if (trackedFrom != null && trackedFrom > s.range.start) {
             Text(stringResource(R.string.history_tracking_since, trackedFrom.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))),

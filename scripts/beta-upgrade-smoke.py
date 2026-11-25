@@ -1,5 +1,6 @@
 """Exercise upgrade and backup recovery on a fresh disposable Android 15 emulator."""
 from base64 import urlsafe_b64encode
+from contextlib import contextmanager
 from datetime import date, timedelta
 import json
 from pathlib import Path
@@ -20,6 +21,52 @@ DIAGNOSTICS = Path("upgrade-diagnostics")
 
 def adb(*arguments):
     return subprocess.check_output(["adb", *arguments], text=True).strip()
+
+
+def wait_until_offline():
+    for _ in range(30):
+        connectivity = adb("shell", "dumpsys", "connectivity")
+        if re.search(r"Active default network:\s*(?:none|null)\b", connectivity, re.IGNORECASE):
+            return
+        time.sleep(1)
+    raise AssertionError("Android still reports an active default network")
+
+
+@contextmanager
+def offline_emulator():
+    # The caller verifies this is a fresh, disposable API 35 emulator. ADB runs over the
+    # host transport and keeps working when guest Wi-Fi and cellular data are off.
+    airplane = adb("shell", "settings", "get", "global", "airplane_mode_on")
+    wifi = adb("shell", "settings", "get", "global", "wifi_on")
+    mobile = adb("shell", "settings", "get", "global", "mobile_data")
+    try:
+        adb("shell", "cmd", "connectivity", "airplane-mode", "enable")
+        adb("shell", "svc", "wifi", "disable")
+        adb("shell", "svc", "data", "disable")
+        wait_until_offline()
+        yield
+    finally:
+        if airplane != "1":
+            adb("shell", "cmd", "connectivity", "airplane-mode", "disable")
+        adb("shell", "svc", "wifi", "enable" if wifi == "1" else "disable")
+        adb("shell", "svc", "data", "disable" if mobile == "0" else "enable")
+
+
+def reboot_emulator():
+    boot_count = int(adb("shell", "settings", "get", "global", "boot_count"))
+    subprocess.run(["adb", "reboot"], check=True, timeout=20)
+    subprocess.run(["adb", "wait-for-device"], check=True, timeout=180)
+    for _ in range(150):
+        if adb("shell", "getprop", "sys.boot_completed") == "1":
+            current = adb("shell", "settings", "get", "global", "boot_count")
+            if current.isdecimal() and int(current) > boot_count:
+                break
+        time.sleep(1)
+    else:
+        raise AssertionError("Android did not complete a new boot")
+    adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
+    adb("shell", "wm", "dismiss-keyguard")
+    wait_until_offline()
 
 
 def installed_version():
@@ -373,6 +420,13 @@ class Screen:
         if notification_permission_granted():
             raise AssertionError("Not now unexpectedly granted notification permission")
         self.device(resourceId="tab_timer", packageName=PACKAGE).click(timeout=15)
+        # The chosen default is one hour ago, rounded down to the minute. Use the
+        # device clock, and verify this exact range against the later exported record.
+        earliest = int(adb("shell", "date", "+%s")) - 3662
+        self.click("timer_start_earlier", scroll=True)
+        self.find("timer_start_earlier_title")
+        self.click("ok")
+        latest = int(adb("shell", "date", "+%s")) - 3598
         self.click("timer_start", scroll=True)
         permission = self.device(packageNameMatches=r".*permissioncontroller")
         end = self.device(text=self.strings["timer_end"], packageName=PACKAGE)
@@ -386,7 +440,8 @@ class Screen:
         if permission.wait(timeout=2) or notification_permission_granted():
             raise AssertionError("First Start did not honor the notification choice")
         self.enable_notifications_in_settings()
-        print("Verified first Start after Not now, and a later opt-in through Android notification settings.")
+        print("Verified first Start with an earlier time after Not now, and a later notification opt-in.")
+        return earliest, latest
 
     def verify_fresh_invite(self):
         # Only run after all upgrade assertions. Reset this dedicated emulator app's data so
@@ -603,12 +658,15 @@ class Screen:
         print("Verified a saved fast on its original History date and a weekly reflection after relaunch.")
 
 
-    def verify_reinstall_restore(self, recovery_apk):
+    def verify_reinstall_restore(self, recovery_apk, start_range):
         name = "00-fasting-shift-recovery.json"
         before = self.export_backup(name, downloads=True)
         statuses = [fast["ended_at"] is None for fast in before["fasts"]]
         if sorted(statuses) != [False, True] or not before["schedules"] or not before["challenges"]:
             raise AssertionError("The recovery fixture must include a running fast, history, a schedule and a challenge")
+        running = next(fast for fast in before["fasts"] if fast["ended_at"] is None)
+        if not start_range[0] <= running["start_at"] // 1000 <= start_range[1]:
+            raise AssertionError("The active fast lost the earlier start selected in the timer")
         if len(before["settings"]["day_overrides"]) != 2 or not before["settings"]["week_reflections"]:
             raise AssertionError("The recovery fixture must include dated overrides and a reflection")
 
@@ -636,15 +694,34 @@ class Screen:
         self.device.app_stop(PACKAGE)
         self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
         self.find("timer_end", scroll=True)
-        recovered = self.export_backup("recovery-after-relaunch.json")
+        reboot_emulator()
+        self.device = u2.connect()
+        self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
+        self.find("timer_end", scroll=True)
+        recovered = self.export_backup("recovery-after-reboot.json")
         for key in ("fasts", "schedules", "challenges", "screenings"):
             if before[key] != recovered[key]:
                 raise AssertionError(f"Restoring the backup changed {key}")
         for key in ("goal", "default_protocol", "plan_revisions", "day_overrides", "week_reflections", "appearance"):
             if before["settings"][key] != recovered["settings"][key]:
                 raise AssertionError(f"Restoring the backup changed the {key} setting")
-        print("Verified Android rejected the changed signer, then a fresh install recovered the active target, "
-              "history, routine, one-day changes, reflection, screening and challenge through the Android file picker.")
+        self.device(resourceId="tab_timer", packageName=PACKAGE).click(timeout=15)
+        self.click("timer_end", scroll=True)
+        self.find("summary_title_early")
+        self.click("save", scroll=True)
+        self.find("timer_start", scroll=True)
+        self.device(resourceId="tab_history", packageName=PACKAGE).click(timeout=15)
+        self.find_node(self.device(resourceId="history-list", packageName=PACKAGE), "History")
+        final = self.export_backup("offline-finished.json")["fasts"]
+        if len(final) != len(before["fasts"]):
+            raise AssertionError("Finishing the recovered timer changed the number of fasts")
+        persisted = next(fast for fast in final if fast["id"] == running["id"])
+        if (persisted["ended_at"] is None or persisted["status"] != "ENDED_EARLY"
+                or any(persisted[key] != running[key] for key in ("start_at", "target_end_at", "protocol_id"))):
+            raise AssertionError("Ending the recovered fast lost its original start or target")
+        wait_until_offline()
+        print("Verified offline onboarding, a backdated start, History, file-picker restore, a full Android "
+              "reboot with the original running timer and schedule, and ending that timer offline.")
 
 
 def fingerprint(fasts):
@@ -700,11 +777,12 @@ def main(device, old_apk, new_apk, recovery_apk):
     candidate.verify_reminder_and_timer_view(upgraded["settings"]["fast_end_alert"], before)
     candidate.enable_notifications_in_settings()
     print("Verified a previously installed user can opt in through Android notification settings after upgrading.")
-    candidate.verify_fresh_invite()
-    candidate.verify_week_planner()
-    candidate.verify_history_day()
-    candidate.verify_declined_first_start()
-    candidate.verify_reinstall_restore(recovery_apk)
+    with offline_emulator():
+        candidate.verify_fresh_invite()
+        candidate.verify_week_planner()
+        candidate.verify_history_day()
+        start_range = candidate.verify_declined_first_start()
+        candidate.verify_reinstall_restore(recovery_apk, start_range)
 
 
 if __name__ == "__main__":

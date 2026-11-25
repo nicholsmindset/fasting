@@ -7,6 +7,8 @@ import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.model.Schedule
 import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.schedule.PlanHistory
+import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
@@ -18,6 +20,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
+
+enum class EveningOffer { AVAILABLE, COVERED, UNAVAILABLE }
 
 /** Pure decisions for the first-week journey, kept apart from Compose so they're easy to test. */
 object FirstWeekRules {
@@ -48,6 +52,23 @@ object FirstWeekRules {
         val local = now.atZone(zone)
         val tonight = local.toLocalDate().atTime(EVENING_START).atZone(zone)
         return if (tonight.toInstant().isAfter(now)) tonight else local.toLocalDate().plusDays(1).atTime(EVENING_START).atZone(zone)
+    }
+
+    /** Check the requested 8 pm occurrence, even if Android currently has an earlier alert queued. */
+    fun eveningOffer(now: Instant, zone: ZoneId, routines: List<Schedule>, plan: PlanHistory): EveningOffer {
+        val target = nextEvening(now, zone)
+        val day = target.toLocalDate()
+        val edit = plan.dayOverrides[day]
+        if (plan.isBreak(day) || edit?.isSkipped == true) return EveningOffer.UNAVAILABLE
+        val starts = ScheduleCalculator.startsOn(routines, day, zone, plan.breakWeeks, plan.dayOverrides)
+        if (starts.any { it.second == target.toInstant() }) return EveningOffer.COVERED
+        if (edit != null) {
+            // A dated move belongs to the earliest original start. An earlier or coincident new
+            // reminder would take over that edit rather than adding the time the button promises.
+            val first = ScheduleCalculator.startsOn(routines, day, zone).firstOrNull()?.second
+            if (first == null || !first.isBefore(target.toInstant())) return EveningOffer.UNAVAILABLE
+        }
+        return EveningOffer.AVAILABLE
     }
 
     /** Undo is only a quick "oops" right after ending ([FastService.UNDO_WINDOW]). */

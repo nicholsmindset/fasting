@@ -246,6 +246,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenScreening = { nav.navigate(Routes.ONBOARDING) },
                     onOpenWeek = { day -> nav.navigate(if (day == null) Routes.SCHEDULES else "${Routes.SCHEDULES}?date=$day") },
                     onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
+                    onOpenReminders = { nav.navigate(SettingsSection.REMINDERS.route) },
                 )
             }
             composable(Routes.HISTORY) {

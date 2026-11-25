@@ -43,6 +43,8 @@ import com.fastingshift.domain.timer.FastTimer
 import com.fastingshift.domain.timer.TimerDisplayMode
 import com.fastingshift.domain.timer.TimerState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.fastingshift.app.ui.firstweek.EveningOffer
+import com.fastingshift.app.ui.firstweek.FirstWeekRules
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -94,6 +96,8 @@ data class TimerUiState(
     val plannedStart: Instant? = null,
     val startReminder: Instant? = null,
     val earlierPlannedStartToday: Instant? = null,
+    val eveningOffer: EveningOffer = EveningOffer.UNAVAILABLE,
+    val startRemindersEnabled: Boolean = true,
 ) {
     val selectedTargetEnd: Instant get() = (startAt ?: now).plus(Duration.ofHours(selected.fastHours.toLong()))
 }
@@ -241,6 +245,10 @@ class TimerViewModel @Inject constructor(
             programTargetHours = target, eatingWindow = window, today = today,
             plannedStart = plannedStart, startReminder = candidate.takeIf { appSettings.reminders.fastStartEnabled },
             earlierPlannedStartToday = earlierPlannedStartToday,
+            eveningOffer = if (all.isEmpty() && s.maxHours != null && firstEvening == null) {
+                FirstWeekRules.eveningOffer(s.now, zone, eligible, plan)
+            } else EveningOffer.UNAVAILABLE,
+            startRemindersEnabled = appSettings.reminders.fastStartEnabled,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

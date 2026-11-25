@@ -43,6 +43,7 @@
     <string name="first_fast_tomorrow">Remind me tomorrow at %1$s</string>
     <string name="first_fast_planned_tonight">We\'ll remind you tonight at %1$s.</string>
     <string name="first_fast_planned_tomorrow">We\'ll remind you tomorrow at %1$s.</string>
+    <string name="first_fast_one_off">One-time plan for %1$s</string>
     <string name="first_fast_cancel_plan">Cancel reminder</string>
 
     <!-- Coaching tip card -->
