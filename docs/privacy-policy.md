@@ -20,6 +20,14 @@ The health and fasting database is encrypted. Android Keystore protects the key 
 
 Fasting Shift never sells your health or religious-observance records. We do not use them for advertising or share them with advertising or billing services. If you enable reminders or add a widget, information such as fasting times can appear in notifications or on your home screen.
 
+## Optional partner weeks
+
+Ordinary challenge links share plan settings and keep progress on each phone. If you start a partner week, preview an invitation or join one, the app connects to our partner service. You can use the timer and ordinary challenges without it.
+
+The service processes a chosen nickname, participant or supporter role, time zone, an app-generated device credential, invitation details and week dates. When you choose to check in or send a preset reply, your partner can see the check-in day or reply. Sharing never includes fasting times, fasting duration, notes, health measurements, screening or religious records. Partner activity is separate from advertising and billing. Anyone you send an unused invitation to can preview the inviter’s nickname and may claim the invitation.
+
+Leave the partner week while online to remove the shared week for both people. If you leave offline, reconnect and allow the app to sync before uninstalling or clearing its data. Uninstalling alone clears the local copy. An unaccepted invite expires in seven days. A completed week expires 30 days after it ends for both people. The service removes expired records on its hourly cleanup. Starting another week together replaces the previous week.
+
 ## Files you choose to save
 
 The app excludes its private data from Android's automatic cloud backup and device transfer. You can save copies yourself through the Android file picker.

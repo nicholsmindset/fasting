@@ -76,11 +76,11 @@
     <string name="trust_title">Pusat kepercayaan</string>
     <string name="trust_intro">Fasting Shift dibina supaya data kesihatan anda kekal milik anda. Inilah maksudnya.</string>
     <string name="trust_on_device_title">Rekod puasa dan kesihatan anda</string>
-    <string name="trust_on_device_body">Puasa, log, semakan simptom dan jawapan keselamatan disimpan hanya dalam peranti ini. Tiada pelayan Fasting Shift dan tiada salinan awan, dan sandaran automatik Android dimatikan untuk aplikasi ini.</string>
+    <string name="trust_on_device_body">Waktu puasa, log kesihatan dan jawapan saringan anda kekal dalam peranti ini. Sandaran automatik Android dimatikan.</string>
     <string name="trust_encrypted_title">Disulitkan</string>
     <string name="trust_encrypted_body">Pangkalan data disulitkan dengan SQLCipher. Kuncinya dilindungi oleh Android Keystore dalam telefon ini.</string>
     <string name="trust_no_account_title">Tiada akaun</string>
-    <string name="trust_no_account_body">Anda tidak perlu mendaftar atau log masuk. Tiada e-mel atau profil yang boleh bocor.</string>
+    <string name="trust_no_account_body">Anda boleh menggunakan Fasting Shift tanpa akaun atau e-mel. Pilih nama panggilan jika anda memulakan atau menyertai minggu bersama pasangan.</string>
     <string name="trust_free_ads_title">Iklan dalam pelan percuma</string>
     <string name="trust_free_ads_body">Pelan percuma boleh memaparkan iklan Google dalam Tetapan. Shift+ bebas iklan. Kami tidak menghantar rekod puasa, jawapan saringan, amalan agama atau data Health Connect kepada Google untuk pengiklanan.</string>
     <string name="trust_leaves_title">Apa yang keluar dari telefon ini, dan bila</string>
@@ -99,7 +99,7 @@
     <string name="trust_export_subtitle">Fail zip dengan sandaran penuh dan fail hamparan</string>
     <string name="trust_delete">Padam semua data</string>
     <string name="trust_deleting">Sedang memadam…</string>
-    <string name="trust_delete_footer">Pemadaman membuang semua yang disimpan oleh aplikasi ini dalam telefon ini dan memulakannya semula. Eksport dahulu jika anda mahu menyimpan salinan.</string>
+    <string name="trust_delete_footer">Ini memadamkan data daripada telefon ini. Untuk turut memadamkan minggu bersama pasangan, keluar daripada minggu itu semasa dalam talian sebelum memadamkan data aplikasi. Eksport dahulu jika anda mahu menyimpan salinan.</string>
     <string name="trust_delete_confirm_title">Padam semua data?</string>
     <string name="trust_delete_confirm_body">Puasa, log, semakan, jawapan keselamatan, cabaran dan tetapan anda akan dibuang secara kekal dari telefon ini. Fail yang anda eksport dan data dalam Health Connect tidak terjejas. Pembelian Shift+ anda kekal dengan akaun Google Play anda. Tindakan ini tidak boleh dibatalkan.</string>
     <string name="trust_delete_confirm">Padam semuanya</string>
@@ -191,4 +191,6 @@
     <string name="share_fast_text">Selesai puasa %1$s (%2$s) dengan Fasting Shift.</string>
     <string name="share_week_text">%1$s berpuasa minggu ini, dijejak secara peribadi dengan Fasting Shift.</string>
     <string name="share_challenge_text">Sertai cabaran saya \"%1$s\" di Fasting Shift: %2$s</string>
+    <string name="trust_leaves_partner_title">Minggu bersama pasangan</string>
+    <string name="trust_leaves_partner_body">Jika anda memulakan atau menyertai minggu bersama pasangan, perkhidmatan ini menggunakan nama panggilan, peranan, zon waktu dan kunci yang dijana oleh aplikasi. Pasangan anda boleh melihat nama panggilan, hari daftar masuk dan balasan pratetap anda. Pemasa dan rekod kesihatan anda kekal peribadi.</string>
 </resources>

@@ -76,11 +76,11 @@
     <string name="trust_title">Pusat kepercayaan</string>
     <string name="trust_intro">Fasting Shift dibuat agar data kesehatan Anda tetap milik Anda. Inilah artinya.</string>
     <string name="trust_on_device_title">Catatan puasa dan kesehatan Anda</string>
-    <string name="trust_on_device_body">Puasa, catatan, cek gejala, dan jawaban keamanan hanya disimpan di perangkat ini. Tidak ada server Fasting Shift dan tidak ada salinan cloud, dan pencadangan otomatis Android dinonaktifkan untuk aplikasi ini.</string>
+    <string name="trust_on_device_body">Waktu puasa, catatan kesehatan, dan jawaban skrining Anda tetap tersimpan di perangkat ini. Pencadangan otomatis Android dinonaktifkan.</string>
     <string name="trust_encrypted_title">Terenkripsi</string>
     <string name="trust_encrypted_body">Basis data dienkripsi dengan SQLCipher. Kuncinya dilindungi oleh Android Keystore di ponsel ini.</string>
     <string name="trust_no_account_title">Tanpa akun</string>
-    <string name="trust_no_account_body">Anda tidak perlu mendaftar atau masuk. Tidak ada email atau profil yang bisa bocor.</string>
+    <string name="trust_no_account_body">Anda dapat menggunakan Fasting Shift tanpa akun atau email. Pilih nama panggilan jika Anda memulai atau bergabung dalam pekan bersama teman.</string>
     <string name="trust_free_ads_title">Iklan pada paket gratis</string>
     <string name="trust_free_ads_body">Paket gratis dapat menampilkan iklan Google di Setelan. Shift+ bebas iklan. Kami tidak mengirimkan catatan puasa, jawaban skrining, praktik keagamaan, atau data Health Connect ke Google untuk iklan.</string>
     <string name="trust_leaves_title">Apa yang keluar dari ponsel ini, dan kapan</string>
@@ -99,7 +99,7 @@
     <string name="trust_export_subtitle">File zip berisi cadangan lengkap dan file spreadsheet</string>
     <string name="trust_delete">Hapus semua data</string>
     <string name="trust_deleting">Menghapus…</string>
-    <string name="trust_delete_footer">Menghapus akan membuang semua yang disimpan aplikasi ini di ponsel ini dan memulainya dari awal. Ekspor dulu jika Anda ingin menyimpan salinan.</string>
+    <string name="trust_delete_footer">Ini menghapus data dari ponsel ini. Untuk menghapus pekan bersama juga, tinggalkan pekan tersebut saat terhubung ke internet sebelum menghapus data aplikasi. Ekspor dahulu jika Anda ingin menyimpan salinan.</string>
     <string name="trust_delete_confirm_title">Hapus semua data?</string>
     <string name="trust_delete_confirm_body">Puasa, catatan, cek gejala, jawaban keamanan, tantangan, dan setelan Anda akan dihapus permanen dari ponsel ini. File yang Anda ekspor dan data di Health Connect tidak terpengaruh. Pembelian Shift+ tetap ada di akun Google Play Anda. Ini tidak dapat dibatalkan.</string>
     <string name="trust_delete_confirm">Hapus semuanya</string>
@@ -191,4 +191,6 @@
     <string name="share_fast_text">Menyelesaikan puasa %1$s (%2$s) dengan Fasting Shift.</string>
     <string name="share_week_text">%1$s berpuasa minggu ini, dicatat secara pribadi dengan Fasting Shift.</string>
     <string name="share_challenge_text">Gabung tantangan saya \"%1$s\" di Fasting Shift: %2$s</string>
+    <string name="trust_leaves_partner_title">Pekan bersama teman</string>
+    <string name="trust_leaves_partner_body">Jika Anda memulai atau bergabung dalam pekan bersama teman, layanan ini menggunakan nama panggilan, peran, zona waktu, dan kunci yang dibuat aplikasi. Teman Anda dapat melihat nama panggilan, hari saat Anda memberi kabar, dan balasan siap pakai. Pengatur waktu dan catatan kesehatan tetap pribadi.</string>
 </resources>
