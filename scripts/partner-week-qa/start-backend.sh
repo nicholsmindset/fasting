@@ -22,7 +22,7 @@ for variant in debug staging; do
   mkdir -p "$target/res/raw" "$target/res/xml"
   cp "$fixture/ca.crt" "$target/res/raw/partner_test_ca.pem"
   cat > "$target/res/xml/partner_week_test_network.xml" <<'XML'
-<network-security-config><domain-config><domain>127.0.0.1</domain><trust-anchors><certificates src="@raw/partner_test_ca"/></trust-anchors></domain-config></network-security-config>
+<network-security-config><domain-config><domain includeSubdomains="false">127.0.0.1</domain><trust-anchors><certificates src="@raw/partner_test_ca"/></trust-anchors></domain-config></network-security-config>
 XML
   python - "$target/AndroidManifest.xml" <<'PY'
 from pathlib import Path
