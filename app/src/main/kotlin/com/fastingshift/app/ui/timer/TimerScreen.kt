@@ -439,12 +439,17 @@ private fun ProtocolPicker(state: TimerUiState, actions: TimerActions, onDismiss
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SelectedFast(selected: Protocol, onChoose: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.week_timer_selected), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.week_timer_selected), modifier = Modifier.padding(end = 8.dp),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = onChoose) { Text(stringResource(R.string.timer_pick_protocol)) }
         }
         Text(selected.name, style = MaterialTheme.typography.displayMedium.merge(TabularNumbers), color = MaterialTheme.colorScheme.onSurface)

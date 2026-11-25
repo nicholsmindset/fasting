@@ -4,8 +4,10 @@ import android.app.Application
 import android.app.TimePickerDialog
 import android.content.DialogInterface
 import android.text.format.DateFormat
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -13,6 +15,8 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -122,6 +126,24 @@ class ThursdayJourneyScreenshotTest {
 
     private fun visibleNode(matcher: SemanticsMatcher) = compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
 
+    /** Measure the actual English label, including wraps which TalkBack's full string conceals. */
+    private fun compactLabel(id: Int, mode: String) = compose.onNode(
+        label(id) and SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult), useUnmergedTree = true,
+    ).also { node ->
+        val results = mutableListOf<TextLayoutResult>()
+        node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+        val layout = results.single()
+        val text = app.getString(id)
+        val lines = (0 until layout.lineCount).map { index ->
+            text.substring(layout.getLineStart(index), layout.getLineEnd(index, visibleEnd = true))
+        }
+        moatsOutput("thursday").resolve("$mode-layout.txt").appendText("$text = ${lines.joinToString(" | ")}\n")
+        if (System.getenv("THURSDAY_CAPTURE_VARIANT") != "before") {
+            assertEquals(listOf(text), lines, "$text at 320dp / 200% type")
+            check(!layout.isLineEllipsized(0)) { "$text was truncated" }
+        }
+    }
+
     @Test fun thursdayLight() = journey("light", 1f)
 
     @Test
@@ -161,6 +183,15 @@ class ThursdayJourneyScreenshotTest {
             val previewBuild = app.resources.getIdentifier("plan_date_save", "string", app.packageName) != 0
             if (previewBuild) check(directRoute) { "Timer must expose today's missed planned start" }
             val action = if (directRoute) direct else nextAction
+            if (scale == 2f) {
+                moatsOutput("thursday").resolve("$mode-layout.txt").writeText("")
+                val selected = compactLabel(R.string.week_timer_selected, mode).getUnclippedBoundsInRoot()
+                val choose = compactLabel(R.string.timer_pick_protocol, mode).getUnclippedBoundsInRoot()
+                if (System.getenv("THURSDAY_CAPTURE_VARIANT") != "before") {
+                    check(choose.top >= selected.bottom) { "The chooser overlaps the selected-fast label at large type" }
+                }
+                capture("$mode-selected-fast")
+            }
             compose.onNode(action).performScrollTo().assertIsDisplayed()
             capture("$mode-02-timer")
             if (directRoute) {
@@ -222,6 +253,18 @@ class ThursdayJourneyScreenshotTest {
             waitFor(hasTestTag("tab_history"))
             compose.waitForIdle()
             capture("$mode-06-empty-history")
+            if (scale == 2f) {
+                waitFor(label(R.string.history_stat_average))
+                val labels = listOf(R.string.history_stat_fasts, R.string.history_stat_average, R.string.status_completed)
+                val bounds = labels.map { compactLabel(it, mode).getUnclippedBoundsInRoot() }
+                if (System.getenv("THURSDAY_CAPTURE_VARIANT") != "before") {
+                    check(bounds.zipWithNext().all { (above, below) -> below.top >= above.bottom }) {
+                        "History labels must stack at large type: $bounds"
+                    }
+                }
+                compose.onNode(label(R.string.history_stat_average)).performScrollTo()
+                capture("$mode-history-metrics")
+            }
             tap(hasTestTag("tab_settings"))
             waitFor(hasTestTag("settings_overview"))
             capture("$mode-07-settings")
