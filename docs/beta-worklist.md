@@ -72,5 +72,5 @@ The **beta facilitator and Robert** run a voluntary 14-day pilot. Use a short op
 ## 4. Prepare for a wider release
 
 - [ ] **Robert and editorial** – approve one finished book lesson in Robert’s voice and test it with sample readers. Keep full-program promotion tied to the chapters approved for publication.
-- [ ] **Clinical and language reviewers** – verify safety screening, duration guidance, refeeding and emergency wording. Have native speakers review Malay, Indonesian and Simplified Chinese on-device, including the schedule and billing terms.
+- [ ] **Clinical and language reviewers** – verify safety screening, duration guidance, refeeding and emergency wording. Have native speakers review Malay and Indonesian on-device, including the schedule and billing terms.
 - [ ] **Release owner** – close the device and Play checks above, record unresolved findings and review the privacy, store listing and Health Connect declarations in the [launch checklist](../README.md#before-launch-not-code) before a public rollout.

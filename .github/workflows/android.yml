@@ -165,6 +165,13 @@ jobs:
           if BETA_CERT_SHA256=0000000000000000000000000000000000000000000000000000000000000000 bash scripts/sign-internal-beta.sh app/build/outputs/apk/internalBeta/*-unsigned.apk "$RUNNER_TEMP/mismatch.apk"; then exit 1; fi
           test ! -e "$RUNNER_TEMP/mismatch.apk"
 
+      - name: Verify the shipped languages in every variant
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 scripts/check-packaged-locales.py "$ANDROID_HOME/build-tools/36.0.0/aapt2" \
+            app/build/outputs/apk/debug/*.apk app/build/outputs/apk/staging/*.apk \
+            app/build/outputs/apk/internalBeta/*.apk app/build/outputs/bundle/release/*.aab
+
       - name: Check Room schema is committed
         run: |
           if [[ -n "$(git status --porcelain -- core/data/schemas)" ]]; then

@@ -45,7 +45,7 @@ Facts Codex will need (all from the repo):
 | Product ids (must contain `monthly` / `annual`) | `shift_plus_monthly`, `shift_plus_annual` | `app/.../billing/PlanMapper.kt` |
 | Listing, data safety, Health Connect text | `docs/store-listing.md`, `docs/data-safety.md`, `docs/health-connect-justifications.md` | |
 | Screenshots | `docs/screenshots/*.png` (1233×2466) | |
-| Languages | English, Malay (`ms`), Indonesian (`in`), Simplified Chinese (`zh-CN`) | `res/xml/locales_config.xml` |
+| Languages | English (`en`), Malay (`ms`), Indonesian (`id`) | `res/xml/locales_config.xml` |
 
 **Supabase is not needed.** The app is offline-first and has no server; don't create a project.
 
@@ -115,7 +115,7 @@ Phase 2: Google Play Console for com.fastingshift.app.
    2-history-light.png, 2b-calendar-light.png, 3-log-light.png, 5-muslim-hub.png,
    6-challenge.png, 7-trust-center.png. Category: Health & Fitness. Contact email: ask me.
    Privacy policy: https://fastingshift.com/privacy.
-   Add translations for ms, id, zh-CN only if I give you reviewed text; otherwise skip.
+   Add translations for ms and id only if I give you reviewed text; otherwise skip.
 5. App content (Policy → App content). Fill from the repo; STOP before submitting each one:
    - Privacy policy: https://fastingshift.com/privacy
    - Ads: select “Yes, my app contains ads” for the release that includes the free-tier banner.
@@ -204,7 +204,7 @@ Phase 5: Google Ads for Fasting Shift. Everything stays PAUSED until I approve.
 3. Create an App campaign (Android, objective: app installs), name "FS – Installs – SEA",
    status PAUSED:
    - Locations: Singapore, Malaysia, Indonesia (ask me before adding others).
-   - Languages: English, Malay, Indonesian, Chinese (simplified).
+   - Languages: English, Malay, Indonesian.
    - Budget and bid: leave empty and ask me.
    - Headlines (≤30 chars) and descriptions (≤90), wellness only, from docs/store-listing.md and
      docs/moats.md, e.g. "Free fasting timer & widgets", "Sunnah & qada fast tracker",

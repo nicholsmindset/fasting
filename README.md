@@ -26,7 +26,7 @@ refeeding screen, History totals, planned-day ring and fast bars, database-key r
 week (first-fast card, coaching tips, end-of-fast summary with mood), weekly recap, hydration
 goal, Ramadan mode (offline suhoor/iftar times for MUIS, JAKIM, KEMENAG, MWL) and light and dark appearance.
 
-Languages: English, Bahasa Melayu, Bahasa Indonesia, Simplified Chinese (per-app language
+Languages: English, Bahasa Melayu and Bahasa Indonesia (per-app language
 picker on Android 13+). The three translations are drafts and need a native-speaker review,
 especially the safety and refeeding copy.
 
@@ -103,7 +103,7 @@ Step-by-step browser prompts for Vercel, Play Console, RevenueCat, GitHub and Go
 - [ ] Rewrite body-timeline and program lesson copy in Robert's voice; map book chapters
 - [ ] Verify every helpline and emergency number
 - [ ] Complete the physical device checks above
-- [ ] Native-speaker review of `values-ms`, `values-in`, `values-zh-rCN` (safety copy first)
+- [ ] Native-speaker review of `values-ms` and `values-in` (safety copy first)
 
 ## Modules
 
