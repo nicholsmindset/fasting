@@ -2,6 +2,7 @@ package com.fastingshift.app.ui.partner
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.app.R
 import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -100,7 +101,7 @@ class PartnerWeekViewModel @Inject constructor(
     private suspend fun participantPermitted(): Boolean {
         val latest = screening.observeLatest().first()
         val allowed = FastPolicy.maxAllowed(latest?.gateResult, latest?.clinicianAcknowledged == true) != null
-        if (!allowed) ui.update { it.copy(message = "Your current screening allows a supporter role only.") }
+        if (!allowed) ui.update { it.copy(message = R.string.partner_error_supporter_only) }
         return allowed
     }
 
@@ -131,28 +132,31 @@ class PartnerWeekViewModel @Inject constructor(
                 unavailable(silentOffline)
             } else {
                 val message = when (error.status) {
-                    403, 404, 410 -> "This invitation or partner week is no longer available."
-                    409 -> "This partner week has changed. Refresh to see the latest details."
-                    422 -> "Check the invitation or display name and try again."
-                    else -> "The request couldn’t be completed. Try again."
+                    403, 404, 410 -> R.string.partner_error_unavailable
+                    409 -> R.string.partner_error_changed
+                    422 -> R.string.partner_error_details
+                    else -> R.string.partner_error_retry
                 }
                 ui.update { it.copy(message = message, offline = false) }
             }
         } catch (_: IOException) {
             unavailable(silentOffline)
         } catch (_: JSONException) {
-            ui.update { it.copy(message = "Couldn’t read the partner week. Try refreshing.") }
+            ui.update { it.copy(message = R.string.partner_error_read) }
         } catch (validation: IllegalArgumentException) {
-            ui.update { it.copy(message = validation.message ?: "Check the details and try again.") }
+            val message = if (validation.message == PartnerWeekRepository.INVALID_ALIAS) {
+                R.string.partner_error_display_name
+            } else R.string.partner_error_details
+            ui.update { it.copy(message = message) }
         }
     }
 
     private fun unavailable(silent: Boolean) {
         val local = repository.snapshot.value
         val message = when {
-            local.leaving -> "Leaving is saved on this phone. Reconnect to finish removing the shared week."
-            local.pendingDays.isNotEmpty() -> "Check-in saved on this phone. It will sync when a connection is available."
-            else -> "The partner service is unavailable. Try again when you’re connected."
+            local.leaving -> R.string.partner_leaving_offline
+            local.pendingDays.isNotEmpty() -> R.string.partner_queued
+            else -> R.string.partner_service_offline
         }
         ui.update { it.copy(offline = true, message = if (silent) it.message else message) }
     }

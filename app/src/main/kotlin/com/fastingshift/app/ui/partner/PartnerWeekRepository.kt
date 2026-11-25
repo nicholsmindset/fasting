@@ -80,6 +80,9 @@ class PartnerWeekRepository internal constructor(
 
     private fun accept(response: JSONObject, acknowledgedDay: String? = null) {
         if (!response.has("week")) throw IOException("Missing partner week in response")
+        if (!response.isNull("week") && response.optJSONObject("week") == null) {
+            throw IOException("Unexpected partner week in response")
+        }
         val next = response.optJSONObject("week")
         if (next == null) {
             // A lost create response can still be retried with the original idempotency token.
@@ -107,7 +110,7 @@ class PartnerWeekRepository internal constructor(
         val name = alias.trim()
         require(name.codePointCount(0, name.length) in 1..32 &&
             name.none { it.isISOControl() || it in '\u202a'..'\u202e' || it in '\u2066'..'\u2069' }) {
-            "Use a display name of 1 to 32 visible characters."
+            INVALID_ALIAS
         }
         if (leavingId != null) flushLeave()
         if (rawWeek != null) throw PartnerRequestException(409)
@@ -231,6 +234,8 @@ class PartnerWeekRepository internal constructor(
     private fun validateToken(code: String) {
         require(code.matches(Regex("[a-f0-9]{64}"))) { "This partner invitation is invalid." }
     }
+
+    internal companion object { const val INVALID_ALIAS = "invalid_alias" }
 
     private fun secret(): String {
         val random = ByteArray(32).also(SecureRandom()::nextBytes)

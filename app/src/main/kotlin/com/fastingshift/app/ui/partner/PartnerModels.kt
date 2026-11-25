@@ -1,5 +1,6 @@
 package com.fastingshift.app.ui.partner
 
+import androidx.annotation.StringRes
 import java.time.LocalDate
 import org.json.JSONObject
 
@@ -31,7 +32,7 @@ data class PartnerUiState(
     val busy: Boolean = false,
     val offline: Boolean = false,
     val pendingDays: Set<String> = emptySet(),
-    val message: String? = null,
+    @StringRes val message: Int? = null,
     val participantAllowed: Boolean? = null,
     val leaving: Boolean = false,
 )
@@ -39,11 +40,7 @@ data class PartnerUiState(
 internal fun JSONObject.optionalString(name: String): String? =
     if (isNull(name)) null else getString(name)
 
-internal val partnerReactions = mapOf(
-    "glad" to "Glad you’re here.",
-    "here" to "I’m here with you.",
-    "thanks" to "Thanks for checking in.",
-)
+internal val partnerReactions = setOf("glad", "here", "thanks")
 
 private fun JSONObject.member(pendingDays: Set<String> = emptySet()): PartnerMember {
     val days = getJSONArray("days")
@@ -79,7 +76,7 @@ internal fun projectPartnerWeek(
     return PartnerWeek(
         data.getString("id"), status, self, otherMember?.member(), start, end,
         invite.takeIf { status == "pending" && me == "host" },
-        incoming?.getString("kind")?.let(partnerReactions::get),
+        incoming?.getString("kind")?.takeIf(partnerReactions::contains),
         active && self.role == "participant" && date !in self.days && self.days.size < 3,
         active && otherMember != null && !sentToday,
         status == "finished" && !voted, voted, otherMember?.optBoolean("renewed") == true,

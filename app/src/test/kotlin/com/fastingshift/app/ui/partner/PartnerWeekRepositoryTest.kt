@@ -175,7 +175,7 @@ class PartnerWeekRepositoryTest {
         } }
         repo.create("Host")
         val week = assertNotNull(repo.cachedWeek())
-        assertEquals("I’m here with you.", week.lastCheer)
+        assertEquals("here", week.lastCheer)
         assertTrue(week.renewalRequestedByMe)
         assertFalse(week.canRenew)
         repo.renew()
