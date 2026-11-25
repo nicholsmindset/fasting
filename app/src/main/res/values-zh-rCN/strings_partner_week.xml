@@ -60,4 +60,10 @@
     <string name="partner_renew_wait">你已发出再来一周的邀请。伙伴准备好后就可以接受。</string>
     <string name="partner_renew_invited">伙伴想和你再一起过一周。</string>
     <string name="partner_renew_accept">同意再来一周</string>
+    <string name="partner_leaving">你已在本机退出。恢复网络连接后，双方的伙伴周就会结束。</string>
+    <string name="partner_encouragement_from">%1$s说：“%2$s”</string>
+    <string name="partner_reaction_glad">很高兴你在这里。</string>
+    <string name="partner_reaction_here">我在这里陪你。</string>
+    <string name="partner_reaction_thanks">谢谢你来签到。</string>
+    <string name="partner_cheered">今天已送上鼓励</string>
 </resources>

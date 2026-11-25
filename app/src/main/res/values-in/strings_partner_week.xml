@@ -60,4 +60,10 @@
     <string name="partner_renew_wait">Anda sudah mengajak teman untuk melanjutkan satu pekan lagi. Teman Anda bisa bergabung saat siap.</string>
     <string name="partner_renew_invited">Teman Anda ingin melanjutkan satu pekan lagi bersama Anda.</string>
     <string name="partner_renew_accept">Setuju lanjut sepekan lagi</string>
+    <string name="partner_leaving">Anda sudah keluar di ponsel ini. Hubungkan kembali ke internet untuk mengakhiri pekan ini bagi Anda berdua.</string>
+    <string name="partner_encouragement_from">%1$s berkata, “%2$s”</string>
+    <string name="partner_reaction_glad">Senang Anda ada di sini.</string>
+    <string name="partner_reaction_here">Saya di sini bersama Anda.</string>
+    <string name="partner_reaction_thanks">Terima kasih sudah memberi kabar.</string>
+    <string name="partner_cheered">Semangat sudah dikirim hari ini</string>
 </resources>

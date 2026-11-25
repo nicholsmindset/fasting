@@ -60,4 +60,10 @@
     <string name="partner_renew_wait">Anda sudah mengajak rakan untuk menyambung seminggu lagi. Rakan anda boleh menerima ajakan ini apabila bersedia.</string>
     <string name="partner_renew_invited">Rakan anda ingin menyambung seminggu lagi bersama anda.</string>
     <string name="partner_renew_accept">Setuju untuk seminggu lagi</string>
+    <string name="partner_leaving">Anda sudah keluar pada telefon ini. Sambung semula ke internet untuk menamatkan minggu ini bagi anda berdua.</string>
+    <string name="partner_encouragement_from">%1$s berkata, “%2$s”</string>
+    <string name="partner_reaction_glad">Gembira anda ada di sini.</string>
+    <string name="partner_reaction_here">Saya di sini bersama anda.</string>
+    <string name="partner_reaction_thanks">Terima kasih kerana memberi khabar.</string>
+    <string name="partner_cheered">Kata semangat sudah dihantar hari ini</string>
 </resources>

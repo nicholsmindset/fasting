@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_error_unavailable">Jemputan atau minggu bersama rakan ini tidak lagi tersedia.</string>
+    <string name="partner_error_changed">Minggu bersama rakan ini telah berubah. Muat semula untuk melihat maklumat terkini.</string>
+    <string name="partner_error_details">Semak jemputan atau nama paparan, kemudian cuba lagi.</string>
+    <string name="partner_error_retry">Permintaan ini tidak dapat diselesaikan. Cuba lagi.</string>
+    <string name="partner_error_read">Maklumat minggu bersama rakan tidak dapat dibaca. Cuba muat semula.</string>
+    <string name="partner_leaving_offline">Permintaan untuk keluar disimpan dalam telefon ini. Sambung semula ke internet untuk memadamkan minggu bersama ini.</string>
+    <string name="partner_service_offline">Perkhidmatan minggu bersama rakan tidak dapat diakses. Cuba lagi setelah tersambung ke internet.</string>
+    <string name="partner_error_supporter_only">Anda boleh menyertai minggu bersama rakan untuk memberi sokongan.</string>
+    <string name="partner_error_display_name">Pilih nama paparan yang mengandungi 1 hingga 32 aksara yang boleh dilihat.</string>
+</resources>
