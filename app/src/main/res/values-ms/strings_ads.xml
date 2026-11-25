@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ad_privacy_choices">Pilihan privasi iklan</string>
+    <string name="ad_privacy_unavailable">Pilihan privasi iklan tidak dapat dibuka. Cuba lagi.</string>
+</resources>

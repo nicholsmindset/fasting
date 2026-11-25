@@ -53,6 +53,7 @@ jobs:
           FS_UPLOAD_KEY_ALIAS: ${{ secrets.FS_UPLOAD_KEY_ALIAS }}
           FS_UPLOAD_KEY_PASSWORD: ${{ secrets.FS_UPLOAD_KEY_PASSWORD }}
           EXPECTED_CERT: ${{ vars.PLAY_UPLOAD_CERT_SHA256 }}
+          FS_ADS_ENABLED: ${{ vars.FS_ADS_ENABLED }}
           REVENUECAT_KEY: ${{ vars.REVENUECAT_ANDROID_PUBLIC_KEY }}
         run: |
           set -euo pipefail
@@ -63,6 +64,10 @@ jobs:
           trap 'rm -f "$FS_UPLOAD_STORE_FILE"' EXIT
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$FS_UPLOAD_STORE_FILE"
           unset KEYSTORE_BASE64
+          if [[ "$FS_ADS_ENABLED" == "true" && -z "$REVENUECAT_KEY" ]]; then
+            echo "::error::Ad-enabled releases need REVENUECAT_ANDROID_PUBLIC_KEY to verify the free tier."
+            exit 1
+          fi
           ./gradlew --no-daemon :app:bundleRelease "-Prevenuecat.apiKey=$REVENUECAT_KEY"
           bundle=app/build/outputs/bundle/release/app-release.aab
           jarsigner -verify "$bundle"

@@ -88,9 +88,8 @@ private data class Promise(val title: Int, val body: Int)
  * - no account: there is no sign-in anywhere; RevenueCat uses an anonymous app user ID
  * - storage: Room + SQLCipher (FastingDatabase.createEncrypted), passphrase wrapped by an
  *   AES-GCM key in the Android Keystore (DatabaseKeyProvider); Auto Backup is off
- * - network: the app declares no INTERNET permission itself; it comes only from the
- *   RevenueCat/Play Billing libraries (RevenueCat starts at launch in billing builds; see
- *   docs/privacy-policy.md). No ads, tracking, crash-reporting or health-analytics SDKs.
+ * - network: billing and free-tier advertising use separate services. The app supplies
+ *   neither with fasting, screening, religious-observance or Health Connect records.
  * - Health Connect: only after the user turns it on and grants permissions (Settings)
  * - files: export/backup via the system file picker; report/cards via the share sheet only
  */
@@ -98,10 +97,11 @@ private val promises = listOf(
     Promise(R.string.trust_on_device_title, R.string.trust_on_device_body),
     Promise(R.string.trust_encrypted_title, R.string.trust_encrypted_body),
     Promise(R.string.trust_no_account_title, R.string.trust_no_account_body),
-    Promise(R.string.trust_no_tracking_title, R.string.trust_no_tracking_body),
+    Promise(R.string.trust_free_ads_title, R.string.trust_free_ads_body),
 )
 
 private val leaves = listOf(
+    Promise(R.string.trust_leaves_ads_title, R.string.trust_leaves_ads_body),
     Promise(R.string.trust_leaves_purchases_title, R.string.trust_leaves_purchases_body),
     Promise(R.string.trust_leaves_hc_title, R.string.trust_leaves_hc_body),
     Promise(R.string.trust_leaves_files_title, R.string.trust_leaves_files_body),

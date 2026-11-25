@@ -1,10 +1,8 @@
 # Fasting Shift privacy policy (draft)
 
-> Release owner: add the verified publisher name, contact details and effective date before publication. The app opens https://fastingshift.com/privacy from Settings and from the Health Connect permission screen. Verify that the public page displays the approved policy.
+> Release owner: publish this version with the Android release that adds free-tier ads. The app opens https://fastingshift.com/privacy from Settings and the Health Connect permission screen. Verify both links before release.
 
-Effective date: [date of publication]  
-Publisher: [legal name shown on the Google Play listing]  
-Privacy contact: [monitored email address or contact page]
+Effective upon publication. Fasting Shift is published on Google Play by theonngroup. For privacy or support, email [onnifyworks@gmail.com](mailto:onnifyworks@gmail.com).
 
 ## Your records
 
@@ -20,7 +18,7 @@ You can use Fasting Shift without creating an account. The app keeps your health
 
 The health and fasting database is encrypted. Android Keystore protects the key used to unlock it. The app keeps preferences, such as the city you select and reminder choices, in private app storage. It uses an offline list of cities and bundled prayer times or local calculations. Choosing a city does not request your device location or send your selections to a prayer-time provider.
 
-Fasting Shift has no advertising or health-analytics service. We do not sell your health or religious-observance records or send them to the billing provider. If you enable reminders or add a widget, information such as fasting times can appear in notifications or on your home screen.
+Fasting Shift never sells your health or religious-observance records. We do not use them for advertising or share them with advertising or billing services. If you enable reminders or add a widget, information such as fasting times can appear in notifications or on your home screen.
 
 ## Files you choose to save
 
@@ -43,6 +41,14 @@ To stop future access, turn off sync and revoke permissions in Health Connect. T
 
 Our use of Health Connect information is limited to the features you enable and follows Google's Health Connect limited-use requirements. [Android health permissions](https://support.google.com/googleplay/android-developer/answer/12991134)
 
+## Ads on the free plan
+
+The free plan can show a Google AdMob banner in Settings. Shift+ is ad-free. Fasting Shift requests non-personalized ads and does not use your fasts, screening answers, selected city, religious practices, or Health Connect records to select or measure ads.
+
+Google can use your IP address to estimate your general location. Its advertising and consent services can process device or app identifiers, privacy choices, app and ad interactions, and diagnostics for ad delivery, measurement, and fraud prevention. Data sent by the Google Mobile Ads SDK is encrypted in transit. The app does not request access to the Android advertising ID.
+
+Where privacy choices are available, open **Settings → Privacy and data → Ad privacy choices** to review or change them. Google describes its use of advertising data and retention periods in [How Google uses information from apps](https://policies.google.com/technologies/partner-sites) and its [data retention policy](https://policies.google.com/technologies/retention).
+
 ## Purchases and subscriptions
 
 Google Play processes Shift+ purchases and code redemptions. In builds with billing enabled, the RevenueCat billing service starts when you open the app. It uses a generated app user ID to check access, including before you buy anything. It processes available purchase history, product and subscription status, and billing-related app and device information to manage access, restore purchases and report subscription activity. Its customer profile can use the store country or infer a country from the network address. The app does not send RevenueCat your screening answers, fasting records, prayer settings or measurements. [RevenueCat privacy policy](https://www.revenuecat.com/privacy) · [Google privacy policy](https://policies.google.com/privacy)
@@ -51,6 +57,6 @@ Google Play processes Shift+ purchases and code redemptions. In builds with bill
 
 Your app records stay on your device until you delete them or clear the app's storage. To remove all local records, including settings and pending sync references, use **Settings → Privacy and data → How your data is protected → Delete all data** in the app (it asks you to confirm first), clear Fasting Shift's storage in Android Settings, or uninstall it. Delete any exported files at the destination where you saved them. Copies already held by Health Connect, another app or a file provider have their own deletion controls.
 
-Manage or cancel subscriptions in Google Play. Uninstalling Fasting Shift does not cancel a subscription. For questions or a request about billing information held on our behalf, contact [monitored privacy contact]. Google Play manages its own transaction records.
+Manage or cancel subscriptions in Google Play. Uninstalling Fasting Shift does not cancel a subscription. For questions or a request about billing information held on our behalf, email [onnifyworks@gmail.com](mailto:onnifyworks@gmail.com). If you contact us, we use your email address and the information you choose to send to handle your request. Google Play manages its own transaction records.
 
 Fasting Shift is intended for adults aged 18 and over. The safety screen restricts access to fasting plans for users under 18.

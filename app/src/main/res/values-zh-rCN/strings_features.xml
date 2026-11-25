@@ -147,7 +147,7 @@
 
     <!-- Onboarding -->
     <string name="onb_welcome_title">欢迎使用 Fasting Shift</string>
-    <string name="onb_welcome_body">简单、坦诚的断食计时器。无需账号，数据只保存在你的手机上。</string>
+    <string name="onb_welcome_body">无需注册即可使用断食计时器。断食记录保存在本机。</string>
     <string name="onb_get_started">开始使用</string>
     <string name="onb_next">下一步</string>
     <string name="onb_continue">继续</string>

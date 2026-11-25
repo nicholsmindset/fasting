@@ -143,7 +143,7 @@
 
     <!-- Onboarding -->
     <string name="onb_welcome_title">Selamat datang di Fasting Shift</string>
-    <string name="onb_welcome_body">Timer puasa yang sederhana dan jujur. Tanpa akun, dan data Anda tetap di ponsel Anda.</string>
+    <string name="onb_welcome_body">Timer puasa tanpa pendaftaran. Riwayat puasa Anda tersimpan di ponsel ini.</string>
     <string name="onb_get_started">Mulai</string>
     <string name="onb_next">Berikutnya</string>
     <string name="onb_continue">Lanjutkan</string>

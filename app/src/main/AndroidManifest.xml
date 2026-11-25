@@ -7,6 +7,13 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- The free Settings banner uses no advertising ID, Topics, Attribution or protected audiences. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCE" tools:node="remove" />
+
     <!-- Health Connect (F6): only the data types the app uses. Requested on sync opt-in. -->
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
     <uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
@@ -36,6 +43,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FastingShift"
         tools:targetApi="31">
+
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${admobAppId}" />
+        <meta-data android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT" android:value="true" />
+        <meta-data android:name="com.google.android.gms.ads.CONTENT_URL_OPTED_OUT" android:value="true" />
+        <meta-data android:name="com.google.android.gms.ads.CONTENT_VERTICAL_OPTED_OUT" android:value="true" />
 
         <activity
             android:name=".ui.MainActivity"

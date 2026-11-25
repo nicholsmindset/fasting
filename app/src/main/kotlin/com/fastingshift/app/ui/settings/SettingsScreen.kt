@@ -38,6 +38,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ads.AdPrivacyChoices
+import com.fastingshift.app.ads.SettingsBanner
 import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.billing.RestoreOutcome
 import com.fastingshift.app.export.ExportManager
@@ -233,14 +235,19 @@ internal fun SettingsRoute(
         Box(Modifier.fillMaxSize()) {
             val planner: SchedulesViewModel = hiltViewModel()
             val week by planner.state.collectAsStateWithLifecycle()
-            SettingsOverview(
-                planner = week,
-                appearance = s.appearance,
-                entitlement = ent,
-                onOpenWeek = onOpenSchedules,
-                onAppearance = { sheet = SettingsSheet.APPEARANCE },
-                onSection = onOpenSection,
-            )
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f)) {
+                    SettingsOverview(
+                        planner = week,
+                        appearance = s.appearance,
+                        entitlement = ent,
+                        onOpenWeek = onOpenSchedules,
+                        onAppearance = { sheet = SettingsSheet.APPEARANCE },
+                        onSection = onOpenSection,
+                    )
+                }
+                if (sheet == null) SettingsBanner(vm.billing)
+            }
             SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         }
     } else {
@@ -306,6 +313,7 @@ internal fun SettingsRoute(
                             )
                         }
                         GroupDivider()
+                        AdPrivacyChoices { vm.message.value = R.string.ad_privacy_unavailable }
                         GroupRow(stringResource(R.string.settings_privacy_policy), showChevron = true, onClick = {
                             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.privacy_policy_url)))) }
                         })

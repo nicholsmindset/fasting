@@ -147,7 +147,7 @@
 
     <!-- Onboarding -->
     <string name="onb_welcome_title">Selamat datang ke Fasting Shift</string>
-    <string name="onb_welcome_body">Pemasa puasa yang ringkas dan jujur. Tiada akaun, dan data anda kekal dalam telefon anda.</string>
+    <string name="onb_welcome_body">Pemasa puasa tanpa pendaftaran. Sejarah puasa anda disimpan pada telefon ini.</string>
     <string name="onb_get_started">Mulakan</string>
     <string name="onb_next">Seterusnya</string>
     <string name="onb_continue">Teruskan</string>
