@@ -1,4 +1,4 @@
-name: Review daily Android fixtures
+name: Verify native staging package
 on:
   push:
     branches: [codex/settings-review-fixtures]
@@ -6,39 +6,28 @@ permissions:
   actions: read
   contents: read
 jobs:
-  preview:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
-    strategy:
-      matrix:
-        include:
-          - {phase: baseline, capture: 45510098748}
-          - {phase: updated, capture: 45512201367}
+    timeout-minutes: 8
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ matrix.capture }}
-          name: fasting-shift-moats-screens
-          path: captured
-      - name: Read synthetic screenshots
+      - name: Check package integrity and Android signer
         env:
-          PHASE: ${{ matrix.phase }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python -c 'import PIL' || python -m pip install Pillow
-          python - <<'PY'
-          import base64, hashlib, io, os
-          from PIL import Image
-          from pathlib import Path
-          for key in ("layout-ready-light", "layout-active-dark", "layout-log-light"):
-              with Image.open(Path("captured/en") / (key + ".png")) as im:
-                  im = im.convert("RGB")
-                  im.thumbnail((480, 960), Image.Resampling.LANCZOS)
-                  out = io.BytesIO()
-                  im.save(out, format="JPEG", quality=92, optimize=True, subsampling=0)
-              raw = out.getvalue()
-              print(f"FSQA|BEGIN|{key}|{len(raw)}|{hashlib.sha256(raw).hexdigest()}")
-              for offset in range(0, len(raw), 1800):
-                  print(f"FSQA|PART|{key}|{offset//1800}|{base64.b64encode(raw[offset:offset+1800]).decode()}")
-              print(f"FSQA|END|{key}")
-          PY
+          set -euo pipefail
+          fetch_apk() {
+            local id="$1" dest="$2"
+            curl --retry 3 -fsSL -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" -o "$dest"
+          }
+          fetch_apk 14976273329 previous.apk
+          fetch_apk 14977003993 current.apk
+          echo 'c57256048f79706c243389dba95bc3f877f1e88e71a3f283e26d394fa385f30c  previous.apk' | sha256sum -c -
+          echo 'ead803b51ab35e55d2b3811c29d25d4a05b3bdc5415a9d6491d119ca15426b21  current.apk' | sha256sum -c -
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          for file in previous.apk current.apk; do
+            unzip -tqq "$file"
+            unzip -Z1 "$file" | awk '$0 == "AndroidManifest.xml" || $0 == "classes.dex"'
+            echo "Verifying signer of $file"
+            "$signer" verify --print-certs "$file" | grep 'certificate SHA-256 digest'
+          done
+          sha256sum previous.apk current.apk
