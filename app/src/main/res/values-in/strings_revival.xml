@@ -18,4 +18,5 @@
   <string name="revival_open_notifications">Buka setelan notifikasi</string>
   <string name="revival_notification_title">Kesempatan untuk memulai lagi</string>
   <string name="revival_notification_body">Acara pemulihan runtunan baru tersedia saat Anda merasa siap kembali ke rencana biasa.</string>
+    <string name="revival_award_unit">hari dalam runtunan yang Anda pulihkan</string>
 </resources>

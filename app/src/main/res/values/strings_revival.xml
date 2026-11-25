@@ -19,4 +19,5 @@
     <string name="revival_open_notifications">Open notification settings</string>
     <string name="revival_notification_title">A fresh start is here</string>
     <string name="revival_notification_body">A new Streak Revival is open whenever you feel ready to return to your usual plan.</string>
+    <string name="revival_award_unit">days in your revived streak</string>
 </resources>

@@ -61,5 +61,8 @@ class RevivalMoatsCaptureTest {
         capture("earned")
         compose.onNodeWithText("See my revival").performClick()
         compose.onNodeWithText("Welcome back.").assertExists()
+        if (System.getProperty("fastingshift.screenshotDir") != null) {
+            compose.onNodeWithTag("revival-achievement").captureRoboImage(moatsOutput("en").resolve("revival-celebration.png").absolutePath)
+        }
     }
 }

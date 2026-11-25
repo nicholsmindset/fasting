@@ -18,4 +18,5 @@
   <string name="revival_open_notifications">Buka tetapan pemberitahuan</string>
   <string name="revival_notification_title">Peluang untuk bermula semula</string>
   <string name="revival_notification_body">Acara rentetan baharu dibuka apabila anda bersedia kembali kepada pelan biasa anda.</string>
+    <string name="revival_award_unit">hari dalam rentetan yang anda pulihkan</string>
 </resources>
