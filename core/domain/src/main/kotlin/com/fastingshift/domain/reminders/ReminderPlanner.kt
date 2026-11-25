@@ -127,7 +127,8 @@ object ReminderPlanner {
         val firstAt = if (FastPolicy.requiresCheckIns(fast.plannedDuration)) interval else FastPolicy.EXTENDED_THRESHOLD
         val horizon = maxOf(fast.targetEndAt.plus(settings.forgotToEndAfter ?: Duration.ZERO), now)
             .plus(interval.multipliedBy(CHECK_IN_LOOKAHEAD))
-        var k = firstAt.dividedBy(interval)
+        // These policy intervals use whole seconds. Android 8 has no Duration / Duration overload.
+        var k = firstAt.seconds / interval.seconds
         while (k < Reminder.MAX_PER_KIND) {
             val at = fast.startAt.plus(interval.multipliedBy(k))
             if (at.isAfter(horizon)) break
