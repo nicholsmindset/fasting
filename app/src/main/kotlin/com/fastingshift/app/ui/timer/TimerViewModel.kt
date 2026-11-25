@@ -302,13 +302,6 @@ class TimerViewModel @Inject constructor(
         _events.update { it.copy(message = R.string.quick_water_added) }
     }
 
-    /** Water from the Today card: no snackbar, the ring itself shows the change. */
-    fun addWaterQuietly() = viewModelScope.launch {
-        val log = WaterLog(at = clock.instant(), value = 250.0, unit = VolumeUnit.ML)
-        val id = logs.addWater(log)
-        if (settings.current().healthConnectSync) health.writeWater(log.copy(id = id))
-    }
-
     fun addWeight(value: Double, unit: WeightUnit) = viewModelScope.launch {
         settings.setWeightUnit(unit)
         val log = WeightLog(at = clock.instant(), value = value, unit = unit)

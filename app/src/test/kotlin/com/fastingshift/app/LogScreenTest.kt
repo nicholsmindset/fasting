@@ -17,6 +17,8 @@ import com.fastingshift.app.ui.log.LogState
 import com.fastingshift.app.ui.log.weightTrendPoints
 import com.fastingshift.app.ui.theme.FastingShiftTheme
 import com.fastingshift.domain.model.Electrolyte
+import com.fastingshift.domain.model.WaterLog
+import com.fastingshift.domain.model.VolumeUnit
 import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.model.WeightUnit
 import java.time.Duration
@@ -72,6 +74,23 @@ class LogScreenTest {
         compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("125")
         add.performScrollTo().performClick()
         compose.runOnIdle { assertEquals(Electrolyte.POTASSIUM to 125.0, saved) }
+    }
+
+    @Test fun waterHistoryShowsLatestInlineAndOlderEntriesInTheSheet() {
+        val entries = listOf(400, 325, 175).mapIndexed { index, amount ->
+            WaterLog(id = index + 1L, at = now.minusSeconds(index * 3600L), value = amount.toDouble(), unit = VolumeUnit.ML)
+        }
+        compose.setContent {
+            FastingShiftTheme {
+                LogScreen(LogState(hideWeight = true, waterEntries = entries), LogActions())
+            }
+        }
+        compose.onNodeWithText("400 ml").assertExists()
+        compose.onNodeWithText("175 ml").assertDoesNotExist()
+        compose.onNodeWithText("Water entries (3)").performScrollTo().performClick()
+        compose.onNodeWithText("175 ml").performScrollTo().assertExists()
+        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("175 ml").assertDoesNotExist()
     }
 
     @Test fun trendKeepsTheLast90DaysOldestFirst() {

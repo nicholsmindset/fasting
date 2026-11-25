@@ -1,7 +1,20 @@
 package com.fastingshift.app
 
 import android.app.Application
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performScrollTo
+import com.fastingshift.app.ui.design.GroupRow
+import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.app.ui.design.SwitchGroupRow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -15,11 +28,21 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.ui.settings.PlannerState
+import com.fastingshift.app.ui.settings.SettingsOverview
+import com.fastingshift.app.ui.settings.SettingsSection
+import com.fastingshift.data.settings.AppAppearance
+import com.fastingshift.data.settings.AppSettings
+import com.fastingshift.domain.billing.Entitlement
+import java.time.Instant
+import java.time.ZoneOffset
 import com.fastingshift.app.ui.settings.ForgotSheet
 import com.fastingshift.app.ui.settings.MilestonesSheet
 import com.fastingshift.app.ui.settings.WaterGoalDisplay
@@ -38,6 +61,54 @@ class SettingsControlsTest {
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
 
     private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
+
+    @Test
+    @Config(qualifiers = "w411dp-h822dp")
+    fun loadingWeekDoesNotMovePrivacyRow() {
+        val planner = mutableStateOf<PlannerState?>(null)
+        var opened: SettingsSection? = null
+        compose.setContent {
+            FastingShiftTheme {
+                SettingsOverview(AppAppearance.SYSTEM, planner.value, Entitlement.FREE, {}, {}, { opened = it })
+            }
+        }
+        val privacy = compose.onNodeWithTag(SettingsSection.PRIVACY.overviewTag)
+        privacy.performScrollTo().assertIsDisplayed()
+        val before = privacy.getUnclippedBoundsInRoot()
+        compose.runOnIdle {
+            planner.value = PlannerState(emptyList(), AppSettings(), null, Instant.parse("2026-11-25T12:00:00Z"),
+                ZoneOffset.UTC, null, false, null)
+        }
+        assertEquals(before, privacy.getUnclippedBoundsInRoot())
+        privacy.performClick()
+        compose.runOnIdle { assertEquals(SettingsSection.PRIVACY, opened) }
+    }
+
+    @Test fun compactLargeTextKeepsPickerAndSwitchAsSingleLabeledActions() {
+        var pickerOpens = 0
+        val enabled = mutableStateOf(false)
+        val choice = "Follow system appearance"
+        val picker = "Appearance"
+        val setting = "Show a reminder before the next planned fast"
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
+                FastingShiftTheme(darkTheme = true) {
+                    Column(Modifier.width(280.dp).verticalScroll(rememberScrollState())) {
+                        GroupRow(picker, value = choice, opensPicker = true, showChevron = true, onClick = { pickerOpens++ })
+                        SwitchGroupRow(setting, enabled.value, { enabled.value = it })
+                        SecondaryButton("Save changes", onClick = {}, enabled = false)
+                    }
+                }
+            }
+        }
+        val choiceRow = compose.onNode(role(Role.Button) and hasText(picker) and hasText(choice))
+        choiceRow.performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle { assertEquals(1, pickerOpens) }
+        compose.onAllNodes(role(Role.Switch)).assertCountEquals(1)
+        val toggle = compose.onNode(role(Role.Switch) and hasText(setting))
+        toggle.performScrollTo().assertHeightIsAtLeast(48.dp).assertIsOff().performClick().assertIsOn()
+        compose.onNode(role(Role.Button) and hasText("Save changes")).performScrollTo().assertIsNotEnabled()
+    }
 
     @Test fun eachMilestoneCanBeChangedIndependently() {
         val chosen = mutableStateOf(setOf(12))

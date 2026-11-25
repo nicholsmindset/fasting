@@ -12,4 +12,5 @@
     <string name="history_day_planned">Dikira sebagai hari yang dirancang</string>
     <string name="history_day_starts">Waktu mula yang dijadualkan · %1$s</string>
     <string name="history_day_plan">Rancangan</string>
+    <string name="history_view_records">Lihat rekod mengikut tarikh</string>
 </resources>

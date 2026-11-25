@@ -61,6 +61,7 @@ import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.SegmentedControl
 import com.fastingshift.app.ui.design.Spacing
 import com.fastingshift.app.ui.design.rememberHaptics
+import com.fastingshift.app.ui.ramadan.GroupedSheet
 import com.fastingshift.app.ui.timer.Today
 import com.fastingshift.app.ui.timer.electrolyteLabel
 import com.fastingshift.data.repo.LogRepository
@@ -277,11 +278,28 @@ private fun WaterSection(st: LogState, actions: LogActions) {
                 }
             }
         }
-        if (st.waterEntries.isNotEmpty()) {
+        st.waterEntries.firstOrNull()?.let { latest ->
+            var showEntries by rememberSaveable { mutableStateOf(false) }
+            val entriesTitle = stringResource(R.string.log_water_entries, st.waterEntries.size)
             InsetGroup(header = stringResource(R.string.log_today_entries)) {
-                st.waterEntries.forEachIndexed { i, w ->
-                    if (i > 0) GroupDivider()
-                    EntryRow(w.at.formatTime(), stringResource(R.string.unit_ml_value, WaterGoal.toMl(w).toInt())) { actions.deleteWater(w.id) }
+                EntryRow(latest.at.formatTime(), stringResource(R.string.unit_ml_value, WaterGoal.toMl(latest).toInt())) {
+                    actions.deleteWater(latest.id)
+                }
+                if (st.waterEntries.size > 1) {
+                    GroupDivider()
+                    GroupRow(entriesTitle, showChevron = true, onClick = { showEntries = true })
+                }
+            }
+            if (showEntries) {
+                GroupedSheet(entriesTitle, onDismiss = { showEntries = false }) {
+                    InsetGroup {
+                        st.waterEntries.forEachIndexed { index, entry ->
+                            if (index > 0) GroupDivider()
+                            EntryRow(entry.at.formatTime(), stringResource(R.string.unit_ml_value, WaterGoal.toMl(entry).toInt())) {
+                                actions.deleteWater(entry.id)
+                            }
+                        }
+                    }
                 }
             }
         }

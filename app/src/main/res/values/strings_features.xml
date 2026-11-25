@@ -25,8 +25,8 @@
     <string name="eating_a11y">Eating window ends in %1$s, at %2$s.</string>
     <string name="quick_add_title">Quick add</string>
     <string name="quick_water">+250 ml water</string>
-    <string name="quick_weight">Weight</string>
-    <string name="quick_electrolytes">Electrolytes</string>
+    <string name="quick_weight">Log weight</string>
+    <string name="quick_electrolytes">Log electrolytes</string>
     <string name="quick_water_added">Added 250 ml of water</string>
     <string name="quick_weight_added">Weight saved</string>
     <string name="quick_electrolyte_added">Electrolytes saved</string>
@@ -355,4 +355,5 @@
     <string name="history_keep_plan">Keep my plan</string>
     <string name="history_edit_schedule">Edit regular schedule</string>
     <string name="history_take_break">Take next week off</string>
+    <string name="log_water_entries">Water entries (%1$d)</string>
 </resources>

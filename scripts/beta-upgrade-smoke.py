@@ -64,6 +64,22 @@ class Screen:
     def click(self, key, scroll=False):
         self.find(key, scroll).click()
 
+    def advance_onboarding(self, source_key, next_key):
+        # AnimatedContent briefly exposes two copies of Next. Wait for the
+        # outgoing title to leave before allowing the next screen to use it.
+        source = self.find(source_key)
+        target = self.device(text=self.strings[next_key], packageName=PACKAGE)
+        for _ in range(3):
+            if target.exists:
+                break
+            if not source.exists:
+                break
+            self.click("onb_next")
+            if target.wait(timeout=3):
+                break
+        if not target.wait(timeout=12) or not source.wait_gone(timeout=5):
+            raise AssertionError(f"Onboarding did not advance from {source_key} to {next_key}")
+
     def finish_free_onboarding(self, destination, allow_notifications):
         # Ads and billing services are not needed. Older baselines display an offer before
         # entering the app; current free builds go directly to the timer or pending invite.
@@ -93,18 +109,15 @@ class Screen:
             self.click("onb_skip")
         self.find("onb_goal_title")
         self.click("goal_consistency")
-        self.click("onb_next")
-        self.find("onb_screen_title")
+        self.advance_onboarding("onb_goal_title", "onb_screen_title")
         fields = self.device(className="android.widget.EditText", packageName=PACKAGE)
         if fields.count != 3:
             raise AssertionError(f"Expected three screening inputs, found {fields.count}")
         for index, value in enumerate(("40", "175", "70")):
             fields[index].set_text(value)
-        self.click("onb_next")
-        self.find("onb_ok_title")
-        self.click("onb_next")
-        self.find("onb_protocol_title")
-        self.click("onb_next")
+        self.advance_onboarding("onb_screen_title", "onb_ok_title")
+        self.advance_onboarding("onb_ok_title", "onb_protocol_title")
+        self.advance_onboarding("onb_protocol_title", "onb_notif_title")
         self.click("onb_notif_allow" if allow_notifications else "onb_not_now")
         self.finish_free_onboarding(destination, allow_notifications)
 
@@ -129,7 +142,24 @@ class Screen:
             self.click("tab_settings")
 
     def open_settings_category(self, tag):
-        self.find_node(self.device(resourceId=tag, packageName=PACKAGE), tag, scroll=True).click()
+        row = self.find_node(self.device(resourceId=tag, packageName=PACKAGE), tag, scroll=True)
+        # Let scrolling and the entering overview settle before sending a physical
+        # tap. Reading a tag alone does not guarantee its screen position is fixed.
+        previous = None
+        stable_intervals = 0
+        deadline = time.monotonic() + 6
+        while time.monotonic() < deadline:
+            bounds = row.info.get("visibleBounds") if row.exists else None
+            if bounds and bounds["right"] > bounds["left"] and bounds["bottom"] > bounds["top"]:
+                stable_intervals = stable_intervals + 1 if bounds == previous else 0
+                if stable_intervals >= 2:
+                    row.click(timeout=1)
+                    return
+            else:
+                stable_intervals = 0
+            previous = bounds
+            time.sleep(0.2)
+        raise AssertionError(f"Settings control {tag} did not settle into a visible position")
 
     def back_to_settings(self):
         self.device.press("back")
@@ -172,8 +202,21 @@ class Screen:
         if downloads:
             self.open_downloads_folder()
         field.set_text(name)
-        self.device(packageNameMatches=".*documentsui", textMatches="(?i)save").click(timeout=10)
-        if not self.device(packageName=PACKAGE).wait(timeout=15):
+        save = self.device(packageNameMatches=".*documentsui", textMatches="(?i)save", enabled=True)
+        named_field = self.device(className="android.widget.EditText", packageNameMatches=".*documentsui", text=name)
+        if not named_field.wait(timeout=8):
+            raise AssertionError(f"Files did not accept the requested filename {name}")
+        # Gboard can shift Save between locating and tapping it. Resolve its
+        # position again only while this same document is still being created.
+        for _ in range(3):
+            if not named_field.exists:
+                break
+            # Files can finish creating the document between the field check and
+            # this tap. The app return and the exported JSON are checked below.
+            save.click_exists(timeout=3)
+            if named_field.wait_gone(timeout=3):
+                break
+        if named_field.exists or not self.device(packageName=PACKAGE).wait(timeout=15):
             raise AssertionError("The picker did not return to Fasting Shift")
         for _ in range(40):
             # The Android shell cannot enumerate some scoped Android/data subdirectories.
@@ -197,9 +240,10 @@ class Screen:
     def verify_appearance(self, original_fasts):
         def choose(key):
             self.open_settings()
-            title = self.strings["appearance_title"]
-            self.find_node(self.device(textContains=title, packageName=PACKAGE), title, scroll=True).click()
-            self.click(key)
+            # The section "Appearance and language" and its Appearance row are both
+            # visible on larger screens. Only the tagged row opens the choices.
+            self.open_settings_category("settings_open_appearance")
+            self.click(key, scroll=True)
 
         def expect_palette(dark):
             # Sample the app content, excluding system bars. Both Timer and Settings
@@ -405,10 +449,7 @@ class Screen:
             self.find_node(self.device(textContains=label, packageName=PACKAGE), label, scroll=True).click()
 
         def open_date(day):
-            # Android's English localized abbreviation and punctuation can vary by API.
-            # Match the date label without relying on a time or the position of a row.
-            pattern = rf"(?s).*\b{day:%a}\b.*\b{day:%b}\.?\s+{day.day}\b.*"
-            row = self.device(textMatches=pattern, packageName=PACKAGE)
+            row = self.device(resourceId=f"week-day-{day.isoformat()}", packageName=PACKAGE)
             self.find_node(row, day.isoformat(), scroll=True).click()
             self.find("week_date_hint")
 
@@ -493,9 +534,33 @@ class Screen:
         open_selected_day()
         self.find("history_day_recorded")
         self.click("settings_done", scroll=True)
-        self.find("recap_fit_question", scroll=True)
-        self.click("recap_fit_partly", scroll=True)
-        self.find("recap_change_answer", scroll=True)
+        if not self.device(resourceId="history-day-sheet", packageName=PACKAGE).wait_gone(timeout=8):
+            raise AssertionError("The History day sheet did not close")
+        history = self.device(resourceId="history-list", packageName=PACKAGE)
+        if not history.wait(timeout=8):
+            raise AssertionError("The History list did not return after closing the day")
+        bounds = history.info["visibleBounds"]
+        height = bounds["bottom"] - bounds["top"]
+        x = bounds["left"] + (bounds["right"] - bounds["left"]) // 6
+        start = bounds["top"] + height * 3 // 4
+        end = start - height // 3
+
+        def recap_control(key):
+            # The recap follows the calendar. Keep consecutive viewports
+            # overlapping so a fling cannot skip a question or its answers.
+            label = self.strings[key]
+            node = self.device(text=label, packageName=PACKAGE)
+            for _ in range(8):
+                if node.wait(timeout=0.6):
+                    return node
+                adb("shell", "input", "swipe", str(x), str(start), str(x), str(end), "650")
+            if node.wait(timeout=1):
+                return node
+            raise AssertionError(f"Missing {label} below the History calendar")
+
+        recap_control("recap_fit_question")
+        recap_control("recap_fit_partly").click()
+        recap_control("recap_change_answer")
         self.device.app_stop(PACKAGE)
         self.device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
         self.find("timer_start")

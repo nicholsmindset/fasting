@@ -29,6 +29,17 @@ The first customer to test is someone who already fasts, but whose dinner times 
 
 The [facilitator guide and blank pilot scorecards](pilot-session.md) are ready for the five-person round and follow-up.
 
+## Visual design and controls
+
+Start with Settings and the daily logging flow. Compare matched Android screenshots before and after each change using the same data, device width, locale and appearance. The [screen audit and reference studies](design-direction.md) record the findings for Timer, History, Log and Settings.
+
+| Priority | Design work | How to judge the result |
+| --- | --- | --- |
+| First | Organize Settings by what someone wants to do. Put the current routine and frequently changed preferences within easy reach. Move detailed alarm options into their own context. | A first-time tester can change Tuesday, choose dark mode, and locate the next reminder without having to inspect each switch. |
+| First | Give primary actions, navigation rows, switches and choice lists a consistent visual treatment. Expose the current value wherever it helps predict what will happen on tap. | A tester can tell whether tapping changes a setting immediately, opens choices or navigates elsewhere. Checked, disabled and pressed states are legible in both appearances. |
+| Next | Reduce repeated actions and equally weighted groups on the daily tabs. Preserve direct access to starting a fast, correcting a record and logging a portion. | In screenshots and observed use, the immediate task is easy to locate. A single tap logs exactly one entry. |
+| Verify | Exercise long translated labels, 320dp screens, doubled text, back navigation and screen-reader semantics. Compare the release candidate with the baseline. | Primary actions remain reachable, values do not overlap, and a screen reader can identify each control and its state. Run a physical TalkBack session before wider release. |
+
 ## The usability session
 
 Use fictional schedules and records. Let the participant act before giving a hint.
@@ -56,6 +67,10 @@ Use fictional schedules and records. Let the participant act before giving a hin
 - Mobbin’s onboarding study informed setup and progress cues. Purrweb’s Dribbble concept distinguishes the live timer from the journal. The Android app keeps its own Nichols identity and native interactions. [Mobbin](https://mobbin.com/blog/the-long-onboarding-a-study-of-1-460-flows) · [Dribbble](https://dribbble.com/shots/22392705-Intermittent-Fasting-Tracker-Mobile-iOS-App)
 
 ## Candidate evidence
+
+The Settings redesign puts the next planned start and the coming week above grouped preferences. Reminders shows the common alerts first and counts the enabled options inside collapsed groups. Timer now places the 250 ml action beside the daily total. Log keeps the latest entry visible and opens older entries on demand. The Android build passed 404 executed unit tests, including a check that Privacy stays in the same position while the weekly schedule loads. [Settings and daily controls](https://github.com/nicholsmindset/fasting/pull/17) · [Android verification](https://github.com/nicholsmindset/fasting/actions/runs/45518596771)
+
+History places **View records by date** beside the recent chart. The full list shows the start date and time first. The pilot task is to find the earlier of two 16-hour fasts, correct its note, and return to the chart with the other record intact. Also test the first-time empty list, an active fast, and imported records. Physical-device TalkBack and participants’ paid-review decisions remain open.
 
 The 25 November candidate was merged in [PR #15](https://github.com/nicholsmindset/fasting/pull/15). The [Android build](https://github.com/nicholsmindset/fasting/actions/runs/45505089270) passed 396 executed unit tests with 22 skipped. Lint reported 0 errors and 47 warnings. The [signed Android 15 upgrade](https://github.com/nicholsmindset/fasting/actions/runs/45505089057) preserved the original timer target, History entry, moved start, skipped date and weekly reflection after relaunch. Six web invitation tests also passed. The first reminder check saved the default routine time during setup. On the same build, the retry observed no notification at the replaced time, recorded delivery one second after the moved time on a PIN-locked emulator, and confirmed the following day rearmed at its usual time. Physical-device delivery is still open.
 
