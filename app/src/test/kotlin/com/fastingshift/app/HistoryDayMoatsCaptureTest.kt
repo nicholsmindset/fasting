@@ -12,6 +12,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -26,6 +28,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.di.ClockModule
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.app.ui.components.formatDateTime
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.protocol.Presets
@@ -146,6 +149,42 @@ class HistoryDayMoatsCaptureTest {
         if (file.exists()) check(file.delete())
         captureScreenRoboImage(file.absolutePath)
         check(file.length() > 0)
+    }
+
+    @Test fun correctOneOfTwoEqualDurationsFromRecentChart() {
+        val earlier = runBlocking {
+            val start = overnight.startAt.minus(Duration.ofDays(2))
+            val end = start.plus(Duration.ofHours(16))
+            fasts.insert(Fast(startAt = start, targetEndAt = end, protocolId = overnight.protocolId).end(end))
+        }
+        val locale = app.resources.configuration.locales[0]
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        tap(label(R.string.tab_history))
+        awaitNode(hasTestTag("history-list"))
+        compose.onNodeWithTag("history-list").performScrollToKey("history-recent")
+        val openRecords = label(R.string.history_view_records)
+        compose.onNode(openRecords).performScrollTo().assertIsDisplayed()
+        capture("history-records-chart")
+        tap(openRecords)
+        awaitNode(label(R.string.history_all_fasts))
+        val earlierDate = hasText(earlier.startAt.formatDateTime(locale))
+        val laterDate = hasText(overnight.startAt.formatDateTime(locale))
+        compose.onNode(laterDate and hasClickAction()).assertIsDisplayed()
+        compose.onNode(earlierDate and hasClickAction()).assertIsDisplayed()
+        capture("history-records-dates")
+        tap(earlierDate and hasClickAction())
+        awaitNode(label(R.string.edit_title))
+        val note = "Corrected earlier record"
+        awaitNode(hasSetTextAction())
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement(note)
+        tap(label(R.string.save), scroll = true)
+        awaitNode(label(R.string.history_all_fasts))
+        awaitNode(earlierDate and hasText(note, substring = true))
+        assertEquals(note, runBlocking { fasts.getById(earlier.id)?.note })
+        assertEquals(overnight, runBlocking { fasts.getById(overnight.id) })
+        tap(label(R.string.settings_done))
+        awaitNode(openRecords)
+        compose.onNode(openRecords).assertIsDisplayed()
     }
 
     @Test fun correctOneOfTwoFastsOnAnOvernightDate() {

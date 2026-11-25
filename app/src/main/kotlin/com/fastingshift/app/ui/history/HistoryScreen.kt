@@ -30,7 +30,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
@@ -84,6 +87,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -267,6 +271,10 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
         return
     }
     var selectedEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
+    var recordsOpen by rememberSaveable { mutableStateOf(false) }
+    if (recordsOpen) {
+        FastRecordsSheet(st.fasts, st.now, onEditFast, onClose = { recordsOpen = false })
+    }
     selectedEpochDay?.let { epochDay ->
         val day = LocalDate.ofEpochDay(epochDay)
         HistoryDaySheet(day, st, onEditFast, onAdd = { onAddPastFast(day) }, onClose = { selectedEpochDay = null })
@@ -314,7 +322,12 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
                 }
             }
         }
-        section { RecentFastChart(st.recent, onEditFast) }
+        section(key = "history-recent") {
+            Column {
+                RecentFastChart(st.recent, onEditFast)
+                TextButton(onClick = { recordsOpen = true }) { Text(stringResource(R.string.history_view_records)) }
+            }
+        }
         section(key = "history-calendar") {
             CalendarCard(st, vm::shiftMonth, onEditFast) { selectedEpochDay = it.toEpochDay() }
         }
@@ -337,14 +350,26 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
             val nextWeek = History.weekStart(st.today).plusWeeks(1)
             WeekPlanCard(nextWeek, st.nextWeekChoice, { vm.chooseWeek(nextWeek, it) }, onOpenSchedules)
         }
-        section {
-            Text(stringResource(R.string.history_all_fasts), Modifier.padding(top = 8.dp).semantics { heading() },
-                style = MaterialTheme.typography.titleLarge)
-        }
-        if (st.fasts.isEmpty()) item { Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        // One inset group drawn row by row, so the list stays lazy.
-        itemsIndexed(st.fasts, key = { _, f -> f.id }) { i, f ->
-            FastRow(f, first = i == 0, last = i == st.fasts.lastIndex) { onEditFast(f.id) }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FastRecordsSheet(fasts: List<Fast>, now: Instant, onEditFast: (Long) -> Unit, onClose: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.background) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.screen)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.history_all_fasts), Modifier.weight(1f).semantics { heading() },
+                    style = MaterialTheme.typography.headlineSmall)
+                TextButton(onClick = onClose) { Text(stringResource(R.string.settings_done)) }
+            }
+            LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)) {
+                if (fasts.isEmpty()) item { Text(stringResource(R.string.history_empty)) }
+                itemsIndexed(fasts, key = { _, f -> f.id }) { i, f ->
+                    FastRow(f, now, first = i == 0, last = i == fasts.lastIndex) { onEditFast(f.id) }
+                }
+            }
         }
     }
 }
@@ -669,21 +694,23 @@ private fun SegmentBar(seg: WeekSegment, dayWidth: androidx.compose.ui.unit.Dp, 
 }
 
 @Composable
-private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit) {
+private fun FastRow(f: Fast, now: Instant, first: Boolean, last: Boolean, onClick: () -> Unit) {
     // One row of the "All fasts" inset group: rounded only at the group's top and bottom.
     val r = 22.dp
     val shape = RoundedCornerShape(
         topStart = if (first) r else 0.dp, topEnd = if (first) r else 0.dp,
         bottomStart = if (last) r else 0.dp, bottomEnd = if (last) r else 0.dp,
     )
-    val length = Duration.between(f.startAt, f.endedAt ?: java.time.Instant.now())
+    val length = Duration.between(f.startAt, f.endedAt ?: now)
     val status = stringResource(statusLabel(f.status))
+    val editLabel = stringResource(R.string.edit_title)
     Surface(shape = shape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column {
             if (!first) GroupDivider()
             GroupRow(
-                title = "${Presets.byId(f.protocolId)?.name ?: f.protocolId} · ${length.hoursMinutes()}",
-                subtitle = listOfNotNull(f.startAt.formatDateTime(LocalConfiguration.current.locales[0]), f.note).joinToString(" · "),
+                title = f.startAt.formatDateTime(LocalConfiguration.current.locales[0]),
+                modifier = Modifier.semantics { this.onClick(label = editLabel, action = null) },
+                subtitle = listOfNotNull(Presets.byId(f.protocolId)?.name ?: f.protocolId, length.hoursMinutes(), status, f.note).joinToString(" · "),
                 showChevron = true,
                 onClick = onClick,
                 leading = {
@@ -696,11 +723,6 @@ private fun FastRow(f: Fast, first: Boolean, last: Boolean, onClick: () -> Unit)
                 },
             ) {
                 com.fastingshift.app.ui.ramadan.FastKindChip(f.kind)
-                Text(
-                    status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (f.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }

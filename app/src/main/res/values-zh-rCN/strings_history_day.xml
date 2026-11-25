@@ -12,4 +12,5 @@
     <string name="history_day_planned">计入计划天数</string>
     <string name="history_day_starts">计划开始时间 · %1$s</string>
     <string name="history_day_plan">计划</string>
+    <string name="history_view_records">按日期查看记录</string>
 </resources>
