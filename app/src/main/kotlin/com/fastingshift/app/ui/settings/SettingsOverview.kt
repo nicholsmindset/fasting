@@ -17,12 +17,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.fastingshift.app.ui.components.rememberWeekFormat
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import androidx.compose.foundation.layout.Arrangement
@@ -122,10 +124,11 @@ private fun SectionRow(section: SettingsSection, onSection: (SettingsSection) ->
 @Composable
 private fun WeekShortcut(planner: PlannerState?, onClick: () -> Unit) {
     val format = rememberWeekFormat()
-    val days = planner?.let { state -> (0L..6L).map { offset ->
-        val date = state.today.plusDays(offset)
-        date to state.starts(date).map { it.second }
-    } }.orEmpty()
+    val today = planner?.today ?: LocalDate.now()
+    val days = (0L..6L).map { offset ->
+        val date = today.plusDays(offset)
+        date to planner?.starts(date).orEmpty().map { it.second }
+    }
     val next = planner?.let { state -> days.asSequence().flatMap { it.second.asSequence() }.firstOrNull { it > state.now }
         ?.atZone(state.zone) }
     val colors = MaterialTheme.colorScheme
@@ -137,20 +140,21 @@ private fun WeekShortcut(planner: PlannerState?, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleLarge, color = colors.onPrimaryContainer)
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = colors.onPrimaryContainer)
             }
-            if (next != null) {
-                Text(stringResource(R.string.week_timer_planned, format.dateTime.format(next)),
-                    style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
-            } else {
-                val description = if (planner != null && planner.routines.any { it.enabled }) R.string.settings_no_starts_this_week
-                    else R.string.settings_schedules_subtitle
-                Text(stringResource(description), style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
+            val subtitle = when {
+                next != null -> stringResource(R.string.week_timer_planned, format.dateTime.format(next))
+                planner?.routines?.any { it.enabled } == true -> stringResource(R.string.settings_no_starts_this_week)
+                else -> stringResource(R.string.settings_schedules_subtitle)
             }
+            Text(subtitle, minLines = 2, style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
             BoxWithConstraints {
-                if (days.isNotEmpty() && maxWidth >= 280.dp && LocalDensity.current.fontScale <= 1.3f) {
+                if (maxWidth >= 280.dp && LocalDensity.current.fontScale <= 1.3f) {
                     val scheduled = days.filter { it.second.isNotEmpty() }.joinToString(", ") { it.first.format(format.date) }
-                    val description = if (scheduled.isEmpty()) stringResource(R.string.settings_no_starts_this_week)
-                        else stringResource(R.string.settings_planned_dates, scheduled)
-                    Row(Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+                    val description = when {
+                        planner == null -> null
+                        scheduled.isEmpty() -> stringResource(R.string.settings_no_starts_this_week)
+                        else -> stringResource(R.string.settings_planned_dates, scheduled)
+                    }
+                    Row(Modifier.fillMaxWidth().clearAndSetSemantics { if (description != null) contentDescription = description },
                         horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         val dayNumber = DateTimeFormatter.ofPattern("d", format.locale)
                         days.forEachIndexed { index, (date, starts) ->
@@ -163,7 +167,11 @@ private fun WeekShortcut(planner: PlannerState?, onClick: () -> Unit) {
                                         color = if (index == 0) colors.primaryContainer else colors.onPrimaryContainer)
                                 }
                                 Box(Modifier.fillMaxWidth(0.55f).height(3.dp).background(
-                                    if (starts.isNotEmpty()) colors.onPrimaryContainer else colors.onPrimaryContainer.copy(alpha = 0.14f),
+                                    when {
+                                        planner == null -> Color.Transparent
+                                        starts.isNotEmpty() -> colors.onPrimaryContainer
+                                        else -> colors.onPrimaryContainer.copy(alpha = 0.14f)
+                                    },
                                     CircleShape))
                             }
                         }

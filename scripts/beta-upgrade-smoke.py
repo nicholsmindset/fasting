@@ -142,7 +142,24 @@ class Screen:
             self.click("tab_settings")
 
     def open_settings_category(self, tag):
-        self.find_node(self.device(resourceId=tag, packageName=PACKAGE), tag, scroll=True).click()
+        row = self.find_node(self.device(resourceId=tag, packageName=PACKAGE), tag, scroll=True)
+        # Let scrolling and the entering overview settle before sending a physical
+        # tap. Reading a tag alone does not guarantee its screen position is fixed.
+        previous = None
+        stable_intervals = 0
+        deadline = time.monotonic() + 6
+        while time.monotonic() < deadline:
+            bounds = row.info.get("visibleBounds") if row.exists else None
+            if bounds and bounds["right"] > bounds["left"] and bounds["bottom"] > bounds["top"]:
+                stable_intervals = stable_intervals + 1 if bounds == previous else 0
+                if stable_intervals >= 2:
+                    row.click(timeout=1)
+                    return
+            else:
+                stable_intervals = 0
+            previous = bounds
+            time.sleep(0.2)
+        raise AssertionError(f"Settings control {tag} did not settle into a visible position")
 
     def back_to_settings(self):
         self.device.press("back")
