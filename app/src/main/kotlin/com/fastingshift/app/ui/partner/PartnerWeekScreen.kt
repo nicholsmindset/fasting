@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.PersistableBundle
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,9 +71,32 @@ import kotlinx.coroutines.delay
 internal fun PartnerTimerEntry(onOpen: () -> Unit, vm: PartnerWeekViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val week = state.week
+    val owner = LocalLifecycleOwner.current
+    LaunchedEffect(week?.id, owner) {
+        if (week != null) owner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { vm.refresh() }
+    }
+    if (week?.status == "active") {
+        val member = if (week.self.role == "participant") week.self else week.partner
+        val other = week.partner
+        val latestDay = localDate(other?.days?.maxOrNull())
+        val subtitle = when {
+            other != null && latestDay != null -> stringResource(R.string.partner_last_checkin, other.alias, latestDay)
+            other != null -> stringResource(R.string.partner_with, other.alias)
+            else -> stringResource(R.string.partner_week_heading)
+        }
+        AppCard(modifier = Modifier.testTag("partner_open").clickable(role = Role.Button, onClick = onOpen)) {
+            Text(stringResource(R.string.partner_title), style = MaterialTheme.typography.titleMedium)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            member?.let {
+                MarkDots(it.days.distinct().size)
+                Text(stringResource(if (week.self.role == "participant") R.string.partner_your_count else R.string.partner_count,
+                    it.days.distinct().size), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        return
+    }
     val subtitle = when (week?.status) {
         "pending" -> stringResource(R.string.partner_pending_title)
-        "active" -> week.partner?.let { stringResource(R.string.partner_with, it.alias) }
         "finished" -> stringResource(R.string.partner_recap)
         else -> stringResource(R.string.partner_entry_hint)
     }
@@ -385,14 +409,20 @@ private fun MarkRow(member: PartnerMember, name: String, tag: String) {
             Text(stringResource(R.string.partner_supporter_label), color = colors.onSurfaceVariant)
         } else {
             val count = member.days.distinct().size.coerceIn(0, 3)
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                repeat(3) { index ->
-                    val mark = Modifier.size(20.dp).border(1.5.dp, if (index < count) colors.primary else colors.outline, CircleShape)
-                    Box(if (index < count) mark.background(colors.primary, CircleShape) else mark)
-                }
-            }
+            MarkDots(count)
             Text(stringResource(R.string.partner_count, count), style = MaterialTheme.typography.bodyMedium,
                 color = colors.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun MarkDots(count: Int) {
+    val colors = MaterialTheme.colorScheme
+    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        repeat(3) { index ->
+            val mark = Modifier.size(20.dp).border(1.5.dp, if (index < count) colors.primary else colors.outline, CircleShape)
+            Box(if (index < count) mark.background(colors.primary, CircleShape) else mark)
         }
     }
 }

@@ -66,4 +66,6 @@
     <string name="partner_reaction_here">I’m here with you.</string>
     <string name="partner_reaction_thanks">Thanks for checking in.</string>
     <string name="partner_cheered">Encouragement sent today</string>
+    <string name="partner_last_checkin">%1$s checked in on %2$s.</string>
+    <string name="partner_your_count">Your check-ins: %1$d of 3</string>
 </resources>
