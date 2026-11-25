@@ -364,7 +364,7 @@ private fun FastRecordsSheet(fasts: List<Fast>, now: Instant, onEditFast: (Long)
                     style = MaterialTheme.typography.headlineSmall)
                 TextButton(onClick = onClose) { Text(stringResource(R.string.settings_done)) }
             }
-            LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)) {
+            LazyColumn(Modifier.testTag("history-records-list"), contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)) {
                 if (fasts.isEmpty()) item { Text(stringResource(R.string.history_empty)) }
                 itemsIndexed(fasts, key = { _, f -> f.id }) { i, f ->
                     FastRow(f, now, first = i == 0, last = i == fasts.lastIndex) { onEditFast(f.id) }

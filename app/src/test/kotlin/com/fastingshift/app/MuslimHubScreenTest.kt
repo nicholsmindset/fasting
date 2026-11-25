@@ -1,6 +1,6 @@
 package com.fastingshift.app
 
-import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -35,7 +35,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
-import kotlin.test.assertEquals
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -111,8 +110,12 @@ class MuslimHubScreenTest {
         waitFor(s(R.string.tab_history))
         compose.onNodeWithText(s(R.string.tab_history)).performClick()
         waitFor(s(R.string.history_title))
-        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(s(R.string.fast_kind_qada)))
-        waitFor(s(R.string.fast_kind_qada))
-        assertEquals(1, compose.onAllNodesWithText(s(R.string.fast_kind_qada)).fetchSemanticsNodes().size)
+        val records = s(R.string.history_view_records)
+        compose.onNodeWithTag("history-list").performScrollToNode(hasText(records))
+        compose.onNodeWithText(records).performClick()
+        waitFor(s(R.string.history_all_fasts))
+        val kind = s(R.string.fast_kind_qada)
+        compose.onNodeWithTag("history-records-list").performScrollToNode(hasText(kind))
+        compose.onNodeWithText(kind).assertIsDisplayed()
     }
 }
