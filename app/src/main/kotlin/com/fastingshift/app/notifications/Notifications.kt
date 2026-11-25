@@ -210,6 +210,12 @@ object Notifications {
         notify(context, ID_BILLING, base(context, CHANNEL_ACCOUNT, title, body, "settings"))
     }
 
+    fun showPartnerReminder(context: Context) {
+        val title = context.getString(R.string.partner_remind_notification)
+        val body = context.getString(R.string.partner_remind_note)
+        notify(context, 1011, base(context, CHANNEL_REMINDERS, title, body, "partner"))
+    }
+
     fun cancelFastNotifications(context: Context) {
         NotificationManagerCompat.from(context).apply {
             cancel(ID_FAST)

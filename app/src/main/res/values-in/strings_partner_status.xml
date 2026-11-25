@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_error_unavailable">Undangan atau pekan bersama teman ini sudah tidak tersedia.</string>
+    <string name="partner_error_changed">Pekan bersama teman ini telah berubah. Muat ulang untuk melihat informasi terbaru.</string>
+    <string name="partner_error_details">Periksa undangan atau nama tampilan, lalu coba lagi.</string>
+    <string name="partner_error_retry">Permintaan ini tidak dapat diselesaikan. Coba lagi.</string>
+    <string name="partner_error_read">Data pekan bersama teman tidak dapat dibaca. Coba muat ulang.</string>
+    <string name="partner_leaving_offline">Permintaan untuk keluar tersimpan di ponsel ini. Hubungkan kembali ke internet untuk menghapus pekan bersama ini.</string>
+    <string name="partner_service_offline">Layanan pekan bersama teman tidak dapat diakses. Coba lagi saat terhubung ke internet.</string>
+    <string name="partner_error_supporter_only">Anda bisa bergabung dalam pekan bersama teman untuk memberi semangat.</string>
+    <string name="partner_error_display_name">Pilih nama tampilan yang berisi 1 hingga 32 karakter yang terlihat.</string>
+    <string name="partner_error_adults_only">Pekan bersama teman tersedia untuk orang dewasa berusia 18 tahun ke atas yang telah menjalani skrining.</string>
+</resources>

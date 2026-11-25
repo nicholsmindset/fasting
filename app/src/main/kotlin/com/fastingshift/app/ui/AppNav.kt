@@ -59,6 +59,8 @@ import com.fastingshift.app.ui.settings.SchedulesRoute
 import com.fastingshift.app.ui.settings.SettingsRoute
 import com.fastingshift.app.ui.settings.SettingsSection
 import com.fastingshift.app.ui.timer.TimerRoute
+import com.fastingshift.app.ui.partner.PartnerLinks
+import com.fastingshift.app.ui.partner.PartnerWeekRoute
 import com.fastingshift.app.ui.trust.TrustRoute
 import com.fastingshift.app.ui.challenge.ChallengeDetailRoute
 import com.fastingshift.app.ui.challenge.ChallengeListRoute
@@ -84,6 +86,8 @@ object Routes {
     const val ADD_PAST_FAST = "addfast"
     const val TRUST = "trust"
     const val MUSLIM = "muslim"
+    const val PARTNER = "partner?invite={invite}"
+    fun partner(code: String? = null) = if (code == null) "partner" else "partner?invite=" + (code.takeIf(PartnerLinks::valid) ?: "invalid")
     const val CHALLENGES = "challenges"
     const val CHALLENGE_NEW = "challenges/new"
     const val CHALLENGE = "challenge/{challengeId}"
@@ -247,6 +251,7 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
                     onOpenWeek = { day -> nav.navigate(if (day == null) Routes.SCHEDULES else "${Routes.SCHEDULES}?date=$day") },
                     onOpenMuslimHub = { nav.navigate(Routes.MUSLIM) },
                     onOpenReminders = { nav.navigate(SettingsSection.REMINDERS.route) },
+                    onOpenPartner = { nav.navigate(Routes.partner()) },
                 )
             }
             composable(Routes.HISTORY) {
@@ -278,12 +283,16 @@ fun AppNav(onboarded: Boolean, deepLink: String?, onDeepLinkHandled: () -> Unit,
             }
             composable(Routes.RELIABILITY) { ReliabilityRoute(onBack = back) }
             composable(Routes.TRUST) { TrustRoute(onBack = back) }
+            composable(Routes.PARTNER, arguments = listOf(navArgument("invite") { type = NavType.StringType; nullable = true; defaultValue = null })) { e ->
+                PartnerWeekRoute(invite = e.arguments?.getString("invite"), onBack = back)
+            }
             composable(Routes.CHALLENGES) {
                 ChallengeListRoute(
                     onBack = back,
                     onOpen = { nav.navigate(Routes.challenge(it)) },
                     onNew = { nav.navigate(Routes.CHALLENGE_NEW) },
                     onJoinCode = { nav.navigate(Routes.joinChallenge(it)) },
+                    onPartner = { nav.navigate(Routes.partner(it)) },
                 )
             }
             composable(Routes.CHALLENGE_NEW) {
