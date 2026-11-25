@@ -37,7 +37,8 @@ class WrappedMoatsCaptureTest {
             compose.waitUntil(12_000) { opened() == expected }
         } catch (error: Throwable) {
             val warnings = org.robolectric.shadows.ShadowLog.getLogsForTag("RecapShare")
-            throw AssertionError("Chooser did not open; graphics errors: " + warnings.joinToString { it.throwable?.stackTraceToString().orEmpty() }, error)
+            val message = "Chooser did not open; graphics errors: " + warnings.joinToString { it.throwable?.stackTraceToString().orEmpty() }
+            throw AssertionError(message + "\nVisible tree: " + compose.onAllNodes(isRoot()).fetchSemanticsNodes().joinToString { it.toString() }, error)
         }
         val chooser = requireNotNull(shadowOf(app).nextStartedActivity)
         assertEquals(Intent.ACTION_CHOOSER, chooser.action)
