@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- The new recap falls back to English in the existing Chinese locale. Keep all other
+         locales, files and categories checked while this feature is outside the Chinese rollout. -->
+    <issue id="MissingTranslation">
+        <ignore path="src/main/res/values/strings_wrapped.xml"
+                regexp="is not translated in &quot;zh&quot; \(Chinese\)\s*$" />
+    </issue>
+</lint>
