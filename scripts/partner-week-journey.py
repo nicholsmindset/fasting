@@ -114,13 +114,25 @@ class PartnerScreen:
         self.device.screenshot(str(destination / f"{label}.png"))
 
     def leave(self):
-        self.tap("partner_leave", timeout=2)
-        # Compose creates a separate modal window for AlertDialog. Its accessibility
-        # labels remain available even though the parent NavHost's resource-ID export
-        # does not apply inside that window.
+        # A renewal changes the page height while Compose keeps the previous scroll
+        # position. Wait for the action to settle after scrolling before a physical tap.
         title = self.device(packageName=self.package, text="Leave this partner week?")
-        if not title.wait(timeout=8):
+        for _ in range(3):
+            control = self.locate("partner_leave", timeout=2)
+            previous = None
+            for _ in range(30):
+                bounds = control.info["visibleBounds"] if control.exists else None
+                if bounds and bounds == previous and bounds["bottom"] - bounds["top"] >= 12:
+                    control.click()
+                    break
+                previous = bounds
+                time.sleep(0.20)
+            if title.wait(timeout=3):
+                break
+            self.device.swipe_ext("up", scale=0.55)
+        else:
             raise AssertionError("Leave confirmation did not open")
+        # Compose dialogs use a separate semantics window with accessible text labels.
         self.device(packageName=self.package, text="Leave partner week").click()
         self.locate("partner_create", timeout=10)
 
@@ -225,8 +237,9 @@ def journey(device):
     guest.resume()
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_self_marks", 0)
+    print("A new week required both members' consent and reset their progress.")
     guest.leave()
-    print("A new week required both members' consent, reset their progress, and let the guest end sharing.")
+    print("The guest could also end the renewed partnership.")
 
 
 def main():
