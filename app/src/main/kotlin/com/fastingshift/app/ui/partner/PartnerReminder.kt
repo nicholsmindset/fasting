@@ -89,9 +89,9 @@ class PartnerReminderWorker(context: Context, params: WorkerParameters) : Corout
         val id = inputData.getString("week") ?: return Result.success()
         val due = Instant.ofEpochMilli(inputData.getLong("at", 0))
         if (Instant.now().isAfter(due.plus(Duration.ofHours(1)))) return Result.success()
-        val repo = EntryPointAccessors.fromApplication(applicationContext, PartnerWorkerEntryPoint::class.java)
-            .partnerWeekRepository()
-        val week = repo.cachedWeek()
+        val entry = EntryPointAccessors.fromApplication(applicationContext, PartnerWorkerEntryPoint::class.java)
+        if (!entry.screeningRepository().getLatest().partnerEligibility().participant) return Result.success()
+        val week = entry.partnerWeekRepository().cachedWeek()
         if (week?.id == id && week.canCheckIn) Notifications.showPartnerReminder(applicationContext)
         return Result.success()
     }
