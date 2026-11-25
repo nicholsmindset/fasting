@@ -47,7 +47,14 @@ class PartnerScreen:
         raise AssertionError(f"{self.package} could not find {tag}")
 
     def tap(self, tag, **kwargs):
-        self.locate(tag, **kwargs).click()
+        target = self.locate(tag, **kwargs)
+        deadline = time.monotonic() + 12
+        while time.monotonic() < deadline:
+            if target.exists and target.info["enabled"]:
+                target.click()
+                return
+            time.sleep(0.15)
+        raise AssertionError(f"{self.package} did not enable {tag}")
 
     def edit(self, tag, text=None):
         self.tap(tag)
@@ -90,6 +97,12 @@ class PartnerScreen:
             time.sleep(0.25)
         raise AssertionError(f"{tag} did not display {count} of 3 check-ins")
 
+    def expect_unpaired(self):
+        # The foreground refresh may observe the departure before we can tap Refresh.
+        if not self.node("partner_create").wait(timeout=2) and self.node("partner_refresh").exists:
+            self.tap("partner_refresh", timeout=2)
+        self.locate("partner_create", timeout=10)
+
     def leave(self):
         self.tap("partner_leave", timeout=2)
         self.tap("partner_confirm_leave")
@@ -104,8 +117,7 @@ def invite(host, guest, supporter):
     guest.tap("partner_paste", timeout=3)
     guest.edit("partner_link")
     guest.tap("partner_preview")
-    guest.locate("partner_participant")
-    if not guest.device(packageName=guest.package, textContains="Rowan").wait(timeout=5):
+    if not guest.device(packageName=guest.package, text="Rowan invited you").wait(timeout=12):
         raise AssertionError("Invitation preview did not identify the host")
     guest.edit("partner_alias", "Jamie")
     guest.tap("partner_supporter" if supporter else "partner_participant")
@@ -156,8 +168,7 @@ def journey(device):
     print("Offline check-in survived a process restart, synchronized as one mark, and received encouragement.")
     host.leave()
     guest.resume()
-    guest.tap("partner_refresh", timeout=3)
-    guest.locate("partner_create")
+    guest.expect_unpaired()
     print("Leaving the partnership removed the shared week from the other installation.")
     host.resume()
     invite(host, guest, supporter=False)
