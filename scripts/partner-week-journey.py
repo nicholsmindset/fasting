@@ -32,12 +32,32 @@ class PartnerScreen:
     def adb(self, *args):
         return subprocess.check_output(["adb", "-s", self.serial, *args], text=True, timeout=120).strip()
 
+    def fixture_reachable(self):
+        # Exercise the exact loopback TCP port the app uses. Toybox returns zero
+        # on successful connection; EOF closes it without sending a TLS request.
+        result = subprocess.run(["adb", "-s", self.serial, "shell", "toybox", "nc",
+                                 "-w", "2", "127.0.0.1", "18443"],
+                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, timeout=8)
+        return result.returncode == 0
+
     @contextmanager
     def offline(self):
+        if not self.fixture_reachable():
+            raise AssertionError("The emulator could not reach the fixture before disconnect")
         self.adb("reverse", "--remove", FORWARD)
         smoke.adb = self.adb
         try:
             with smoke.offline_emulator():
+                # Removing the ADB reverse listener does not close a socket nginx
+                # and Android already negotiated. Drop the old app process before
+                # any tap, then relaunch against its previously saved membership.
+                self.adb("shell", "am", "force-stop", self.package)
+                if FORWARD in self.adb("reverse", "--list") or self.fixture_reachable():
+                    raise AssertionError("The emulator can still reach the fixture")
+                self.resume()
+                if self.fixture_reachable():
+                    raise AssertionError("Relaunching the app restored fixture connectivity")
                 yield
         finally:
             self.adb("reverse", FORWARD, FORWARD)
@@ -255,6 +275,12 @@ def fixture_query(query):
                                    text=True, timeout=20).strip()
 
 
+def expect_stored_host_marks(expected):
+    rows = fixture_query("SELECT cardinality(marks) FROM fasting_partners.members WHERE seat='host'").splitlines()
+    if rows != [str(expected)]:
+        raise AssertionError(f"Expected one host row with {expected} persisted marks, observed counts {rows!r}")
+
+
 def check_local_days(host, guest, initial):
     rows = fixture_query("SELECT seat, zone, cardinality(marks), marks[1] "
                          "FROM fasting_partners.members ORDER BY seat").splitlines()
@@ -280,6 +306,7 @@ def journey(host, guest, observer):
     host.open()
     invite(host, guest, observer, supporter=True)
     print("A supporter accepted on a different emulator, and the third install could not reuse the invitation.")
+    expect_stored_host_marks(0)
     with host.offline():
         host.tap("partner_checkin")
         host.assert_marks("partner_self_marks", 1)
@@ -291,15 +318,13 @@ def journey(host, guest, observer):
         host.launch()
         host.open()
         host.assert_marks("partner_self_marks", 1)
-        if fixture_query("SELECT cardinality(marks) FROM fasting_partners.members WHERE seat='host'") != "0":
-            raise AssertionError("Disconnected host unexpectedly reached the fixture")
+        expect_stored_host_marks(0)
     host.tap("partner_refresh", timeout=3)
     host.assert_marks("partner_self_marks", 1)
     guest.resume()
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_other_marks", 1)
-    if fixture_query("SELECT cardinality(marks) FROM fasting_partners.members WHERE seat='host'") != "1":
-        raise AssertionError("Retrying a disconnected mark did not produce exactly one server check-in")
+    expect_stored_host_marks(1)
     guest.capture("supporter-with-host-check-in")
     guest.tap("partner_cheer")
     host.resume()
@@ -362,6 +387,7 @@ def journey(host, guest, observer):
     # Host earns an unsynced mark; the online guest revokes the partnership.
     # Reconnecting and retrying must discard the local mark and keep the pair gone.
     host.resume()
+    expect_stored_host_marks(0)
     with host.offline():
         host.tap("partner_checkin")
         host.assert_marks("partner_self_marks", 1)
