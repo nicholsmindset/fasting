@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -35,19 +36,19 @@ class FoodLabelEntryTest {
         compose.onNodeWithText("Food label").performClick()
         compose.onNodeWithText("Look up").assertIsNotEnabled()
         val field = compose.onNode(hasSetTextAction())
-        field.performTextInput(soy)
+        field.performScrollTo().performTextInput(soy)
         compose.runOnIdle { assertEquals(emptyList<String>(), requests.toList()) }
-        compose.onNodeWithText("Look up").performClick()
+        compose.onNodeWithText("Look up").performScrollTo().performClick()
         compose.waitUntil(5_000) { vm.result is LookupResult.Found }
         compose.onNodeWithText("Soy drink").assertExists()
         compose.onNodeWithText("4.2 g").assertExists()
         compose.onNodeWithText("Not listed").assertExists()
-        field.performTextReplacement(water)
-        compose.onNodeWithText("Look up").performClick()
+        field.performScrollTo().performTextReplacement(water)
+        compose.onNodeWithText("Look up").performScrollTo().performClick()
         compose.waitUntil(5_000) { vm.result == LookupResult.Missing }
         compose.onNodeWithText("Open Food Facts has no entry", substring = true).assertExists()
-        field.performTextReplacement(soy)
-        compose.onNodeWithText("Look up").performClick()
+        field.performScrollTo().performTextReplacement(soy)
+        compose.onNodeWithText("Look up").performScrollTo().performClick()
         compose.onNodeWithText("Soy drink").assertExists()
         assertEquals(listOf(soy, water), requests.toList())
     }

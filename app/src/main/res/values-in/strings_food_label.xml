@@ -1,7 +1,7 @@
 <resources>
     <string name="food_label">Label pangan</string>
     <string name="food_label_summary">Periksa makanan atau minuman kemasan melalui kode batang.</string>
-    <string name="food_lookup_privacy">Pindai atau masukkan kode batang, lalu ketuk Cari. Open Food Facts menerima kode dan alamat jaringan Anda. Catatan puasa dan kesehatan Anda tetap di ponsel.</string>
+    <string name="food_lookup_privacy">Pindai atau masukkan kode batang, lalu ketuk Cari. Open Food Facts menerima kode dan alamat jaringan Anda. Pencarian ini tidak mengirim catatan puasa atau kesehatan Anda.</string>
     <string name="food_scan">Pindai kode batang</string>
     <string name="food_scan_unavailable">Pemindai tidak tersedia. Masukkan angka di bawah kode batang.</string>
     <string name="food_barcode">Nomor kode batang</string>

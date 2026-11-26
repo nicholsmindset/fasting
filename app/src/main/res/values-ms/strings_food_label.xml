@@ -1,7 +1,7 @@
 <resources>
     <string name="food_label">Label makanan</string>
     <string name="food_label_summary">Semak makanan atau minuman berbungkus melalui kod bar.</string>
-    <string name="food_lookup_privacy">Imbas atau masukkan kod bar, kemudian ketik Cari. Open Food Facts menerima kod dan alamat rangkaian anda. Log puasa dan kesihatan anda kekal pada telefon.</string>
+    <string name="food_lookup_privacy">Imbas atau masukkan kod bar, kemudian ketik Cari. Open Food Facts menerima kod dan alamat rangkaian anda. Carian ini tidak menghantar log puasa atau kesihatan anda.</string>
     <string name="food_scan">Imbas kod bar</string>
     <string name="food_scan_unavailable">Pengimbas tidak tersedia. Masukkan nombor di bawah kod bar.</string>
     <string name="food_barcode">Nombor kod bar</string>

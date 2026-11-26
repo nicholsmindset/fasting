@@ -1,7 +1,7 @@
 <resources>
     <string name="food_label">Food label</string>
     <string name="food_label_summary">Check a packaged food or drink by barcode.</string>
-    <string name="food_lookup_privacy">Scan or enter a barcode, then tap Look up. Open Food Facts receives the code and your network address. Your fasting and health logs stay on your phone.</string>
+    <string name="food_lookup_privacy">Scan or enter a barcode, then tap Look up. Open Food Facts receives the code and your network address. Your fasting and health logs are never sent with this lookup.</string>
     <string name="food_scan">Scan barcode</string>
     <string name="food_scan_unavailable">Scanner unavailable. Enter the numbers printed below the barcode.</string>
     <string name="food_barcode">Barcode number</string>
