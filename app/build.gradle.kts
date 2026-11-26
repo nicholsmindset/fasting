@@ -48,6 +48,11 @@ android {
         buildConfigField("boolean", "ADS_ENABLED", "true")
     }
 
+    androidResources {
+        // Android uses "in" for Indonesian resource qualifiers. Filter dependency translations too.
+        localeFilters += listOf("en", "ms", "in")
+    }
+
     signingConfigs {
         if (hasUploadKey) {
             create("upload") {

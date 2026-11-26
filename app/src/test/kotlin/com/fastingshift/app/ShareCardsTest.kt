@@ -60,7 +60,7 @@ class ShareCardsTest {
             val invite = ChallengeInvite(ChallengeType.DAILY_PROTOCOL, "window_16_8", LocalDate.of(2026, 11, 16), 366, name)
             for (link in listOf(ChallengeLinks.link(invite), ChallengeLinks.link(invite, pilot = true))) {
                 assertEquals(InviteResult.Valid(invite), ChallengeLinks.parse(link))
-                for (language in listOf("en", "ms", "id", "zh")) {
+                for (language in listOf("en", "ms", "id")) {
                     val config = Configuration(app.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)) }
                     val res = app.createConfigurationContext(config).resources
                     val text = res.getString(R.string.share_challenge_join, link)

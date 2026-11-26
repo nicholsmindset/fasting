@@ -29,6 +29,23 @@ def capture(device, expect, target):
     with target.open("wb") as image:
         subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=image, check=True)
 
+
+def toggle_timer_notification(screen, device):
+    screen.open_settings()
+    screen.open_settings_category("settings_open_reminders")
+    label = screen.strings["settings_ongoing"]
+    screen.find_node(device(textContains=label, packageName=package), label, scroll=True).click()
+    screen.back_to_settings()
+    screen.click("tab_timer")
+
+def wait_for_notification(present):
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        if bool(ongoing()) == present:
+            return
+        time.sleep(0.5)
+    raise AssertionError(f"Unexpected timer notification presence; expected {present}")
+
 def main():
     sdk = int(adb("shell", "getprop", "ro.build.version.sdk"))
     emulator = any(adb("shell", "getprop", prop) == "1" for prop in ("ro.boot.qemu", "ro.kernel.qemu"))
@@ -38,12 +55,7 @@ def main():
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
     screen = ui.Screen(device, Path.cwd())
     screen.onboard("tab_timer", allow_notifications=True)
-    screen.open_settings()
-    screen.open_settings_category("settings_open_reminders")
-    label = screen.strings["settings_ongoing"]
-    screen.find_node(device(textContains=label, packageName=package), label, scroll=True).click()
-    screen.back_to_settings()
-    screen.click("tab_timer")
+    toggle_timer_notification(screen, device)
     screen.click("timer_start", scroll=True)
     screen.find("timer_end", scroll=True)
     for _ in range(15):
@@ -73,12 +85,22 @@ def main():
             directory / f"api-{sdk}-{label}-shade.png")
     adb("shell", "cmd", "statusbar", "collapse")
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
+    screen.find("timer_end", scroll=True)
+    toggle_timer_notification(screen, device)
+    wait_for_notification(False)
+    screen.find("timer_end", scroll=True)
+    toggle_timer_notification(screen, device)
+    wait_for_notification(True)
+    screen.find("timer_end", scroll=True)
     screen.click("timer_end", scroll=True)
     for _ in range(15):
         if not ongoing():
             break
         time.sleep(1)
     assert not ongoing(), "Ended fast still has an ongoing notification"
+    lifecycle = "Disabling the ongoing notification removed it during the fast; re-enabling restored it. Ending the fast cleared it."
+    print(lifecycle, flush=True)
+    (directory / "lifecycle.txt").write_text(lifecycle + "\n")
 
 if __name__ == "__main__":
     main()

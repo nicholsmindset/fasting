@@ -761,12 +761,26 @@ def main(device, old_apk, new_apk, recovery_apk):
     if notification_permission_granted():
         adb("shell", "pm", "revoke", PACKAGE, NOTIFICATIONS)
 
+    # Reproduce the actual pre-upgrade preference left by a previously supported release.
+    adb("shell", "cmd", "locale", "set-app-locales", PACKAGE, "--locales", "zh-CN")
+    assert "[zh-CN]" in adb("shell", "cmd", "locale", "get-app-locales", PACKAGE)
+
     # Package manager enforces package identity and signing certificate continuity.
     adb("install", "-r", new_apk)
     assert installed_version() == 101, "Replacement version was not installed"
     device.app_start(PACKAGE, activity=ACTIVITY, wait=True)
     candidate = Screen(device, Path("."))
-    candidate.find("tab_timer")
+    candidate.find("tab_history")
+    assert "are []" in adb("shell", "cmd", "locale", "get-app-locales", PACKAGE), "Retired language override survived startup"
+    for language, qualifier in [("ms", "ms"), ("id", "in")]:
+        resources = Path(f"app/src/main/res/values-{qualifier}/strings_features.xml")
+        label = ET.parse(resources).getroot().find("string[@name='tab_history']").text
+        adb("shell", "cmd", "locale", "set-app-locales", PACKAGE, "--locales", language)
+        candidate.find_node(device(packageName=PACKAGE, text=label), label)
+        print(f"Verified Android rendered {language}: {label}", flush=True)
+    adb("shell", "cmd", "locale", "set-app-locales", PACKAGE)
+    candidate.find("tab_history")
+    print("Verified the old Chinese preference reverted to the phone language and the English History tab.", flush=True)
     candidate.find("timer_end", scroll=True)
     upgraded = candidate.export_backup("upgrade-after.json")
     after = fingerprint(upgraded["fasts"])

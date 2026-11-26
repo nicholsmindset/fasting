@@ -13,6 +13,7 @@ CREATE SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 SQL
 psql -v ON_ERROR_STOP=1 -f server/partner-week/migration.sql
+psql -v ON_ERROR_STOP=1 -f server/partner-week/test.sql
 psql -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema'"
 openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 1 -keyout "$fixture/ca.key" -out "$fixture/ca.crt" -subj '/CN=Partner week runner CA' -addext 'basicConstraints=critical,CA:TRUE' >/dev/null 2>&1
 openssl req -newkey rsa:2048 -nodes -keyout "$fixture/server.key" -out "$fixture/server.csr" -subj '/CN=127.0.0.1' >/dev/null 2>&1

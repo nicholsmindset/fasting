@@ -66,4 +66,21 @@ class FastingWrappedTest {
         assertNull(FastingWrapped.sunday(rows, utc, dec.plus(Duration.ofDays(1))))
         assertNull(FastingWrapped.sunday(emptyList(), utc, dec)!!.average)
     }
+
+    @Test fun sundayUsesLocalWeekBoundariesAndElapsedTimeAcrossSpringForward() {
+        val losAngeles = ZoneId.of("America/Los_Angeles")
+        val rows = listOf(
+            session("2026-03-02T07:30:00Z", 1, 1), // Sunday night locally, in the prior week.
+            session("2026-03-02T08:15:00Z", 4, 4), // Monday morning locally.
+            session("2026-03-08T09:00:00Z", 2, 2), // 01:00 PST to 04:00 PDT.
+            session("2026-03-08T10:30:00Z", 3, 3), // Has not ended at the time of the recap.
+        )
+        assertNull(FastingWrapped.sunday(rows, losAngeles, Instant.parse("2026-03-08T07:59:59Z")))
+        val sunday = assertNotNull(FastingWrapped.sunday(rows, losAngeles, Instant.parse("2026-03-08T11:00:00Z")))
+        assertEquals(LocalDate.of(2026, 3, 2), sunday.weekStart)
+        assertEquals(2, sunday.completed)
+        assertEquals(Duration.ofHours(3), sunday.average)
+        assertEquals(Duration.ofHours(1), sunday.previousAverage)
+        assertNull(FastingWrapped.sunday(rows, losAngeles, Instant.parse("2026-03-09T07:00:00Z")))
+    }
 }

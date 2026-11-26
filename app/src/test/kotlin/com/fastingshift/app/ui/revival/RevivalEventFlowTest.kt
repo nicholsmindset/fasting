@@ -59,6 +59,9 @@ class RevivalEventFlowTest {
             screening.save(screened)
             assertFalse(opening.claimStartAlert("january-2027"))
             (8..11).forEach { completed("2026-12-%02d".format(it)) }
+            val scheduled = during("2026-12-31").nextAlert(null)
+            assertEquals("january-2027" to at("2027-01-01", 10), scheduled)
+            assertFalse(during("2027-01-02").claimStartAlert("january-2027"))
             assertFalse(opening.claimStartAlert("post-eid-2027"))
             assertTrue(opening.claimStartAlert("january-2027"))
             assertFalse(opening.claimStartAlert("january-2027"))
@@ -93,6 +96,19 @@ class RevivalEventFlowTest {
             assertNull(db.revivalDao().all().single { it.id == eidEvent.id }.joined)
             val onEid = withTimeout(10_000) { eid.observe().first { it.joinedCount == 1 } }
             assertNull(onEid.event)
+
+            // Dismissing an invitation before its reminder runs must also block subsequent joins.
+            val dismissed = eidEvent.copy(id = "spring-dismissed",
+                starts = at("2027-04-05", 0).toEpochMilli(), ends = at("2027-04-10", 0).toEpochMilli())
+            db.revivalDao().seed(listOf(dismissed))
+            val openingDay = during("2027-04-05")
+            openingDay.dismiss(dismissed.id)
+            assertFalse(openingDay.claimStartAlert(dismissed.id))
+            openingDay.join(dismissed.id)
+            val record = db.revivalDao().all().single { it.id == dismissed.id }
+            assertTrue(record.dismissed)
+            assertFalse(record.notified)
+            assertNull(record.joined)
         } finally {
             prefs.clearAll()
             db.close()

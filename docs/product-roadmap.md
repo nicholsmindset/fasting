@@ -12,7 +12,7 @@ The first customer to test is someone who already fasts, but whose dinner times 
 | My week | Inspect the actual starts on a date, compare them with the usual schedule, move the first start, skip that date or restore it. Selecting the usual first time clears the exception. |
 | History and Log | View hours separately from planned days completed. Open a dated record to edit it or add a missed fast. Log water, weight and electrolytes. Full history and export are available in the free app. |
 | Shift+ | Review the four most recent finished Monday–Sunday weeks. A weekday appears as a pattern after at least two distinct dates were moved or skipped. Tap it to see the dates, revised start times or skips, then open My week to decide what to change. Free users can inspect a labeled fictional example. |
-| Appearance and preferences | System, light and dark appearance, optional weight display, reminder settings, backup and restore. One-day edits and reviews have English, Malay, Indonesian and Simplified Chinese resources. Native review is pending. |
+| Appearance and preferences | System, light and dark appearance, optional weight display, reminder settings, backup and restore. One-day edits and reviews have English, Malay and Indonesian resources. Native review is pending. |
 
 ## Delivery order
 
