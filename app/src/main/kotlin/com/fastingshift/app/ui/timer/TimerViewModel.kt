@@ -211,9 +211,13 @@ class TimerViewModel @Inject constructor(
         }
         val zone = ZoneId.systemDefault()
         val todayDate = s.now.atZone(zone).toLocalDate()
-        val eligible = eligibleSchedules(d.schedules, s.maxHours?.let { Duration.ofHours(it.toLong()) })
-        val plan = appSettings.planHistory
         val firstEvening = settings.firstEvening()
+        // A widget can complete the first fast while Home is closed, before cleanup runs.
+        val applicable = if (all.isNotEmpty() && firstEvening != null) {
+            d.schedules.filterNot { it.id == firstEvening.first }
+        } else d.schedules
+        val eligible = eligibleSchedules(applicable, s.maxHours?.let { Duration.ofHours(it.toLong()) })
+        val plan = appSettings.planHistory
         val firstPlan = firstEvening?.takeIf { all.isEmpty() && !it.second.isBefore(todayDate) }?.let { (id, date) ->
             val occurrence = ScheduleCalculator.startsOn(eligible, date, zone, plan.breakWeeks, plan.dayOverrides, firstEvening)
                 .firstOrNull { it.first.id == id }

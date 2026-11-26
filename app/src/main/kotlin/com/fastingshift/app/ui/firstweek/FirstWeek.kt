@@ -123,9 +123,16 @@ fun FirstFastCard(
         SecondaryButton(stringResource(if (plan == null) R.string.first_plan_choose_time else R.string.first_plan_edit_time),
             onClick = openEditor, enabled = !busy)
         if (plan != null) {
-            Text(stringResource(if (remindersAvailable) R.string.week_timer_reminder_on else R.string.week_timer_reminder_off),
-                style = MaterialTheme.typography.bodyMedium)
-            if (!remindersAvailable) PlainButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
+            val upcoming = plan.start > now
+            val reminderLabel = when {
+                !upcoming -> R.string.first_plan_time_passed
+                remindersAvailable -> R.string.week_timer_reminder_on
+                else -> R.string.week_timer_reminder_off
+            }
+            Text(stringResource(reminderLabel), style = MaterialTheme.typography.bodyMedium)
+            if (upcoming && !remindersAvailable) {
+                PlainButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
+            }
         }
     }
     if (editing) {

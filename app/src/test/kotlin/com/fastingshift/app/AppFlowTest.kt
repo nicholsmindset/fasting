@@ -39,6 +39,7 @@ import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
 import com.fastingshift.domain.service.FastRepository
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -58,6 +59,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * End-to-end run of the real app (real Hilt graph, navigation and screens) under Robolectric:
@@ -251,7 +253,18 @@ class AppFlowTest {
         }
     }
 
-    @Test fun lateDinnerWindowSurvivesDecliningNotificationsAndCanBeEditedOnHome() {
+    private fun captureFirstPlan(name: String) {
+        if (System.getProperty("fastingshift.screenshotDir") == null) return
+        compose.waitForIdle()
+        val file = moatsOutput("first-plan").resolve("$name.png")
+        captureScreenRoboImage(file.absolutePath)
+        check(file.length() > 0)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
+    fun lateDinnerWindowSurvivesDecliningNotificationsAndCanBeEditedOnHome() {
         val original = runBlocking { settings.toRecord() }
         val application = compose.activity.application
         shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
@@ -264,12 +277,15 @@ class AppFlowTest {
             chooseStartTime(21, 30)
             val previewStart = compose.onNodeWithTag("first-plan-start").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
             val previewFinish = compose.onNodeWithTag("first-plan-finish").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+            captureFirstPlan("01-overnight-preview")
             click(s(R.string.first_plan_schedule))
             waitFor(s(R.string.first_plan_saved_title))
             click(s(R.string.onb_not_now))
             waitFor(s(R.string.first_plan_home_title))
             waitFor(previewStart)
             waitFor(previewFinish)
+            compose.onNodeWithTag("first-plan-saved").performScrollTo()
+            captureFirstPlan("02-saved-home")
 
             val (id, day) = assertNotNull(schedules.firstEvening())
             val planned = runBlocking { schedules.getAll().single { it.id == id } }

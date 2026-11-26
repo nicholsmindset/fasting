@@ -20,15 +20,15 @@ import com.fastingshift.domain.safety.ScreeningOutcome
 import com.fastingshift.domain.safety.StartRequirement
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
-import com.fastingshift.domain.service.StartResult
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
+import com.fastingshift.domain.service.StartResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Duration
 import java.time.ZonedDateTime
-import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -176,13 +176,15 @@ class OnboardingViewModel @Inject constructor(
         val ack = handle[KEY_ACK] ?: false
         // Steps after the result need its outcome; without valid answers, go back to the form.
         val firstStart = handle.get<String>(KEY_FIRST_START)?.let { runCatching { ZonedDateTime.parse(it) }.getOrNull() }
+        val allowed = outcome?.let { allowedProtocols(it.result, it.result == GateResult.SOFT && ack) }.orEmpty()
         val safeStep = when {
             step > Step.SCREENING && outcome == null -> Step.SCREENING
+            step == Step.FIRST_PLAN && allowed.isEmpty() -> Step.RESULT
             // Previous builds offered notifications before a plan existed. Resume into the free app.
             step == Step.NOTIFICATIONS && firstStart == null -> Step.COMPLETE
             else -> step
         }
-        val allowed = outcome?.let { allowedProtocols(it.result, it.result == GateResult.SOFT && ack) }.orEmpty()
+        val savedProtocol = handle.get<String>(KEY_SELECTED)?.let(Presets::byId) ?: Presets.W16_8
         return OnboardingState(
             step = safeStep,
             firstStart = firstStart,
@@ -194,7 +196,7 @@ class OnboardingViewModel @Inject constructor(
             outcome = outcome,
             clinicianAck = ack,
             protocols = allowed,
-            selected = handle.get<String>(KEY_SELECTED)?.let(Presets::byId) ?: Presets.W16_8,
+            selected = if (safeStep == Step.FIRST_PLAN && savedProtocol !in allowed) allowed.first() else savedProtocol,
         )
     }
 
@@ -294,9 +296,10 @@ class OnboardingViewModel @Inject constructor(
 
     fun saveFirstPlan(offerNotifications: Boolean) = runFirstAction { st ->
         val start = st.firstStart ?: return@runFirstAction
+        val askForPermission = offerNotifications && settings.current().reminders.fastStartEnabled
         when (planner.planAt(st.selected, start)) {
             EveningOffer.AVAILABLE, EveningOffer.COVERED -> {
-                val next = if (offerNotifications && settings.current().reminders.fastStartEnabled) Step.NOTIFICATIONS else Step.COMPLETE
+                val next = if (askForPermission) Step.NOTIFICATIONS else Step.COMPLETE
                 _state.update { it.copy(step = next) }
             }
             EveningOffer.UNAVAILABLE -> _state.update { it.copy(planError = R.string.first_plan_conflict) }

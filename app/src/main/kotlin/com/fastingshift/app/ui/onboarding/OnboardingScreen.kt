@@ -81,6 +81,7 @@ import com.fastingshift.app.R
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.NicholsMark
 import com.fastingshift.app.ui.firstweek.FirstPlanTimeFields
 import com.fastingshift.app.ui.safety.ChecklistDialog
 import com.fastingshift.app.ui.settings.WelcomeHistoryImport
@@ -232,7 +233,10 @@ private fun Welcome(onStart: () -> Unit, onTour: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            WelcomeArt()
+            Box {
+                WelcomeArt()
+                NicholsMark(Modifier.align(Alignment.TopStart).padding(12.dp).size(36.dp), compact = true)
+            }
             Text(stringResource(R.string.onb_welcome_title), style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
             Text(stringResource(R.string.onb_welcome_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
