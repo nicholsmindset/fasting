@@ -102,6 +102,31 @@ object ShareCards {
         return bmp
     }
 
+    /** The pair's keepsake takes only a date range. Names, logs and private plans never enter the image. */
+    fun renderPartnerKeepsake(res: Resources, period: String): Bitmap {
+        val bmp = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val cream = Color.rgb(242, 237, 228)
+        val mint = Color.rgb(131, 218, 184)
+        canvas.drawColor(Color.rgb(7, 31, 28))
+        brand(canvas, res)
+        val width = (WIDTH - 2 * PAD).toInt()
+        val mark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = mint }
+        repeat(3) { index -> canvas.drawCircle(PAD + 30f + index * 84f, 368f, 30f, mark) }
+        val kicker = layout(res.getString(R.string.partner_title), paint(44f, cream), width, maxLines = 2)
+        draw(canvas, kicker, PAD, 475f)
+        val headline = paint(96f, mint).apply { typeface = Typeface.SERIF }
+        val title = layout(res.getString(R.string.partner_week_complete), headline, width, maxLines = 3)
+        val titleY = 475f + kicker.height + 24f
+        draw(canvas, title, PAD, titleY)
+        val note = layout(res.getString(R.string.partner_keepsake_note), paint(44f, cream), width, maxLines = 4)
+        draw(canvas, note, PAD, titleY + title.height + 32f)
+        canvas.drawLine(PAD, HEIGHT - 230f, WIDTH - PAD, HEIGHT - 230f,
+            Paint().apply { color = Color.rgb(53, 83, 74); strokeWidth = 2f })
+        footerLine(canvas, period)
+        return bmp
+    }
+
     // ---------- sharing ----------
 
     fun shareFast(context: Context, fast: Fast) {

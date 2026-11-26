@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_plan_title">My check-in days</string>
+    <string name="partner_plan_empty">Choose up to three days. Your partner only sees your check-ins.</string>
+    <string name="partner_plan_help">Only you can see these dates. You can check in on any day of the week, including a rest day. Removing a day also cancels its reminder.</string>
+    <string name="partner_plan_save">Save</string>
+    <string name="partner_plan_reminder_time">Reminder time · %1$s</string>
+    <string name="partner_quiet_hours">Use quiet hours</string>
+    <string name="partner_quiet_from">Quiet from · %1$s</string>
+    <string name="partner_quiet_until">Quiet until · %1$s</string>
+    <string name="partner_plan_reminder_preview">One reminder around %1$s (%2$s).</string>
+    <string name="partner_quiet_conflict">Choose a reminder time outside your quiet hours.</string>
+    <string name="partner_plan_no_reminder">No check-in day remains at this time. Choose another time or edit your days.</string>
+    <string name="partner_plan_save_error">Could not save your days on this phone. Please try again.</string>
+</resources>

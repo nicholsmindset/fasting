@@ -26,6 +26,8 @@ Ordinary challenge links share plan settings and keep progress on each phone. If
 
 The service processes a chosen nickname, participant or supporter role, time zone, an app-generated device credential, invitation details and week dates. When you choose to check in or send a preset reply, your partner can see the check-in day or reply. Sharing never includes fasting times, fasting duration, notes, health measurements, screening or religious records. Partner activity is separate from advertising and billing. Anyone you send an unused invitation to can preview the inviter’s nickname and may claim the invitation.
 
+Your planned Partner Week check-in days, reminder time and quiet hours stay on your phone. Your partner sees the days you actually check in. If you request another week, the service shares your request with your partner. A new week starts when both people agree. In versions with the Pause here option, you can withdraw a pending request before the new week starts. Once the service confirms the withdrawal, your partner’s next refresh shows that the request is gone.
+
 Leave the partner week while online to remove the shared week for both people. If you leave offline, reconnect and allow the app to sync before uninstalling or clearing its data. Uninstalling alone clears the local copy. An unaccepted invite expires in seven days. A completed week expires 30 days after it ends for both people. Expired invitations and weeks become inaccessible immediately. An hourly cleanup deletes their records, including both partners’ check-ins and encouragement. Starting another week together replaces the previous week.
 
 ## Files you choose to save

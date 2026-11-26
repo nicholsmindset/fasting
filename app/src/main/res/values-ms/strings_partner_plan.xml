@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_plan_title">Hari daftar hadir saya</string>
+    <string name="partner_plan_empty">Pilih sehingga tiga hari. Pasangan anda hanya dapat melihat apabila anda mendaftar hadir.</string>
+    <string name="partner_plan_help">Hanya anda dapat melihat tarikh ini. Anda boleh daftar hadir pada mana-mana hari minggu ini, termasuk hari rehat. Jika anda membuang sesuatu hari, peringatannya juga dibatalkan.</string>
+    <string name="partner_plan_save">Simpan</string>
+    <string name="partner_plan_reminder_time">Waktu peringatan · %1$s</string>
+    <string name="partner_quiet_hours">Gunakan waktu senyap</string>
+    <string name="partner_quiet_from">Senyap mulai · %1$s</string>
+    <string name="partner_quiet_until">Senyap hingga · %1$s</string>
+    <string name="partner_plan_reminder_preview">Satu peringatan sekitar %1$s (%2$s).</string>
+    <string name="partner_quiet_conflict">Pilih waktu peringatan di luar waktu senyap anda.</string>
+    <string name="partner_plan_no_reminder">Tiada lagi hari daftar hadir yang sesuai pada waktu ini. Pilih waktu lain atau ubah hari anda.</string>
+    <string name="partner_plan_save_error">Hari pilihan anda tidak dapat disimpan pada telefon ini. Sila cuba lagi.</string>
+</resources>

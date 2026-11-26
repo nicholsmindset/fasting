@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_plan_title">Hari check-in saya</string>
+    <string name="partner_plan_empty">Pilih hingga tiga hari. Pasangan Anda hanya dapat melihat saat Anda check-in.</string>
+    <string name="partner_plan_help">Hanya Anda yang dapat melihat tanggal ini. Anda bisa check-in pada hari apa pun minggu ini, termasuk hari istirahat. Menghapus hari juga membatalkan pengingat untuk hari itu.</string>
+    <string name="partner_plan_save">Simpan</string>
+    <string name="partner_plan_reminder_time">Waktu pengingat · %1$s</string>
+    <string name="partner_quiet_hours">Gunakan jam tenang</string>
+    <string name="partner_quiet_from">Mulai jam tenang · %1$s</string>
+    <string name="partner_quiet_until">Akhir jam tenang · %1$s</string>
+    <string name="partner_plan_reminder_preview">Satu pengingat sekitar %1$s (%2$s).</string>
+    <string name="partner_quiet_conflict">Pilih waktu pengingat di luar jam tenang Anda.</string>
+    <string name="partner_plan_no_reminder">Tidak ada hari check-in tersisa pada waktu ini. Pilih waktu lain atau ubah pilihan hari Anda.</string>
+    <string name="partner_plan_save_error">Pilihan hari Anda tidak dapat disimpan di ponsel ini. Silakan coba lagi.</string>
+</resources>

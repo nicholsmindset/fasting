@@ -5,6 +5,7 @@ import com.fastingshift.domain.safety.FastPolicy
 import com.fastingshift.domain.safety.ScreeningEvaluator
 import com.fastingshift.domain.service.ScreeningRecord
 import java.time.LocalDate
+import java.time.ZoneId
 import org.json.JSONObject
 
 data class PartnerMember(val alias: String, val role: String, val days: List<String>)
@@ -25,6 +26,7 @@ data class PartnerWeek(
     val renewalRequestedByPartner: Boolean,
     val inviteExpiresAt: String?,
     val today: String,
+    val zone: ZoneId = ZoneId.systemDefault(),
 )
 
 data class PartnerInvitePreview(val hostAlias: String, val code: String, val expiresAt: String? = null)
@@ -35,10 +37,13 @@ data class PartnerUiState(
     val busy: Boolean = false,
     val offline: Boolean = false,
     val pendingDays: Set<String> = emptySet(),
+    val plannedDays: Set<String> = emptySet(),
     @StringRes val message: Int? = null,
     val participantAllowed: Boolean? = null,
     val adultAllowed: Boolean? = null,
     val leaving: Boolean = false,
+    val pausedWeekId: String? = null,
+    val showTimerShortcut: Boolean = true,
 )
 
 internal fun JSONObject.optionalString(name: String): String? =
@@ -59,6 +64,7 @@ internal fun projectPartnerWeek(
     today: LocalDate,
     invite: String?,
     pendingDays: Set<String>,
+    zone: ZoneId = ZoneId.systemDefault(),
 ): PartnerWeek {
     val me = data.getString("self")
     val other = if (me == "host") "guest" else "host"
@@ -87,7 +93,7 @@ internal fun projectPartnerWeek(
         // The other person may still have a local day left. Only the server knows when
         // both seven-day windows have ended and a renewal vote can be recorded.
         serverStatus == "finished" && !voted, voted, otherMember?.optBoolean("renewed") == true,
-        data.optionalString("expiresAt"), date,
+        data.optionalString("expiresAt"), date, zone,
     )
 }
 

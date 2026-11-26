@@ -6,7 +6,7 @@
     <string name="partner_start">Start a partner week</string>
     <string name="partner_intro">Invite one person. Check in on any three days this week, even when you change your plans. Your partner can join in or cheer you on.</string>
     <string name="partner_alias">Name your partner will see</string>
-    <string name="partner_privacy">Fasting Shift shares your chosen name, check-in days and preset encouragement with your partner. Your timer, health logs and reasons for checking in stay on your phone.</string>
+    <string name="partner_privacy">Your partner sees your chosen name, role, check-in days, preset messages and whether you ask for another week. Your planned days, fasting timer, health logs and reasons for checking in stay on this phone.</string>
     <string name="partner_support_only">You can accept an invitation to cheer someone on. This role never asks you to fast.</string>
     <string name="partner_create">Create invitation</string>
     <string name="partner_open_invite">Open an invitation</string>

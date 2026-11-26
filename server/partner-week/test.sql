@@ -54,9 +54,15 @@ begin
     req:=jsonb_build_object('action','renew','deviceHash',hostkey,'weekId',wid);
     result:=public.fasting_partner_week(req);
     assert result#>>'{week,id}'=wid and result#>>'{week,host,renewed}'='true' and result#>>'{week,guest,renewed}'='false';
+    result:=public.fasting_partner_week(req||jsonb_build_object('action','pause'));
+    assert result#>>'{week,host,renewed}'='false' and jsonb_array_length(result#>'{week,host,days}')=3;
+    assert public.fasting_partner_week(req||jsonb_build_object('action','pause'))#>>'{week,id}'=wid;
     result:=public.fasting_partner_week(req||jsonb_build_object('deviceHash',guestkey));
+    assert result#>>'{week,id}'=wid and result#>>'{week,guest,renewed}'='true';
+    result:=public.fasting_partner_week(req);
     changed_wid:=result#>>'{week,id}';
     assert changed_wid is not null and changed_wid<>wid;
+    assert public.fasting_partner_week(req||jsonb_build_object('action','pause'))->>'error'='stale';
     assert result#>'{week,host,days}'='[]'::jsonb and result#>'{week,cheers}'='[]'::jsonb;
     assert public.fasting_partner_week(jsonb_build_object('action','leave','weekId',wid,'deviceHash',hostkey))->>'error'='stale';
     assert public.fasting_partner_week(jsonb_build_object('action','leave','weekId',changed_wid,'deviceHash',guestkey))->'week'='null'::jsonb;

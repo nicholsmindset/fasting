@@ -22,6 +22,8 @@ internal data class PartnerSnapshot(
     val week: PartnerWeek? = null,
     val pendingDays: Set<String> = emptySet(),
     val leaving: Boolean = false,
+    val pausedWeekId: String? = null,
+    val plannedDays: Set<String> = emptySet(),
 )
 
 /** Only opt-in social data is stored here. Fast history, screening and timers are never read. */
@@ -32,10 +34,12 @@ class PartnerWeekRepository internal constructor(
     private val clock: Clock,
     private val localZone: () -> ZoneId,
     private val scheduleSync: () -> Unit,
+    private val cancelPlannedReminder: (String, String) -> Unit = { _, _ -> },
 ) {
     @Inject constructor(@ApplicationContext context: Context, clock: Clock) : this(
         context.getSharedPreferences("partner_week", Context.MODE_PRIVATE),
         HttpPartnerTransport(), clock, ZoneId::systemDefault, { PartnerSyncWorker.enqueue(context) },
+        { id, day -> cancelPartnerPlanReminder(context, id, day) },
     )
 
     private val lock = Mutex()
@@ -47,10 +51,14 @@ class PartnerWeekRepository internal constructor(
     private val days get() = prefs.getStringSet("days", emptySet()).orEmpty().toSet()
     private val rawWeek get() = prefs.getString("week", null)?.let(::JSONObject)
     private val leavingId get() = prefs.getString("leaving", null)
-    private val today get() = LocalDate.now(clock.withZone(ZoneId.of(prefs.getString("zone", null) ?: localZone().id)))
+    private val memberZone get() = ZoneId.of(prefs.getString("zone", null) ?: localZone().id)
+    private val today get() = LocalDate.now(clock.withZone(memberZone))
+    private val plannedDays get() = prefs.getStringSet("planned_days", emptySet()).orEmpty().toSet()
 
     private fun publish() {
-        current.value = PartnerSnapshot(rawWeek?.let { projectPartnerWeek(it, today, token, days) }, days, leavingId != null)
+        current.value = PartnerSnapshot(rawWeek?.let { projectPartnerWeek(it, today, token, days, memberZone) },
+            pendingDays = days, leaving = leavingId != null, plannedDays = plannedDays,
+            pausedWeekId = prefs.getString("paused_week", null))
     }
 
     private fun save(change: SharedPreferences.Editor.() -> Unit) {
@@ -78,7 +86,7 @@ class PartnerWeekRepository internal constructor(
         return transport.send(body)
     }
 
-    private fun accept(response: JSONObject, acknowledgedDay: String? = null) {
+    private fun accept(response: JSONObject, acknowledgedDay: String? = null, pausedId: String? = null) {
         if (!response.has("week")) throw IOException("Missing partner week in response")
         if (!response.isNull("week") && response.optJSONObject("week") == null) {
             throw IOException("Unexpected partner week in response")
@@ -90,10 +98,15 @@ class PartnerWeekRepository internal constructor(
             return
         }
         // Validate before replacing the last usable offline copy.
-        projectPartnerWeek(next, today, token, emptySet())
+        val projected = projectPartnerWeek(next, today, token, emptySet())
         val sameWeek = rawWeek?.getString("id") == next.getString("id")
         val remaining = if (sameWeek) days - listOfNotNull(acknowledgedDay).toSet() else emptySet()
         save {
+            if (!sameWeek) remove("planned_days")
+            if (!sameWeek || projected.renewalRequestedByMe) remove("paused_week")
+            if (projected.id == pausedId && projected.status == "finished" && !projected.renewalRequestedByMe) {
+                putString("paused_week", pausedId)
+            }
             putString("week", next.toString())
             putStringSet("days", remaining)
             if (next.getString("status") != "pending") remove("invite")
@@ -145,6 +158,24 @@ class PartnerWeekRepository internal constructor(
         accept(response)
     }
 
+    internal suspend fun savePlannedDays(weekId: String, selection: Set<String>) = serialized {
+        publish()
+        val week = current.value.week ?: return@serialized
+        if (week.id != weekId || week.status != "active" || week.self.role != "participant") return@serialized
+        val start = week.startDate ?: return@serialized
+        val end = week.endDate ?: return@serialized
+        val first = LocalDate.parse(start)
+        val weekDays = (0L..6L).map { first.plusDays(it).toString() }
+        require(selection.size <= 3 && selection.all {
+            it in weekDays && it <= end && (it >= week.today || it in plannedDays)
+        })
+        if (selection != plannedDays) {
+            val removed = plannedDays - selection
+            save { putStringSet("planned_days", selection.toSet()) }
+            removed.forEach { cancelPlannedReminder(weekId, it) }
+        }
+    }
+
     internal suspend fun checkIn() = serialized {
         publish()
         val week = current.value.week ?: return@serialized
@@ -188,10 +219,24 @@ class PartnerWeekRepository internal constructor(
         if (week.canRenew) accept(request("renew", "weekId" to week.id))
     }
 
+    internal suspend fun pause(weekId: String) = serialized {
+        publish()
+        val week = current.value.week ?: throw PartnerRequestException(409)
+        if (week.id != weekId || week.status != "finished") throw PartnerRequestException(409)
+        try {
+            accept(request("pause", "weekId" to weekId), pausedId = weekId)
+        } catch (error: PartnerRequestException) {
+            // Another person could already have accepted the renewal or left.
+            if (error.status in setOf(409, 410)) accept(request("get"))
+            throw error
+        }
+    }
+
     internal suspend fun leave() = serialized {
         val id = rawWeek?.getString("id") ?: leavingId ?: return@serialized
         save {
             remove("week")
+            remove("planned_days")
             remove("invite")
             remove("days")
             putString("leaving", id)
