@@ -1,9 +1,12 @@
 package com.fastingshift.app.ui.food
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -38,17 +41,15 @@ class FoodLabelEntryTest {
         val field = compose.onNode(hasSetTextAction())
         field.performScrollTo().performTextInput(soy)
         compose.runOnIdle { assertEquals(emptyList<String>(), requests.toList()) }
-        compose.onNodeWithText("Look up").performScrollTo().performClick()
-        compose.waitUntil(5_000) { vm.result is LookupResult.Found }
+        compose.onNodeWithText("Look up").performScrollTo().assertIsEnabled().performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Soy drink").assertExists()
         compose.onNodeWithText("4.2 g").assertExists()
         compose.onNodeWithText("Not listed").assertExists()
         field.performScrollTo().performTextReplacement(water)
-        compose.onNodeWithText("Look up").performScrollTo().performClick()
-        compose.waitUntil(5_000) { vm.result == LookupResult.Missing }
+        compose.onNodeWithText("Look up").performScrollTo().assertIsEnabled().performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Open Food Facts has no entry", substring = true).assertExists()
         field.performScrollTo().performTextReplacement(soy)
-        compose.onNodeWithText("Look up").performScrollTo().performClick()
+        compose.onNodeWithText("Look up").performScrollTo().assertIsEnabled().performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Soy drink").assertExists()
         assertEquals(listOf(soy, water), requests.toList())
     }

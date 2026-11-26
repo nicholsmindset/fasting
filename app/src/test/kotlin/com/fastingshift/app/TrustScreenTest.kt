@@ -42,6 +42,7 @@ class TrustScreenTest {
             R.string.trust_leaves_ads_title,
             R.string.trust_leaves_purchases_title,
             R.string.trust_leaves_hc_title,
+            R.string.trust_leaves_food_label_title,
             R.string.trust_leaves_files_title,
             R.string.trust_leaves_partner_title,
         ).forEach { compose.onNodeWithText(s(it)).performScrollTo().assertExists() }

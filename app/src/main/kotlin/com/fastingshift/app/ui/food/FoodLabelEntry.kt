@@ -41,8 +41,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal class FoodLookupViewModel(private val fetch: (String) -> LookupResult) : ViewModel() {
-    constructor() : this(OpenFoodFacts::lookup)
+internal class FoodLookupViewModel(private val fetch: suspend (String) -> LookupResult) : ViewModel() {
+    constructor() : this({ code -> withContext(Dispatchers.IO) { OpenFoodFacts.lookup(code) } })
 
     var code by mutableStateOf("")
         private set
@@ -67,7 +67,7 @@ internal class FoodLookupViewModel(private val fetch: (String) -> LookupResult) 
         result = null
         loading = true
         request = viewModelScope.launch {
-            val response = withContext(Dispatchers.IO) { fetch(gtin) }
+            val response = fetch(gtin)
             if (response is LookupResult.Found) lastLabel = gtin to response
             result = response
             loading = false
