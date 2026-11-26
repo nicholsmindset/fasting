@@ -30,6 +30,10 @@ Your planned Partner Week check-in days, reminder time and quiet hours stay on y
 
 Leave the partner week while online to remove the shared week for both people. If you leave offline, reconnect and allow the app to sync before uninstalling or clearing its data. Uninstalling alone clears the local copy. An unaccepted invite expires in seven days. A completed week expires 30 days after it ends for both people. Expired invitations and weeks become inaccessible immediately. An hourly cleanup deletes their records, including both partners’ check-ins and encouragement. Starting another week together replaces the previous week.
 
+## Optional food label lookup
+
+On the Log screen, you can type a packaged product barcode or scan it on your device using Google Play services. Selecting **Look up** sends that barcode to Open Food Facts over HTTPS. The provider receives your network address and the Fasting Shift app name, version and public contact URL. This lookup does not attach a user ID, fasting records or health readings. The most recent successful result is kept temporarily in app memory. Choosing the source link opens the public product page in your browser. [Open Food Facts privacy policy](https://world.openfoodfacts.org/privacy)
+
 ## Files you choose to save
 
 The app excludes its private data from Android's automatic cloud backup and device transfer. You can save copies yourself through the Android file picker.
@@ -44,6 +48,8 @@ The app excludes its private data from Android's automatic cloud backup and devi
 To enable sync, open **Settings → Privacy and data → Sync with Health Connect** and grant Android’s Health Connect permissions. When you grant access, the app reads recent weight entries from Health Connect into your weight log. When you log weight or water with sync enabled, it writes the measurement and its time to Health Connect. Weight entries can also appear in your personal trends.
 
 With sync enabled, you can also allow the app to write glucose readings you log, so other apps you choose can see them; deleting a reading in the app removes the copy it wrote. If you open Body signals in Shift+ Insights and allow it, the app reads your sleep sessions and resting heart rate to compare fasting and non-fasting days. These are read while that screen is open and are not stored. Other apps can access Health Connect records according to the permissions you give them.
+
+In History, you can separately allow the weekly recap to read your total steps for the current week. Fasting Shift displays the total on your device without saving it or including it in exports, share cards, partner challenges, advertising or analytics. Revoke Steps access in Health Connect to turn this off.
 
 If a write fails, the measurement stays in the encrypted database. The app saves the local row number and a fingerprint in private preferences so you can retry from the Log screen. These references are excluded from the app's export and backup files. A successful retry or deletion of the local entry clears the corresponding pending reference. Turning sync off stops further attempts. The app does not read glucose from Health Connect, and never writes ketones (Health Connect has no ketone type) or religious records there.
 

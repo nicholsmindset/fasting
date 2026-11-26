@@ -127,6 +127,7 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
     var requested by rememberSaveable(invite) { mutableStateOf(invite) }
     var joining by rememberSaveable { mutableStateOf(false) }
     var shareOnCreate by rememberSaveable { mutableStateOf(false) }
+    var qrOnCreate by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     var manual by rememberSaveable { mutableStateOf(false) }
     var confirmLeave by rememberSaveable { mutableStateOf(false) }
@@ -134,12 +135,12 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
     val week = state.week
     val preview = state.preview?.takeIf { it.code == requested }
     val token = requested
-    LaunchedEffect(shareOnCreate, week?.inviteCode, state.message) {
+    LaunchedEffect(shareOnCreate, week?.inviteCode, week?.status, state.message) {
         if (shareOnCreate) {
-            val createdCode = week?.takeIf { it.status == "pending" }?.inviteCode?.takeIf(PartnerLinks::valid)
-            if (createdCode != null) {
+            val createdLink = week?.shareableInviteLink(Instant.now())
+            if (createdLink != null) {
                 shareOnCreate = false
-                sharePartnerInvitation(context, PartnerLinks.link(createdCode))
+                sharePartnerInvitation(context, createdLink)
             } else if (state.message != null) shareOnCreate = false
         }
     }
@@ -200,7 +201,7 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
                     TextButton(onClick = ::cancelInvite) { Text(stringResource(R.string.partner_dismiss)) }
                 }
                 when (week.status) {
-                    "pending" -> WaitingWeek(week)
+                    "pending" -> WaitingWeek(week, qrOnCreate) { qrOnCreate = false }
                     "active", "finished" -> WeekProgress(week, state, vm)
                 }
                 TextButton(onClick = vm::refresh, enabled = !state.busy, modifier = Modifier.testTag("partner_refresh")) {
@@ -242,8 +243,13 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
                     Notice(stringResource(R.string.partner_intro))
                     AliasField(alias) { alias = it }
                     Notice(stringResource(R.string.partner_privacy))
-                    PrimaryButton(stringResource(R.string.partner_create_share), { shareOnCreate = true; vm.create(alias.trim()) },
+                    PrimaryButton(stringResource(R.string.partner_create_share), { qrOnCreate = false; shareOnCreate = true; vm.create(alias.trim()) },
                         Modifier.testTag("partner_create"), enabled = alias.isNotBlank() && !state.busy)
+                    SecondaryButton(stringResource(R.string.partner_invite_in_person), {
+                        shareOnCreate = false
+                        qrOnCreate = true
+                        vm.create(alias.trim())
+                    }, Modifier.testTag("partner_create_qr"), enabled = alias.isNotBlank() && !state.busy)
                 } else {
                     Notice(stringResource(R.string.partner_support_only))
                 }
@@ -353,15 +359,27 @@ internal fun sharePartnerInvitation(context: Context, link: String) {
 }
 
 @Composable
-private fun WaitingWeek(week: PartnerWeek) {
+internal fun WaitingWeek(week: PartnerWeek, showOnCreate: Boolean = false, onQrOpened: () -> Unit = {}) {
     val context = LocalContext.current
     Heading(stringResource(R.string.partner_pending_title))
+    val link = rememberShareableInvite(week)
+    if (link == null) {
+        Notice(stringResource(R.string.partner_reshare_unavailable))
+        return
+    }
     Notice(stringResource(R.string.partner_waiting))
-    val token = week.inviteCode?.takeIf(PartnerLinks::valid) ?: return
-    val link = PartnerLinks.link(token)
+    var showQr by rememberSaveable(week.id, link) { mutableStateOf(false) }
+    LaunchedEffect(showOnCreate, link) {
+        if (showOnCreate) {
+            showQr = true
+            onQrOpened()
+        }
+    }
     PrimaryButton(stringResource(R.string.partner_share), {
         sharePartnerInvitation(context, link)
     }, Modifier.testTag("partner_share"))
+    SecondaryButton(stringResource(R.string.partner_show_qr), { showQr = true }, Modifier.testTag("partner_show_qr"))
+    if (showQr) PartnerQrDialog(link, onDismiss = { showQr = false })
     SecondaryButton(stringResource(R.string.partner_copy), {
         val clip = ClipData.newPlainText(context.getString(R.string.partner_title), link)
         clip.description.extras = PersistableBundle().apply { putBoolean("android.content.extra.IS_SENSITIVE", true) }

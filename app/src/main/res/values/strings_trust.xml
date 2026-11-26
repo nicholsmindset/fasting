@@ -92,9 +92,9 @@
     <string name="trust_leaves_purchases_title">Purchases: Google Play and RevenueCat</string>
     <string name="trust_leaves_purchases_body">Each time the app opens, it checks Shift+ with Google Play and RevenueCat, our billing service, using a generated app ID, even if you never buy. They handle purchase and basic device information, never your fasts, screening answers or measurements.</string>
     <string name="trust_leaves_hc_title">Health Connect: only if you turn it on</string>
-    <string name="trust_leaves_hc_body">If you turn on Health Connect in Settings, the app exchanges only the data types you allow (such as weight, water and glucose) with Health Connect on this phone.</string>
+    <string name="trust_leaves_hc_body">If you turn on Health Connect in Settings, the app exchanges only the data types you allow (such as weight, water and glucose) with Health Connect on this phone. You can also separately allow steps for your weekly recap.</string>
     <string name="trust_leaves_files_title">Files: only when you export or share</string>
-    <string name="trust_leaves_files_body">Exports, backups, doctor reports and share cards are created on this phone and go only where you send them.</string>
+    <string name="trust_leaves_files_body">Exports, backups, doctor reports and share cards are created on this phone and go only where you send them. Opening a calendar draft shares its start and finish with your chosen calendar app.</string>
     <string name="trust_leaves_links_title">Challenge links: settings only</string>
     <string name="trust_leaves_links_body">A challenge link holds only the challenge (type, dates and an optional name). Everyone tracks their own progress on their own phone.</string>
     <string name="trust_your_data">Your data</string>
@@ -200,4 +200,6 @@
     <string name="share_challenge_text">Join my challenge \"%1$s\" on Fasting Shift: %2$s</string>
     <string name="trust_leaves_partner_title">Partner weeks</string>
     <string name="trust_leaves_partner_body">If you join or start a partner week, the service uses your nickname, role, time zone and an app-generated key to run it. Your partner sees your nickname, check-in days and preset replies. Timers and health records stay private.</string>
+    <string name="trust_leaves_food_label_title">Food label lookup</string>
+    <string name="trust_leaves_food_label_body">Choosing Look up sends the product barcode to Open Food Facts. The service receives your IP address. Your fasting and health records stay out of the request.</string>
 </resources>

@@ -89,9 +89,9 @@
     <string name="trust_leaves_purchases_title">Pembelian: Google Play dan RevenueCat</string>
     <string name="trust_leaves_purchases_body">Setiap kali aplikasi dibuka, aplikasi memeriksa Shift+ dengan Google Play dan RevenueCat, layanan penagihan kami, menggunakan ID aplikasi yang dibuat otomatis, meskipun Anda tidak pernah membeli. Mereka menangani informasi pembelian dan perangkat dasar, bukan puasa, jawaban skrining, atau pengukuran Anda.</string>
     <string name="trust_leaves_hc_title">Health Connect: hanya jika Anda mengaktifkannya</string>
-    <string name="trust_leaves_hc_body">Jika Anda mengaktifkan Health Connect di Setelan, aplikasi hanya bertukar jenis data yang Anda izinkan (seperti berat badan, air, dan glukosa) dengan Health Connect di ponsel ini.</string>
+    <string name="trust_leaves_hc_body">Jika Anda mengaktifkan Health Connect di Setelan, aplikasi hanya bertukar jenis data yang Anda izinkan (seperti berat badan, air, dan glukosa) dengan Health Connect di ponsel ini. Anda juga dapat memberikan izin terpisah untuk membaca jumlah langkah dalam ringkasan mingguan.</string>
     <string name="trust_leaves_files_title">File: hanya saat Anda mengekspor atau membagikan</string>
-    <string name="trust_leaves_files_body">Ekspor, cadangan, laporan dokter, dan kartu berbagi dibuat di ponsel ini dan hanya dikirim ke tempat yang Anda pilih.</string>
+    <string name="trust_leaves_files_body">Ekspor, cadangan, laporan dokter, dan kartu berbagi dibuat di ponsel ini dan hanya dikirim ke tempat yang Anda pilih. Membuka draf acara membagikan waktu mulai dan selesai kepada aplikasi kalender pilihan Anda.</string>
     <string name="trust_leaves_links_title">Tautan tantangan: hanya pengaturan</string>
     <string name="trust_leaves_links_body">Tautan tantangan hanya berisi tantangannya (jenis, tanggal, dan nama opsional). Setiap orang mencatat kemajuannya sendiri di ponselnya masing-masing.</string>
     <string name="trust_your_data">Data Anda</string>
@@ -193,4 +193,6 @@
     <string name="share_challenge_text">Gabung tantangan saya \"%1$s\" di Fasting Shift: %2$s</string>
     <string name="trust_leaves_partner_title">Pekan bersama teman</string>
     <string name="trust_leaves_partner_body">Jika Anda memulai atau bergabung dalam pekan bersama teman, layanan ini menggunakan nama panggilan, peran, zona waktu, dan kunci yang dibuat aplikasi. Teman Anda dapat melihat nama panggilan, hari saat Anda memberi kabar, dan balasan siap pakai. Pengatur waktu dan catatan kesehatan tetap pribadi.</string>
+    <string name="trust_leaves_food_label_title">Pencarian label makanan</string>
+    <string name="trust_leaves_food_label_body">Saat Anda memilih untuk mencari produk, kode batang dikirim ke Open Food Facts. Layanan tersebut menerima alamat IP Anda. Riwayat puasa dan data kesehatan Anda tidak disertakan.</string>
 </resources>

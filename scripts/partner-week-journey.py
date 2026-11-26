@@ -11,6 +11,7 @@ import time
 import xml.etree.ElementTree as ET
 
 import uiautomator2 as u2
+import zxingcpp
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("upgrade", ROOT / "scripts/beta-upgrade-smoke.py")
@@ -109,6 +110,20 @@ class PartnerScreen:
         # Hide the IME only if visible, so Back cannot navigate away from a field.
         if "mInputShown=true" in self.adb("shell", "dumpsys", "input_method"):
             self.device.press("back")
+
+    def open_paste_form(self):
+        # A newly copied invite can put System UI's clipboard preview above this
+        # button while we switch app sandboxes. Confirm the actual destination.
+        overlay = self.device(packageName="com.android.systemui", resourceIdMatches=".*:id/clipboard_.*")
+        if overlay.exists:
+            overlay.wait_gone(timeout=12)
+        for _ in range(3):
+            if self.node("partner_link").exists:
+                return
+            self.tap("partner_paste")
+            if self.node("partner_link").wait(timeout=3):
+                return
+        raise AssertionError("Opening the invitation form did not display the link field")
 
     def open(self):
         self.tap("partner_open", timeout=2)
@@ -210,22 +225,37 @@ def open_invitation(guest, token):
 
 def invite(host, guest, observer, supporter):
     host.edit("partner_alias", "Rowan")
-    host.tap("partner_create")
-    # Assert the system sharesheet opens as part of creation. Close it to use the
-    # copy fallback without sending anything to a real messaging account.
-    chooser = host.device(packageNameMatches=r"(com.android|com.google.android).intentresolver|android",
-                          resourceIdMatches=".*:id/(chooser_header|chooser_headline|content_preview_text|resolver_list).*")
-    if not chooser.wait(timeout=10):
-        top = host.device.app_current().get("package")
-        if top not in {"com.android.intentresolver", "com.google.android.intentresolver", "android"}:
-            raise AssertionError("Creating an invitation did not open the Android sharesheet")
+    if supporter:
+        host.tap("partner_create_qr")
+    else:
+        host.tap("partner_create")
+        # Protect the existing sharesheet path without sending the test invite.
+        chooser = host.device(packageNameMatches=r"(com.android|com.google.android).intentresolver|android",
+                              resourceIdMatches=".*:id/(chooser_header|chooser_headline|content_preview_text|resolver_list).*")
+        if not chooser.wait(timeout=10):
+            top = host.device.app_current().get("package")
+            if top not in {"com.android.intentresolver", "com.google.android.intentresolver", "android"}:
+                raise AssertionError("Creating an invitation did not open the Android sharesheet")
+        host.device.press("back")
+        host.tap("partner_show_qr")
+
+    # Decode the screen in memory, just like a second phone's camera. Do not retain the token.
+    qr_link = None
+    for _ in range(10):
+        scanned = zxingcpp.read_barcode(host.device.screenshot(), formats=zxingcpp.BarcodeFormat.QRCode)
+        if scanned is not None:
+            qr_link = scanned.text
+            break
+        time.sleep(0.5)
+    if qr_link is None:
+        raise AssertionError("The displayed Partner Week QR code could not be scanned")
     host.device.press("back")
     host.tap("partner_copy")
 
     # A third, unpaired app sandbox on the host device can paste exactly what the
     # user copied. Relay it to the other emulator without sharing device storage.
     observer.resume()
-    observer.tap("partner_paste")
+    observer.open_paste_form()
     observer.edit("partner_link")
     field = observer.device(packageName=observer.package, className="android.widget.EditText")
     link = field.get_text()
@@ -233,9 +263,12 @@ def invite(host, guest, observer, supporter):
     if not match:
         raise AssertionError("The Android clipboard did not contain a complete partner link")
 
+    if qr_link != link:
+        raise AssertionError("Scanning and copying produced different invitations")
+
     if supporter:
         guest.resume()
-        guest.tap("partner_paste")
+        guest.open_paste_form()
         try:
             guest.edit("partner_link", link)
         except Exception:

@@ -124,6 +124,7 @@ fun FirstFastCard(
             onClick = openEditor, enabled = !busy)
         if (plan != null) {
             val upcoming = plan.start > now
+            if (upcoming) AddPlanToCalendar(plan)
             val reminderLabel = when {
                 !upcoming -> R.string.first_plan_time_passed
                 remindersAvailable -> R.string.week_timer_reminder_on

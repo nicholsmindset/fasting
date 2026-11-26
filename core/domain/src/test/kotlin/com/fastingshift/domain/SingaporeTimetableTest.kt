@@ -12,6 +12,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.assertIs
 
 class SingaporeTimetableTest {
@@ -20,10 +21,14 @@ class SingaporeTimetableTest {
 
     @Test fun `every published day matches the MUIS annual tables`() {
         // Digests of ISO date, Subuh HH:mm and Maghrib HH:mm, newline terminated, from each PDF.
-        val annualDigests = mapOf(
-            2026 to "b55bc5fb8ef80329a548f5d20a6b91217175dc88f6238b7fa3971233088e5309",
-            2027 to "458c4cc8ef314e4446a8df7cb091e735607fa0a24b733600f1beecebad95404a",
-        )
+        val annualDigests = requireNotNull(javaClass.getResourceAsStream("/muis-reviewed-pdfs.csv"))
+            .bufferedReader(Charsets.UTF_8).useLines { lines ->
+                lines.drop(1).map { line ->
+                    val (year, digest) = line.split(',')
+                    year.toInt() to digest
+                }.toMap()
+            }
+        assertTrue(annualDigests.isNotEmpty())
         for ((year, expected) in annualDigests) {
             val digest = MessageDigest.getInstance("SHA-256")
             for (ordinal in 1..LocalDate.of(year, 1, 1).lengthOfYear()) {

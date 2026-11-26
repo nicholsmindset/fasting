@@ -1,0 +1,12 @@
+<resources>
+    <string name="recap_steps_heading">Berjalan minggu ini</string>
+    <string name="recap_steps_privacy">Paparkan jumlah langkah mingguan anda daripada Health Connect di sini. Hanya anda boleh melihatnya.</string>
+    <string name="recap_steps_denied">Akses langkah dimatikan. Anda boleh mengaktifkannya melalui kebenaran aplikasi dalam Health Connect.</string>
+    <string name="recap_steps_connect">Sambungkan kiraan langkah</string>
+    <string name="recap_steps_unavailable">Health Connect tidak tersedia pada peranti ini.</string>
+    <string name="recap_steps_failed">Langkah anda tidak dapat dibaca.</string>
+    <string name="recap_steps_retry">Cuba lagi</string>
+    <string name="recap_steps_empty">Tiada data langkah untuk minggu ini.</string>
+    <string name="recap_steps_one">%1$s langkah</string>
+    <string name="recap_steps_total">%1$s langkah</string>
+</resources>

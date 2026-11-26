@@ -12,9 +12,11 @@ import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.HydrationRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.RestingHeartRateRecord
+import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.BloodGlucose
@@ -35,6 +37,7 @@ import com.fastingshift.domain.model.WeightUnit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -64,7 +67,7 @@ object WeightImport {
  * Writes WeightRecord, HydrationRecord and BloodGlucoseRecord; reads WeightRecord, and (for
  * Shift+ body signals, read-only) SleepSessionRecord and RestingHeartRateRecord. Ketones are
  * local only: Health Connect has no ketone type. Permissions are requested incrementally: the
- * core [permissions] on sync opt-in, [glucosePermissions] and [bodySignalPermissions] where
+ * core [permissions] on sync opt-in, [stepPermissions], [glucosePermissions] and [bodySignalPermissions] where
  * those features are used. Every call is
  * guarded: Health Connect can throw SecurityException (permission revoked) or
  * RemoteException/IllegalStateException (provider restarting or updating) at any time.
@@ -107,6 +110,20 @@ class HealthConnectManager @Inject constructor(
         HealthPermission.getReadPermission(SleepSessionRecord::class),
         HealthPermission.getReadPermission(RestingHeartRateRecord::class),
     )
+
+    // This permission belongs only to the free weekly recap. It is separate from log sync.
+    val stepPermissions = setOf(HealthPermission.getReadPermission(StepsRecord::class))
+
+    internal suspend fun weeklySteps(weekStart: LocalDate, now: Instant, zone: ZoneId): WeeklySteps {
+        val c = client() ?: return WeeklySteps.Unavailable
+        return readWeeklySteps(weekStart, now, zone,
+            hasPermission = { c.permissionController.getGrantedPermissions().containsAll(stepPermissions) },
+            aggregate = { from, until ->
+                val total = StepsRecord.COUNT_TOTAL
+                c.aggregate(AggregateRequest(setOf(total), TimeRangeFilter.between(from, until)))[total]
+            },
+        )
+    }
 
     private fun sdkStatus(): Int = runCatching { HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE) }
         .getOrDefault(HealthConnectClient.SDK_UNAVAILABLE)

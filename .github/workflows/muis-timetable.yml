@@ -1,0 +1,23 @@
+name: Verify MUIS timetable
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 23 * * 0'
+  pull_request:
+    paths:
+      - 'scripts/muis/**'
+      - 'core/domain/src/main/resources/com/fastingshift/domain/ramadan/muis-singapore.csv'
+      - 'core/domain/src/test/resources/muis-reviewed-pdfs.csv'
+      - '.github/workflows/muis-timetable.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s scripts/muis
+      - run: python3 scripts/muis/verify.py
