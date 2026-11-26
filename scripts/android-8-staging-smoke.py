@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import subprocess
+import time
 import uiautomator2
 
 helper = Path(__file__).with_name("beta-upgrade-smoke.py")
@@ -16,6 +17,30 @@ def capture(name):
     (proof / f"{name}.xml").write_text(device.dump_hierarchy())
     with (proof / f"{name}.png").open("wb") as target:
         subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=target, check=True)
+
+
+def save_summary(screen):
+    """Scroll the sheet and tap Save only after the label's visible bounds settle."""
+    label = screen.strings["save"]
+    panel = device(packageName=package, scrollable=True)
+    previous = None
+    deadline = time.monotonic() + 40
+    while time.monotonic() < deadline:
+        if "mInputShown=true" in ui.adb("shell", "dumpsys", "input_method"):
+            device.press("back")
+            previous = None
+            continue
+        point = ui.visible_label_center(device.dump_hierarchy(), label)
+        if point is None:
+            if panel.exists:
+                panel.scroll.forward(steps=45)
+        elif point == previous:
+            device.click(*point)
+            if device(packageName=package, text=screen.strings["timer_start"]).wait(timeout=3):
+                return
+        previous = point
+        time.sleep(0.35)
+    raise AssertionError("The summary Save action did not return to the idle timer")
 
 def run():
     assert ui.adb("shell", "getprop", "ro.build.version.sdk") == "26"
@@ -34,8 +59,7 @@ def run():
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
     screen.click("timer_end", scroll=True)
     screen.find("summary_title_early")
-    screen.click("save", scroll=True)
-    screen.find("timer_start", scroll=True)
+    save_summary(screen)
     device.app_stop(package)
     device.app_start(package, activity=ui.ACTIVITY, wait=True)
     screen.find("timer_start", scroll=True)
