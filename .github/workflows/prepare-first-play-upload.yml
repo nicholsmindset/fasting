@@ -1,0 +1,31 @@
+name: Prepare first Play bundle
+on:
+  push:
+    branches: ['codex/play-upload-preparation']
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6d5aa9b3af3dc06ae3fbcf792d9c39197cefabb2
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the unsigned production package
+        run: ./gradlew :app:bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fasting-shift-play-unsigned
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 7
