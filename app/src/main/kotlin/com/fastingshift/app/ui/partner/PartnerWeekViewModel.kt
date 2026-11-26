@@ -3,6 +3,7 @@ package com.fastingshift.app.ui.partner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
@@ -19,6 +20,7 @@ import org.json.JSONException
 class PartnerWeekViewModel @Inject constructor(
     private val repository: PartnerWeekRepository,
     private val screening: ScreeningRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
     private val ui = MutableStateFlow(PartnerUiState())
     val state = ui.asStateFlow()
@@ -28,8 +30,13 @@ class PartnerWeekViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            settings.settings.collect { preferences ->
+                ui.update { it.copy(showTimerShortcut = preferences.showPartnerShortcut) }
+            }
+        }
+        viewModelScope.launch {
             repository.snapshot.collect { snapshot ->
-                ui.update { it.copy(week = snapshot.week, pendingDays = snapshot.pendingDays, leaving = snapshot.leaving) }
+                ui.update { it.copy(week = snapshot.week, pendingDays = snapshot.pendingDays, plannedDays = snapshot.plannedDays, leaving = snapshot.leaving, pausedWeekId = snapshot.pausedWeekId) }
             }
         }
         viewModelScope.launch {
@@ -89,6 +96,16 @@ class PartnerWeekViewModel @Inject constructor(
         }
     }
 
+    fun savePlannedDays(weekId: String, selection: Set<String>) = action(updatesNetworkStatus = false) {
+        if (permitted(participating = true)) {
+            try {
+                repository.savePlannedDays(weekId, selection)
+            } catch (_: IOException) {
+                ui.update { it.copy(message = R.string.partner_plan_save_error) }
+            }
+        }
+    }
+
     fun checkIn() = action {
         if (permitted(participating = true)) repository.checkIn()
     }
@@ -99,7 +116,15 @@ class PartnerWeekViewModel @Inject constructor(
         if (permitted(participating = state.value.week?.self?.role != "supporter")) repository.renew()
     }
 
+    fun pause(weekId: String) = action {
+        if (permitted(participating = false)) repository.pause(weekId)
+    }
+
     fun leave() = action { repository.leave() }
+    fun setTimerShortcut(show: Boolean) {
+        viewModelScope.launch { handled { settings.setPartnerShortcut(show) } }
+    }
+
     fun dismissMessage() = ui.update { it.copy(message = null) }
 
     private suspend fun permitted(participating: Boolean): Boolean {
@@ -115,7 +140,7 @@ class PartnerWeekViewModel @Inject constructor(
         return true
     }
 
-    private fun action(block: suspend () -> Unit) {
+    private fun action(updatesNetworkStatus: Boolean = true, block: suspend () -> Unit) {
         if (acting) return
         acting = true
         ui.update { it.copy(busy = true, message = null) }
@@ -123,7 +148,7 @@ class PartnerWeekViewModel @Inject constructor(
             try {
                 handled {
                     block()
-                    ui.update { it.copy(offline = false) }
+                    if (updatesNetworkStatus) ui.update { it.copy(offline = false) }
                 }
             } finally {
                 acting = false

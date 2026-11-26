@@ -103,7 +103,7 @@ $$;
 
 -- p_request is normalized by the Edge Function. Its 256-bit device and invite
 -- capabilities are domain-separated SHA-256 digests before touching PostgREST.
-create function public.fasting_partner_week(p_request jsonb)
+create or replace function public.fasting_partner_week(p_request jsonb)
 returns jsonb language plpgsql volatile security invoker set search_path='' as $$
 declare
     op text := p_request->>'action';
@@ -120,7 +120,7 @@ declare
     first_day date;
     no_week jsonb := jsonb_build_object('week',null);
 begin
-    if op is null or op not in ('create','preview','join','get','check_in','cheer','leave','renew') then
+    if op is null or op not in ('create','preview','join','get','check_in','cheer','leave','renew','pause') then
         return '{"error":"invalid"}';
     end if;
     if op in ('create','preview','join') and coalesce(invite,'') !~ '^[a-f0-9]{64}$' then
@@ -186,10 +186,10 @@ begin
         end if;
         if w.started_at is null then return '{"error":"conflict"}'; end if;
         select * into strict me from fasting_partners.members where device_hash=device and pair_id=w.pair_id;
-        if op='renew' then
+        if op in ('renew','pause') then
             if clock_time<w.finishes_at then return '{"error":"conflict"}'; end if;
-            update fasting_partners.members set renewed=true where device_hash=device;
-            if not exists(select from fasting_partners.members where pair_id=w.pair_id and not renewed) then
+            update fasting_partners.members set renewed=(op='renew') where device_hash=device;
+            if op='renew' and not exists(select from fasting_partners.members where pair_id=w.pair_id and not renewed) then
                 perform fasting_partners.start_week(w.pair_id,clock_time);
             end if;
         else

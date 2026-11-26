@@ -9,6 +9,7 @@ const fields: Record<string, string[]> = {
   cheer: ["deviceKey", "weekId", "day", "kind"],
   leave: ["deviceKey", "weekId"],
   renew: ["deviceKey", "weekId"],
+  pause: ["deviceKey", "weekId"],
 };
 const status: Record<string, number> = {
   invalid: 422, gone: 410, conflict: 409, stale: 409, slow_down: 429,

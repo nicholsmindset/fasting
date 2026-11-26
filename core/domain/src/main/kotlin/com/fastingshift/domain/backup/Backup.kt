@@ -79,6 +79,7 @@ data class Backup(
     @SerialName("day_overrides") val dayOverrides: Map<String, String> = emptyMap(),
     @SerialName("week_reflections") val weekReflections: Map<String, String> = emptyMap(),
     val appearance: String? = null,
+    @SerialName("partner_timer_shortcut") val showPartnerShortcut: Boolean? = null,
 )
 
 @Serializable data class FastRecord(

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_create_share">Cipta dan kongsi jemputan</string>
+    <string name="partner_copy_fallback">Gunakan Salin pautan untuk menghantar jemputan.</string>
+    <string name="partner_spent_link">Jemputan ini telah tamat tempoh atau sudah digunakan. Minta pautan baharu daripada rakan anda.</string>
+    <string name="partner_replace_invite">Tampal jemputan lain</string>
+    <string name="partner_supporting">Anda memberi sokongan kepada %1$s.</string>
+    <string name="partner_supported_by">%1$s memberi sokongan kepada anda.</string>
+    <string name="partner_pause">Berehat dahulu</string>
+    <string name="partner_pause_question">Tarik balik permintaan untuk seminggu lagi?</string>
+    <string name="partner_withdraw_note">Rakan anda tidak lagi akan melihat permintaan itu. Ringkasan minggu ini masih boleh dilihat di sini.</string>
+    <string name="partner_paused_note">Anda sedang berehat. Anda boleh kembali dan melihat ringkasan ini.</string>
+    <string name="partner_send_preset">Hantar “%1$s”</string>
+    <string name="partner_choose_preset">Pilih mesej</string>
+    <string name="partner_discover">Luangkan tujuh hari bersama rakan untuk mencatat kehadiran atau memberi sokongan.</string>
+    <string name="partner_save_keepsake">Simpan kenangan</string>
+    <string name="partner_keepsake_saved">Kenangan telah disimpan.</string>
+    <string name="partner_keepsake_failed">Salinan ini tidak dapat disimpan. Pilih lokasi lain dan cuba lagi.</string>
+</resources>

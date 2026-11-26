@@ -31,6 +31,7 @@ class PartnerWeekRepositoryTest {
     private val prefs = ApplicationProvider.getApplicationContext<Context>()
         .getSharedPreferences("partner-test", Context.MODE_PRIVATE).also { it.edit().clear().commit() }
     private val calls = mutableListOf<JSONObject>()
+    private val cancelledReminders = mutableListOf<Pair<String, String>>()
     private var background = 0
     private var service: (JSONObject) -> JSONObject = { error("Unexpected partner service request") }
 
@@ -39,6 +40,7 @@ class PartnerWeekRepositoryTest {
             prefs,
             PartnerTransport { calls += it; service(it) },
             Clock.fixed(Instant.parse(instant), zone), { zone }, { background++ },
+            { id, day -> cancelledReminders += id to day },
         )
 
     private fun member(alias: String, role: String, days: List<String>) = JSONObject()
@@ -193,6 +195,58 @@ class PartnerWeekRepositoryTest {
         assertEquals(1, calls.size)
     }
 
+    @Test fun planIsPrivateEditableOfflineAndDoesNotGateRestDayCheckIn() = runBlocking {
+        val repo = repository()
+        service = { sample() }
+        repo.create("Host")
+        val id = repo.cachedWeek()!!.id
+        val selected = setOf("2026-11-26", "2026-11-27", "2026-11-28")
+        service = { error("Private plan must not call the service") }
+        repo.savePlannedDays(id, selected)
+        val restored = repository()
+        restored.load()
+        assertEquals(selected, restored.snapshot.value.plannedDays)
+        assertEquals(zone, restored.cachedWeek()!!.zone)
+        assertFailsWith<IllegalArgumentException> { restored.savePlannedDays(id, selected + "2026-11-29") }
+        assertFailsWith<IllegalArgumentException> { restored.savePlannedDays(id, setOf("2026-11-24")) }
+        assertFailsWith<IllegalArgumentException> { restored.savePlannedDays(id, setOf("2026-11-30")) }
+        val revised = selected - "2026-11-26" + "2026-11-29"
+        restored.savePlannedDays(id, revised)
+        assertEquals(listOf(id to "2026-11-26"), cancelledReminders)
+        assertTrue(restored.cachedWeek()!!.canCheckIn)
+        service = { req ->
+            assertEquals(setOf("action", "deviceKey", "weekId", "day"), req.keys().asSequence().toSet())
+            assertEquals("2026-11-25", req.getString("day"))
+            sample(dates = listOf("2026-11-25"))
+        }
+        restored.checkIn()
+        assertEquals(revised, restored.snapshot.value.plannedDays)
+        assertEquals(listOf("2026-11-25"), restored.cachedWeek()!!.self.days)
+        assertEquals(2, calls.size)
+    }
+
+    @Test fun planIsScopedToTheMemberAndWeekAndCanBeClearedOffline() = runBlocking {
+        val repo = repository()
+        service = { sample() }
+        repo.create("Host")
+        val id = repo.cachedWeek()!!.id
+        val day = setOf("2026-11-26")
+        repo.savePlannedDays(id, day)
+        repo.savePlannedDays(id, emptySet())
+        assertTrue(repo.snapshot.value.plannedDays.isEmpty())
+        repo.savePlannedDays(id, day)
+        val nextId = "832ba877-488d-43fc-9593-2c2f6a778e64"
+        service = { sample().apply { getJSONObject("week").put("id", nextId) } }
+        repo.refresh()
+        assertTrue(repo.snapshot.value.plannedDays.isEmpty())
+        repo.savePlannedDays(id, day)
+        assertTrue(repo.snapshot.value.plannedDays.isEmpty())
+        repo.savePlannedDays(nextId, day)
+        service = { throw IOException("offline") }
+        assertFailsWith<IOException> { repo.leave() }
+        assertTrue(repo.snapshot.value.plannedDays.isEmpty())
+    }
+
     @Test fun localEndOfWeekWaitsForOtherTimeZoneBeforeRenewal() = runBlocking {
         val repo = repository("2026-11-30T01:00:00Z")
         service = { sample("active") }
@@ -205,6 +259,32 @@ class PartnerWeekRepositoryTest {
         service = { sample("finished") }
         repo.refresh()
         assertTrue(repo.cachedWeek()!!.canRenew)
+    }
+
+    @Test fun pauseIsConfirmedBeforeItIsSavedAndDoesNotChangeMarks() = runBlocking {
+        val repo = repository()
+        val earned = listOf("2026-11-24")
+        service = { sample("finished", dates = earned) }
+        repo.create("Host")
+        val id = repo.cachedWeek()!!.id
+        service = { throw IOException("Offline") }
+        assertFailsWith<IOException> { repo.pause(id) }
+        assertNull(repo.snapshot.value.pausedWeekId)
+        service = { req ->
+            assertEquals("pause", req.getString("action"))
+            assertEquals(id, req.getString("weekId"))
+            sample("finished", dates = earned)
+        }
+        repo.pause(id)
+        val reopened = repository()
+        reopened.load()
+        assertEquals(id, reopened.snapshot.value.pausedWeekId)
+        assertEquals(earned, reopened.cachedWeek()!!.self.days)
+        service = { sample("finished", dates = earned).also { response ->
+            response.getJSONObject("week").getJSONObject("host").put("renewed", true)
+        } }
+        reopened.renew()
+        assertNull(reopened.snapshot.value.pausedWeekId)
     }
 
     @Test fun onlyIncomingReactionsDisplayAndRenewNeedsASecondVote() = runBlocking {

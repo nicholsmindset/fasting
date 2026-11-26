@@ -1,10 +1,16 @@
 package com.fastingshift.app.ui.partner
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.PersistableBundle
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -32,10 +38,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -53,6 +61,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.fastingshift.app.R
+import com.fastingshift.app.share.ShareCards
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.design.AppCard
@@ -60,18 +69,23 @@ import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
+import com.fastingshift.app.ui.design.SwitchGroupRow
+import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun PartnerTimerEntry(onOpen: () -> Unit, vm: PartnerWeekViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val week = state.week
-    if (state.adultAllowed != true) return
+    if (state.adultAllowed != true || !state.showTimerShortcut) return
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(week?.id, owner) {
         if (week != null) owner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { vm.refresh() }
@@ -99,7 +113,7 @@ internal fun PartnerTimerEntry(onOpen: () -> Unit, vm: PartnerWeekViewModel = hi
     val subtitle = when (week?.status) {
         "pending" -> stringResource(R.string.partner_pending_title)
         "finished" -> stringResource(R.string.partner_recap)
-        else -> stringResource(R.string.partner_entry_hint)
+        else -> stringResource(R.string.partner_discover)
     }
     InsetGroup {
         GroupRow(stringResource(R.string.partner_title), Modifier.testTag("partner_open"),
@@ -112,12 +126,23 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
     val state by vm.state.collectAsStateWithLifecycle()
     var requested by rememberSaveable(invite) { mutableStateOf(invite) }
     var joining by rememberSaveable { mutableStateOf(false) }
+    var shareOnCreate by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
     var manual by rememberSaveable { mutableStateOf(false) }
     var confirmLeave by rememberSaveable { mutableStateOf(false) }
     val owner = LocalLifecycleOwner.current
     val week = state.week
     val preview = state.preview?.takeIf { it.code == requested }
     val token = requested
+    LaunchedEffect(shareOnCreate, week?.inviteCode, state.message) {
+        if (shareOnCreate) {
+            val createdCode = week?.takeIf { it.status == "pending" }?.inviteCode?.takeIf(PartnerLinks::valid)
+            if (createdCode != null) {
+                shareOnCreate = false
+                sharePartnerInvitation(context, PartnerLinks.link(createdCode))
+            } else if (state.message != null) shareOnCreate = false
+        }
+    }
     LaunchedEffect(owner, vm) {
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
@@ -146,7 +171,7 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
     }
 
     SecondaryScaffold(stringResource(R.string.partner_title), onBack) {
-        state.message?.let { message ->
+        state.message?.takeUnless { token != null && week == null && it == R.string.partner_error_unavailable }?.let { message ->
             Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
                 Column(Modifier.fillMaxWidth().padding(14.dp)) {
                     Text(stringResource(message), Modifier.semantics { liveRegion = LiveRegionMode.Polite },
@@ -193,12 +218,20 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
                         vm.join(token, alias, supporter)
                     })
                     state.busy -> LoadingBox()
+                    state.message == R.string.partner_error_unavailable -> {
+                        Text(stringResource(R.string.partner_spent_link),
+                            Modifier.testTag("partner_invite_unavailable").semantics { liveRegion = LiveRegionMode.Polite })
+                        SecondaryButton(stringResource(R.string.partner_replace_invite), {
+                            cancelInvite()
+                            manual = true
+                        })
+                    }
                     else -> {
                         Notice(stringResource(R.string.partner_cannot_preview))
                         SecondaryButton(stringResource(R.string.partner_retry), { vm.preview(token) }, Modifier.testTag("partner_retry"))
                     }
                 }
-                TextButton(onClick = ::cancelInvite) { Text(stringResource(R.string.partner_close_invite)) }
+                TextButton(onClick = ::cancelInvite, modifier = Modifier.testTag("partner_close_invite")) { Text(stringResource(R.string.partner_close_invite)) }
             }
             manual -> PasteForm(onPreview = { requested = it }, onCancel = { manual = false })
             state.participantAllowed == null -> LoadingBox()
@@ -209,7 +242,7 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
                     Notice(stringResource(R.string.partner_intro))
                     AliasField(alias) { alias = it }
                     Notice(stringResource(R.string.partner_privacy))
-                    PrimaryButton(stringResource(R.string.partner_create), { vm.create(alias.trim()) },
+                    PrimaryButton(stringResource(R.string.partner_create_share), { shareOnCreate = true; vm.create(alias.trim()) },
                         Modifier.testTag("partner_create"), enabled = alias.isNotBlank() && !state.busy)
                 } else {
                     Notice(stringResource(R.string.partner_support_only))
@@ -217,6 +250,9 @@ internal fun PartnerWeekRoute(invite: String?, onBack: () -> Unit, vm: PartnerWe
                 SecondaryButton(stringResource(R.string.partner_open_invite), { manual = true }, Modifier.testTag("partner_paste"),
                     enabled = !state.busy)
             }
+        }
+        if (state.adultAllowed == true) InsetGroup {
+            SwitchGroupRow(stringResource(R.string.partner_timer_shortcut), state.showTimerShortcut, vm::setTimerShortcut)
         }
     }
     if (confirmLeave && week != null) {
@@ -306,6 +342,16 @@ private fun RoleChoice(title: String, note: String, selected: Boolean, tag: Stri
     }
 }
 
+internal fun sharePartnerInvitation(context: Context, link: String) {
+    val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, context.getString(R.string.partner_share_text, link))
+    try {
+        context.startActivity(Intent.createChooser(send, context.getString(R.string.partner_share)))
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(context, R.string.partner_copy_fallback, Toast.LENGTH_LONG).show()
+    }
+}
+
 @Composable
 private fun WaitingWeek(week: PartnerWeek) {
     val context = LocalContext.current
@@ -314,9 +360,7 @@ private fun WaitingWeek(week: PartnerWeek) {
     val token = week.inviteCode?.takeIf(PartnerLinks::valid) ?: return
     val link = PartnerLinks.link(token)
     PrimaryButton(stringResource(R.string.partner_share), {
-        val intent = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,
-            context.getString(R.string.partner_share_text, link))
-        context.startActivity(Intent.createChooser(intent, context.getString(R.string.partner_share)))
+        sharePartnerInvitation(context, link)
     }, Modifier.testTag("partner_share"))
     SecondaryButton(stringResource(R.string.partner_copy), {
         val clip = ClipData.newPlainText(context.getString(R.string.partner_title), link)
@@ -328,99 +372,223 @@ private fun WaitingWeek(week: PartnerWeek) {
     }, Modifier.testTag("partner_copy"))
     week.inviteExpiresAt?.let { expires ->
         val date = runCatching { Instant.parse(expires).atZone(ZoneId.systemDefault()).toLocalDate() }.getOrNull()
-        if (date != null) Notice(stringResource(R.string.partner_expires, date.format(shortDate)))
+        if (date != null) Notice(stringResource(R.string.partner_expires, localDate(date.toString()).orEmpty()))
     }
 }
 
-private val shortDate = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-private fun localDate(value: String?) = value?.let { runCatching { LocalDate.parse(it).format(shortDate) }.getOrNull() }
+@Composable
+private fun localDate(value: String?): String? {
+    val locale = LocalConfiguration.current.locales[0]
+    return value?.let { runCatching { LocalDate.parse(it).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)) }.getOrNull() }
+}
 
 @Composable
 private fun WeekProgress(week: PartnerWeek, state: PartnerUiState, vm: PartnerWeekViewModel) {
+    WeekProgressContent(week, state, vm::checkIn, vm::cheer, vm::renew, { vm.pause(week.id) }, planning = {
+        PartnerCheckInPlan(week = week, plannedDays = state.plannedDays, enabled = !state.busy,
+            onSave = { vm.savePlannedDays(week.id, it) })
+    }, reminder = {
+        PartnerReminderRow(week = week, plannedDays = state.plannedDays)
+    })
+}
+
+@Composable
+internal fun WeekProgressContent(
+    week: PartnerWeek, state: PartnerUiState, onCheckIn: () -> Unit, onCheer: (String) -> Unit,
+    onRenew: () -> Unit, onPause: () -> Unit,
+    planning: @Composable () -> Unit = {}, reminder: @Composable () -> Unit = {},
+) {
     val finished = week.status == "finished"
+    val supporter = week.self.role == "supporter"
+    val other = week.partner
+    val members = listOfNotNull(week.self, other).filter { it.role == "participant" }
     Heading(stringResource(if (finished) R.string.partner_recap else R.string.partner_week_heading))
     val start = localDate(week.startDate)
     val end = localDate(week.endDate)
     if (start != null && end != null) Notice(stringResource(R.string.partner_period, start, end))
+    if (other != null) {
+        when {
+            supporter -> Notice(stringResource(R.string.partner_supporting, other.alias))
+            other.role == "supporter" -> Notice(stringResource(R.string.partner_supported_by, other.alias))
+        }
+    }
     AppCard {
-        MarkRow(week.self, stringResource(R.string.partner_you, week.self.alias), "partner_self_marks")
-        week.partner?.let {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            MarkRow(it, it.alias, "partner_other_marks")
+        members.forEachIndexed { index, member ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            val self = member === week.self
+            MarkRow(member, if (self) stringResource(R.string.partner_you, member.alias) else member.alias,
+                isSelf = self)
         }
     }
     if (state.pendingDays.isNotEmpty()) Notice(stringResource(R.string.partner_queued))
     else if (state.offline) Notice(stringResource(R.string.partner_offline))
-    week.lastCheer?.let { cheer ->
-        val message = when (cheer) {
-            "here" -> R.string.partner_reaction_here
-            "thanks" -> R.string.partner_reaction_thanks
-            else -> R.string.partner_reaction_glad
-        }
-        week.partner?.let { sender ->
-            Text(stringResource(R.string.partner_encouragement_from, sender.alias, stringResource(message)),
-                Modifier.testTag("partner_received").semantics { liveRegion = LiveRegionMode.Polite },
-                style = MaterialTheme.typography.titleMedium)
-        }
+    if (week.lastCheer != null && other != null) {
+        Text(stringResource(R.string.partner_encouragement_from, other.alias, stringResource(reactionLabel(week.lastCheer))),
+            Modifier.testTag("partner_received").semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.titleMedium)
     }
 
+    // Optimistic marks count on this phone. The shared keepsake waits for both records to sync.
+    if (other != null && members.isNotEmpty() && state.pendingDays.isEmpty() && members.all { it.days.distinct().size >= 3 }) {
+        PartnerKeepsake(week.id, week.startDate, start, end)
+    }
     if (finished) {
-        val participants = listOfNotNull(week.self, week.partner).filter { it.role == "participant" }
-        if (participants.isNotEmpty() && participants.all { it.days.distinct().size >= 3 }) {
-            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.large) {
-                Column(Modifier.fillMaxWidth().padding(20.dp).semantics(mergeDescendants = true) {},
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.partner_week_complete),
-                        style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text(stringResource(R.string.partner_keepsake_note), color = MaterialTheme.colorScheme.onPrimaryContainer)
+        RenewalActions(week, state, onRenew, onPause)
+        return
+    }
+    val participating = !supporter && state.participantAllowed == true
+    val full = week.self.days.distinct().size >= 3
+    if (participating) {
+        val checked = week.today in week.self.days
+        val label = when {
+            full -> R.string.partner_all_marks
+            checked -> R.string.partner_checked
+            else -> R.string.partner_checkin
+        }
+        PrimaryButton(stringResource(label), onCheckIn, Modifier.testTag("partner_checkin"),
+            enabled = week.canCheckIn && !state.busy)
+        if (!checked && !full) Notice(stringResource(R.string.partner_checkin_hint))
+    }
+    if (other != null) Encouragement(week, !state.busy, primary = !participating, onSend = onCheer)
+    if (participating && !full) {
+        planning()
+        reminder()
+    }
+}
+
+@Composable
+private fun PartnerKeepsake(weekId: String, startDay: String?, start: String?, end: String?) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val title = stringResource(R.string.partner_week_complete)
+    val note = stringResource(R.string.partner_keepsake_note)
+    val period = if (start != null && end != null) stringResource(R.string.partner_period, start, end) else ""
+    var export by rememberSaveable { mutableStateOf<String?>(null) }
+    var feedback by rememberSaveable(weekId) { mutableStateOf<Int?>(null) }
+    val destination = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri: Uri? ->
+        val range = export
+        export = null
+        if (uri != null && range != null) scope.launch {
+            feedback = try {
+                withContext(Dispatchers.IO) {
+                    val out = context.contentResolver.openOutputStream(uri) ?: throw IOException("No output stream")
+                    out.use { stream ->
+                        val image = ShareCards.renderPartnerKeepsake(context.resources, range)
+                        try {
+                            if (!image.compress(Bitmap.CompressFormat.PNG, 100, stream)) throw IOException("PNG encoding failed")
+                        } finally {
+                            image.recycle()
+                        }
+                    }
                 }
+                R.string.partner_keepsake_saved
+            } catch (_: IOException) {
+                R.string.partner_keepsake_failed
+            } catch (_: SecurityException) {
+                R.string.partner_keepsake_failed
             }
         }
-        if (week.renewalRequestedByMe) Notice(stringResource(R.string.partner_renew_wait))
-        else if (week.renewalRequestedByPartner) Notice(stringResource(R.string.partner_renew_invited))
-        if (week.canRenew && !week.renewalRequestedByMe) {
-            PrimaryButton(stringResource(if (week.renewalRequestedByPartner) R.string.partner_renew_accept else R.string.partner_renew),
-                vm::renew, Modifier.testTag("partner_renew"), enabled = !state.busy)
-        }
-    } else {
-        if (week.self.role == "participant" && state.participantAllowed == true) {
-            val checked = week.today in week.self.days
-            val full = week.self.days.distinct().size >= 3
-            val label = when {
-                full -> R.string.partner_all_marks
-                checked -> R.string.partner_checked
-                else -> R.string.partner_checkin
-            }
-            PrimaryButton(stringResource(label), vm::checkIn, Modifier.testTag("partner_checkin"),
-                enabled = week.canCheckIn && !state.busy)
-            if (!checked && !full) Notice(stringResource(R.string.partner_checkin_hint))
-        }
-        if (week.partner != null) {
-            val sentToday = !week.canCheer && week.startDate?.let { week.today >= it } == true &&
-                week.endDate?.let { week.today <= it } == true
-            SecondaryButton(stringResource(if (sentToday) R.string.partner_cheered else R.string.partner_cheer),
-                { vm.cheer("glad") }, Modifier.testTag("partner_cheer"),
-                enabled = week.canCheer && !state.busy)
-        }
-        if (week.self.role == "participant" && state.participantAllowed == true && week.self.days.distinct().size < 3) {
-            PartnerReminderRow(weekId = week.id, enabledForWeek = true)
+    }
+    Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.large) {
+        Column(Modifier.fillMaxWidth().testTag("partner_keepsake").padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(note, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            if (period.isNotBlank()) Text(period, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            TextButton(onClick = {
+                export = period
+                try {
+                    val day = startDay?.let { runCatching { LocalDate.parse(it).toString() }.getOrNull() }
+                    destination.launch(listOfNotNull("Fasting-Shift", day).joinToString("-") + ".png")
+                } catch (_: ActivityNotFoundException) {
+                    export = null
+                    feedback = R.string.partner_keepsake_failed
+                }
+            }, modifier = Modifier.testTag("partner_save_keepsake")) { Text(stringResource(R.string.partner_save_keepsake)) }
+            feedback?.let { Text(stringResource(it), Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
         }
     }
 }
 
 @Composable
-private fun MarkRow(member: PartnerMember, name: String, tag: String) {
+private fun RenewalActions(week: PartnerWeek, state: PartnerUiState, onRenew: () -> Unit, onPause: () -> Unit) {
+    var confirmPause by rememberSaveable(week.id) { mutableStateOf(false) }
+    val paused = state.pausedWeekId == week.id && !week.renewalRequestedByMe
+    when {
+        week.renewalRequestedByMe -> Notice(stringResource(R.string.partner_renew_wait))
+        week.renewalRequestedByPartner -> Notice(stringResource(R.string.partner_renew_invited))
+    }
+    if (paused) Text(stringResource(R.string.partner_paused_note),
+        Modifier.testTag("partner_paused").semantics { liveRegion = LiveRegionMode.Polite })
+    if (week.canRenew && !week.renewalRequestedByMe) {
+        PrimaryButton(stringResource(if (week.renewalRequestedByPartner) R.string.partner_renew_accept else R.string.partner_renew),
+            onRenew, Modifier.testTag("partner_renew"), enabled = !state.busy)
+    }
+    if (!paused && (week.canRenew || week.renewalRequestedByMe)) {
+        SecondaryButton(stringResource(R.string.partner_pause), {
+            if (week.renewalRequestedByMe) confirmPause = true else onPause()
+        }, Modifier.testTag("partner_pause"), enabled = !state.busy)
+    }
+    if (confirmPause) AlertDialog(onDismissRequest = { confirmPause = false },
+        title = { Text(stringResource(R.string.partner_pause_question)) },
+        text = { Text(stringResource(R.string.partner_withdraw_note)) },
+        confirmButton = { TextButton(onClick = { confirmPause = false; onPause() }) { Text(stringResource(R.string.partner_pause)) } },
+        dismissButton = { TextButton(onClick = { confirmPause = false }) { Text(stringResource(R.string.partner_back)) } })
+}
+
+private fun reactionLabel(kind: String) = when (kind) {
+    "here" -> R.string.partner_reaction_here
+    "thanks" -> R.string.partner_reaction_thanks
+    else -> R.string.partner_reaction_glad
+}
+
+@Composable
+private fun Encouragement(week: PartnerWeek, enabled: Boolean, primary: Boolean, onSend: (String) -> Unit) {
+    var kind by rememberSaveable(week.id) { mutableStateOf("glad") }
+    var choose by rememberSaveable(week.id) { mutableStateOf(false) }
+    val sent = !week.canCheer && week.startDate?.let { week.today >= it } == true &&
+        week.endDate?.let { week.today <= it } == true
+    val label = if (sent) stringResource(R.string.partner_cheered)
+        else stringResource(R.string.partner_send_preset, stringResource(reactionLabel(kind)))
+    val modifier = Modifier.testTag("partner_cheer")
+    val send = { onSend(kind) }
+    if (primary) PrimaryButton(label, send, modifier, enabled && week.canCheer)
+    else SecondaryButton(label, send, modifier, enabled && week.canCheer)
+    if (week.canCheer) {
+        TextButton(onClick = { choose = true }, enabled = enabled, modifier = Modifier.testTag("partner_choose_preset")) {
+            Text(stringResource(R.string.partner_choose_preset))
+        }
+    }
+    if (choose) AlertDialog(onDismissRequest = { choose = false },
+        title = { Text(stringResource(R.string.partner_choose_preset)) },
+        text = {
+            Column(Modifier.selectableGroup()) {
+                for (option in partnerReactions) {
+                    Row(Modifier.fillMaxWidth().selectable(selected = kind == option, role = Role.RadioButton,
+                        onClick = { kind = option; choose = false }).heightIn(min = 48.dp).padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = kind == option, onClick = null)
+                        Text(stringResource(reactionLabel(option)))
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { choose = false }) { Text(stringResource(R.string.partner_back)) } })
+}
+
+@Composable
+private fun MarkRow(member: PartnerMember, name: String, isSelf: Boolean) {
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxWidth().testTag(tag).semantics(mergeDescendants = true) {},
+    Column(Modifier.fillMaxWidth().testTag(if (isSelf) "partner_self_marks" else "partner_other_marks").semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(name, style = MaterialTheme.typography.titleMedium)
-        if (member.role == "supporter") {
-            Text(stringResource(R.string.partner_supporter_label), color = colors.onSurfaceVariant)
-        } else {
-            val count = member.days.distinct().size.coerceIn(0, 3)
-            MarkDots(count)
-            Text(stringResource(R.string.partner_count, count), style = MaterialTheme.typography.bodyMedium,
-                color = colors.onSurfaceVariant)
+        val count = member.days.distinct().size.coerceIn(0, 3)
+        MarkDots(count)
+        Text(stringResource(R.string.partner_count, count), style = MaterialTheme.typography.bodyMedium,
+            color = colors.onSurfaceVariant)
+        if (!isSelf) localDate(member.days.maxOrNull())?.let { day ->
+            Text(stringResource(R.string.partner_last_checkin, member.alias, day), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

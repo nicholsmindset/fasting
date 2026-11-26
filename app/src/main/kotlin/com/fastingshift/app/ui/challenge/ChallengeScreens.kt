@@ -138,7 +138,7 @@ fun ChallengeListRoute(
         onPartner?.let { open ->
             InsetGroup {
                 GroupRow(stringResource(R.string.partner_title), modifier = Modifier.testTag("partner_open"),
-                    subtitle = stringResource(R.string.partner_entry_hint), showChevron = true, onClick = { open(null) })
+                    subtitle = stringResource(R.string.partner_discover), showChevron = true, onClick = { open(null) })
             }
         }
         if (!s.allowed) {

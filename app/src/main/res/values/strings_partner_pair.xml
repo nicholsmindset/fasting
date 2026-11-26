@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="partner_create_share">Create and share invitation</string>
+    <string name="partner_copy_fallback">Use Copy link to send your invitation.</string>
+    <string name="partner_spent_link">This invitation has expired or was already used. Ask your partner for a new link.</string>
+    <string name="partner_replace_invite">Paste a different invitation</string>
+    <string name="partner_supporting">You’re cheering on %1$s.</string>
+    <string name="partner_supported_by">%1$s is cheering you on.</string>
+    <string name="partner_pause">Pause here</string>
+    <string name="partner_pause_question">Withdraw your request for another week?</string>
+    <string name="partner_withdraw_note">Your partner will no longer see your request. Your recap stays here.</string>
+    <string name="partner_paused_note">You’re taking a break. Your recap is here if you want to return.</string>
+    <string name="partner_send_preset">Send “%1$s”</string>
+    <string name="partner_choose_preset">Choose a message</string>
+    <string name="partner_discover">Pair up for seven days of check-ins or encouragement.</string>
+    <string name="partner_save_keepsake">Save keepsake</string>
+    <string name="partner_keepsake_saved">Keepsake saved.</string>
+    <string name="partner_keepsake_failed">Couldn’t save this copy. Choose another location and try again.</string>
+</resources>

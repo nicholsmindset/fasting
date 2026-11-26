@@ -91,6 +91,7 @@ data class AppSettings(
     val annualRecapsShared: Int = 0,
     val weeklyRecapsViewed: Int = 0,
     val weeklyRecapsShared: Int = 0,
+    val showPartnerShortcut: Boolean = true,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -133,6 +134,7 @@ class SettingsRepository(context: Context) {
                 hydrationEnabled = p[HYDRATION] ?: true,
             ),
             hideWeight = p[HIDE_WEIGHT] ?: false,
+            showPartnerShortcut = p[PARTNER_SHORTCUT] ?: true,
             ongoingNotification = p[ONGOING] ?: false,
             defaultProtocolId = p[DEFAULT_PROTOCOL],
             onboardingComplete = p[ONBOARDED] ?: false,
@@ -172,6 +174,7 @@ class SettingsRepository(context: Context) {
 
     /** 0 disables the "forgot to end your fast?" nudge. */
     suspend fun setForgotToEndHours(hours: Int) = store.edit { it[FORGOT_HOURS] = hours.coerceAtLeast(0) }
+    suspend fun setPartnerShortcut(show: Boolean) = store.edit { it[PARTNER_SHORTCUT] = show }
     suspend fun setHideWeight(hide: Boolean) = store.edit { it[HIDE_WEIGHT] = hide }
     suspend fun setOngoingNotification(enabled: Boolean) = store.edit { it[ONGOING] = enabled }
     suspend fun setDefaultProtocol(id: String) = store.edit { it[DEFAULT_PROTOCOL] = id }
@@ -326,6 +329,7 @@ class SettingsRepository(context: Context) {
             goal = s.goal?.name,
             defaultProtocolId = s.defaultProtocolId,
             hideWeight = s.hideWeight,
+            showPartnerShortcut = s.showPartnerShortcut,
             ongoingNotification = s.ongoingNotification,
             fastEndAlert = s.reminders.fastEndEnabled,
             fastStartAlert = s.reminders.fastStartEnabled,
@@ -364,6 +368,7 @@ class SettingsRepository(context: Context) {
         r.defaultProtocolId?.let { d -> it[DEFAULT_PROTOCOL] = d } ?: it.remove(DEFAULT_PROTOCOL)
         // Restoring an older backup must never reveal weight someone has chosen to hide (SR-6).
         it[HIDE_WEIGHT] = (it[HIDE_WEIGHT] ?: false) || r.hideWeight
+        r.showPartnerShortcut?.let { show -> it[PARTNER_SHORTCUT] = show }
         it[ONGOING] = r.ongoingNotification
         it[FAST_END] = r.fastEndAlert
         it[FAST_START] = r.fastStartAlert
@@ -425,6 +430,7 @@ class SettingsRepository(context: Context) {
         val FAST_START = booleanPreferencesKey("reminder_fast_start")
         val MILESTONES = stringSetPreferencesKey("reminder_milestone_hours")
         val FORGOT_HOURS = intPreferencesKey("reminder_forgot_hours")
+        val PARTNER_SHORTCUT = booleanPreferencesKey("partner_timer_shortcut")
         val HIDE_WEIGHT = booleanPreferencesKey("hide_weight")
         val ONGOING = booleanPreferencesKey("ongoing_notification")
         val DEFAULT_PROTOCOL = stringPreferencesKey("default_protocol")

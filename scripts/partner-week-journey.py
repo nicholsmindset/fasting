@@ -1,4 +1,6 @@
-"""Drive separate host and guest installations through the real partner week service in CI."""
+"""Drive separate host and guest emulators through the real partner week service in CI."""
+from contextlib import contextmanager
+from datetime import date
 import importlib.util
 import os
 from pathlib import Path
@@ -14,23 +16,41 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("upgrade", ROOT / "scripts/beta-upgrade-smoke.py")
 smoke = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(smoke)
-adb = smoke.adb
 HOST = "com.fastingshift.app.staging"
 GUEST = "com.fastingshift.app"
 FORWARD = "tcp:18443"
+HOST_ZONE = "Pacific/Kiritimati"
+GUEST_ZONE = "Etc/GMT+12"
 
 
 class PartnerScreen:
-    def __init__(self, device, package):
-        self.device = device
+    def __init__(self, serial, package):
+        self.serial = serial
+        self.device = u2.connect(serial)
         self.package = package
 
+    def adb(self, *args):
+        return subprocess.check_output(["adb", "-s", self.serial, *args], text=True, timeout=120).strip()
+
+    @contextmanager
+    def offline(self):
+        self.adb("reverse", "--remove", FORWARD)
+        smoke.adb = self.adb
+        try:
+            with smoke.offline_emulator():
+                yield
+        finally:
+            self.adb("reverse", FORWARD, FORWARD)
+
     def launch(self, onboard=False):
-        adb("shell", "am", "start", "-W", "-n", f"{self.package}/{smoke.ACTIVITY}")
+        self.adb("shell", "am", "start", "-W", "-n", f"{self.package}/{smoke.ACTIVITY}")
         # Reuse the existing UI journey's real onboarding and safety screen for each install.
-        smoke.PACKAGE = self.package
         if onboard:
+            smoke.adb = self.adb
+            smoke.PACKAGE = self.package
             smoke.Screen(self.device, ROOT).onboard("tab_timer", allow_notifications=False)
+            if smoke.notification_permission_granted():
+                raise AssertionError("Choosing Not now granted notification permission")
 
     def node(self, tag):
         return self.device(packageName=self.package, resourceId=tag)
@@ -67,7 +87,7 @@ class PartnerScreen:
         else:
             field.set_text(text)
         # Hide the IME only if visible, so Back cannot navigate away from a field.
-        if "mInputShown=true" in adb("shell", "dumpsys", "input_method"):
+        if "mInputShown=true" in self.adb("shell", "dumpsys", "input_method"):
             self.device.press("back")
 
     def open(self):
@@ -100,9 +120,28 @@ class PartnerScreen:
 
     def expect_unpaired(self):
         # The foreground refresh may observe the departure before we can tap Refresh.
-        if not self.node("partner_create").wait(timeout=2) and self.node("partner_refresh").exists:
-            self.tap("partner_refresh", timeout=2)
+        if not self.node("partner_create").wait(timeout=2):
+            try:
+                self.tap("partner_refresh", timeout=2)
+            except AssertionError:
+                # Refresh can disappear while scrolling if an automatic sync finishes.
+                self.locate("partner_create", timeout=2)
         self.locate("partner_create", timeout=10)
+
+    def plan_day(self, own, other, previously_saved=False):
+        self.tap("partner_plan_open")
+        own_row = self.locate(f"partner_plan_day_{own}")
+        other_row = self.locate(f"partner_plan_day_{other}")
+        if not own_row.info["checkable"] or own_row.info["checked"] != previously_saved or other_row.info["checked"]:
+            raise AssertionError("Private day selections were lost or appeared on the other phone")
+        if not previously_saved:
+            own_row.click()
+            if not own_row.info["checked"]:
+                raise AssertionError("Tapping a private plan day did not select it")
+        save = self.device(packageName=self.package, text="Save")
+        save.click(timeout=5)
+        if not own_row.wait_gone(timeout=5):
+            raise AssertionError("Saving the private plan left the picker open")
 
     def capture(self, label):
         # Only established synthetic memberships are photographed. The invitation token,
@@ -137,42 +176,67 @@ class PartnerScreen:
         self.locate("partner_create", timeout=10)
 
 
-def open_copied_invite_from_browser(guest):
-    # The Chrome handoff uses this custom scheme and the installed app's package.
-    # Read only the fake invitation pasted into the guest's field. Keep the link and
-    # native activity-launch output out of CI logs, including on failures.
-    field = guest.device(packageName=guest.package, className="android.widget.EditText")
-    link = field.get_text()
-    match = re.fullmatch(r"https://www\.fastingshift\.com/partner/#([a-f0-9]{64})", link or "")
-    if not match:
-        raise AssertionError("Host copy did not produce a branded invitation")
-    adb("shell", "am", "force-stop", guest.package)
+def open_invitation(guest, token):
+    guest.adb("shell", "am", "force-stop", guest.package)
+    # Suppress the normal am output: it includes the synthetic single-use link.
     result = subprocess.run([
-        "adb", "shell", "am", "start", "-W", "-a", "android.intent.action.VIEW",
+        "adb", "-s", guest.serial, "shell", "am", "start", "-W", "-a", "android.intent.action.VIEW",
         "-c", "android.intent.category.BROWSABLE", "-p", guest.package,
-        "-d", "fastingshift://partner/#" + match.group(1),
+        "-d", "fastingshift://partner/#" + token,
     ], capture_output=True, text=True, timeout=30)
     if result.returncode or "Error:" in result.stdout or result.stderr.strip().startswith("Error:"):
         raise AssertionError("Android could not launch the private partner invitation")
 
 
-def invite(host, guest, supporter):
+def invite(host, guest, observer, supporter):
     host.edit("partner_alias", "Rowan")
     host.tap("partner_create")
+    # Assert the system sharesheet opens as part of creation. Close it to use the
+    # copy fallback without sending anything to a real messaging account.
+    chooser = host.device(packageNameMatches=r"(com.android|com.google.android).intentresolver|android",
+                          resourceIdMatches=".*:id/(chooser_header|chooser_headline|content_preview_text|resolver_list).*")
+    if not chooser.wait(timeout=10):
+        top = host.device.app_current().get("package")
+        if top not in {"com.android.intentresolver", "com.google.android.intentresolver", "android"}:
+            raise AssertionError("Creating an invitation did not open the Android sharesheet")
+    host.device.press("back")
     host.tap("partner_copy")
-    guest.resume()
-    guest.tap("partner_paste", timeout=3)
-    guest.edit("partner_link")
+
+    # A third, unpaired app sandbox on the host device can paste exactly what the
+    # user copied. Relay it to the other emulator without sharing device storage.
+    observer.resume()
+    observer.tap("partner_paste")
+    observer.edit("partner_link")
+    field = observer.device(packageName=observer.package, className="android.widget.EditText")
+    link = field.get_text()
+    match = re.fullmatch(r"https://www\.fastingshift\.com/partner/#([a-f0-9]{64})", link or "")
+    if not match:
+        raise AssertionError("The Android clipboard did not contain a complete partner link")
+
     if supporter:
+        guest.resume()
+        guest.tap("partner_paste")
+        try:
+            guest.edit("partner_link", link)
+        except Exception:
+            raise AssertionError("Guest could not enter the synthetic invite") from None
         guest.tap("partner_preview")
     else:
-        open_copied_invite_from_browser(guest)
+        open_invitation(guest, match.group(1))
     if not guest.device(packageName=guest.package, text="Rowan invited you").wait(timeout=12):
         raise AssertionError("Invitation preview did not identify the host")
     guest.edit("partner_alias", "Jamie")
     guest.tap("partner_supporter" if supporter else "partner_participant")
     guest.tap("partner_join")
     guest.locate("partner_leave")
+
+    # Ordinary invitation preview by an unpaired install after redemption.
+    observer.tap("partner_preview")
+    observer.locate("partner_invite_unavailable")
+    if observer.node("partner_join").exists or observer.node("partner_self_marks").exists:
+        raise AssertionError("A used invitation exposed participant actions to a third installation")
+    observer.tap("partner_close_invite")
+    observer.locate("partner_create")
     if supporter:
         if guest.node("partner_checkin").exists:
             raise AssertionError("Supporter was given a participant's check-in")
@@ -184,32 +248,58 @@ def invite(host, guest, supporter):
     host.assert_marks("partner_self_marks", 0)
 
 
-def journey(device):
-    host = PartnerScreen(device, HOST)
-    guest = PartnerScreen(device, GUEST)
+def fixture_query(query):
+    if (os.environ.get("PGHOST"), os.environ.get("PGPORT")) != ("127.0.0.1", "18479"):
+        raise AssertionError("The journey requires the disposable CI database")
+    return subprocess.check_output(["psql", "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", query],
+                                   text=True, timeout=20).strip()
+
+
+def check_local_days(host, guest, initial):
+    rows = fixture_query("SELECT seat, zone, cardinality(marks), marks[1] "
+                         "FROM fasting_partners.members ORDER BY seat").splitlines()
+    if len(rows) != 2:
+        raise AssertionError("The test pair should be the only two members")
+    marked = {}
+    for seat, screen, zone in (("guest", guest, GUEST_ZONE), ("host", host, HOST_ZONE)):
+        actual_seat, actual_zone, count, saved = rows[0 if seat == "guest" else 1].split("|")
+        first = date.fromisoformat(initial[seat])
+        last = date.fromisoformat(screen.adb("shell", "date", "+%F"))
+        if (actual_seat, actual_zone, count) != (seat, zone, "1") or not first <= date.fromisoformat(saved) <= last:
+            raise AssertionError(f"The {seat}'s persisted check-in did not match their emulator's local date")
+        marked[seat] = saved
+    if marked["guest"] == marked["host"]:
+        raise AssertionError("The two local check-ins used the same calendar day")
+    print(f"Local check-in days verified: host {marked['host']}, guest {marked['guest']}.")
+
+
+def journey(host, guest, observer):
+    observer.launch(onboard=True)
     guest.launch(onboard=True)
     host.launch(onboard=True)
     host.open()
-    invite(host, guest, supporter=True)
-    print("Private invite copied through the host UI and redeemed in a second Android installation as a supporter.")
-    # Emulator ADB forwards can remain reachable while Android's network is off. Disconnect
-    # the fixture as well and restart the host so the queued mark must survive process death.
-    adb("reverse", "--remove", FORWARD)
-    try:
-        with smoke.offline_emulator():
-            host.tap("partner_checkin")
-            host.assert_marks("partner_self_marks", 1)
-            adb("shell", "am", "force-stop", HOST)
-            host.launch()
-            host.open()
-            host.assert_marks("partner_self_marks", 1)
-    finally:
-        adb("reverse", FORWARD, FORWARD)
+    invite(host, guest, observer, supporter=True)
+    print("A supporter accepted on a different emulator, and the third install could not reuse the invitation.")
+    with host.offline():
+        host.tap("partner_checkin")
+        host.assert_marks("partner_self_marks", 1)
+        # Physically tap the same control again, even when the product disables it.
+        host.locate("partner_checkin").click()
+        host.assert_marks("partner_self_marks", 1)
+        host.tap("partner_refresh")
+        host.adb("shell", "am", "force-stop", HOST)
+        host.launch()
+        host.open()
+        host.assert_marks("partner_self_marks", 1)
+        if fixture_query("SELECT cardinality(marks) FROM fasting_partners.members WHERE seat='host'") != "0":
+            raise AssertionError("Disconnected host unexpectedly reached the fixture")
     host.tap("partner_refresh", timeout=3)
     host.assert_marks("partner_self_marks", 1)
     guest.resume()
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_other_marks", 1)
+    if fixture_query("SELECT cardinality(marks) FROM fasting_partners.members WHERE seat='host'") != "1":
+        raise AssertionError("Retrying a disconnected mark did not produce exactly one server check-in")
     guest.capture("supporter-with-host-check-in")
     guest.tap("partner_cheer")
     host.resume()
@@ -223,14 +313,23 @@ def journey(device):
     guest.expect_unpaired()
     print("Leaving the partnership removed the shared week from the other installation.")
     host.resume()
-    invite(host, guest, supporter=False)
+    initial = {"host": host.adb("shell", "date", "+%F"), "guest": guest.adb("shell", "date", "+%F")}
+    invite(host, guest, observer, supporter=False)
     host.assert_marks("partner_other_marks", 1)
+    # Neither participant plans today. Each can still check in, and their
+    # independent plans survive refresh without appearing on the partner's phone.
+    host.plan_day(1, 2)
+    guest.plan_day(2, 1)
+    guest.tap("partner_refresh")
+    guest.plan_day(2, 1, previously_saved=True)
+    host.tap("partner_refresh")
+    host.plan_day(1, 2, previously_saved=True)
     host.tap("partner_checkin")
     host.assert_marks("partner_self_marks", 1)
     guest.resume()
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_other_marks", 1)
-    print("Both participating members independently checked in on their own app installation.")
+    check_local_days(host, guest, initial)
 
     # Move the synthetic fixture through the end of its week without changing either
     # device clock. Never run this against a remote database or a populated project.
@@ -248,7 +347,7 @@ def journey(device):
     """, text=True, check=True)
     guest.tap("partner_refresh", timeout=3)
     guest.tap("partner_renew")
-    if not device(packageName=GUEST, textContains="asked to do another week").wait(timeout=8):
+    if not guest.device(packageName=GUEST, textContains="asked to do another week").wait(timeout=8):
         raise AssertionError("Guest's invitation restarted the week without host consent")
     host.resume()
     host.tap("partner_refresh", timeout=3)
@@ -260,31 +359,56 @@ def journey(device):
     guest.tap("partner_refresh", timeout=3)
     guest.assert_marks("partner_self_marks", 0)
     print("A new week required both members' consent and reset their progress.")
-    guest.leave()
+    # Host earns an unsynced mark; the online guest revokes the partnership.
+    # Reconnecting and retrying must discard the local mark and keep the pair gone.
+    host.resume()
+    with host.offline():
+        host.tap("partner_checkin")
+        host.assert_marks("partner_self_marks", 1)
+        guest.leave()
+        if fixture_query("SELECT count(*) FROM fasting_partners.members") != "0":
+            raise AssertionError("Leaving failed to remove shared membership")
+    host.expect_unpaired()
+    host.adb("shell", "am", "force-stop", HOST)
     host.resume()
     host.expect_unpaired()
-    print("The guest could also end the renewed partnership, and the host lost access.")
+    if fixture_query("SELECT count(*) FROM fasting_partners.weeks") != "0":
+        raise AssertionError("An offline retry restored a revoked partnership")
+    print("Leaving while the other emulator was offline discarded its queued mark on reconnect and restart.")
 
 
 def main():
-    if adb("shell", "getprop", "ro.kernel.qemu") != "1":
-        raise SystemExit("This automated test requires a disposable Android emulator.")
-    adb("install", "-r", str(ROOT / "app/build/outputs/apk/staging/app-staging.apk"))
-    adb("install", "-r", str(ROOT / "app/build/outputs/apk/debug/app-debug.apk"))
-    adb("reverse", FORWARD, FORWARD)
-    device = u2.connect()
+    host = PartnerScreen(os.environ["PARTNER_HOST_SERIAL"], HOST)
+    guest = PartnerScreen(os.environ["PARTNER_GUEST_SERIAL"], GUEST)
+    if host.serial == guest.serial:
+        raise AssertionError("Host and guest must use separate Android emulators")
+    observer = PartnerScreen(host.serial, GUEST)
+    for screen, zone in ((host, HOST_ZONE), (guest, GUEST_ZONE)):
+        if screen.adb("shell", "getprop", "ro.kernel.qemu") != "1":
+            raise AssertionError("This automated test requires a disposable Android emulator")
+        screen.adb("shell", "settings", "put", "global", "auto_time_zone", "0")
+        screen.adb("shell", "cmd", "alarm", "set-timezone", zone)
+        if screen.adb("shell", "getprop", "persist.sys.timezone") != zone:
+            raise AssertionError(f"Android did not enter its assigned timezone {zone}")
+        screen.adb("reverse", FORWARD, FORWARD)
+    if host.adb("shell", "date", "+%F") == guest.adb("shell", "date", "+%F"):
+        raise AssertionError("Partner emulators must start on different calendar dates")
+    staging = str(ROOT / "app/build/outputs/apk/staging/app-staging.apk")
+    debug = str(ROOT / "app/build/outputs/apk/debug/app-debug.apk")
+    host.adb("install", "-r", staging)
+    observer.adb("install", "-r", debug)
+    guest.adb("install", "-r", debug)
     try:
-        journey(device)
+        journey(host, guest, observer)
     except Exception:
-        # Keep aliases, links and editable contents out of CI diagnostics.
-        try:
-            tags = [n.attrib["resource-id"] for n in ET.fromstring(device.dump_hierarchy()).iter("node")
+        for screen in (host, guest):
+            tags = [n.attrib["resource-id"] for n in ET.fromstring(screen.device.dump_hierarchy()).iter("node")
                     if n.attrib.get("resource-id", "").startswith("partner_")]
-            print(f"Partner controls visible at failure: {tags}", file=sys.stderr)
-        finally:
-            raise
+            print(f"{screen.serial} partner controls visible at failure: {tags}", file=sys.stderr)
+        raise
     finally:
-        subprocess.run(["adb", "reverse", "--remove", FORWARD], check=False)
+        for screen in (host, guest):
+            subprocess.run(["adb", "-s", screen.serial, "reverse", "--remove", FORWARD], check=False)
 
 
 if __name__ == "__main__":
