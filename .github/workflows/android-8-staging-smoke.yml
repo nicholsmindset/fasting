@@ -20,8 +20,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/nicholsmindset/fasting/actions/artifacts/15051579162/zip > distributed-staging.apk
-          echo '70790e3cbd805b7a5f6da0c0e4fdf60b854634d8efd4a1f5ccd1b86fee328efb  distributed-staging.apk' | sha256sum -c -
+          gh api repos/nicholsmindset/fasting/actions/artifacts/15075635023/zip > distributed-staging.apk
+          echo 'b761a0e78b6cfcf8214b8b96b77687a88653b6f54a084d60c9ae174668d55d7b  distributed-staging.apk' | sha256sum -c -
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
