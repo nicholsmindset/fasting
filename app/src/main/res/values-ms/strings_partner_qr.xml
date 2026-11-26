@@ -1,0 +1,7 @@
+<resources>
+    <string name="partner_show_qr">Tunjukkan kod QR</string>
+    <string name="partner_qr_title">Imbas untuk menyertai minggu bersama rakan</string>
+    <string name="partner_qr_instruction">Minta rakan anda mengimbas kod ini dengan kamera telefon mereka.</string>
+    <string name="partner_reshare_unavailable">Jemputan ini tidak tersedia. Batalkan jemputan ini dan buat jemputan baharu untuk rakan anda.</string>
+    <string name="partner_invite_in_person">Jemput secara bersemuka</string>
+</resources>

@@ -42,6 +42,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.ui.food.FoodLabelEntry
 import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.app.ui.components.TabularNumbers
 import com.fastingshift.app.ui.components.convertWeight
@@ -201,12 +202,13 @@ fun LogRoute(vm: LogViewModel = hiltViewModel()) {
             setWeightUnit = { vm.setWeightUnit(it) }, deleteWater = { vm.deleteWater(it) }, deleteElectrolyte = { vm.deleteElectrolyte(it) },
             deleteWeight = { vm.deleteWeight(it) }, retryHealthSync = { vm.retryHealthSync() },
         ),
+        foodLabel = { FoodLabelEntry() },
         metrics = { MetricsRoute() },
     )
 }
 
 @Composable
-fun LogScreen(st: LogState, actions: LogActions, metrics: @Composable () -> Unit = {}) {
+fun LogScreen(st: LogState, actions: LogActions, foodLabel: @Composable () -> Unit = {}, metrics: @Composable () -> Unit = {}) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.section),
@@ -227,6 +229,7 @@ fun LogScreen(st: LogState, actions: LogActions, metrics: @Composable () -> Unit
         }
         WaterSection(st, actions)
         ElectrolyteGroup(st, actions)
+        foodLabel()
         // Glucose & ketones (MetricsSection.kt), separate state so this screen stays small.
         metrics()
         // Hide weight mode removes weight from every screen (SR-6), the trend chart included.

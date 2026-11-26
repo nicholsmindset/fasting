@@ -11,6 +11,7 @@ import time
 import xml.etree.ElementTree as ET
 
 import uiautomator2 as u2
+import zxingcpp
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("upgrade", ROOT / "scripts/beta-upgrade-smoke.py")
@@ -210,15 +211,30 @@ def open_invitation(guest, token):
 
 def invite(host, guest, observer, supporter):
     host.edit("partner_alias", "Rowan")
-    host.tap("partner_create")
-    # Assert the system sharesheet opens as part of creation. Close it to use the
-    # copy fallback without sending anything to a real messaging account.
-    chooser = host.device(packageNameMatches=r"(com.android|com.google.android).intentresolver|android",
-                          resourceIdMatches=".*:id/(chooser_header|chooser_headline|content_preview_text|resolver_list).*")
-    if not chooser.wait(timeout=10):
-        top = host.device.app_current().get("package")
-        if top not in {"com.android.intentresolver", "com.google.android.intentresolver", "android"}:
-            raise AssertionError("Creating an invitation did not open the Android sharesheet")
+    if supporter:
+        host.tap("partner_create_qr")
+    else:
+        host.tap("partner_create")
+        # Protect the existing sharesheet path without sending the test invite.
+        chooser = host.device(packageNameMatches=r"(com.android|com.google.android).intentresolver|android",
+                              resourceIdMatches=".*:id/(chooser_header|chooser_headline|content_preview_text|resolver_list).*")
+        if not chooser.wait(timeout=10):
+            top = host.device.app_current().get("package")
+            if top not in {"com.android.intentresolver", "com.google.android.intentresolver", "android"}:
+                raise AssertionError("Creating an invitation did not open the Android sharesheet")
+        host.device.press("back")
+        host.tap("partner_show_qr")
+
+    # Decode the screen in memory, just like a second phone's camera. Do not retain the token.
+    qr_link = None
+    for _ in range(10):
+        scanned = zxingcpp.read_barcode(host.device.screenshot(), formats=zxingcpp.BarcodeFormat.QRCode)
+        if scanned is not None:
+            qr_link = scanned.text
+            break
+        time.sleep(0.5)
+    if qr_link is None:
+        raise AssertionError("The displayed Partner Week QR code could not be scanned")
     host.device.press("back")
     host.tap("partner_copy")
 
@@ -232,6 +248,9 @@ def invite(host, guest, observer, supporter):
     match = re.fullmatch(r"https://www\.fastingshift\.com/partner/#([a-f0-9]{64})", link or "")
     if not match:
         raise AssertionError("The Android clipboard did not contain a complete partner link")
+
+    if qr_link != link:
+        raise AssertionError("Scanning and copying produced different invitations")
 
     if supporter:
         guest.resume()

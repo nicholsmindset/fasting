@@ -1,0 +1,7 @@
+<resources>
+    <string name="partner_show_qr">Tampilkan kode QR</string>
+    <string name="partner_qr_title">Pindai untuk bergabung dalam pekan bersama teman</string>
+    <string name="partner_qr_instruction">Minta partner Anda memindai kode ini dengan kamera ponselnya.</string>
+    <string name="partner_reshare_unavailable">Undangan ini tidak tersedia. Batalkan undangan ini dan buat undangan baru untuk partner Anda.</string>
+    <string name="partner_invite_in_person">Undang secara langsung</string>
+</resources>

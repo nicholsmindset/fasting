@@ -1,6 +1,6 @@
 # Health Connect permission justifications (draft for Play review)
 
-Health Connect is optional and off by default. Weight and hydration permissions are requested when the user turns on **Settings → Privacy and data → Sync with Health Connect**. The others are requested in context, only when the user uses the feature that needs them: glucose from the Log screen's "Glucose & ketones" section (with sync on), and sleep and resting heart rate from **Shift+ → Insights → Body signals**.
+Health Connect is optional and off by default. Weight and hydration permissions are requested when the user turns on **Settings → Privacy and data → Sync with Health Connect**. The others are requested in context, only when the user uses the feature that needs them: glucose from the Log screen's "Glucose & ketones" section (with sync on), read-only steps from **History → This week → Connect step count**, and sleep and resting heart rate from **Shift+ → Insights → Body signals**.
 
 | Permission | User-facing reason |
 | --- | --- |
@@ -8,6 +8,7 @@ Health Connect is optional and off by default. Weight and hydration permissions 
 | `android.permission.health.READ_WEIGHT` | Imports recent weights recorded by other apps into the user's local weight log and trends when they enable sync. The import checks for duplicates. |
 | `android.permission.health.WRITE_HYDRATION` | Writes user-logged water intake to Health Connect so the user can access it in compatible apps they authorize. |
 | `android.permission.health.WRITE_BLOOD_GLUCOSE` | Writes a glucose reading the user typed in from their own meter as a manual entry, so apps they choose can see it. Deleting the reading in Fasting Shift removes the copy it wrote. The app does not read glucose. |
+| `android.permission.health.READ_STEPS` | Shows the aggregate step count for the current local week in the free weekly recap. Access is separate from log sync and requires the user’s permission. The app reads only while the recap is open. Counts stay out of storage, exports, partners, ads and analytics. |
 | `android.permission.health.READ_SLEEP` | Read-only. Shows average sleep on nights after a fasting day next to other nights (at least 5 nights each side), labelled "correlation, not cause". Not stored. |
 | `android.permission.health.READ_RESTING_HEART_RATE` | Read-only. Shows weekly average resting heart rate in fasting weeks next to other weeks (at least 3 weeks each side), labelled "correlation, not cause". Not stored. |
 

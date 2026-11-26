@@ -1,0 +1,29 @@
+<resources>
+    <string name="food_label">Label makanan</string>
+    <string name="food_label_summary">Semak makanan atau minuman berbungkus melalui kod bar.</string>
+    <string name="food_lookup_privacy">Imbas atau masukkan kod bar, kemudian ketik Cari. Open Food Facts menerima kod dan alamat rangkaian anda. Log puasa dan kesihatan anda kekal pada telefon.</string>
+    <string name="food_scan">Imbas kod bar</string>
+    <string name="food_scan_unavailable">Pengimbas tidak tersedia. Masukkan nombor di bawah kod bar.</string>
+    <string name="food_barcode">Nombor kod bar</string>
+    <string name="food_barcode_hint">Gunakan 8, 12, 13 atau 14 digit pada bungkusan.</string>
+    <string name="food_check_digits">Semak semula digit pada bungkusan.</string>
+    <string name="food_lookup">Cari</string>
+    <string name="food_searching">Sedang mencari…</string>
+    <string name="food_unknown">Tiada rekod untuk kod bar ini di Open Food Facts. Semak panel pemakanan pada bungkusan.</string>
+    <string name="food_rate_limit">Tunggu sebentar sebelum mencari kod bar lain.</string>
+    <string name="food_offline">Open Food Facts tidak dapat dihubungi. Semak sambungan dan cuba lagi, atau baca label bungkusan.</string>
+    <string name="food_unnamed">Produk berbungkus</string>
+    <string name="food_serving_size">Saiz hidangan: %1$s</string>
+    <string name="food_per_serving">Setiap hidangan</string>
+    <string name="food_per_100">Bagi setiap 100 g atau 100 ml mengikut label</string>
+    <string name="food_per_100ml">Setiap 100 ml</string>
+    <string name="food_no_nutrition">Nilai tenaga dan gula tidak tersedia untuk produk ini.</string>
+    <string name="food_attribution">Data produk daripada penyumbang Open Food Facts, di bawah lesen Open Database License (ODbL). Semak label terkini pada bungkusan.</string>
+    <string name="food_source">Lihat di Open Food Facts</string>
+    <string name="food_no_browser">Tiada pelayar untuk membuka sumber.</string>
+    <string name="food_energy">Tenaga</string>
+    <string name="food_sugars">Gula</string>
+    <string name="food_not_listed">Tidak dinyatakan</string>
+    <string name="food_kcal">%1$s kcal</string>
+    <string name="food_grams">%1$s g</string>
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="recap_steps_heading">Walking this week</string>
+    <string name="recap_steps_privacy">Show your weekly step total from Health Connect here. It stays private.</string>
+    <string name="recap_steps_denied">Step access is off. You can enable it in Health Connect under App permissions.</string>
+    <string name="recap_steps_connect">Connect step count</string>
+    <string name="recap_steps_unavailable">Health Connect is unavailable on this device.</string>
+    <string name="recap_steps_failed">Couldn’t read your steps.</string>
+    <string name="recap_steps_retry">Try again</string>
+    <string name="recap_steps_empty">No step data for this week.</string>
+    <string name="recap_steps_one">%1$s step</string>
+    <string name="recap_steps_total">%1$s steps</string>
+</resources>

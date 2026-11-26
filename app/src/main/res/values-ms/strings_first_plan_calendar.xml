@@ -1,0 +1,6 @@
+<resources>
+    <string name="first_plan_add_to_calendar">Tambah ke kalendar</string>
+    <string name="first_plan_calendar_copy">Pilih kalendar dan simpan salinan. Perubahan pada rancangan anda hanya disimpan dalam Fasting Shift.</string>
+    <string name="first_plan_calendar_event_title">Masa peribadi</string>
+    <string name="first_plan_calendar_unavailable">Tiada aplikasi kalendar tersedia untuk membuka acara ini.</string>
+</resources>

@@ -1,0 +1,29 @@
+<resources>
+    <string name="food_label">Food label</string>
+    <string name="food_label_summary">Check a packaged food or drink by barcode.</string>
+    <string name="food_lookup_privacy">Scan or enter a barcode, then tap Look up. Open Food Facts receives the code and your network address. Your fasting and health logs stay on your phone.</string>
+    <string name="food_scan">Scan barcode</string>
+    <string name="food_scan_unavailable">Scanner unavailable. Enter the numbers printed below the barcode.</string>
+    <string name="food_barcode">Barcode number</string>
+    <string name="food_barcode_hint">Use the 8, 12, 13 or 14 digits printed on the pack.</string>
+    <string name="food_check_digits">Check the digits against the package.</string>
+    <string name="food_lookup">Look up</string>
+    <string name="food_searching">Looking up…</string>
+    <string name="food_unknown">Open Food Facts has no entry for this barcode. Check the nutrition panel on the pack.</string>
+    <string name="food_rate_limit">Please wait before looking up another barcode.</string>
+    <string name="food_offline">Could not reach Open Food Facts. Check your connection and try again, or read the package label.</string>
+    <string name="food_unnamed">Packaged product</string>
+    <string name="food_serving_size">Serving size: %1$s</string>
+    <string name="food_per_serving">Per serving</string>
+    <string name="food_per_100">Per 100 g or 100 ml as labelled</string>
+    <string name="food_per_100ml">Per 100 ml</string>
+    <string name="food_no_nutrition">Energy and sugar values are unavailable for this product.</string>
+    <string name="food_attribution">Product data from Open Food Facts contributors, licensed under the Open Database License (ODbL). Check the pack for the current label.</string>
+    <string name="food_source">View on Open Food Facts</string>
+    <string name="food_no_browser">No browser available to open the source.</string>
+    <string name="food_energy">Energy</string>
+    <string name="food_sugars">Sugars</string>
+    <string name="food_not_listed">Not listed</string>
+    <string name="food_kcal">%1$s kcal</string>
+    <string name="food_grams">%1$s g</string>
+</resources>

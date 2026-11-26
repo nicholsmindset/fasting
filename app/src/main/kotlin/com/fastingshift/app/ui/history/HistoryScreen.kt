@@ -96,6 +96,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
+import com.fastingshift.app.health.HealthConnectManager
 import com.fastingshift.app.ui.components.LoadingBox
 import com.fastingshift.app.ui.components.minutesLabel
 import com.fastingshift.app.ui.components.formatDateTime
@@ -176,6 +177,7 @@ class HistoryViewModel @Inject constructor(
     screening: ScreeningRepository,
     private val settings: SettingsRepository,
     private val clock: Clock,
+    val health: HealthConnectManager,
 ) : ViewModel() {
     private val month = MutableStateFlow(YearMonth.now(clock.withZone(ZoneId.systemDefault())))
     private val period = MutableStateFlow(Period.WEEK)
@@ -375,7 +377,9 @@ fun HistoryRoute(onEditFast: (Long) -> Unit, onOpenInsights: () -> Unit, onAddPa
             section(key = "recap-${item.recap.weekStart}") {
                 WeeklyRecapCard(item, showShare = st.today.dayOfWeek != DayOfWeek.SUNDAY, onReflect = if (item == review || item.fit != null) {
                     { fit -> vm.reflect(item.recap.weekStart, fit) }
-                } else null)
+                } else null, walking = {
+                    if (!item.isLastWeek) WalkingRecap(vm.health, item.recap.weekStart, st.now, st.zone)
+                })
             }
         }
         section {
