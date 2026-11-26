@@ -34,9 +34,9 @@ class PartnerScreen:
 
     def fixture_reachable(self):
         # Exercise the exact loopback TCP port the app uses. Toybox returns zero
-        # on successful connection; EOF closes it without sending a TLS request.
+        # on successful connection. Its zero-I/O mode sends no TLS request.
         result = subprocess.run(["adb", "-s", self.serial, "shell", "toybox", "nc",
-                                 "-w", "2", "127.0.0.1", "18443"],
+                                 "-z", "-w", "2", "127.0.0.1", "18443"],
                                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                 stderr=subprocess.DEVNULL, timeout=8)
         return result.returncode == 0
