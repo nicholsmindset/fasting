@@ -111,6 +111,20 @@ class PartnerScreen:
         if "mInputShown=true" in self.adb("shell", "dumpsys", "input_method"):
             self.device.press("back")
 
+    def open_paste_form(self):
+        # A newly copied invite can put System UI's clipboard preview above this
+        # button while we switch app sandboxes. Confirm the actual destination.
+        overlay = self.device(packageName="com.android.systemui", resourceIdMatches=".*:id/clipboard_.*")
+        if overlay.exists:
+            overlay.wait_gone(timeout=12)
+        for _ in range(3):
+            if self.node("partner_link").exists:
+                return
+            self.tap("partner_paste")
+            if self.node("partner_link").wait(timeout=3):
+                return
+        raise AssertionError("Opening the invitation form did not display the link field")
+
     def open(self):
         self.tap("partner_open", timeout=2)
 
@@ -241,7 +255,7 @@ def invite(host, guest, observer, supporter):
     # A third, unpaired app sandbox on the host device can paste exactly what the
     # user copied. Relay it to the other emulator without sharing device storage.
     observer.resume()
-    observer.tap("partner_paste")
+    observer.open_paste_form()
     observer.edit("partner_link")
     field = observer.device(packageName=observer.package, className="android.widget.EditText")
     link = field.get_text()
@@ -254,7 +268,7 @@ def invite(host, guest, observer, supporter):
 
     if supporter:
         guest.resume()
-        guest.tap("partner_paste")
+        guest.open_paste_form()
         try:
             guest.edit("partner_link", link)
         except Exception:
