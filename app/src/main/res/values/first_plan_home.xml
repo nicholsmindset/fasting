@@ -1,0 +1,13 @@
+<resources>
+    <string name="first_plan_choose_time">Schedule my first fast</string>
+    <string name="first_plan_edit_time">Edit this window</string>
+    <string name="first_plan_save_window">Save this window</string>
+    <string name="first_plan_pick_clock">Choose start time</string>
+    <string name="first_plan_change_clock">Change start time</string>
+    <string name="first_plan_starts_at">Starts %1$s</string>
+    <string name="first_plan_finishes_at">Finishes %1$s</string>
+    <string name="first_plan_home_title">Your scheduled fast</string>
+    <string name="first_plan_unavailable">This time is unavailable. Choose another time or check My week.</string>
+    <string name="first_plan_covered">Your weekly plan already includes this start time.</string>
+    <string name="first_plan_save_failed">Your change could not be saved. Try again.</string>
+</resources>

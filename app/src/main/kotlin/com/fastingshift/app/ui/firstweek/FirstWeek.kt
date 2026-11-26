@@ -5,7 +5,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -62,7 +61,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
 import com.fastingshift.app.notifications.Notifications
-import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.GroupHeader
@@ -78,6 +76,9 @@ import com.fastingshift.domain.coaching.CoachingTip
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.FastStatus
 import java.time.Instant
+import com.fastingshift.domain.model.Protocol
+import com.fastingshift.app.ui.ramadan.GroupedSheet
+import androidx.compose.ui.platform.testTag
 import java.time.ZoneId
 import kotlinx.coroutines.launch
 
@@ -86,39 +87,67 @@ import kotlinx.coroutines.launch
  * its own (through its view model) whether to show anything.
  */
 
-/** One-off reminder before the first fast. The Timer provides the start action. */
+/** Editing a dated plan never starts the timer and does not require notifications. */
 @Composable
 fun FirstFastCard(
     now: Instant,
-    offer: EveningOffer,
+    selected: Protocol,
+    plan: FirstPlanWindow?,
     remindersAvailable: Boolean,
     onOpenReminders: () -> Unit,
     vm: FirstFastViewModel = hiltViewModel(),
 ) {
-    val st by vm.state.collectAsStateWithLifecycle()
-    val visible = st != null && (st?.planned != null || offer == EveningOffer.AVAILABLE ||
-        (offer == EveningOffer.COVERED && !remindersAvailable))
-    AnimatedVisibility(visible, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-        val ui = st ?: return@AnimatedVisibility
-        val format = rememberWeekFormat()
-        AppCard(Modifier.animateContentSize(), padding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
-            Text(stringResource(R.string.first_fast_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-            val plan = ui.planned
-            if (plan != null) {
-                Text(stringResource(R.string.first_fast_one_off, format.date.format(plan.date)), style = MaterialTheme.typography.bodyMedium)
-                PlainButton(stringResource(R.string.first_fast_cancel_plan), onClick = vm::cancelPlan)
+    val result by vm.result.collectAsStateWithLifecycle()
+    var editing by rememberSaveable { mutableStateOf(false) }
+    var draftEpoch by rememberSaveable { mutableStateOf<Long?>(null) }
+    val zone = ZoneId.systemDefault()
+    val busy = result == FirstPlanEditResult.BUSY
+    val savedStart = plan?.start?.atZone(zone)
+    val openEditor = {
+        draftEpoch = savedStart?.toEpochSecond()
+        vm.clearResult()
+        editing = true
+    }
+    LaunchedEffect(result) {
+        if (result == FirstPlanEditResult.SAVED) {
+            editing = false
+            vm.clearResult()
+        }
+    }
+    AppCard(
+        modifier = if (plan == null) Modifier else Modifier.testTag("first-plan-saved"),
+    ) {
+        Text(stringResource(if (plan == null) R.string.first_fast_title else R.string.first_plan_home_title),
+            style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+        if (plan != null && savedStart != null) FirstWindowTimes(savedStart, plan.protocol)
+        SecondaryButton(stringResource(if (plan == null) R.string.first_plan_choose_time else R.string.first_plan_edit_time),
+            onClick = openEditor, enabled = !busy)
+        if (plan != null) {
+            Text(stringResource(if (remindersAvailable) R.string.week_timer_reminder_on else R.string.week_timer_reminder_off),
+                style = MaterialTheme.typography.bodyMedium)
+            if (!remindersAvailable) PlainButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
+        }
+    }
+    if (editing) {
+        val draft = draftEpoch?.let { Instant.ofEpochSecond(it).atZone(zone) }
+        GroupedSheet(stringResource(if (plan == null) R.string.first_fast_title else R.string.first_plan_edit_time),
+            onDismiss = { if (!busy) editing = false }, dismissLabel = R.string.cancel) {
+            FirstPlanTimeFields(now, selected, draft, onPick = { picked ->
+                draftEpoch = picked.toEpochSecond()
+                vm.clearResult()
+            })
+            val problem = when (result) {
+                FirstPlanEditResult.COVERED -> R.string.first_plan_covered
+                FirstPlanEditResult.UNAVAILABLE -> R.string.first_plan_unavailable
+                FirstPlanEditResult.FAILED -> R.string.first_plan_save_failed
+                else -> null
             }
-            if (!remindersAvailable) {
-                Text(stringResource(R.string.week_alert_off), style = MaterialTheme.typography.bodyMedium)
-                SecondaryButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
-            } else if (plan == null && offer == EveningOffer.AVAILABLE) {
-                val zone = ZoneId.systemDefault()
-                val tonight = FirstWeekRules.nextEvening(now, zone).toLocalDate() == now.atZone(zone).toLocalDate()
-                SecondaryButton(
-                    stringResource(if (tonight) R.string.first_fast_tonight else R.string.first_fast_tomorrow,
-                        format.time.format(FirstWeekRules.EVENING_START)),
-                    onClick = vm::planTonight,
-                )
+            if (problem != null) Text(stringResource(problem), color = MaterialTheme.colorScheme.error)
+            PrimaryButton(stringResource(R.string.first_plan_save_window),
+                onClick = { if (draft != null) vm.save(selected, draft) },
+                enabled = !busy && draft != null && draft.toInstant() > now)
+            if (plan != null) TextButton(onClick = vm::cancelPlan, enabled = !busy) {
+                Text(stringResource(R.string.first_fast_cancel_plan))
             }
         }
     }

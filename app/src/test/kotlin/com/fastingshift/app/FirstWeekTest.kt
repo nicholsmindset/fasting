@@ -22,6 +22,9 @@ import com.fastingshift.domain.schedule.WeekChoice
 import com.fastingshift.domain.onboarding.Goal
 import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.safety.GateResult
+import com.fastingshift.domain.safety.ScreeningAnswers
+import com.fastingshift.domain.schedule.ScheduleCalculator
+import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
 import com.fastingshift.domain.service.ScreeningRepository
@@ -155,7 +158,8 @@ class FirstWeekTest {
         assertNull(stepProgress(Step.WELCOME, rerun = false))
         assertNull(stepProgress(Step.INTRO, rerun = false))
         assertEquals(1 to 5, stepProgress(Step.GOAL, rerun = false))
-        assertEquals(5 to 5, stepProgress(Step.NOTIFICATIONS, rerun = false))
+        assertEquals(5 to 5, stepProgress(Step.FIRST_PLAN, rerun = false))
+        assertNull(stepProgress(Step.NOTIFICATIONS, rerun = false))
         assertNull(stepProgress(Step.COMPLETE, rerun = false))
         assertEquals(1 to 3, stepProgress(Step.SCREENING, rerun = true))
         assertEquals(3 to 3, stepProgress(Step.PROTOCOL, rerun = true))
@@ -163,7 +167,7 @@ class FirstWeekTest {
 
     @Test fun optionalTourAndDirectSetupKeepTheirOwnBackPathAndGoal() {
         val handle = SavedStateHandle(mapOf("step" to Step.WELCOME.name))
-        val vm = OnboardingViewModel(screening, settings, clock, handle)
+        val vm = OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts)
         vm.openGoal()
         assertEquals(Step.GOAL, vm.state.value.step)
         vm.continueFromGoal()
@@ -174,7 +178,7 @@ class FirstWeekTest {
         vm.back()
         assertEquals(Goal.CONSISTENCY, vm.state.value.goal)
         shadowOf(Looper.getMainLooper()).idle()
-        val restored = OnboardingViewModel(screening, settings, clock, SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }))
+        val restored = OnboardingViewModel(screening, settings, clock, SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }), planner, service, fasts)
         restored.back()
         assertEquals(Step.WELCOME, restored.state.value.step)
         restored.openTour()
@@ -190,7 +194,7 @@ class FirstWeekTest {
     @Test fun restoredPaidOfferFinishesSetupAndMissingAnswersReturnToScreening() {
         fun restored(step: String, weight: String = "70"): OnboardingViewModel {
             val handle = SavedStateHandle(mapOf("step" to step, "age" to "40", "height" to "175", "weight" to weight))
-            return OnboardingViewModel(screening, settings, clock, handle)
+            return OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts)
         }
         assertEquals(Step.COMPLETE, restored("OFFER").state.value.step)
         assertEquals(Step.SCREENING, restored("OFFER", weight = "").state.value.step)
@@ -224,10 +228,67 @@ class FirstWeekTest {
         assertNull(vm.mood.value)
     }
 
+    private suspend fun recordScreening(gate: GateResult) {
+        val answers = ScreeningAnswers(40, false, false, false, emptySet(), 170.0, 70.0)
+        screening.save(ScreeningRecord(clock.instant(), answers, gate, clinicianAcknowledged = false))
+    }
+
+    @Test fun editableFirstWindowMatchesActualAlarmAcrossDstAndMidnight() {
+        val zone = ZoneId.of("America/New_York")
+        // A missing 02:30 becomes 03:30, exactly as the weekly scheduler resolves it.
+        val morning = FirstWeekRules.nextStartAt(Instant.parse("2026-03-08T05:00:00Z"), LocalTime.of(2, 30), zone)
+        assertEquals(LocalTime.of(3, 30), morning.toLocalTime())
+        val evening = FirstWeekRules.nextStartAt(Instant.parse("2026-03-07T18:00:00Z"), LocalTime.of(21, 30), zone)
+        assertEquals(LocalDate.of(2026, 3, 8).atTime(10, 30), evening.plusHours(12).toLocalDateTime())
+        val schedule = Schedule(41L, Presets.W12_12.id, setOf(evening.dayOfWeek), evening.toLocalTime())
+        val marker = schedule.id to evening.toLocalDate()
+        assertEquals(evening.toInstant(), ScheduleCalculator.nextStart(listOf(schedule), zone, evening.toInstant().minusSeconds(1), firstEvening = marker)?.second)
+        assertNull(ScheduleCalculator.nextStart(listOf(schedule), zone, evening.toInstant(), firstEvening = marker))
+    }
+
+    @Test fun editsKeepOneRowAndConflictsPreserveTheLastSavedWindow() = runBlocking {
+        val zone = ZoneId.systemDefault()
+        val tomorrow = clock.instant().atZone(zone).toLocalDate().plusDays(1)
+        fun at(hour: Int, minute: Int) = tomorrow.atTime(hour, minute).atZone(zone)
+        recordScreening(GateResult.OK)
+        assertEquals(EveningOffer.AVAILABLE, planner.planAt(Presets.W12_12, at(19, 15)))
+        val id = requireNotNull(planner.planned()).scheduleId
+        assertEquals(EveningOffer.AVAILABLE, planner.planAt(Presets.W12_12, at(21, 30)))
+        assertEquals(id, requireNotNull(planner.planned()).scheduleId)
+        assertEquals(LocalTime.of(21, 30), schedules.getAll().single().startTime)
+        schedules.save(Schedule(protocolId = Presets.W16_8.id, days = setOf(tomorrow.dayOfWeek), startTime = LocalTime.of(22, 0)))
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, at(22, 0)))
+        assertEquals(LocalTime.of(21, 30), schedules.getAll().single { it.id == id }.startTime)
+        assertEquals(EveningOffer.COVERED, planner.planAt(Presets.W16_8, at(22, 0)))
+        assertNull(planner.planned())
+        assertEquals(LocalTime.of(22, 0), schedules.getAll().single().startTime)
+    }
+
+    @Test fun unscreenedMissedOrIneligibleFirstPlansAreNeverScheduled() = runBlocking {
+        val zone = ZoneId.systemDefault()
+        val future = FirstWeekRules.nextStartAt(clock.instant(), LocalTime.of(21, 30), zone)
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, future))
+        recordScreening(GateResult.BLOCK)
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, future))
+        recordScreening(GateResult.SOFT)
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, future))
+        recordScreening(GateResult.OK)
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, future.minusDays(1)))
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, future.plusDays(2)))
+        val past = clock.instant().minus(Duration.ofDays(1))
+        fasts.insert(Fast(startAt = past, targetEndAt = past.plus(Duration.ofHours(12)), protocolId = Presets.W12_12.id).end(past.plus(Duration.ofHours(12))))
+        assertEquals(EveningOffer.UNAVAILABLE, planner.planAt(Presets.W12_12, future))
+        assertNull(planner.planned())
+        assertTrue(schedules.getAll().isEmpty())
+    }
+
     @Test fun startTonightIsAOneOffScheduleRemovedOnceAFastStarts() = runBlocking {
         settings.setOnboardingComplete(true)
         planner.cancel()
-        val plan = planner.planTonight(Presets.W16_8)
+        recordScreening(GateResult.OK)
+        val scheduled = FirstWeekRules.nextEvening(clock.instant(), ZoneId.systemDefault())
+        assertEquals(EveningOffer.AVAILABLE, planner.planAt(Presets.W16_8, scheduled))
+        val plan = requireNotNull(planner.planned())
         val schedule = schedules.getAll().single { it.id == plan.scheduleId }
         assertEquals(LocalTime.of(20, 0), schedule.startTime)
         assertEquals(1, schedule.days.size)

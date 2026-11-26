@@ -1,0 +1,13 @@
+<resources>
+    <string name="first_plan_choose_time">Jadwalkan puasa pertama saya</string>
+    <string name="first_plan_edit_time">Ubah jadwal ini</string>
+    <string name="first_plan_save_window">Simpan jadwal ini</string>
+    <string name="first_plan_pick_clock">Pilih waktu mulai</string>
+    <string name="first_plan_change_clock">Ubah waktu mulai</string>
+    <string name="first_plan_starts_at">Mulai %1$s</string>
+    <string name="first_plan_finishes_at">Selesai %1$s</string>
+    <string name="first_plan_home_title">Puasa terjadwal Anda</string>
+    <string name="first_plan_unavailable">Waktu ini tidak tersedia. Pilih waktu lain atau periksa minggu Anda.</string>
+    <string name="first_plan_covered">Rencana mingguan Anda sudah mencakup waktu mulai ini.</string>
+    <string name="first_plan_save_failed">Perubahan Anda gagal disimpan. Coba lagi.</string>
+</resources>

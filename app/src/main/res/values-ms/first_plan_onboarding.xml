@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="first_plan_title">Waktu puasa pertama anda</string>
+    <string name="first_plan_body">Pilih waktu mula. Anda boleh mengubah rancangan sekali ini pada skrin pemasa.</string>
+    <string name="first_plan_schedule">Jadualkan waktu ini</string>
+    <string name="first_plan_start">Mulakan sekarang</string>
+    <string name="first_plan_leave_open">Biarkan minggu ini tanpa jadual</string>
+    <string name="first_plan_saved_title">Jadual anda telah disimpan</string>
+    <string name="first_plan_saved_body">Benarkan Android menghantar peringatan? Anda tetap boleh melihat rancangan anda dalam aplikasi.</string>
+    <string name="first_plan_conflict">Waktu ini tidak tersedia. Pilih waktu lain atau biarkan minggu ini tanpa jadual.</string>
+    <string name="first_plan_blocked">Saringan keselamatan semasa anda tidak membenarkan puasa ini dimulakan. Semak saringan anda atau biarkan minggu ini tanpa jadual.</string>
+    <string name="first_plan_retry">Perubahan ini tidak dapat disimpan. Cuba lagi.</string>
+</resources>

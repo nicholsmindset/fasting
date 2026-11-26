@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="first_plan_title">Your first window</string>
+    <string name="first_plan_body">Choose when you want to start. You can change this one-time plan from your timer.</string>
+    <string name="first_plan_schedule">Schedule this window</string>
+    <string name="first_plan_start">Start now</string>
+    <string name="first_plan_leave_open">Leave my week open</string>
+    <string name="first_plan_saved_title">Your window is saved</string>
+    <string name="first_plan_saved_body">Would you like Android to send reminders? You can see your plan in the app either way.</string>
+    <string name="first_plan_conflict">This time is unavailable. Choose another time or leave your week open.</string>
+    <string name="first_plan_blocked">Your current safety screening does not allow this start. Review your screening or leave your week open.</string>
+    <string name="first_plan_retry">We couldn’t save that change. Try again.</string>
+</resources>

@@ -132,7 +132,7 @@ class ChallengeJoinTest {
         tap(R.string.onb_next)
         waitFor(s(R.string.onb_protocol_title))
         tap(R.string.onb_next)
-        tap(R.string.onb_not_now)
+        tap(R.string.first_plan_leave_open)
 
         // A briefly visible Join screen is insufficient: completion used to pop it back to Timer.
         waitFor("Welcome challenge")

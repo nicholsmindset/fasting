@@ -6,6 +6,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
+/** Whether a requested first start can be added without changing an existing routine. */
+enum class FirstPlanOffer { AVAILABLE, COVERED, UNAVAILABLE }
+
 /** Weekly schedules for 5:2, ADF and custom fasting days (PRD F2). */
 object ScheduleCalculator {
 

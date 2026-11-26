@@ -2,6 +2,7 @@ package com.fastingshift.app.ui.onboarding
 
 import android.Manifest
 import android.os.Build
+import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,6 +61,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,7 +81,10 @@ import com.fastingshift.app.R
 import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
-import com.fastingshift.app.ui.design.NicholsMark
+import com.fastingshift.app.ui.firstweek.FirstPlanTimeFields
+import com.fastingshift.app.ui.safety.ChecklistDialog
+import com.fastingshift.app.ui.settings.WelcomeHistoryImport
+import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.Spacing
@@ -127,6 +133,7 @@ fun OnboardingRoute(onFinished: () -> Unit, vm: OnboardingViewModel = hiltViewMo
                     Step.SCREENING -> ScreeningForm(st, vm)
                     Step.RESULT -> Result(st, vm, onFinished)
                     Step.PROTOCOL -> ProtocolPick(st, vm, onFinished)
+                    Step.FIRST_PLAN -> FirstPlanStep(st, vm)
                     Step.NOTIFICATIONS -> StepPage(
                         actions = {
                             PrimaryButton(stringResource(R.string.onb_notif_allow), onClick = {
@@ -135,7 +142,7 @@ fun OnboardingRoute(onFinished: () -> Unit, vm: OnboardingViewModel = hiltViewMo
                             PlainButton(stringResource(R.string.onb_not_now), onClick = vm::completeNotifications, modifier = Modifier.fillMaxWidth())
                         },
                     ) {
-                        CenteredHero(Icons.Filled.Notifications, R.string.onb_notif_title, R.string.onb_notif_body)
+                        CenteredHero(Icons.Filled.Notifications, R.string.first_plan_saved_title, R.string.first_plan_saved_body)
                     }
                     Step.COMPLETE -> Unit
                 }
@@ -221,15 +228,15 @@ private fun Welcome(onStart: () -> Unit, onTour: () -> Unit) {
         PlainButton(stringResource(R.string.onb_open_tour), onClick = onTour, modifier = Modifier.fillMaxWidth())
     }) {
         Column(
-            Modifier.fillMaxWidth().padding(top = 48.dp),
+            Modifier.fillMaxWidth().padding(top = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            NicholsMark(Modifier.size(96.dp))
+            WelcomeArt()
             Text(stringResource(R.string.onb_welcome_title), style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
             Text(stringResource(R.string.onb_welcome_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
-        Spacer(Modifier.height(8.dp))
+        WelcomeHistoryImport()
         Text(
             stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
@@ -437,6 +444,40 @@ private fun ProtocolPick(st: OnboardingState, vm: OnboardingViewModel, onFinishe
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FirstPlanStep(st: OnboardingState, vm: OnboardingViewModel) {
+    val now by vm.minuteClock.collectAsStateWithLifecycle(initialValue = vm.now())
+    val context = LocalContext.current
+    // Let the whole page scroll with large type or a short landscape window.
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        StepTitle(R.string.first_plan_title, R.string.first_plan_body)
+        FirstPlanTimeFields(now = now, protocol = st.selected, start = st.firstStart, onPick = vm::pickFirstStart)
+        st.planError?.let { message ->
+            Text(
+                stringResource(message), color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
+        PrimaryButton(
+            stringResource(R.string.first_plan_schedule),
+            onClick = {
+                val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                vm.saveFirstPlan(offerNotifications = needsPermission)
+            },
+            enabled = !st.busy && st.firstStart != null,
+        )
+        SecondaryButton(stringResource(R.string.first_plan_start), onClick = { vm.startFirstFast() }, enabled = !st.busy)
+        PlainButton(stringResource(R.string.first_plan_leave_open), onClick = vm::leaveFirstPlanOpen, modifier = Modifier.fillMaxWidth())
+    }
+    st.checklist?.let { requirements ->
+        ChecklistDialog(requirements, onConfirm = { vm.startFirstFast(confirmChecklist = true) }, onDismiss = vm::dismissFirstChecklist)
     }
 }
 

@@ -4,7 +4,8 @@ import com.fastingshift.data.db.ElectrolyteLogEntity
 import com.fastingshift.data.db.LogDao
 import com.fastingshift.data.db.ProgramProgressDao
 import com.fastingshift.data.db.ProgramProgressEntity
-import com.fastingshift.data.db.ScheduleDao
+import androidx.room.withTransaction
+import com.fastingshift.data.db.FastingDatabase
 import com.fastingshift.data.db.ScheduleEntity
 import com.fastingshift.data.db.SymptomCheckinDao
 import com.fastingshift.data.db.SymptomCheckinEntity
@@ -16,7 +17,9 @@ import com.fastingshift.domain.model.WaterLog
 import com.fastingshift.domain.model.WeightLog
 import com.fastingshift.domain.safety.Symptom
 import com.fastingshift.domain.safety.SymptomCheck
+import com.fastingshift.data.settings.FIRST_PLAN_SCHEDULE_ID
 import com.fastingshift.data.settings.SettingsRepository
+import com.fastingshift.domain.schedule.FirstPlanOffer
 import com.fastingshift.domain.schedule.PlanHistory
 import java.time.Clock
 import java.time.Instant
@@ -51,10 +54,11 @@ class LogRepository(private val dao: LogDao) {
 }
 
 class ScheduleRepository(
-    private val dao: ScheduleDao,
+    private val db: FastingDatabase,
     private val settings: SettingsRepository,
     private val clock: Clock,
 ) {
+    private val dao = db.scheduleDao()
     private val changes = Mutex()
 
     fun observeAll(): Flow<List<Schedule>> = dao.observeAll().map { l -> l.map { it.toDomain() } }
@@ -67,19 +71,42 @@ class ScheduleRepository(
 
     fun firstEvening(): Pair<Long, LocalDate>? = settings.firstEvening()
 
-    /** A one-off first-fast reminder must never become a recurring weekly plan. */
-    suspend fun saveFirstEvening(schedule: Schedule, date: LocalDate): Long = changes.withLock {
-        firstEvening()?.let { dao.delete(it.first) }
-        val id = upsert(schedule)
-        settings.rememberFirstEvening(id, date)
-        recordCurrentPlan()
-        id
+    /** Re-check history, screening and conflicting routines inside the same transaction as the edit. */
+    suspend fun saveFirstEvening(
+        schedule: Schedule,
+        date: LocalDate,
+        check: suspend (List<Schedule>, PlanHistory) -> FirstPlanOffer,
+    ): FirstPlanOffer = changes.withLock {
+        db.withTransaction {
+            val previous = firstEvening()
+            val routines = getAll().filter { it.id != previous?.first }
+            when (val offer = check(routines, settings.current().planHistory)) {
+                FirstPlanOffer.AVAILABLE -> {
+                    val id = previous?.first ?: FIRST_PLAN_SCHEDULE_ID
+                    upsert(schedule.copy(id = id))
+                    settings.rememberFirstEvening(id, date)
+                    offer
+                }
+                FirstPlanOffer.COVERED -> {
+                    // When an edit lands on a regular routine, retire only the old one-off.
+                    if (previous != null) {
+                        dao.delete(previous.first)
+                    }
+                    offer
+                }
+                FirstPlanOffer.UNAVAILABLE -> offer
+            }
+        }.also { offer ->
+            if (offer == FirstPlanOffer.COVERED) settings.clearFirstEvening()
+            if (offer != FirstPlanOffer.UNAVAILABLE) recordCurrentPlan()
+        }
     }
 
-    suspend fun cancelFirstEvening() = changes.withLock {
-        firstEvening()?.let { dao.delete(it.first) }
+    suspend fun cancelFirstEvening(expected: Pair<Long, LocalDate>? = null) = changes.withLock {
+        val current = firstEvening() ?: return@withLock
+        if (expected != null && current != expected) return@withLock
+        dao.delete(current.first)
         settings.clearFirstEvening()
-        recordCurrentPlan()
     }
 
     private suspend fun upsert(s: Schedule) = dao.upsert(
