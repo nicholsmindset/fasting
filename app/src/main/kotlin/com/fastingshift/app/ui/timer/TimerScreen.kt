@@ -344,21 +344,33 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
     }
     val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
     SelectedFast(state.selected, onChoose = { choosing = true })
-    if (selectedEnabled) {
+    val alertsAvailable = startReminderNotificationsEnabled()
+    val savedPlan = state.firstPlan
+    if (savedPlan != null) {
+        FirstFastCard(state.now, state.selected, savedPlan, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
+    }
+    if (selectedEnabled && (savedPlan == null || state.startAt != null)) {
         val format = rememberWeekFormat()
         Text(stringResource(R.string.plan_target_time, format.dateTime.format(state.selectedTargetEnd.atZone(ZoneId.systemDefault()))),
             style = MaterialTheme.typography.titleMedium.merge(TabularNumbers))
     }
     Column(Modifier.fillMaxWidth()) {
-        PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
+        val startLabel = if (savedPlan != null && state.startAt == null) R.string.first_plan_start else R.string.timer_start
+        PrimaryButton(stringResource(startLabel), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
         StartTimeRow(state, actions.onStartAt)
+    }
+    if (state.showFirstPlan && savedPlan == null) {
+        FirstFastCard(state.now, state.selected, null, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
     }
     actions.onOpenPartner?.let { PartnerTimerEntry(it) }
     revival()
-    val alertsAvailable = startReminderNotificationsEnabled()
-    if (state.maxHours != null) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable)
+    if (state.maxHours != null && (!state.showFirstPlan ||
+            (state.plannedStart != null && state.plannedStart != state.firstPlan?.start))) {
+        WeekStartPreview(state, actions.onOpenWeek, alertsAvailable, actions.onOpenReminders)
+    } else if (state.showFirstPlan) {
+        TextButton(onClick = { actions.onOpenWeek(null) }) { Text(stringResource(R.string.week_timer_plan)) }
+    }
     RamadanCard(onOpenHub = actions.onOpenMuslimHub)
-    FirstFastCard(state.now, state.eveningOffer, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
     state.programTargetHours?.let {
         SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
     }
@@ -368,7 +380,12 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
 }
 
 @Composable
-private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Unit, notificationsEnabled: Boolean) {
+private fun WeekStartPreview(
+    state: TimerUiState,
+    onOpenWeek: (LocalDate?) -> Unit,
+    notificationsEnabled: Boolean,
+    onOpenReminders: () -> Unit,
+) {
     val format = rememberWeekFormat()
     val planned = state.plannedStart
     val reminder = state.startReminder
@@ -397,6 +414,9 @@ private fun WeekStartPreview(state: TimerUiState, onOpenWeek: (LocalDate?) -> Un
         }
         reminderText?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (planned != null && (!notificationsEnabled || !state.startRemindersEnabled)) {
+            TextButton(onClick = onOpenReminders) { Text(stringResource(R.string.settings_reminders)) }
         }
         val action = when (day) {
             null -> R.string.week_timer_plan

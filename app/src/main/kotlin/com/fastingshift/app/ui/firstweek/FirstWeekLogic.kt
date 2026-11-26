@@ -1,17 +1,21 @@
 package com.fastingshift.app.ui.firstweek
 
+import com.fastingshift.app.alarm.eligibleSchedules
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.domain.coaching.CoachingPlanner
 import com.fastingshift.domain.coaching.CoachingTip
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.model.Schedule
+import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.safety.FastPolicy
+import com.fastingshift.domain.schedule.FirstPlanOffer
 import com.fastingshift.domain.schedule.PlanHistory
 import com.fastingshift.domain.schedule.ScheduleCalculator
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
+import com.fastingshift.domain.service.ScreeningRepository
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -21,7 +25,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
 
-enum class EveningOffer { AVAILABLE, COVERED, UNAVAILABLE }
+typealias EveningOffer = FirstPlanOffer
 
 /** Pure decisions for the first-week journey, kept apart from Compose so they're easy to test. */
 object FirstWeekRules {
@@ -48,20 +52,32 @@ object FirstWeekRules {
     fun fastsStartedBefore(all: List<Fast>, fast: Fast): Int = all.count { it.id != fast.id && it.startAt.isBefore(fast.startAt) }
 
     /** The next 8:00 PM local time strictly after [now]: tonight, or tomorrow if it has passed. */
-    fun nextEvening(now: Instant, zone: ZoneId): ZonedDateTime {
+    fun nextEvening(now: Instant, zone: ZoneId): ZonedDateTime = nextStartAt(now, EVENING_START, zone)
+
+    /** Uses the same civil-time resolution and minute precision as the Android schedule. */
+    fun nextStartAt(now: Instant, time: LocalTime, zone: ZoneId): ZonedDateTime {
         val local = now.atZone(zone)
-        val tonight = local.toLocalDate().atTime(EVENING_START).atZone(zone)
-        return if (tonight.toInstant().isAfter(now)) tonight else local.toLocalDate().plusDays(1).atTime(EVENING_START).atZone(zone)
+        val minute = time.withSecond(0).withNano(0)
+        val today = local.toLocalDate().atTime(minute).atZone(zone)
+        return if (today.toInstant().isAfter(now)) today else local.toLocalDate().plusDays(1).atTime(minute).atZone(zone)
     }
 
     /** Check the requested 8 pm occurrence, even if Android currently has an earlier alert queued. */
-    fun eveningOffer(now: Instant, zone: ZoneId, routines: List<Schedule>, plan: PlanHistory): EveningOffer {
-        val target = nextEvening(now, zone)
+    fun eveningOffer(now: Instant, zone: ZoneId, routines: List<Schedule>, plan: PlanHistory): EveningOffer =
+        offerAt(nextEvening(now, zone), routines, plan)
+
+    fun offerAt(target: ZonedDateTime, routines: List<Schedule>, plan: PlanHistory, protocol: Protocol? = null): EveningOffer {
+        val zone = target.zone
         val day = target.toLocalDate()
         val edit = plan.dayOverrides[day]
         if (plan.isBreak(day) || edit?.isSkipped == true) return EveningOffer.UNAVAILABLE
         val starts = ScheduleCalculator.startsOn(routines, day, zone, plan.breakWeeks, plan.dayOverrides)
-        if (starts.any { it.second == target.toInstant() }) return EveningOffer.COVERED
+        val existing = starts.firstOrNull { it.second == target.toInstant() }?.first
+        if (existing != null) {
+            return if (protocol == null || Presets.byId(existing.protocolId)?.fastHours == protocol.fastHours) {
+                EveningOffer.COVERED
+            } else EveningOffer.UNAVAILABLE
+        }
         if (edit != null) {
             // A dated move belongs to the earliest original start. An earlier or coincident new
             // reminder would take over that edit rather than adding the time the button promises.
@@ -76,27 +92,37 @@ object FirstWeekRules {
         fast.endedAt?.let { !it.isAfter(now.plus(FastService.CLOCK_SLACK)) && Duration.between(it, now) <= FastService.UNDO_WINDOW } ?: false
 }
 
-/** A one-off "start tonight" plan: when it is for and the schedule that carries its reminder. */
+/** Identifies a one-time schedule. Its protocol and local start time live in the schedule row. */
 data class PlannedFirstFast(val scheduleId: Long, val date: LocalDate)
 
-/**
- * "Start tonight at 8:00 PM" for the very first fast. The reminder rides on the existing fast-start
- * schedule reminders: we save a one-day [Schedule] at 20:00 and remember its id here, then delete
- * it as soon as any fast has started, or once its evening has passed, so it never repeats weekly
- * or counts as a planned day in History.
- */
 class FirstFastPlanner @Inject constructor(
     private val schedules: ScheduleRepository,
     private val fasts: FastRepository,
     private val clock: Clock,
+    private val screening: ScreeningRepository,
 ) {
     fun planned(): PlannedFirstFast? = schedules.firstEvening()?.let { (id, day) -> PlannedFirstFast(id, day) }
 
-    suspend fun planTonight(protocol: Protocol, zone: ZoneId = ZoneId.systemDefault()): PlannedFirstFast {
-        val at = FirstWeekRules.nextEvening(clock.instant(), zone)
-        val schedule = Schedule(protocolId = protocol.id, days = setOf(at.dayOfWeek), startTime = FirstWeekRules.EVENING_START)
-        val id = schedules.saveFirstEvening(schedule, at.toLocalDate())
-        return PlannedFirstFast(id, at.toLocalDate())
+    suspend fun planAt(protocol: Protocol, start: ZonedDateTime, zone: ZoneId = ZoneId.systemDefault()): EveningOffer {
+        val date = start.toLocalDate()
+        val schedule = Schedule(protocolId = protocol.id, days = setOf(start.dayOfWeek), startTime = start.toLocalTime())
+        return schedules.saveFirstEvening(schedule, date) { routines, plan ->
+            val now = clock.instant()
+            val today = now.atZone(zone).toLocalDate()
+            val record = screening.getLatest()
+            val max = FastPolicy.maxAllowed(record?.gateResult, record?.clinicianAcknowledged == true)
+            // A stale preview cannot roll forward a day, and the queued alarm must be capable of
+            // representing this exact instant (minute precision and the earlier overlap offset).
+            if (start.zone.rules != zone.rules || start.toInstant() <= now || date > today.plusDays(1) ||
+                start.second != 0 || start.nano != 0 ||
+                start != start.withEarlierOffsetAtOverlap() || fasts.getAll().isNotEmpty() ||
+                max == null || Presets.byId(protocol.id) != protocol || Duration.ofHours(protocol.fastHours.toLong()) > max
+            ) {
+                EveningOffer.UNAVAILABLE
+            } else {
+                FirstWeekRules.offerAt(start, eligibleSchedules(routines, max), plan, protocol)
+            }
+        }
     }
 
     suspend fun cancel() = schedules.cancelFirstEvening()
@@ -105,6 +131,8 @@ class FirstFastPlanner @Inject constructor(
     suspend fun cleanUp(zone: ZoneId = ZoneId.systemDefault()) {
         val plan = planned() ?: return
         val today = clock.instant().atZone(zone).toLocalDate()
-        if (fasts.getAll().isNotEmpty() || plan.date.isBefore(today)) cancel()
+        if (fasts.getAll().isNotEmpty() || plan.date.isBefore(today)) {
+            schedules.cancelFirstEvening(expected = plan.scheduleId to plan.date)
+        }
     }
 }

@@ -70,7 +70,7 @@ object AppModule {
 
     @Provides @Singleton
     fun scheduleRepository(db: FastingDatabase, settings: SettingsRepository, clock: Clock): ScheduleRepository =
-        ScheduleRepository(db.scheduleDao(), settings, clock)
+        ScheduleRepository(db, settings, clock)
 
     @Provides @Singleton
     fun symptomCheckinRepository(db: FastingDatabase): SymptomCheckinRepository = SymptomCheckinRepository(db.symptomCheckinDao())

@@ -36,4 +36,5 @@
         <item quantity="other">%d baris tidak valid dilewati. Periksa waktu, offset UTC, dan jenis puasa.</item>
     </plurals>
     <string name="history_transfer_sample">%1$s · puasa %2$s (target %3$s)</string>
+    <string name="welcome_import_history">Impor riwayat puasa saya dari Zero</string>
 </resources>

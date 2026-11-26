@@ -2,6 +2,9 @@ package com.fastingshift.app
 
 import android.Manifest
 import android.app.NotificationManager
+import android.app.TimePickerDialog
+import android.content.DialogInterface
+import android.text.format.DateFormat
 import android.provider.Settings
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -25,6 +28,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.app.ui.components.WeekFormat
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Schedule
@@ -35,12 +39,14 @@ import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
 import com.fastingshift.domain.service.FastRepository
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalTime
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -51,7 +57,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDialog
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * End-to-end run of the real app (real Hilt graph, navigation and screens) under Robolectric:
@@ -131,8 +139,7 @@ class AppFlowTest {
             settings.setOnboardingComplete(true)
         }
         val heading = s(R.string.first_fast_title)
-        val offer = hasText(s(R.string.first_fast_tonight, "").trim(), substring = true) or
-            hasText(s(R.string.first_fast_tomorrow, "").trim(), substring = true)
+        val offer = hasText(s(R.string.first_plan_choose_time))
         var routineId: Long? = null
         try {
             // First observe a real offer. An empty loading state must never pass as de-duplication.
@@ -148,7 +155,8 @@ class AppFlowTest {
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
             notifications.setNotificationsEnabled(false)
             compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-            waitFor(heading)
+            waitFor(s(R.string.week_timer_reminder_off))
+            compose.onNodeWithText(heading).assertDoesNotExist()
             compose.onNode(offer).assertDoesNotExist()
             click(s(R.string.settings_reminders))
             waitFor(s(R.string.settings_start_alert))
@@ -218,6 +226,114 @@ class AppFlowTest {
         }
     }
 
+    private fun reachFirstPlan() {
+        waitFor(s(R.string.onb_get_started))
+        click(s(R.string.onb_get_started))
+        waitFor(s(R.string.onb_goal_title))
+        click(s(R.string.goal_consistency))
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.onb_screen_title))
+        field(s(R.string.onb_age), "40")
+        field(s(R.string.onb_height), "175")
+        field(s(R.string.onb_weight), "70")
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.onb_ok_title))
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.onb_protocol_title))
+        click(s(R.string.onb_next))
+        waitFor(s(R.string.first_plan_title))
+    }
+
+    private fun chooseStartTime(hour: Int, minute: Int) {
+        compose.onNodeWithTag("first-plan-clock-picker").performScrollTo().performClick()
+        compose.runOnIdle {
+            val picker = ShadowDialog.getLatestDialog() as TimePickerDialog
+            picker.updateTime(hour, minute)
+            picker.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+        }
+    }
+
+    private fun captureFirstPlan(name: String) {
+        if (System.getProperty("fastingshift.screenshotDir") == null) return
+        compose.waitForIdle()
+        val file = moatsOutput("first-plan").resolve("$name.png")
+        captureScreenRoboImage(file.absolutePath)
+        check(file.length() > 0)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "en-rSG-w411dp-h822dp-notnight-xxhdpi")
+    fun lateDinnerWindowSurvivesDecliningNotificationsAndCanBeEditedOnHome() {
+        val original = runBlocking { settings.toRecord() }
+        val application = compose.activity.application
+        shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        val notifications = shadowOf(application.getSystemService(NotificationManager::class.java))
+        notifications.setNotificationsEnabled(false)
+        runBlocking { settings.setFastStartReminder(true) }
+        val format = WeekFormat(compose.activity.resources.configuration.locales[0], DateFormat.is24HourFormat(compose.activity)).dateTime
+        try {
+            reachFirstPlan()
+            chooseStartTime(21, 30)
+            val previewStart = compose.onNodeWithTag("first-plan-start").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+            val previewFinish = compose.onNodeWithTag("first-plan-finish").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+            captureFirstPlan("01-overnight-preview")
+            click(s(R.string.first_plan_schedule))
+            waitFor(s(R.string.first_plan_saved_title))
+            click(s(R.string.onb_not_now))
+            waitFor(s(R.string.first_plan_home_title))
+            waitFor(previewStart)
+            waitFor(previewFinish)
+            compose.onNodeWithTag("first-plan-saved").performScrollTo()
+            captureFirstPlan("02-saved-home")
+
+            val (id, day) = assertNotNull(schedules.firstEvening())
+            val planned = runBlocking { schedules.getAll().single { it.id == id } }
+            assertEquals(LocalTime.of(21, 30), planned.startTime)
+            val expectedStart = day.atTime(21, 30).atZone(ZoneId.systemDefault())
+            val expectedFinish = expectedStart.plusHours(14)
+            assertEquals(day.plusDays(1), expectedFinish.toLocalDate())
+            assertEquals(s(R.string.first_plan_starts_at, format.format(expectedStart)), previewStart)
+            assertEquals(s(R.string.first_plan_finishes_at, format.format(expectedFinish)), previewFinish)
+            assertNull(runBlocking { fasts.getActive() })
+
+            click(s(R.string.first_plan_edit_time))
+            chooseStartTime(22, 15)
+            click(s(R.string.first_plan_save_window))
+            val revisedStart = LocalTime.of(22, 15)
+            compose.waitUntil(5_000) { runBlocking { schedules.getAll().singleOrNull()?.startTime == revisedStart } }
+            val revised = assertNotNull(schedules.firstEvening()).second.atTime(revisedStart).atZone(ZoneId.systemDefault())
+            waitFor(s(R.string.first_plan_starts_at, format.format(revised)))
+            waitFor(s(R.string.first_plan_finishes_at, format.format(revised.plusHours(14))))
+            assertEquals(android.content.pm.PackageManager.PERMISSION_DENIED, application.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS))
+        } finally {
+            notifications.setNotificationsEnabled(true)
+            runBlocking {
+                schedules.cancelFirstEvening()
+                settings.restore(original)
+            }
+        }
+    }
+
+    @Test fun firstPlanStartNowRunsTheChosenProtocolOnceWithoutSchedulingAReminder() {
+        val original = runBlocking { settings.toRecord() }
+        try {
+            reachFirstPlan()
+            click(s(R.string.first_plan_start))
+            waitFor(s(R.string.timer_end))
+            val fast = assertNotNull(runBlocking { fasts.getActive() })
+            assertEquals(14L, fast.plannedDuration.toHours())
+            assertEquals(1, runBlocking { fasts.getAll().size })
+            assertNull(schedules.firstEvening())
+            compose.onNodeWithText(s(R.string.first_plan_saved_title)).assertDoesNotExist()
+        } finally {
+            runBlocking {
+                fasts.getActive()?.let { fasts.delete(it.id) }
+                settings.restore(original)
+            }
+        }
+    }
+
     @Test fun incompleteScreeningShowsTheFirstInvalidFieldBesideNext() {
         waitFor(s(R.string.onb_get_started))
         click(s(R.string.onb_get_started))
@@ -268,6 +384,8 @@ class AppFlowTest {
 
         // Education-only: no protocols and no start button.
         waitFor(s(R.string.timer_education_only))
+        compose.onNodeWithText(s(R.string.first_plan_schedule)).assertDoesNotExist()
+        assertNull(schedules.firstEvening())
         assertEquals(0, compose.onAllNodesWithText(s(R.string.timer_start)).fetchSemanticsNodes().size)
 
         // Update answers from Settings.

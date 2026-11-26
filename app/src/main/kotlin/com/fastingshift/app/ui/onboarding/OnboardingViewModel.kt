@@ -3,6 +3,10 @@ package com.fastingshift.app.ui.onboarding
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.app.R
+import com.fastingshift.app.ui.firstweek.EveningOffer
+import com.fastingshift.app.ui.firstweek.FirstFastPlanner
+import com.fastingshift.app.ui.firstweek.minuteTicker
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.onboarding.Goal
@@ -13,23 +17,29 @@ import com.fastingshift.domain.safety.Medication
 import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.safety.ScreeningEvaluator
 import com.fastingshift.domain.safety.ScreeningOutcome
+import com.fastingshift.domain.safety.StartRequirement
+import com.fastingshift.domain.service.FastRepository
+import com.fastingshift.domain.service.FastService
 import com.fastingshift.domain.service.ScreeningRecord
 import com.fastingshift.domain.service.ScreeningRepository
+import com.fastingshift.domain.service.StartResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Duration
+import java.time.ZonedDateTime
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, NOTIFICATIONS, COMPLETE }
+enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, FIRST_PLAN, NOTIFICATIONS, COMPLETE }
 
 /** Only count setup steps. The welcome and optional tour have their own navigation. */
 fun stepProgress(step: Step, rerun: Boolean): Pair<Int, Int>? {
     val first = if (rerun) Step.SCREENING else Step.GOAL
-    val last = if (rerun) Step.PROTOCOL else Step.NOTIFICATIONS
+    val last = if (rerun) Step.PROTOCOL else Step.FIRST_PLAN
     if (step !in first..last) return null
     return (step.ordinal - first.ordinal + 1) to (last.ordinal - first.ordinal + 1)
 }
@@ -88,6 +98,10 @@ data class OnboardingState(
     val clinicianAck: Boolean = false,
     val protocols: List<Protocol> = emptyList(),
     val selected: Protocol = Presets.W16_8,
+    val firstStart: ZonedDateTime? = null,
+    val busy: Boolean = false,
+    val planError: Int? = null,
+    val checklist: Set<StartRequirement>? = null,
 )
 
 @HiltViewModel
@@ -96,9 +110,14 @@ class OnboardingViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val clock: Clock,
     private val handle: SavedStateHandle,
+    private val planner: FirstFastPlanner,
+    private val service: FastService,
+    private val fasts: FastRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(restore() ?: OnboardingState())
     val state: StateFlow<OnboardingState> = _state
+    val minuteClock = minuteTicker(clock)
+    fun now() = clock.instant()
 
     init {
         val fresh = handle.get<String>(KEY_STEP) == null
@@ -136,6 +155,7 @@ class OnboardingViewModel @Inject constructor(
         handle[KEY_WEIGHT] = st.form.weightKg
         handle[KEY_ACK] = st.clinicianAck
         handle[KEY_SELECTED] = st.selected.id
+        handle[KEY_FIRST_START] = st.firstStart?.toString()
     }
 
     private fun restore(): OnboardingState? {
@@ -155,10 +175,19 @@ class OnboardingViewModel @Inject constructor(
         val outcome = form.toAnswers()?.let(ScreeningEvaluator::evaluate)
         val ack = handle[KEY_ACK] ?: false
         // Steps after the result need its outcome; without valid answers, go back to the form.
-        val safeStep = if (step > Step.SCREENING && outcome == null) Step.SCREENING else step
+        val firstStart = handle.get<String>(KEY_FIRST_START)?.let { runCatching { ZonedDateTime.parse(it) }.getOrNull() }
         val allowed = outcome?.let { allowedProtocols(it.result, it.result == GateResult.SOFT && ack) }.orEmpty()
+        val safeStep = when {
+            step > Step.SCREENING && outcome == null -> Step.SCREENING
+            step == Step.FIRST_PLAN && allowed.isEmpty() -> Step.RESULT
+            // Previous builds offered notifications before a plan existed. Resume into the free app.
+            step == Step.NOTIFICATIONS && firstStart == null -> Step.COMPLETE
+            else -> step
+        }
+        val savedProtocol = handle.get<String>(KEY_SELECTED)?.let(Presets::byId) ?: Presets.W16_8
         return OnboardingState(
             step = safeStep,
+            firstStart = firstStart,
             rerun = handle[KEY_RERUN] ?: false,
             // Older versions always led through the tour before the goal.
             goalFromTour = handle[KEY_TOUR] ?: (step >= Step.INTRO),
@@ -167,7 +196,7 @@ class OnboardingViewModel @Inject constructor(
             outcome = outcome,
             clinicianAck = ack,
             protocols = allowed,
-            selected = handle.get<String>(KEY_SELECTED)?.let(Presets::byId) ?: Presets.W16_8,
+            selected = if (safeStep == Step.FIRST_PLAN && savedProtocol !in allowed) allowed.first() else savedProtocol,
         )
     }
 
@@ -195,9 +224,11 @@ class OnboardingViewModel @Inject constructor(
 
     fun back() = _state.update {
         when {
+            it.busy -> it
+            it.step == Step.NOTIFICATIONS -> it.copy(step = Step.COMPLETE)
             it.step == Step.WELCOME || (it.rerun && it.step == Step.SCREENING) -> it
             it.step == Step.GOAL && !it.goalFromTour -> it.copy(step = Step.WELCOME)
-            else -> it.copy(step = Step.entries[it.step.ordinal - 1])
+            else -> it.copy(step = Step.entries[it.step.ordinal - 1], planError = null, checklist = null)
         }
     }
 
@@ -243,20 +274,72 @@ class OnboardingViewModel @Inject constructor(
 
     fun confirmProtocol(onFinished: () -> Unit) {
         viewModelScope.launch {
-            settings.setDefaultProtocol(_state.value.selected.id)
-            if (_state.value.rerun) {
+            val st = _state.value
+            if (st.step != Step.PROTOCOL || st.selected !in st.protocols) return@launch
+            settings.setDefaultProtocol(st.selected.id)
+            if (st.rerun) {
                 onFinished()
             } else {
-                _state.update { it.copy(step = Step.NOTIFICATIONS) }
+                val next = if (fasts.getAll().isEmpty()) Step.FIRST_PLAN else Step.COMPLETE
+                _state.update { it.copy(step = next) }
+            }
+        }
+    }
+
+    fun pickFirstStart(start: ZonedDateTime) = _state.update {
+        if (it.step == Step.FIRST_PLAN && !it.busy) it.copy(firstStart = start, planError = null) else it
+    }
+
+    fun leaveFirstPlanOpen() = _state.update {
+        if (it.step == Step.FIRST_PLAN && !it.busy) it.copy(step = Step.COMPLETE) else it
+    }
+
+    fun saveFirstPlan(offerNotifications: Boolean) = runFirstAction { st ->
+        val start = st.firstStart ?: return@runFirstAction
+        val askForPermission = offerNotifications && settings.current().reminders.fastStartEnabled
+        when (planner.planAt(st.selected, start)) {
+            EveningOffer.AVAILABLE, EveningOffer.COVERED -> {
+                val next = if (askForPermission) Step.NOTIFICATIONS else Step.COMPLETE
+                _state.update { it.copy(step = next) }
+            }
+            EveningOffer.UNAVAILABLE -> _state.update { it.copy(planError = R.string.first_plan_conflict) }
+        }
+    }
+
+    fun startFirstFast(confirmChecklist: Boolean = false) = runFirstAction { st ->
+        val confirmed = if (confirmChecklist) st.checklist ?: return@runFirstAction else emptySet()
+        when (val result = service.start(st.selected, confirmed)) {
+            is StartResult.Started, is StartResult.AlreadyActive -> _state.update { it.copy(step = Step.COMPLETE, checklist = null) }
+            is StartResult.NeedsConfirmation -> _state.update { it.copy(checklist = result.requirements) }
+            is StartResult.Blocked -> _state.update { it.copy(checklist = null, planError = R.string.first_plan_blocked) }
+            StartResult.InvalidStartTime -> _state.update { it.copy(checklist = null, planError = R.string.timer_invalid_start) }
+        }
+    }
+
+    fun dismissFirstChecklist() = _state.update { it.copy(checklist = null) }
+
+    private fun runFirstAction(action: suspend (OnboardingState) -> Unit) {
+        val st = _state.value
+        if (st.step != Step.FIRST_PLAN || st.busy || st.rerun || st.selected !in st.protocols) return
+        _state.update { it.copy(busy = true, planError = null) }
+        viewModelScope.launch {
+            try {
+                action(st)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _state.update { it.copy(planError = R.string.first_plan_retry) }
+            } finally {
+                _state.update { it.copy(busy = false) }
             }
         }
     }
 
     fun finish(onFinished: () -> Unit) {
         viewModelScope.launch {
-            settings.setOnboardingComplete(true)
             // Coaching runs in the first two weeks after this moment.
             settings.setOnboardedAt(clock.millis())
+            settings.setOnboardingComplete(true)
             onFinished()
         }
     }
@@ -275,5 +358,6 @@ class OnboardingViewModel @Inject constructor(
         const val KEY_WEIGHT = "weight"
         const val KEY_ACK = "ack"
         const val KEY_SELECTED = "selected"
+        const val KEY_FIRST_START = "first_plan_start"
     }
 }

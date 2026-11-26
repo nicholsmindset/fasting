@@ -26,6 +26,7 @@ import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.GroupDivider
+import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.data.db.FastingDatabase
 import com.fastingshift.data.repo.HistoryTransferRepository
@@ -120,17 +121,39 @@ class HistoryTransferViewModel @Inject constructor(
 
 @Composable
 internal fun HistoryTransferRows(vm: HistoryTransferViewModel = hiltViewModel()) {
-    val importFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::open) }
-    val exportFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::export) }
-    GroupRow(
-        stringResource(R.string.history_transfer_import), subtitle = stringResource(R.string.history_transfer_hint),
-        showChevron = true, onClick = { importFile.launch(arrayOf("application/json", "text/*", "application/csv", "application/vnd.ms-excel", "application/octet-stream")) },
-    )
+    HistoryImportRow(vm, stringResource(R.string.history_transfer_import))
     GroupDivider()
+    val exportFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::export) }
     GroupRow(
         stringResource(R.string.history_transfer_export), subtitle = stringResource(R.string.history_transfer_privacy),
         showChevron = true, onClick = { exportFile.launch("fasting-shift-history.csv") },
     )
+    TransferDialog(vm)
+}
+
+@Composable
+internal fun WelcomeHistoryImport(vm: HistoryTransferViewModel = hiltViewModel()) {
+    InsetGroup {
+        HistoryImportRow(vm, stringResource(R.string.welcome_import_history))
+    }
+    TransferDialog(vm)
+}
+
+@Composable
+private fun HistoryImportRow(vm: HistoryTransferViewModel, title: String) {
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::open) }
+    GroupRow(
+        title = title,
+        subtitle = stringResource(R.string.history_transfer_hint),
+        showChevron = true,
+        onClick = {
+            picker.launch(arrayOf("application/json", "text/*", "application/csv", "application/vnd.ms-excel", "application/octet-stream"))
+        },
+    )
+}
+
+@Composable
+private fun TransferDialog(vm: HistoryTransferViewModel) {
     val state = vm.state
     when (state) {
         TransferState.Idle -> Unit

@@ -187,6 +187,16 @@ class Screen:
             fields[index].set_text(value)
         self.advance_onboarding("onb_screen_title", "onb_ok_title")
         self.advance_onboarding("onb_ok_title", "onb_protocol_title")
+        if "first_plan_title" in self.strings:
+            self.advance_onboarding("onb_protocol_title", "first_plan_title")
+            self.click("first_plan_leave_open", scroll=True)
+            self.finish_free_onboarding(destination, allow_notifications=False)
+            if allow_notifications and int(adb("shell", "getprop", "ro.build.version.sdk")) >= 33:
+                # These scenarios exercise real Android delivery. An open plan doesn't
+                # request permission; enable it through the app's existing settings path.
+                self.enable_notifications_in_settings()
+                self.device(resourceId="tab_timer", packageName=PACKAGE).click(timeout=15)
+            return
         self.advance_onboarding("onb_protocol_title", "onb_notif_title")
         self.click("onb_notif_allow" if allow_notifications else "onb_not_now")
         self.finish_free_onboarding(destination, allow_notifications)

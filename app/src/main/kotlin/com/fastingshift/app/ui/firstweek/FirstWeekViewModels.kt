@@ -8,13 +8,13 @@ import com.fastingshift.domain.coaching.CoachingTip
 import com.fastingshift.domain.hydration.WaterGoal
 import com.fastingshift.domain.model.Fast
 import com.fastingshift.domain.model.Protocol
-import com.fastingshift.domain.protocol.Presets
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
-import com.fastingshift.domain.service.ScreeningRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Instant
+import java.time.ZonedDateTime
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -38,43 +38,48 @@ internal fun minuteTicker(clock: Clock): Flow<Instant> = flow {
     }
 }
 
-data class FirstFastUi(val protocol: Protocol, val planned: PlannedFirstFast?)
+/** The actual dated occurrence from the same schedule calculation used for reminders. */
+data class FirstPlanWindow(val start: Instant, val protocol: Protocol)
+
+enum class FirstPlanEditResult { IDLE, BUSY, SAVED, COVERED, UNAVAILABLE, FAILED }
 
 @HiltViewModel
-class FirstFastViewModel @Inject constructor(
-    fasts: FastRepository,
-    screening: ScreeningRepository,
-    settings: SettingsRepository,
-    private val planner: FirstFastPlanner,
-) : ViewModel() {
-    private val planned = MutableStateFlow(planner.planned())
-
-    /** Null hides the card. */
-    val state: StateFlow<FirstFastUi?> = combine(fasts.observeAll(), screening.observeLatest(), settings.settings, planned) { all, scr, s, plan ->
-        val protocol = s.defaultProtocolId?.let(Presets::byId) ?: Presets.W16_8
-        if (FirstWeekRules.showFirstFastCard(all.isNotEmpty(), scr?.gateResult, scr?.clinicianAcknowledged ?: false, protocol)) {
-            FirstFastUi(protocol, plan)
-        } else {
-            null
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+class FirstFastViewModel @Inject constructor(private val planner: FirstFastPlanner) : ViewModel() {
+    private val edit = MutableStateFlow(FirstPlanEditResult.IDLE)
+    val result: StateFlow<FirstPlanEditResult> = edit
 
     init {
-        viewModelScope.launch {
-            planner.cleanUp()
-            planned.value = planner.planned()
+        viewModelScope.launch { planner.cleanUp() }
+    }
+
+    fun save(protocol: Protocol, start: ZonedDateTime) = change {
+        when (planner.planAt(protocol, start)) {
+            EveningOffer.AVAILABLE -> FirstPlanEditResult.SAVED
+            EveningOffer.COVERED -> FirstPlanEditResult.COVERED
+            EveningOffer.UNAVAILABLE -> FirstPlanEditResult.UNAVAILABLE
         }
     }
 
-    fun planTonight() {
-        val protocol = state.value?.protocol ?: return
-        viewModelScope.launch { planned.value = planner.planTonight(protocol) }
+    fun cancelPlan() = change {
+        planner.cancel()
+        FirstPlanEditResult.SAVED
     }
 
-    fun cancelPlan() {
+    fun clearResult() {
+        if (edit.value != FirstPlanEditResult.BUSY) edit.value = FirstPlanEditResult.IDLE
+    }
+
+    private fun change(action: suspend () -> FirstPlanEditResult) {
+        if (edit.value == FirstPlanEditResult.BUSY) return
+        edit.value = FirstPlanEditResult.BUSY
         viewModelScope.launch {
-            planner.cancel()
-            planned.value = null
+            edit.value = try {
+                action()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                FirstPlanEditResult.FAILED
+            }
         }
     }
 }

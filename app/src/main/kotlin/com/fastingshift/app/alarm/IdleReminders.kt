@@ -33,8 +33,10 @@ internal fun idleReminders(
 ): List<Reminder> {
     val settings = appSettings.reminders
     val history = appSettings.planHistory
-    val next = ScheduleCalculator.nextStart(schedules, zone, now, history.breakWeeks, history.dayOverrides, firstEvening)
-    val recurring = schedules.any { it.enabled && it.days.isNotEmpty() && it.id != firstEvening?.first }
+    // A widget can start and end the first fast before any Home ViewModel runs cleanup.
+    val routines = if (lastFast != null && firstEvening != null) schedules.filterNot { it.id == firstEvening.first } else schedules
+    val next = ScheduleCalculator.nextStart(routines, zone, now, history.breakWeeks, history.dayOverrides, firstEvening)
+    val recurring = routines.any { it.enabled && it.days.isNotEmpty() && it.id != firstEvening?.first }
 
     // Without a weekly routine, a completed eating window still suggests the next start.
     // Calculate the original end even when it has passed: today's plan may have moved later.
@@ -45,7 +47,7 @@ internal fun idleReminders(
     } else null
     val windowEnd = window?.let {
         val day = it.triggerAt.atZone(zone).toLocalDate()
-        val starts = ScheduleCalculator.startsOn(schedules, day, zone, history.breakWeeks, history.dayOverrides, firstEvening)
+        val starts = ScheduleCalculator.startsOn(routines, day, zone, history.breakWeeks, history.dayOverrides, firstEvening)
         when {
             history.isBreak(day) -> null
             recurring || starts.isNotEmpty() -> starts.firstOrNull { occurrence -> occurrence.second.isAfter(ended) }?.second

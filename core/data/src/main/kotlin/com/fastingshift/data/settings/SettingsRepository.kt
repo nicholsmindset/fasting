@@ -94,6 +94,10 @@ data class AppSettings(
     val showPartnerShortcut: Boolean = true,
 )
 
+// SQLite generates positive IDs for regular routines. Reserving an explicit negative ID for new
+// one-offs prevents an interrupted first insert from leaving a marker pointing at a future routine.
+internal const val FIRST_PLAN_SCHEDULE_ID = -2L
+
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 /** User preferences. Health data never lives here; it is in the encrypted database. */
@@ -103,13 +107,14 @@ class SettingsRepository(context: Context) {
     private val firstWeek = context.applicationContext.getSharedPreferences("first_week", Context.MODE_PRIVATE)
 
     fun firstEvening(): Pair<Long, LocalDate>? {
-        val id = firstWeek.getLong("planned_schedule_id", -1L).takeIf { it > 0L } ?: return null
+        val id = firstWeek.getLong("planned_schedule_id", -1L).takeIf { it > 0L || it == FIRST_PLAN_SCHEDULE_ID } ?: return null
         val day = firstWeek.getString("planned_date", null)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
         return id to day
     }
 
     fun rememberFirstEvening(id: Long, day: LocalDate) {
-        firstWeek.edit().putLong("planned_schedule_id", id).putString("planned_date", day.toString()).apply()
+        // The Room transaction can commit only after the one-off marker is durable.
+        check(firstWeek.edit().putLong("planned_schedule_id", id).putString("planned_date", day.toString()).commit())
     }
 
     fun clearFirstEvening() {
