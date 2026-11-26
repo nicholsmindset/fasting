@@ -89,6 +89,16 @@ class WeekReminderPlanTest {
         assertEquals(Instant.parse("2026-11-26T20:00:00Z"), fallback.triggerAt)
     }
 
+    @Test fun firstPlanAlarmDoesNotSurviveACompletedFastFromAnotherEntryPoint() {
+        val first = weekdays.copy(id = 7L, startTime = LocalTime.of(18, 30))
+        val marker = first.id to thursday
+        val expected = plan(schedules = emptyList())
+        val observed = idleReminders(now, ZoneOffset.UTC, settings, listOf(first), previous, marker)
+        assertEquals(expected, observed)
+        val fresh = idleReminders(now, ZoneOffset.UTC, settings, listOf(first), null, marker)
+        assertEquals(Instant.parse("2026-11-26T18:30:00Z"), fresh.single().triggerAt)
+    }
+
     @Test fun schedulesWithUnknownOrRestrictedDurationsCannotGenerateStartReminders() {
         val saved = listOf(weekdays, weekdays.copy(protocolId = "duration_72"), weekdays.copy(protocolId = "unknown"))
         assertEquals(listOf(weekdays), eligibleSchedules(saved, Duration.ofHours(24)))
