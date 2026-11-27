@@ -44,7 +44,10 @@ data class PartnerUiState(
     val leaving: Boolean = false,
     val pausedWeekId: String? = null,
     val showTimerShortcut: Boolean = true,
-)
+) {
+    internal val canInviteAfterReflection: Boolean
+        get() = adultAllowed == true && participantAllowed == true && showTimerShortcut && week == null && !leaving
+}
 
 internal fun JSONObject.optionalString(name: String): String? =
     if (isNull(name)) null else getString(name)

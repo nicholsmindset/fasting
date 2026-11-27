@@ -10,5 +10,5 @@
     <string name="first_plan_unavailable">This time is unavailable. Choose another time or check My week.</string>
     <string name="first_plan_covered">Your weekly plan already includes this start time.</string>
     <string name="first_plan_save_failed">Your change could not be saved. Try again.</string>
-    <string name="first_plan_time_passed">Your planned start has passed. You can choose a new time.</string>
+    <string name="first_plan_time_passed">Your planned start has passed. Start now or choose a new time.</string>
 </resources>

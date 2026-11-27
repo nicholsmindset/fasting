@@ -224,6 +224,7 @@ fun FastSummarySheet(
     onDismiss: () -> Unit,
     vm: FastSummaryViewModel = hiltViewModel(),
     onEdit: (() -> Unit)? = null,
+    undoFailed: Boolean = false,
     onOpenPartner: (() -> Unit)? = null,
 ) {
     LaunchedEffect(fast.id, fast.endedAt) { vm.bind(fast) }
@@ -242,8 +243,18 @@ fun FastSummarySheet(
     val format = rememberWeekFormat().dateTime
     val zone = ZoneId.systemDefault()
     val completed = fast.status == FastStatus.COMPLETED
+    var confirmDiscard by rememberSaveable(fast.id) { mutableStateOf(false) }
+    LaunchedEffect(confirmDiscard) { if (confirmDiscard) sheet.show() }
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(R.string.today_discard_title)) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.today_discard)) } },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
     val safeToShare = completed && ui.fastId == fast.id && ui.noRedFlags
-    ModalBottomSheet(onDismissRequest = { finish(onDismiss) }, sheetState = sheet, containerColor = MaterialTheme.colorScheme.background) {
+    ModalBottomSheet(onDismissRequest = { if (edited) confirmDiscard = true else onDismiss() }, sheetState = sheet, containerColor = MaterialTheme.colorScheme.background) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -267,7 +278,8 @@ fun FastSummarySheet(
                     GroupRow(stringResource(R.string.timer_edit), showChevron = true, onClick = { finish(it) })
                 }
             }
-            if (ui.fastId == fast.id && ui.canUndo) {
+            if (undoFailed) Text(stringResource(R.string.timer_undo_failed), color = MaterialTheme.colorScheme.error)
+            if (ui.fastId == fast.id && ui.canUndo && !undoFailed) {
                 PlainButton(stringResource(R.string.summary_undo), onClick = onUndo)
             }
             if (!edited) PrimaryButton(stringResource(R.string.today_back), onClick = { finish(onDismiss) })
@@ -298,7 +310,10 @@ fun FastSummarySheet(
                     } else stringResource(R.string.summary_water_ml, ui.waterMl))
                 }
             }
-            if (saveFailed) Text(stringResource(R.string.today_reflection_failed), color = MaterialTheme.colorScheme.error)
+            if (saveFailed) {
+                Text(stringResource(R.string.today_reflection_failed), color = MaterialTheme.colorScheme.error)
+                PlainButton(stringResource(R.string.today_discard), onClick = onDismiss)
+            }
             if (edited) PrimaryButton(stringResource(R.string.save), onClick = { finish(onDismiss) }, haptic = true)
             if (safeToShare) {
                 if ((mood ?: 0) >= 4 && onOpenPartner != null) PartnerReflectionInvite(onOpen = { finish(onOpenPartner) })

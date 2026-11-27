@@ -98,7 +98,7 @@
 
     <!-- Timer additions -->
     <string name="timer_edit">Edit times</string>
-    <string name="timer_check_in">Check in now</string>
+    <string name="timer_check_in">Safety check-in</string>
     <string name="timer_custom">Custom length</string>
     <string name="timer_program_target">Today\'s program target: %1$dh</string>
     <string name="timeline_title">What may be happening</string>

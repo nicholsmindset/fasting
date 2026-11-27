@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_log_feeling">Catat perasaan saya</string>
+    <string name="today_back">Kembali ke Hari Ini</string>
+    <string name="today_reflection_failed">Rekod puasa anda telah disimpan. Cuba simpan catatan anda sekali lagi.</string>
+    <string name="today_discard_title">Buang catatan anda?</string>
+    <string name="today_discard">Buang catatan</string>
+</resources>

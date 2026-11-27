@@ -71,4 +71,5 @@
     <string name="partner_adult_only">Minggu bersama rakan hanya untuk orang dewasa berumur 18 tahun ke atas.</string>
     <string name="partner_reflection_invite">Jemput seseorang untuk minggu berpasangan</string>
     <string name="partner_checked_dates">Daftar masuk pada %1$s</string>
+    <string name="partner_renew_choice">Minggu seterusnya hanya bermula jika anda berdua bersetuju.</string>
 </resources>

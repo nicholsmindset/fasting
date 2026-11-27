@@ -93,7 +93,7 @@
 
     <!-- Timer additions -->
     <string name="timer_edit">Ubah waktu</string>
-    <string name="timer_check_in">Cek sekarang</string>
+    <string name="timer_check_in">Pemeriksaan keamanan</string>
     <string name="timer_custom">Durasi khusus</string>
     <string name="timer_program_target">Target program hari ini: %1$d jam</string>
     <string name="timeline_title">Apa yang mungkin terjadi</string>

@@ -97,7 +97,7 @@
 
     <!-- Timer additions -->
     <string name="timer_edit">Edit masa</string>
-    <string name="timer_check_in">Buat semakan</string>
+    <string name="timer_check_in">Semakan keselamatan</string>
     <string name="timer_custom">Tempoh tersuai</string>
     <string name="timer_program_target">Sasaran program hari ini: %1$dh</string>
     <string name="timeline_title">Apa yang mungkin berlaku</string>

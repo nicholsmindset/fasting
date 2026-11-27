@@ -26,12 +26,17 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.fastingshift.app.R
 import com.fastingshift.app.moatsOutput
 import com.fastingshift.app.share.ShareCards
 import java.io.ByteArrayOutputStream
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import com.fastingshift.app.ui.theme.FastingShiftTheme
 import com.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import org.junit.Rule
 import org.junit.Test
@@ -118,6 +123,35 @@ class PartnerPairMoatsCaptureTest {
         compose.onNodeWithTag("partner_keepsake").assertDoesNotExist()
         compose.runOnIdle { ui = ui.copy(pendingDays = emptySet()) }
         compose.onNodeWithTag("partner_keepsake").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun reflectionInviteRequiresBothSafetyChecksAndAnEmptyUnhiddenPartnerWeek() {
+        val eligible = PartnerUiState(adultAllowed = true, participantAllowed = true)
+        assertTrue(eligible.canInviteAfterReflection)
+        for (state in listOf(eligible.copy(adultAllowed = null), eligible.copy(adultAllowed = false),
+            eligible.copy(participantAllowed = null), eligible.copy(participantAllowed = false),
+            eligible.copy(showTimerShortcut = false), eligible.copy(week = active), eligible.copy(leaving = true))) {
+            assertFalse(state.canInviteAfterReflection)
+        }
+    }
+
+    @Test fun offlineCheckInAnnouncesTheQueueAndUsesEachMembersOwnDatesAtLargeText() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val format = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(app.resources.configuration.locales[0])
+        val partnerDay = "2026-11-30" // A partner west of the date line can start the day before us.
+        week = active.copy(self = member.copy(days = days.take(1)), partner = other.copy(days = listOf(partnerDay)))
+        ui = ui.copy(offline = true, pendingDays = setOf(days.first()))
+        display()
+        compose.onNodeWithTag("partner_sync_status").assertTextEquals(app.getString(R.string.partner_queued))
+        compose.onNodeWithTag("partner_other_marks").assertTextContains(app.getString(R.string.partner_checked_dates,
+            LocalDate.parse(partnerDay).format(format)))
+        compose.onNodeWithTag("partner_self_marks").assertTextContains(app.getString(R.string.partner_checked_dates,
+            LocalDate.parse(days.first()).format(format)))
+        compose.runOnIdle { ui = ui.copy(pendingDays = emptySet()) }
+        compose.onNodeWithTag("partner_sync_status").assertTextEquals(app.getString(R.string.partner_offline))
+        compose.runOnIdle { ui = ui.copy(offline = false) }
+        compose.onNodeWithTag("partner_sync_status").assertDoesNotExist()
     }
 
     @Test fun supporterGetsOneProgressRowAndCanChooseAnExactReply() {

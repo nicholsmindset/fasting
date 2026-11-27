@@ -53,14 +53,14 @@
     <string name="coach_hide_confirm">Sembunyikan</string>
 
     <!-- Fast summary sheet -->
-    <string name="summary_title">Puasa selesai</string>
-    <string name="summary_title_early">Puasa diakhiri</string>
+    <string name="summary_title">Puasa tersimpan</string>
+    <string name="summary_title_early">Puasa tersimpan</string>
     <string name="summary_goal_met">Target %1$s · selesai sesuai rencana</string>
     <string name="summary_goal_early">Target %1$s · diakhiri pada %2$s</string>
     <string name="summary_water">Air selama puasa</string>
     <string name="summary_water_ml">%1$d ml</string>
     <string name="summary_water_l">%1$.1f L</string>
-    <string name="summary_mood_title">Bagaimana perasaan Anda?</string>
+    <string name="summary_mood_title">Bagaimana perasaan Anda? (opsional)</string>
     <string name="summary_note">Tambah catatan (opsional)</string>
     <string name="summary_undo">Batalkan, saya tidak bermaksud mengakhirinya</string>
     <string name="mood_1">Berat</string>

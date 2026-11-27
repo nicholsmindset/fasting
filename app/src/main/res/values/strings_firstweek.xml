@@ -54,14 +54,14 @@
     <string name="coach_hide_confirm">Hide tips</string>
 
     <!-- Fast summary sheet -->
-    <string name="summary_title">Fast complete</string>
-    <string name="summary_title_early">Fast ended</string>
+    <string name="summary_title">Fast saved</string>
+    <string name="summary_title_early">Fast saved</string>
     <string name="summary_goal_met">Goal %1$s · completed as planned</string>
     <string name="summary_goal_early">Goal %1$s · ended at %2$s</string>
     <string name="summary_water">Water during your fast</string>
     <string name="summary_water_ml">%1$d ml</string>
     <string name="summary_water_l">%1$.1f L</string>
-    <string name="summary_mood_title">How do you feel?</string>
+    <string name="summary_mood_title">How do you feel? (optional)</string>
     <string name="summary_note">Add a note (optional)</string>
     <string name="summary_undo">Undo, I didn\'t mean to end it</string>
     <string name="mood_1">Rough</string>

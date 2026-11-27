@@ -71,4 +71,5 @@
     <string name="partner_adult_only">Partner weeks are available to adults aged 18 and over.</string>
     <string name="partner_reflection_invite">Invite someone for a partner week</string>
     <string name="partner_checked_dates">Checked in on %1$s</string>
+    <string name="partner_renew_choice">Another week starts only if you both choose it.</string>
 </resources>

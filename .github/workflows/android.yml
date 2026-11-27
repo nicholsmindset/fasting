@@ -65,13 +65,13 @@ jobs:
               print(f'{module}: {totals[0] - totals[1]} executed, {totals[1]} skipped, {totals[2]} failures, {totals[3]} errors')
           PYTHON
 
-      - name: Capture History and moats screens
+      - name: Capture onboarding, History and moats screens
         if: github.event_name == 'pull_request'
         env:
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: |
           rm -f docs/screenshots/{2-history,2a-recent,2b-calendar,4-settings,4a-reminders,4b-milestone-picker}-{light,dark}.png
-          ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.StoreScreenshotTest' --tests '*MoatsCaptureTest' --tests '*.AppFlowTest.lateDinnerWindowSurvivesDecliningNotificationsAndCanBeEditedOnHome'
+          ./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*.StoreScreenshotTest' --tests '*MoatsCaptureTest' --tests '*.FirstWeekScreenshotTest.onboarding' --tests '*.AppFlowTest.lateDinnerWindowSurvivesDecliningNotificationsAndCanBeEditedOnHome'
           mkdir -p app/build/moats-captures/{history,settings}
           cp docs/screenshots/{2-history,2a-recent,2b-calendar}-{light,dark}.png app/build/moats-captures/history/
           cp docs/screenshots/{4-settings,4a-reminders,4b-milestone-picker}-{light,dark}.png app/build/moats-captures/settings/

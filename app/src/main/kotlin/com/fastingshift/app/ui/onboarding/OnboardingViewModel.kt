@@ -174,7 +174,8 @@ class OnboardingViewModel @Inject constructor(
             outcome.result != previous?.gateResult -> Step.SCREENING
             eligible.isEmpty() -> Step.RESULT
             desired >= Step.FIRST_PLAN && fasts.getAll().isNotEmpty() -> Step.COMPLETE
-            desired == Step.FIRST_PLAN && selected !in eligible -> Step.PROTOCOL
+            desired == Step.FIRST_PLAN && planner.planned() != null -> Step.COMPLETE
+            desired == Step.FIRST_PLAN && (selected == null || selected !in eligible) -> Step.PROTOCOL
             else -> desired
         }
         return OnboardingState(
@@ -284,7 +285,9 @@ class OnboardingViewModel @Inject constructor(
     /** Choosing a goal also pre-selects its suggested protocol for the protocol step. */
     fun setGoal(goal: Goal) = _state.update { it.copy(goal = goal, selected = recommendedProtocol(goal)) }
 
-    fun updateForm(f: (ScreeningForm) -> ScreeningForm) = _state.update { it.copy(form = f(it.form), formError = false) }
+    fun updateForm(f: (ScreeningForm) -> ScreeningForm) = _state.update {
+        it.copy(form = f(it.form), formError = false, outcome = null, clinicianAck = false)
+    }
     fun setClinicianAck(ack: Boolean) = _state.update { it.copy(clinicianAck = ack) }
     fun select(p: Protocol) = _state.update { it.copy(selected = p) }
 

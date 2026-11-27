@@ -1,5 +1,6 @@
 package com.fastingshift.app.ui.timer
 
+import androidx.activity.compose.LocalActivity
 import android.app.AlarmManager
 import android.content.Intent
 import android.net.Uri
@@ -145,12 +146,16 @@ fun TimerRoute(
 
     // Ending is one tap; Undo stays on screen for 10 seconds in case it was a mis-tap.
     // Leaving the Timer drops a pending Undo, so it can't reappear later.
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { viewModel.consumeEnded() } }
+    val activity = LocalActivity.current
+    androidx.compose.runtime.DisposableEffect(activity) {
+        onDispose { if (activity?.isChangingConfigurations != true) viewModel.consumeEnded() }
+    }
     events.ended?.let { ended ->
         // A calm summary with "how do you feel?"; Undo lives inside it during the undo window.
         FastSummarySheet(
             fast = ended,
             onUndo = { viewModel.undoEnd(ended) },
+            undoFailed = events.undoFailed,
             onDismiss = viewModel::consumeEnded,
             onEdit = { viewModel.consumeEnded(); onEditFast(ended.id) },
             onOpenPartner = onOpenPartner?.let { open -> { viewModel.consumeEnded(); open() } },

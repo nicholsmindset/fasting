@@ -52,7 +52,7 @@ class FirstWeekScreenshotTest {
     @Inject lateinit var screening: ScreeningRepository
     @Inject lateinit var fasts: FastRepository
 
-    private val outDir = File("/tmp/fastingshift-firstweek")
+    private val outDir = moatsOutput("first-week")
 
     @Before fun setUp() {
         assumeTrue("captures run only with -Pscreenshots", System.getProperty("fastingshift.screenshotDir") != null)
@@ -98,7 +98,7 @@ class FirstWeekScreenshotTest {
         click(s(R.string.onb_next))
         waitFor(s(R.string.onb_intro_privacy_title))
         shoot("03-intro-3")
-        click(s(R.string.onb_continue))
+        click(s(R.string.onb_skip))
         waitFor(s(R.string.onb_goal_title))
         click(s(R.string.goal_long))
         shoot("04-goal")

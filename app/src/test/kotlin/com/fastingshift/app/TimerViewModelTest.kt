@@ -1,5 +1,6 @@
 package com.fastingshift.app
 
+import androidx.lifecycle.SavedStateHandle
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.billing.BillingManager
@@ -81,7 +82,8 @@ class TimerViewModelTest {
         }
     }
 
-    private fun vm(at: Clock = clock) = TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, at, schedules, freezes)
+    private fun vm(at: Clock = clock, savedState: SavedStateHandle = SavedStateHandle()) =
+        TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, at, schedules, freezes, savedState)
 
     /** viewModelScope runs on the main looper, which the test thread must keep turning. */
     private fun <T> await(read: () -> T?): T {

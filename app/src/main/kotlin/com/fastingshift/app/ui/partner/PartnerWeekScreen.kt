@@ -88,8 +88,7 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun PartnerReflectionInvite(onOpen: () -> Unit, vm: PartnerWeekViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
-    if (state.adultAllowed == true && state.participantAllowed == true && state.showTimerShortcut &&
-        state.week == null && !state.leaving) {
+    if (state.canInviteAfterReflection) {
         PlainButton(stringResource(R.string.partner_reflection_invite), onOpen, Modifier.testTag("partner_reflection_invite"))
     }
 }
@@ -552,8 +551,9 @@ private fun RenewalActions(week: PartnerWeek, state: PartnerUiState, onRenew: ()
     var confirmPause by rememberSaveable(week.id) { mutableStateOf(false) }
     val paused = state.pausedWeekId == week.id && !week.renewalRequestedByMe
     when {
-        week.renewalRequestedByMe -> Notice(stringResource(R.string.partner_renew_wait))
+        week.renewalRequestedByMe -> Notice(stringResource(R.string.partner_renew_wait), Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         week.renewalRequestedByPartner -> Notice(stringResource(R.string.partner_renew_invited))
+        week.canRenew && !paused -> Notice(stringResource(R.string.partner_renew_choice))
     }
     if (paused) Text(stringResource(R.string.partner_paused_note),
         Modifier.testTag("partner_paused").semantics { liveRegion = LiveRegionMode.Polite })
