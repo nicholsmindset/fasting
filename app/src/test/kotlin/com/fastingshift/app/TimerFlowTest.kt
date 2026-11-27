@@ -3,6 +3,7 @@ package com.fastingshift.app
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -12,8 +13,11 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.MainActivity
+import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Fast
+import com.fastingshift.domain.model.FastStatus
+import com.fastingshift.domain.safety.Symptom
 import com.fastingshift.domain.safety.GateResult
 import com.fastingshift.domain.safety.ScreeningAnswers
 import com.fastingshift.domain.service.FastRepository
@@ -29,6 +33,7 @@ import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -45,6 +50,7 @@ class TimerFlowTest {
     @get:Rule(order = 0) val hilt = HiltAndroidRule(this)
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
+    @Inject lateinit var checkins: SymptomCheckinRepository
     @Inject lateinit var fasts: FastRepository
     @Inject lateinit var screening: ScreeningRepository
     @Inject lateinit var settings: SettingsRepository
@@ -117,6 +123,33 @@ class TimerFlowTest {
         compose.onNodeWithText(s(R.string.timer_start)).performClick()
         waitFor(s(R.string.timer_end))
         assertEquals("window_14_10", runBlocking { fasts.getActive()?.protocolId })
+    }
+
+    @Test fun optionalFeelingLogAndEarlyCorrectionUseTheSameSavedFast() {
+        seed(GateResult.OK, activeHoursIn = 2)
+        val active = assertNotNull(runBlocking { fasts.getActive() })
+        waitFor(s(R.string.today_log_feeling))
+        compose.onNodeWithText(s(R.string.today_log_feeling)).performScrollTo().performClick()
+        waitFor(s(R.string.sym_hunger))
+        compose.onNodeWithText(s(R.string.sym_hunger)).performScrollTo().performClick()
+        compose.onNodeWithText(s(R.string.checkin_submit)).performScrollTo().performClick()
+        waitFor(s(R.string.timer_end))
+        assertEquals(setOf(Symptom.HUNGER), runBlocking { checkins.observeForFast(active.id).first().single().answers })
+        compose.onNodeWithText(s(R.string.timer_end)).performScrollTo().performClick()
+        waitFor(s(R.string.summary_title_early))
+        compose.onNodeWithTag("summary-start").assertExists()
+        compose.onNodeWithTag("summary-end").assertExists()
+        compose.onNodeWithText(s(R.string.today_back)).assertExists()
+        compose.onNodeWithText(s(R.string.mood_4)).performScrollTo().performClick()
+        compose.onNodeWithTag("partner_reflection_invite").assertDoesNotExist()
+        compose.onNodeWithText(s(R.string.share)).assertDoesNotExist()
+        compose.onNodeWithText(s(R.string.timer_edit)).performScrollTo().performClick()
+        waitFor(s(R.string.edit_title))
+        val saved = assertNotNull(runBlocking { fasts.getById(active.id) })
+        assertEquals(FastStatus.ENDED_EARLY, saved.status)
+        assertEquals(active.startAt, saved.startAt)
+        assertEquals(4, saved.mood)
+        assertNull(runBlocking { fasts.getActive() })
     }
 
     @Test fun educationOnlyShowsNoStartButton() {

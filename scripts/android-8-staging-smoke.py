@@ -40,6 +40,11 @@ def run():
     screen.click("first_plan_pick_clock", scroll=True)
     device(resourceId="android:id/button1", packageName=package).click(timeout=10)
     preview = plan_window(screen)
+    device.app_stop(package)
+    device.app_start(package, activity=ui.ACTIVITY, wait=True)
+    screen.find("first_plan_title", scroll=True)
+    if plan_window(screen) != preview:
+        raise AssertionError("The unsaved plan draft changed after a cold start")
     screen.click("first_plan_schedule", scroll=True)
     screen.finish_free_onboarding("tab_timer", allow_notifications=False)
     screen.find("first_plan_home_title", scroll=True)

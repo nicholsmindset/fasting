@@ -10,6 +10,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
@@ -51,11 +52,13 @@ import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.annotation.Config
@@ -363,6 +366,32 @@ class AppFlowTest {
         field(s(R.string.onb_weight), "70,5")
         click(s(R.string.onb_next))
         waitFor(s(R.string.onb_ok_title))
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [30], qualifiers = "ms-rMY-w320dp-h640dp-night-xxhdpi")
+    fun compactMalayTourKeepsItsHeadingAndSetupActionAtDoubleType() {
+        val originalScale = RuntimeEnvironment.getFontScale()
+        try {
+            RuntimeEnvironment.setFontScale(2f)
+            compose.activityRule.scenario.recreate()
+            waitFor(s(R.string.onb_open_tour))
+            assertEquals(2f, compose.activity.resources.configuration.fontScale)
+            assertEquals(320, compose.activity.resources.configuration.screenWidthDp)
+            click(s(R.string.onb_open_tour))
+            waitFor(s(R.string.onb_intro_heading))
+            val heading = compose.onNode(hasText(s(R.string.onb_intro_heading)) and
+                SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+            val action = compose.onNodeWithText(s(R.string.onb_skip))
+            val headingBounds = heading.assertIsDisplayed().getUnclippedBoundsInRoot()
+            val actionBounds = action.assertIsDisplayed().getUnclippedBoundsInRoot()
+            assertTrue(headingBounds.bottom <= actionBounds.top, "The heading and setup action should wrap onto separate rows")
+            action.performClick()
+            waitFor(s(R.string.onb_goal_title))
+        } finally {
+            RuntimeEnvironment.setFontScale(originalScale)
+        }
     }
 
     @Test fun blockedUserThenUpdatedAnswersThenStartAndEndAFast() {

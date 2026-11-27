@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -269,6 +271,7 @@ private val introPages = listOf(
 )
 
 /** "How Fasting Shift works": three swipeable pages with dots, Next and Skip. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Intro(example: ZonedDateTime, onSetup: () -> Unit) {
     val pager = rememberPagerState { introPages.size }
@@ -276,10 +279,14 @@ private fun Intro(example: ZonedDateTime, onSetup: () -> Unit) {
     val haptics = rememberHaptics()
     val last = pager.currentPage == introPages.lastIndex
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.screen), verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.screen),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 stringResource(R.string.onb_intro_heading), style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).semantics { heading() },
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() },
             )
             if (!last) PlainButton(stringResource(R.string.onb_skip), onClick = onSetup)
         }
