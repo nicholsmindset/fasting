@@ -14,4 +14,9 @@
     <string name="program_trial_duration">Uji coba gratis · %1$s</string>
     <string name="program_trial_action">Mulai uji coba gratis</string>
     <string name="program_purchase_terms">Google Play menampilkan harga dan ketentuan uji coba sebelum pembelian. Langganan diperpanjang otomatis hingga dibatalkan di Google Play. Paket seumur hidup cukup dibayar sekali.</string>
+    <string name="program_excerpt">“A useful record makes space for the detail you care about.”</string>
+    <string name="program_excerpt_credit">Kutipan asli dalam bahasa Inggris. Robert L. Nichols, The Fasting Shift, “Keeping a personal record”, hlm. 7</string>
+    <string name="program_read_day_one">Baca Hari 1 secara gratis</string>
+    <string name="program_action_label">Coba hari ini</string>
+    <string name="program_reflection_label">Renungan</string>
 </resources>

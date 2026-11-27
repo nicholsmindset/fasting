@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_log_feeling">Log how I feel</string>
+    <string name="today_back">Back to Today</string>
+    <string name="today_reflection_failed">Your fast is saved. Try saving your reflection again.</string>
+    <string name="today_discard_title">Discard your reflection?</string>
+    <string name="today_discard">Discard reflection</string>
+</resources>

@@ -6,7 +6,7 @@
     <string name="partner_start">Mulakan minggu bersama rakan</string>
     <string name="partner_intro">Jemput seorang rakan. Beri khabar pada mana-mana tiga hari minggu ini, walaupun rancangan anda berubah. Rakan anda boleh turut serta atau memberi sokongan.</string>
     <string name="partner_alias">Nama yang akan dilihat oleh rakan anda</string>
-    <string name="partner_privacy">Rakan anda dapat melihat nama pilihan anda, peranan, hari anda memberi khabar, mesej pratetap dan sama ada anda mengajak mereka untuk seminggu lagi. Hari yang anda rancang, pemasa puasa, rekod kesihatan dan sebab anda memberi khabar kekal di telefon ini.</string>
+    <string name="partner_privacy">Pasangan anda dapat melihat nama pilihan, peranan, tarikh daftar masuk, mesej pratetap dan permintaan untuk seminggu lagi. Rancangan, tempoh puasa, jumlah langkah, log kesihatan dan sebab anda mendaftar masuk adalah peribadi.</string>
     <string name="partner_support_only">Anda boleh menerima jemputan untuk menyokong rakan. Anda tidak perlu berpuasa.</string>
     <string name="partner_create">Cipta jemputan</string>
     <string name="partner_open_invite">Buka jemputan</string>
@@ -21,9 +21,9 @@
     <string name="partner_invited">%1$s menjemput anda</string>
     <string name="partner_join_intro">Tempoh tujuh hari bermula apabila anda menyertai minggu ini. Pilih cara anda ingin mengambil bahagian.</string>
     <string name="partner_participate">Saya juga ingin memberi khabar</string>
-    <string name="partner_participate_hint">Pilih mana-mana tiga hari untuk memberi khabar.</string>
+    <string name="partner_participate_hint">Daftar masuk pada mana-mana tiga hari. Hari rehat dan perubahan rancangan juga dikira.</string>
     <string name="partner_support">Beri sokongan</string>
-    <string name="partner_support_hint">Beri kata-kata semangat bila-bila masa. Anda tidak perlu berpuasa atau memberi khabar.</string>
+    <string name="partner_support_hint">Hantar satu mesej pratetap sehari. Anda boleh memberi semangat tanpa berpuasa atau mendaftar masuk.</string>
     <string name="partner_join">Sertai minggu bersama rakan</string>
     <string name="partner_pending_title">Menunggu rakan anda</string>
     <string name="partner_waiting">Hantar jemputan peribadi ini kepada seorang sahaja. Orang pertama yang menerimanya akan menjadi rakan anda untuk minggu ini.</string>
@@ -35,7 +35,7 @@
     <string name="partner_refresh">Muat semula</string>
     <string name="partner_leave">Tinggalkan minggu bersama rakan</string>
     <string name="partner_leave_question">Tinggalkan minggu bersama rakan ini?</string>
-    <string name="partner_leave_note">Minggu ini akan berakhir untuk anda berdua. Sejarah puasa peribadi anda kekal dalam telefon ini.</string>
+    <string name="partner_leave_note">Jika anda keluar, minggu bersama, daftar masuk dan mesej akan dipadamkan untuk kedua-duanya. Sejarah puasa peribadi anda kekal pada telefon ini.</string>
     <string name="partner_cancel_invite">Batalkan jemputan</string>
     <string name="partner_cancel_question">Batalkan jemputan ini?</string>
     <string name="partner_cancel_note">Selepas ini, tiada sesiapa boleh menyertai minggu ini melalui pautan tersebut.</string>
@@ -69,4 +69,7 @@
     <string name="partner_last_checkin">%1$s memberi khabar pada %2$s.</string>
     <string name="partner_your_count">Anda sudah beri khabar %1$d daripada 3 kali</string>
     <string name="partner_adult_only">Minggu bersama rakan hanya untuk orang dewasa berumur 18 tahun ke atas.</string>
+    <string name="partner_reflection_invite">Jemput seseorang untuk minggu berpasangan</string>
+    <string name="partner_checked_dates">Daftar masuk pada %1$s</string>
+    <string name="partner_renew_choice">Minggu seterusnya hanya bermula jika anda berdua bersetuju.</string>
 </resources>

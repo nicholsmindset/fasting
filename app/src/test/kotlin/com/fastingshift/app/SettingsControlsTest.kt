@@ -28,6 +28,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -82,6 +83,20 @@ class SettingsControlsTest {
         assertEquals(before, privacy.getUnclippedBoundsInRoot())
         privacy.performClick()
         compose.runOnIdle { assertEquals(SettingsSection.PRIVACY, opened) }
+    }
+
+    @Test fun healthConnectionsAndCurrentAlertPreferencesAreReachableFromTheOverview() {
+        var opened: SettingsSection? = null
+        val alerts = app.getString(R.string.settings_timing_summary, app.getString(R.string.settings_toggle_on), app.getString(R.string.off))
+        compose.setContent {
+            FastingShiftTheme {
+                SettingsOverview(AppAppearance.SYSTEM, null, Entitlement.FREE, {}, {}, { opened = it }, timingSummary = alerts)
+            }
+        }
+        compose.onNodeWithTag(SettingsSection.REMINDERS.overviewTag).assertTextContains(alerts)
+        compose.onNodeWithTag(SettingsSection.CONNECTIONS.overviewTag).performScrollTo().assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle { assertEquals(SettingsSection.CONNECTIONS, opened) }
     }
 
     @Test fun compactLargeTextKeepsPickerAndSwitchAsSingleLabeledActions() {

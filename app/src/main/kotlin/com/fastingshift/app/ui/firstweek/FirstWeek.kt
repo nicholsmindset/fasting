@@ -12,6 +12,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -51,18 +53,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fastingshift.app.R
 import com.fastingshift.app.notifications.Notifications
+import com.fastingshift.app.ui.components.rememberWeekFormat
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.ui.design.AppCard
+import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupHeader
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
@@ -70,6 +74,7 @@ import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.rememberHaptics
+import com.fastingshift.app.ui.partner.PartnerReflectionInvite
 import com.fastingshift.app.ui.onboarding.HeroIcon
 import com.fastingshift.app.ui.onboarding.TextFieldGroupRow
 import com.fastingshift.domain.coaching.CoachingTip
@@ -96,6 +101,7 @@ fun FirstFastCard(
     remindersAvailable: Boolean,
     onOpenReminders: () -> Unit,
     vm: FirstFastViewModel = hiltViewModel(),
+    onStartNow: (() -> Unit)? = null,
 ) {
     val result by vm.result.collectAsStateWithLifecycle()
     var editing by rememberSaveable { mutableStateOf(false) }
@@ -120,19 +126,23 @@ fun FirstFastCard(
         Text(stringResource(if (plan == null) R.string.first_fast_title else R.string.first_plan_home_title),
             style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         if (plan != null && savedStart != null) FirstWindowTimes(savedStart, plan.protocol)
-        SecondaryButton(stringResource(if (plan == null) R.string.first_plan_choose_time else R.string.first_plan_edit_time),
-            onClick = openEditor, enabled = !busy)
-        if (plan != null) {
+        if (plan == null) {
+            SecondaryButton(stringResource(R.string.first_plan_choose_time), onClick = openEditor, enabled = !busy)
+        } else {
             val upcoming = plan.start > now
-            if (upcoming) AddPlanToCalendar(plan)
-            val reminderLabel = when {
-                !upcoming -> R.string.first_plan_time_passed
-                remindersAvailable -> R.string.week_timer_reminder_on
-                else -> R.string.week_timer_reminder_off
+            if (!upcoming) Text(stringResource(R.string.first_plan_time_passed), style = MaterialTheme.typography.bodyMedium)
+            if (upcoming || onStartNow == null) {
+                PrimaryButton(stringResource(R.string.first_plan_edit_time), onClick = openEditor, enabled = !busy)
+                onStartNow?.let { SecondaryButton(stringResource(R.string.first_plan_start), it) }
+            } else {
+                PrimaryButton(stringResource(R.string.first_plan_start), onStartNow, haptic = true)
+                SecondaryButton(stringResource(R.string.first_plan_edit_time), openEditor, enabled = !busy)
             }
-            Text(stringResource(reminderLabel), style = MaterialTheme.typography.bodyMedium)
-            if (upcoming && !remindersAvailable) {
-                PlainButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
+            if (upcoming) {
+                Text(stringResource(if (remindersAvailable) R.string.week_timer_reminder_on else R.string.week_timer_reminder_off),
+                    style = MaterialTheme.typography.bodyMedium)
+                if (!remindersAvailable) PlainButton(stringResource(R.string.settings_reminders), onClick = onOpenReminders)
+                AddPlanToCalendar(plan)
             }
         }
     }
@@ -207,79 +217,112 @@ private fun tipIcon(t: CoachingTip) = when (t) {
 
 private val moodLabels = listOf(R.string.mood_1, R.string.mood_2, R.string.mood_3, R.string.mood_4, R.string.mood_5)
 
-/**
- * Calm end-of-fast summary (duration vs plan, water during the fast, "how do you feel?" and a
- * note), shown right after a fast ends from the Timer. [onUndo] re-opens the fast (only offered
- * inside the undo window); [onDismiss] closes it.
- */
-@OptIn(ExperimentalMaterial3Api::class)
+/** The timer is already saved. Reflection and corrections are optional. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun FastSummarySheet(fast: Fast, onUndo: () -> Unit, onDismiss: () -> Unit, vm: FastSummaryViewModel = hiltViewModel()) {
-    LaunchedEffect(fast.id) { vm.bind(fast) }
+fun FastSummarySheet(
+    fast: Fast,
+    onUndo: () -> Unit,
+    onDismiss: () -> Unit,
+    vm: FastSummaryViewModel = hiltViewModel(),
+    onEdit: (() -> Unit)? = null,
+    undoFailed: Boolean = false,
+    onOpenPartner: (() -> Unit)? = null,
+) {
+    LaunchedEffect(fast.id, fast.endedAt) { vm.bind(fast) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val mood by vm.mood.collectAsStateWithLifecycle()
     val note by vm.note.collectAsStateWithLifecycle()
+    val saveFailed by vm.saveFailed.collectAsStateWithLifecycle()
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val haptics = rememberHaptics()
-    val close: (() -> Unit) -> Unit = { then -> scope.launch { sheet.hide() }.invokeOnCompletion { then() } }
-
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = MaterialTheme.colorScheme.background) {
+    val edited = mood != fast.mood || note != fast.note.orEmpty()
+    val close: (() -> Unit) -> Unit = { then -> scope.launch { sheet.hide(); then() } }
+    val finish: (() -> Unit) -> Unit = { then ->
+        if (edited) vm.save { close(then) } else close(then)
+    }
+    val format = rememberWeekFormat().dateTime
+    val zone = ZoneId.systemDefault()
+    val completed = fast.status == FastStatus.COMPLETED
+    var confirmDiscard by rememberSaveable(fast.id) { mutableStateOf(false) }
+    LaunchedEffect(confirmDiscard) { if (confirmDiscard) sheet.show() }
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(R.string.today_discard_title)) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.today_discard)) } },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    val safeToShare = completed && ui.fastId == fast.id && ui.noRedFlags
+    ModalBottomSheet(onDismissRequest = { if (edited) confirmDiscard = true else onDismiss() }, sheetState = sheet, containerColor = MaterialTheme.colorScheme.background) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val completed = fast.status == FastStatus.COMPLETED
-            val actual = fast.actualDuration ?: java.time.Duration.ZERO
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                HeroIcon(if (completed) Icons.Filled.CheckCircle else Icons.Filled.Favorite, size = 56.dp)
-                Text(
-                    stringResource(if (completed) R.string.summary_title else R.string.summary_title_early),
-                    style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.semantics { heading() },
-                )
-                Text(shortLength(actual), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.SemiBold)
-                Text(
-                    if (completed) {
-                        stringResource(R.string.summary_goal_met, fast.plannedDuration.hoursMinutes())
-                    } else {
-                        stringResource(R.string.summary_goal_early, fast.plannedDuration.hoursMinutes(), shortLength(actual))
-                    },
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
-                )
+                HeroIcon(Icons.Filled.CheckCircle, size = 48.dp)
+                Text(stringResource(if (completed) R.string.summary_title else R.string.summary_title_early),
+                    style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+                fast.actualDuration?.let { Text(shortLength(it), style = MaterialTheme.typography.titleLarge) }
             }
             InsetGroup {
-                GroupRow(
-                    stringResource(R.string.summary_water),
-                    value = if (ui.waterMl >= 1_000) stringResource(R.string.summary_water_l, ui.waterMl / 1000.0) else stringResource(R.string.summary_water_ml, ui.waterMl),
-                )
+                GroupRow(stringResource(R.string.daily_started), subtitle = format.format(fast.startAt.atZone(zone)),
+                    modifier = Modifier.testTag("summary-start"))
+                fast.endedAt?.let { end ->
+                    GroupDivider()
+                    GroupRow(stringResource(R.string.edit_end), subtitle = format.format(end.atZone(zone)),
+                        modifier = Modifier.testTag("summary-end"))
+                }
+                onEdit?.let {
+                    GroupDivider()
+                    GroupRow(stringResource(R.string.timer_edit), showChevron = true, onClick = { finish(it) })
+                }
             }
+            if (undoFailed) Text(stringResource(R.string.timer_undo_failed), color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            if (ui.fastId == fast.id && ui.canUndo && !undoFailed) {
+                PlainButton(stringResource(R.string.summary_undo), onClick = onUndo)
+            }
+            if (!edited) PrimaryButton(stringResource(R.string.today_back), onClick = { finish(onDismiss) })
             Column {
                 GroupHeader(stringResource(R.string.summary_mood_title))
-                Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     moodLabels.forEachIndexed { i, label ->
                         val value = i + 1
                         val selected = mood == value
                         val bg by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer, label = "mood")
                         val fg by animateColorAsState(if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, label = "moodText")
                         Box(
-                            Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).background(bg)
-                                .selectable(selected = selected, role = Role.RadioButton, onClick = { haptics.tick(); vm.setMood(value) }),
+                            Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).background(bg)
+                                .selectable(selected = selected, role = Role.RadioButton, onClick = { haptics.tick(); vm.setMood(value) })
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center,
-                        ) { Text(stringResource(label), style = MaterialTheme.typography.labelMedium, color = fg, maxLines = 1) }
+                        ) { Text(stringResource(label), style = MaterialTheme.typography.labelMedium, color = fg) }
                     }
                 }
             }
             InsetGroup {
                 TextFieldGroupRow(stringResource(R.string.summary_note), note, vm::setNote, keyboardType = KeyboardType.Text, singleLine = false)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                PrimaryButton(stringResource(R.string.save), onClick = { vm.save { close(onDismiss) } }, haptic = true)
-                val shareContext = LocalContext.current
-                PlainButton(stringResource(R.string.share), onClick = { ShareCards.shareFast(shareContext, fast) })
-                AnimatedVisibility(ui.canUndo) {
-                    PlainButton(stringResource(R.string.summary_undo), onClick = { onUndo(); close(onDismiss) })
+                if (ui.fastId == fast.id && ui.waterMl > 0) {
+                    GroupDivider()
+                    GroupRow(stringResource(R.string.summary_water), value = if (ui.waterMl >= 1_000) {
+                        stringResource(R.string.summary_water_l, ui.waterMl / 1000.0)
+                    } else stringResource(R.string.summary_water_ml, ui.waterMl))
                 }
+            }
+            if (saveFailed) {
+                Text(stringResource(R.string.today_reflection_failed), color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                PlainButton(stringResource(R.string.today_discard), onClick = onDismiss)
+            }
+            if (edited) PrimaryButton(stringResource(R.string.save), onClick = { finish(onDismiss) }, haptic = true)
+            if (safeToShare) {
+                if ((mood ?: 0) >= 4 && onOpenPartner != null) PartnerReflectionInvite(onOpen = { finish(onOpenPartner) })
+                val context = LocalContext.current
+                PlainButton(stringResource(R.string.share), onClick = { ShareCards.shareFast(context, fast) })
             }
         }
     }

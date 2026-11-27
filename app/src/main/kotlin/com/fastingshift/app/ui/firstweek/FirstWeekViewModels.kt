@@ -2,6 +2,7 @@ package com.fastingshift.app.ui.firstweek
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.data.repo.SymptomCheckinRepository
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.coaching.CoachingTip
@@ -11,6 +12,7 @@ import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.service.FastRepository
 import com.fastingshift.domain.service.FastService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Duration
 import java.time.Clock
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -30,7 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Emits now, then every minute: tips and the undo window follow the clock. */
+/** Emits now, then every minute: coaching tips follow the clock. */
 internal fun minuteTicker(clock: Clock): Flow<Instant> = flow {
     while (true) {
         emit(clock.instant())
@@ -110,28 +112,41 @@ class CoachingViewModel @Inject constructor(
     }
 }
 
-data class SummaryUi(val waterMl: Int = 0, val canUndo: Boolean = false)
+data class SummaryUi(val fastId: Long? = null, val waterMl: Int = 0, val canUndo: Boolean = false, val noRedFlags: Boolean = false)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class FastSummaryViewModel @Inject constructor(
     logs: LogRepository,
+    checkins: SymptomCheckinRepository,
     private val service: FastService,
     clock: Clock,
 ) : ViewModel() {
     private val fast = MutableStateFlow<Fast?>(null)
     val mood = MutableStateFlow<Int?>(null)
     val note = MutableStateFlow("")
+    val saveFailed = MutableStateFlow(false)
+    private var saving = false
 
     val ui: StateFlow<SummaryUi> = fast.filterNotNull().flatMapLatest { f ->
         val end = f.endedAt ?: clock.instant()
-        combine(logs.observeWaterSince(f.startAt), minuteTicker(clock)) { water, now ->
-            SummaryUi(WaterGoal.totalBetween(water, f.startAt, end).toInt(), FirstWeekRules.canUndo(f, now))
+        val undoAvailable = flow {
+            val now = clock.instant()
+            val available = FirstWeekRules.canUndo(f, now)
+            emit(available)
+            if (available) {
+                delay(Duration.between(now, end.plus(FastService.UNDO_WINDOW)).toMillis() + 1L)
+                emit(false)
+            }
+        }
+        combine(logs.observeWaterSince(f.startAt), checkins.observeForFast(f.id), undoAvailable) { water, symptoms, undo ->
+            SummaryUi(f.id, WaterGoal.totalBetween(water, f.startAt, end).toInt(), undo, symptoms.none { it.redFlag })
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SummaryUi())
 
     fun bind(f: Fast) {
-        if (fast.value?.id == f.id) return
+        if (fast.value == f) return
+        saveFailed.value = false
         fast.value = f
         mood.value = f.mood
         note.value = f.note.orEmpty()
@@ -142,9 +157,19 @@ class FastSummaryViewModel @Inject constructor(
 
     fun save(onDone: () -> Unit) {
         val f = fast.value ?: return onDone()
+        if (saving) return
+        saving = true
+        saveFailed.value = false
         viewModelScope.launch {
-            service.saveReflection(f.id, mood.value, note.value)
-            onDone()
+            try {
+                if (service.saveReflection(f.id, mood.value, note.value)) onDone() else saveFailed.value = true
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                saveFailed.value = true
+            } finally {
+                saving = false
+            }
         }
     }
 }

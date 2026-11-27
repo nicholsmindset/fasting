@@ -5,8 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.firstweek.EveningOffer
+import com.fastingshift.app.ui.firstweek.FirstWeekRules
 import com.fastingshift.app.ui.firstweek.FirstFastPlanner
 import com.fastingshift.app.ui.firstweek.minuteTicker
+import com.fastingshift.data.settings.AppSettings
+import com.fastingshift.data.settings.SetupDraft
 import com.fastingshift.data.settings.SettingsRepository
 import com.fastingshift.domain.model.Protocol
 import com.fastingshift.domain.onboarding.Goal
@@ -26,13 +29,20 @@ import com.fastingshift.domain.service.StartResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.Duration
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+enum class FirstIntent { START_NOW, PLAN_LATER, EXPLORE }
 
 enum class Step { WELCOME, INTRO, GOAL, SCREENING, RESULT, PROTOCOL, FIRST_PLAN, NOTIFICATIONS, COMPLETE }
 
@@ -89,6 +99,7 @@ data class ScreeningForm(
 
 data class OnboardingState(
     val step: Step = Step.WELCOME,
+    val intent: FirstIntent = FirstIntent.PLAN_LATER,
     val rerun: Boolean = false,
     val goalFromTour: Boolean = false,
     val goal: Goal? = null,
@@ -119,29 +130,70 @@ class OnboardingViewModel @Inject constructor(
     val minuteClock = minuteTicker(clock)
     fun now() = clock.instant()
 
+    private val _ready = MutableStateFlow(handle.get<String>(KEY_STEP) != null)
+    val ready: StateFlow<Boolean> = _ready
+
     init {
-        val fresh = handle.get<String>(KEY_STEP) == null
-        // Every change is mirrored into the saved state, so the form survives process death.
-        viewModelScope.launch { _state.collect(::save) }
-        if (fresh) viewModelScope.launch {
-            val s = settings.current()
-            if (s.onboardingComplete) {
-                // Re-running from settings: go straight to the screening with previous answers.
-                val prev = screening.getLatest()?.answers
-                _state.update {
-                    it.copy(
-                        step = Step.SCREENING, rerun = true, goal = s.goal,
-                        selected = s.defaultProtocolId?.let(Presets::byId) ?: recommendedProtocol(s.goal),
-                        form = prev?.let { a ->
-                            ScreeningForm(a.ageYears.toString(), a.pregnantOrBreastfeeding, a.eatingDisorderHistory, a.type1Diabetes, a.medications, a.heightCm.toString(), a.weightKg.toString())
-                        } ?: ScreeningForm(),
-                    )
+        viewModelScope.launch {
+            if (!_ready.value) {
+                val preferences = settings.current()
+                if (preferences.onboardingComplete || preferences.setupDraft != null) {
+                    _state.value = resumeLocalSetup(preferences)
                 }
+                _ready.value = true
+            }
+            launch { _state.collect(::save) }
+            _state.map { st ->
+                if (st.rerun || st.step == Step.WELCOME) null else SetupDraft(
+                    st.step.name, st.intent.name, st.goal, st.selected.id, st.firstStart?.toString(), st.goalFromTour,
+                )
+            }.distinctUntilChanged().collect { draft ->
+                withContext(Dispatchers.IO) { settings.saveSetupDraft(draft) }
             }
         }
     }
 
+    private suspend fun resumeLocalSetup(preferences: AppSettings): OnboardingState {
+        val draft = preferences.setupDraft
+        val previous = screening.getLatest()
+        val form = previous?.answers?.let { a ->
+            ScreeningForm(a.ageYears.toString(), a.pregnantOrBreastfeeding, a.eatingDisorderHistory,
+                a.type1Diabetes, a.medications, a.heightCm.toString(), a.weightKg.toString())
+        } ?: ScreeningForm()
+        if (preferences.onboardingComplete) return OnboardingState(
+            step = Step.SCREENING, rerun = true, goal = preferences.goal, form = form,
+            selected = preferences.defaultProtocolId?.let(Presets::byId) ?: recommendedProtocol(preferences.goal),
+        )
+        draft ?: return OnboardingState()
+        val desired = Step.entries.firstOrNull { it.name == draft.step } ?: Step.WELCOME
+        val outcome = previous?.answers?.let(ScreeningEvaluator::evaluate)
+        val ack = previous?.clinicianAcknowledged == true
+        val eligible = if (outcome != null && outcome.result == previous?.gateResult)
+            allowedProtocols(outcome.result, ack) else emptyList()
+        val selected = Presets.byId(draft.protocolId)
+        val step = when {
+            desired <= Step.GOAL -> desired
+            draft.goal == null -> Step.GOAL
+            desired <= Step.RESULT || outcome == null -> Step.SCREENING
+            outcome.result != previous?.gateResult -> Step.SCREENING
+            eligible.isEmpty() -> Step.RESULT
+            desired >= Step.FIRST_PLAN && fasts.getAll().isNotEmpty() -> Step.COMPLETE
+            desired == Step.FIRST_PLAN && planner.planned() != null -> Step.COMPLETE
+            desired == Step.FIRST_PLAN && (selected == null || selected !in eligible) -> Step.PROTOCOL
+            else -> desired
+        }
+        return OnboardingState(
+            step = step, intent = intentFrom(draft.intent), goalFromTour = draft.fromTour, goal = draft.goal,
+            form = form, outcome = outcome, clinicianAck = ack, protocols = eligible,
+            selected = selected?.takeIf { it in eligible || step < Step.PROTOCOL } ?: eligible.firstOrNull() ?: recommendedProtocol(draft.goal),
+            firstStart = draft.start?.let { runCatching { ZonedDateTime.parse(it) }.getOrNull() },
+        )
+    }
+
+    private fun intentFrom(name: String?) = FirstIntent.entries.firstOrNull { it.name == name } ?: FirstIntent.PLAN_LATER
+
     private fun save(st: OnboardingState) {
+        handle[KEY_INTENT] = st.intent.name
         handle[KEY_STEP] = st.step.name
         handle[KEY_RERUN] = st.rerun
         handle[KEY_TOUR] = st.goalFromTour
@@ -187,6 +239,7 @@ class OnboardingViewModel @Inject constructor(
         val savedProtocol = handle.get<String>(KEY_SELECTED)?.let(Presets::byId) ?: Presets.W16_8
         return OnboardingState(
             step = safeStep,
+            intent = intentFrom(handle[KEY_INTENT]),
             firstStart = firstStart,
             rerun = handle[KEY_RERUN] ?: false,
             // Older versions always led through the tour before the goal.
@@ -205,11 +258,11 @@ class OnboardingViewModel @Inject constructor(
         return Presets.all.filter { Duration.ofHours(it.fastHours.toLong()) <= max }
     }
 
-    fun openTour() = _state.update { if (it.step == Step.WELCOME) it.copy(step = Step.INTRO) else it }
+    fun openTour() = _state.update { if (it.step == Step.WELCOME) it.copy(step = Step.INTRO, intent = FirstIntent.EXPLORE) else it }
 
-    fun openGoal() = _state.update {
+    fun openGoal(intent: FirstIntent = FirstIntent.PLAN_LATER) = _state.update {
         when (it.step) {
-            Step.WELCOME, Step.INTRO -> it.copy(step = Step.GOAL, goalFromTour = it.step == Step.INTRO)
+            Step.WELCOME, Step.INTRO -> it.copy(step = Step.GOAL, intent = intent, goalFromTour = it.step == Step.INTRO)
             else -> it
         }
     }
@@ -227,6 +280,7 @@ class OnboardingViewModel @Inject constructor(
             it.busy -> it
             it.step == Step.NOTIFICATIONS -> it.copy(step = Step.COMPLETE)
             it.step == Step.WELCOME || (it.rerun && it.step == Step.SCREENING) -> it
+            it.step == Step.GOAL && it.goalFromTour -> it.copy(step = Step.INTRO, intent = FirstIntent.EXPLORE)
             it.step == Step.GOAL && !it.goalFromTour -> it.copy(step = Step.WELCOME)
             else -> it.copy(step = Step.entries[it.step.ordinal - 1], planError = null, checklist = null)
         }
@@ -235,11 +289,14 @@ class OnboardingViewModel @Inject constructor(
     /** Choosing a goal also pre-selects its suggested protocol for the protocol step. */
     fun setGoal(goal: Goal) = _state.update { it.copy(goal = goal, selected = recommendedProtocol(goal)) }
 
-    fun updateForm(f: (ScreeningForm) -> ScreeningForm) = _state.update { it.copy(form = f(it.form), formError = false) }
+    fun updateForm(f: (ScreeningForm) -> ScreeningForm) = _state.update {
+        it.copy(form = f(it.form), formError = false, outcome = null, clinicianAck = false)
+    }
     fun setClinicianAck(ack: Boolean) = _state.update { it.copy(clinicianAck = ack) }
     fun select(p: Protocol) = _state.update { it.copy(selected = p) }
 
     fun submitScreening() {
+        if (_state.value.step != Step.SCREENING) return
         val answers = _state.value.form.toAnswers()
         if (answers == null) {
             _state.update { it.copy(formError = true) }
@@ -251,6 +308,7 @@ class OnboardingViewModel @Inject constructor(
     /** Saves the screening (with acknowledgement) and moves to protocol choice. */
     fun confirmResult(onEducationOnly: () -> Unit) {
         val st = _state.value
+        if (st.step != Step.RESULT) return
         val outcome = st.outcome ?: return
         val answers = st.form.toAnswers() ?: return
         viewModelScope.launch {
@@ -281,9 +339,17 @@ class OnboardingViewModel @Inject constructor(
                 onFinished()
             } else {
                 val next = if (fasts.getAll().isEmpty()) Step.FIRST_PLAN else Step.COMPLETE
-                _state.update { it.copy(step = next) }
+                _state.update {
+                    val start = if (next == Step.FIRST_PLAN && it.intent == FirstIntent.PLAN_LATER)
+                        it.firstStart ?: FirstWeekRules.nextEvening(now(), ZoneId.systemDefault()) else it.firstStart
+                    it.copy(step = next, firstStart = start)
+                }
             }
         }
+    }
+
+    fun reviewStartNow() = _state.update {
+        if (it.step == Step.FIRST_PLAN && !it.busy) it.copy(intent = FirstIntent.START_NOW, planError = null) else it
     }
 
     fun pickFirstStart(start: ZonedDateTime) = _state.update {
@@ -295,6 +361,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun saveFirstPlan(offerNotifications: Boolean) = runFirstAction { st ->
+        if (st.intent != FirstIntent.PLAN_LATER) return@runFirstAction
         val start = st.firstStart ?: return@runFirstAction
         val askForPermission = offerNotifications && settings.current().reminders.fastStartEnabled
         when (planner.planAt(st.selected, start)) {
@@ -307,6 +374,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun startFirstFast(confirmChecklist: Boolean = false) = runFirstAction { st ->
+        if (st.intent != FirstIntent.START_NOW) return@runFirstAction
         val confirmed = if (confirmChecklist) st.checklist ?: return@runFirstAction else emptySet()
         when (val result = service.start(st.selected, confirmed)) {
             is StartResult.Started, is StartResult.AlreadyActive -> _state.update { it.copy(step = Step.COMPLETE, checklist = null) }
@@ -336,6 +404,8 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun finish(onFinished: () -> Unit) {
+        val st = _state.value
+        if (st.step != Step.COMPLETE && !(st.step == Step.PROTOCOL && st.outcome != null && st.protocols.isEmpty())) return
         viewModelScope.launch {
             // Coaching runs in the first two weeks after this moment.
             settings.setOnboardedAt(clock.millis())
@@ -345,6 +415,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private companion object {
+        const val KEY_INTENT = "first_intent"
         const val KEY_STEP = "step"
         const val KEY_RERUN = "rerun"
         const val KEY_TOUR = "goal_from_tour"

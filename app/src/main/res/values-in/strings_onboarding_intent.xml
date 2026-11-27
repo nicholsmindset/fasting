@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onb_intent_now">Mulai sekarang</string>
+    <string name="onb_intent_now_detail">Tinjau pilihan Anda sebelum memulai timer.</string>
+    <string name="onb_intent_later_detail">Pilih waktu mulai dan lihat kapan puasa Anda selesai.</string>
+    <string name="onb_intent_explore_detail">Lihat contoh jadwal puasa tanpa memulai timer.</string>
+    <string name="onb_sample_window">Contoh · Puasa 12 jam</string>
+    <string name="first_plan_now_title">Siap memulai puasa?</string>
+    <string name="first_plan_now_body">Ini jadwal puasa Anda jika mulai sekarang. Anda bisa mengakhiri puasa kapan saja.</string>
+    <string name="first_plan_expired">Pilih waktu baru untuk jadwal ini atau lihat jadwal jika Anda mulai berpuasa sekarang.</string>
+</resources>

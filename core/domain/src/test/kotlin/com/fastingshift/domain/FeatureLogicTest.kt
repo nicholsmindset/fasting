@@ -20,6 +20,7 @@ import com.fastingshift.domain.model.WeightUnit
 import com.fastingshift.domain.program.GuidedPrograms
 import com.fastingshift.domain.program.ProgramProgress
 import com.fastingshift.domain.program.Program
+import com.fastingshift.domain.program.ProgramReading
 import com.fastingshift.domain.program.ProgramDay
 import com.fastingshift.domain.safety.Helplines
 import com.fastingshift.domain.schedule.ScheduleCalculator
@@ -107,12 +108,29 @@ class FeatureLogicTest {
     }
 
     @Test fun `program unlocks daily only after a complete release`() {
-        val days = (1..21).map { ProgramDay(it, "Reflection $it", "Prompt $it") }
+        val days = (1..21).map { day ->
+            ProgramDay(day, listOf("en", "ms", "id").associateWith { lang ->
+                ProgramReading("Title $day $lang", "Reading $lang", "Action $lang", "Question $lang", "Page $day")
+            })
+        }
         val p = Program(id = "test", days = days, expectedDays = 21, approvedForRelease = true)
         assertFalse(p.copy(approvedForRelease = false).isPublished)
         assertFalse(p.copy(days = days.dropLast(1)).isPublished)
         assertFalse(p.copy(days = days.reversed()).isPublished)
-        assertFalse(p.copy(days = days.dropLast(1) + days.last().copy(lesson = "")).isPublished)
+        val last = days.last()
+        assertNull(p.copy(approvedForRelease = false).freePreview)
+        val previewOnly = p.copy(days = days.take(1), approvedForRelease = false, firstDayApprovedForPreview = true)
+        assertEquals(days.first(), previewOnly.freePreview)
+        assertFalse(previewOnly.isPublished)
+        assertNull(ProgramProgress.currentDay(previewOnly, emptyMap(), zone, fri))
+        assertNull(previewOnly.copy(days = listOf(days[1])).freePreview)
+        assertNull(previewOnly.copy(days = listOf(days.first().copy(readings = days.first().readings - "ms"))).freePreview)
+        assertEquals(days.first(), p.freePreview)
+        assertEquals(days.first().reading("id"), p.freePreview?.reading("in"))
+        assertEquals(days.first().reading("en"), p.freePreview?.reading("fr"))
+        assertFalse(p.copy(days = days.dropLast(1) + last.copy(readings = last.readings - "ms")).isPublished)
+        val incomplete = last.readings + ("id" to last.readings.getValue("id").copy(action = ""))
+        assertNull(p.copy(days = days.dropLast(1) + last.copy(readings = incomplete)).freePreview)
         assertEquals(1, ProgramProgress.currentDay(p, emptyMap(), zone, fri)!!.day)
         val doneToday = mapOf(1 to at(fri, 9))
         assertNull(ProgramProgress.currentDay(p, doneToday, zone, fri))

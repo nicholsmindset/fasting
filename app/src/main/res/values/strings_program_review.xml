@@ -14,4 +14,9 @@
     <string name="program_trial_duration">Free trial · %1$s</string>
     <string name="program_trial_action">Start free trial</string>
     <string name="program_purchase_terms">Google Play shows the price and any trial before purchase. Subscriptions renew automatically until cancelled in Google Play. Lifetime is a one-time purchase.</string>
+    <string name="program_excerpt">“A useful record makes space for the detail you care about.”</string>
+    <string name="program_excerpt_credit">Robert L. Nichols, The Fasting Shift, “Keeping a personal record,” p. 7</string>
+    <string name="program_read_day_one">Read Day 1 for free</string>
+    <string name="program_action_label">Try this today</string>
+    <string name="program_reflection_label">Reflect</string>
 </resources>

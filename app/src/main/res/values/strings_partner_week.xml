@@ -6,7 +6,7 @@
     <string name="partner_start">Start a partner week</string>
     <string name="partner_intro">Invite one person. Check in on any three days this week, even when you change your plans. Your partner can join in or cheer you on.</string>
     <string name="partner_alias">Name your partner will see</string>
-    <string name="partner_privacy">Your partner sees your chosen name, role, check-in days, preset messages and whether you ask for another week. Your planned days, fasting timer, health logs and reasons for checking in stay on this phone.</string>
+    <string name="partner_privacy">Shared with your partner: your chosen name, role, check-in dates, preset messages and requests for another week. Your plans, fasting hours, step counts, health logs and check-in reasons are private.</string>
     <string name="partner_support_only">You can accept an invitation to cheer someone on. This role never asks you to fast.</string>
     <string name="partner_create">Create invitation</string>
     <string name="partner_open_invite">Open an invitation</string>
@@ -21,9 +21,9 @@
     <string name="partner_invited">%1$s invited you</string>
     <string name="partner_join_intro">Your seven days begin when you join. Choose how you would like to take part.</string>
     <string name="partner_participate">Check in too</string>
-    <string name="partner_participate_hint">Choose any three days to check in.</string>
+    <string name="partner_participate_hint">Check in on any three days. Rest days and changes of plan count too.</string>
     <string name="partner_support">Cheer them on</string>
-    <string name="partner_support_hint">Send encouragement whenever you like. You do not need to fast or check in.</string>
+    <string name="partner_support_hint">Send one preset message a day. You can cheer someone on without fasting or checking in.</string>
     <string name="partner_join">Join partner week</string>
     <string name="partner_pending_title">Waiting for your partner</string>
     <string name="partner_waiting">Send this private invitation to one person. The first person to accept it will become your partner for the week.</string>
@@ -35,7 +35,7 @@
     <string name="partner_refresh">Refresh</string>
     <string name="partner_leave">Leave partner week</string>
     <string name="partner_leave_question">Leave this partner week?</string>
-    <string name="partner_leave_note">Your shared week ends for both people. Your personal fasting history stays on this phone.</string>
+    <string name="partner_leave_note">Leaving removes the shared week, check-ins and messages for both people. Your personal fasting history stays on this phone.</string>
     <string name="partner_cancel_invite">Cancel invitation</string>
     <string name="partner_cancel_question">Cancel this invitation?</string>
     <string name="partner_cancel_note">Anyone who has this link will no longer be able to join.</string>
@@ -69,4 +69,7 @@
     <string name="partner_last_checkin">%1$s checked in on %2$s.</string>
     <string name="partner_your_count">Your check-ins: %1$d of 3</string>
     <string name="partner_adult_only">Partner weeks are available to adults aged 18 and over.</string>
+    <string name="partner_reflection_invite">Invite someone for a partner week</string>
+    <string name="partner_checked_dates">Checked in on %1$s</string>
+    <string name="partner_renew_choice">Another week starts only if you both choose it.</string>
 </resources>

@@ -10,5 +10,5 @@
     <string name="first_plan_unavailable">Waktu ini tidak tersedia. Pilih waktu lain atau semak minggu anda.</string>
     <string name="first_plan_covered">Rancangan mingguan anda sudah merangkumi waktu mula ini.</string>
     <string name="first_plan_save_failed">Perubahan anda gagal disimpan. Cuba lagi.</string>
-    <string name="first_plan_time_passed">Waktu mula yang dirancang telah berlalu. Anda boleh memilih waktu baharu.</string>
+    <string name="first_plan_time_passed">Waktu mula yang dirancang telah berlalu. Mulakan sekarang atau pilih waktu baharu.</string>
 </resources>

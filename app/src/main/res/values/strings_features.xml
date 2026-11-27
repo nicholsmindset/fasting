@@ -98,7 +98,7 @@
 
     <!-- Timer additions -->
     <string name="timer_edit">Edit times</string>
-    <string name="timer_check_in">Check in now</string>
+    <string name="timer_check_in">Safety check-in</string>
     <string name="timer_custom">Custom length</string>
     <string name="timer_program_target">Today\'s program target: %1$dh</string>
     <string name="timeline_title">What may be happening</string>
@@ -148,9 +148,9 @@
     <string name="el_magnesium">Magnesium</string>
 
     <!-- Onboarding -->
-    <string name="onb_welcome_title">Welcome to Fasting Shift</string>
-    <string name="onb_welcome_body">A fasting timer with no sign-up. Your fasting history is stored on this phone.</string>
-    <string name="onb_get_started">Get started</string>
+    <string name="onb_welcome_title">What would you like to do today?</string>
+    <string name="onb_welcome_body">Start with the option that fits your day. No account needed.</string>
+    <string name="onb_get_started">Plan for later</string>
     <string name="onb_next">Next</string>
     <string name="onb_continue">Continue</string>
     <string name="onb_not_now">Not now</string>
@@ -192,7 +192,7 @@
     <string name="onb_protocol_body">You can change this any time. 16:8 is a common place to start.</string>
     <string name="onb_notif_title">Want a nudge when your fast ends?</string>
     <string name="onb_notif_body">Get reminders for your fasts and check-ins. You can turn them on later in Settings under Reminders.</string>
-    <string name="onb_notif_allow">Allow notifications</string>
+    <string name="onb_notif_allow">Remind me when it starts</string>
     <string name="onb_offer_title">Shift+ is optional</string>
     <string name="onb_offer_free_note">The timer, widgets, every protocol, history, export and all safety features are free forever.</string>
     <string name="onb_offer_free">Continue free</string>

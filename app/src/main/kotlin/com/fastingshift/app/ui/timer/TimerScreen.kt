@@ -1,5 +1,6 @@
 package com.fastingshift.app.ui.timer
 
+import androidx.activity.compose.LocalActivity
 import android.app.AlarmManager
 import android.content.Intent
 import android.net.Uri
@@ -145,10 +146,22 @@ fun TimerRoute(
 
     // Ending is one tap; Undo stays on screen for 10 seconds in case it was a mis-tap.
     // Leaving the Timer drops a pending Undo, so it can't reappear later.
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { viewModel.consumeEnded() } }
+    val activity = LocalActivity.current
+    androidx.compose.runtime.DisposableEffect(activity) {
+        onDispose { if (activity?.isChangingConfigurations != true) viewModel.consumeEnded() }
+    }
     events.ended?.let { ended ->
         // A calm summary with "how do you feel?"; Undo lives inside it during the undo window.
-        FastSummarySheet(ended, onUndo = { viewModel.undoEnd(ended) }, onDismiss = viewModel::consumeEnded)
+        FastSummarySheet(
+            fast = ended,
+            onUndo = { viewModel.undoEnd(ended) },
+            undoFailed = events.undoFailed,
+            onDismiss = viewModel::consumeEnded,
+            onEdit = { viewModel.consumeEnded(); onEditFast(ended.id) },
+            onOpenPartner = onOpenPartner?.takeIf { loaded?.onlyFastId == ended.id }?.let { open ->
+                { viewModel.consumeEnded(); open() }
+            },
+        )
     }
     events.message?.let { msg ->
         LaunchedEffect(msg) {
@@ -223,20 +236,25 @@ fun TimerScreen(state: TimerUiState, actions: TimerActions, revival: @Composable
                             Column(Modifier.fillMaxWidth()) {
                                 PrimaryButton(stringResource(R.string.timer_end), onClick = actions.onEnd, haptic = true)
                                 FlowActions {
-                                    TextButton(onClick = actions.onEdit) { Text(stringResource(R.string.timer_edit)) }
-                                    if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
-                                        TextButton(onClick = actions.onCheckIn) { Text(stringResource(R.string.timer_check_in)) }
+                                    val checkInLabel = if (FastPolicy.requiresCheckIns(active.plannedDuration)) {
+                                        R.string.timer_check_in
+                                    } else R.string.today_log_feeling
+                                    TextButton(onClick = actions.onCheckIn, modifier = Modifier.heightIn(min = 48.dp)) {
+                                        Text(stringResource(checkInLabel))
+                                    }
+                                    TextButton(onClick = actions.onEdit, modifier = Modifier.heightIn(min = 48.dp)) {
+                                        Text(stringResource(R.string.timer_edit))
                                     }
                                 }
                             }
-                            actions.onOpenPartner?.let { PartnerTimerEntry(it) }
-                            revival()
                             ExactAlarmBanner()
                             RamadanCard(onOpenHub = actions.onOpenMuslimHub)
                             CoachingTipCard(active)
                             TodayCard(state.today, actions.onWater)
                             QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)
                             BodyTimelineCard(timer.elapsed)
+                            actions.onOpenPartner?.let { PartnerTimerEntry(it) }
+                            revival()
                         } else {
                             NotFasting(state, actions, revival)
                         }
@@ -278,6 +296,7 @@ private fun TimerHeader(state: TimerUiState) {
     }
     val title = when {
         state.active != null -> stringResource(R.string.daily_header_fasting)
+        state.maxHours == null || state.firstPlan != null || state.plannedStart != null -> stringResource(R.string.daily_today_title)
         state.eatingWindow != null -> stringResource(R.string.eating_title)
         else -> stringResource(R.string.timer_idle_title)
     }
@@ -338,33 +357,35 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
         }
     }
     var choosing by rememberSaveable { mutableStateOf(false) }
-    val window = state.eatingWindow
-    if (window != null) {
-        EatingWindowReadout(window, state.now)
-    }
     val selectedEnabled = state.maxHours != null && state.selected.fastHours <= state.maxHours
-    SelectedFast(state.selected, onChoose = { choosing = true })
     val alertsAvailable = startReminderNotificationsEnabled()
     val savedPlan = state.firstPlan
+    val startFromPlan = savedPlan != null && state.startAt == null && state.selected == savedPlan.protocol
     if (savedPlan != null) {
-        FirstFastCard(state.now, state.selected, savedPlan, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
+        FirstFastCard(
+            state.now, savedPlan.protocol, savedPlan, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders,
+            onStartNow = actions.onStart.takeIf { startFromPlan && selectedEnabled },
+        )
     }
-    if (selectedEnabled && (savedPlan == null || state.startAt != null)) {
+    val hasWeeklyWindow = savedPlan == null && (state.plannedStart != null || state.earlierPlannedStartToday != null)
+    if (hasWeeklyWindow) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable, actions.onOpenReminders)
+    state.eatingWindow?.let { EatingWindowReadout(it, state.now) }
+    SelectedFast(state.selected, onChoose = { choosing = true })
+    if (selectedEnabled && !startFromPlan) {
         val format = rememberWeekFormat()
         Text(stringResource(R.string.plan_target_time, format.dateTime.format(state.selectedTargetEnd.atZone(ZoneId.systemDefault()))),
             style = MaterialTheme.typography.titleMedium.merge(TabularNumbers))
     }
     Column(Modifier.fillMaxWidth()) {
-        val startLabel = if (savedPlan != null && state.startAt == null) R.string.first_plan_start else R.string.timer_start
-        PrimaryButton(stringResource(startLabel), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
+        if (!startFromPlan) {
+            PrimaryButton(stringResource(R.string.timer_start), onClick = actions.onStart, enabled = selectedEnabled, haptic = true)
+        }
         StartTimeRow(state, actions.onStartAt)
     }
     if (state.showFirstPlan && savedPlan == null) {
         FirstFastCard(state.now, state.selected, null, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
     }
-    actions.onOpenPartner?.let { PartnerTimerEntry(it) }
-    revival()
-    if (state.maxHours != null && (!state.showFirstPlan ||
+    if (!hasWeeklyWindow && state.maxHours != null && (!state.showFirstPlan ||
             (state.plannedStart != null && state.plannedStart != state.firstPlan?.start))) {
         WeekStartPreview(state, actions.onOpenWeek, alertsAvailable, actions.onOpenReminders)
     } else if (state.showFirstPlan) {
@@ -374,6 +395,8 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
     state.programTargetHours?.let {
         SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
     }
+    actions.onOpenPartner?.let { PartnerTimerEntry(it) }
+    revival()
     if (choosing) ProtocolPicker(state, actions) { choosing = false }
     TodayCard(state.today, actions.onWater)
     QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)

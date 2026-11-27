@@ -55,6 +55,7 @@ import java.util.Locale
 internal enum class SettingsSection(@StringRes val title: Int, @StringRes val summary: Int?) {
     REMINDERS(R.string.settings_reminders, R.string.settings_reminders_summary),
     FASTING(R.string.settings_fasting_preferences, R.string.settings_fasting_summary),
+    CONNECTIONS(R.string.settings_connections, R.string.settings_connections_summary),
     PRIVACY(R.string.settings_privacy, R.string.settings_privacy_summary),
     SAFETY(R.string.settings_safety_reports, R.string.settings_safety_summary),
     PLAN(R.string.settings_plan, null);
@@ -72,6 +73,7 @@ internal fun SettingsOverview(
     onOpenWeek: () -> Unit,
     onAppearance: () -> Unit,
     onSection: (SettingsSection) -> Unit,
+    timingSummary: String? = null,
 ) {
     Column(
         Modifier.fillMaxSize().testTag("settings_overview").verticalScroll(rememberScrollState())
@@ -81,7 +83,7 @@ internal fun SettingsOverview(
         LargeTitle(stringResource(R.string.settings_title))
         WeekShortcut(planner, onOpenWeek)
         InsetGroup(header = stringResource(R.string.settings_group_routine)) {
-            SectionRow(SettingsSection.REMINDERS, onSection)
+            SectionRow(SettingsSection.REMINDERS, onSection, timingSummary)
             GroupDivider()
             SectionRow(SettingsSection.FASTING, onSection)
         }
@@ -96,6 +98,8 @@ internal fun SettingsOverview(
         }
         InsetGroup(header = stringResource(R.string.settings_group_account)) {
             SectionRow(SettingsSection.SAFETY, onSection)
+            GroupDivider()
+            SectionRow(SettingsSection.CONNECTIONS, onSection)
             GroupDivider()
             SectionRow(SettingsSection.PRIVACY, onSection)
             GroupDivider()
@@ -116,9 +120,9 @@ internal fun SettingsOverview(
 }
 
 @Composable
-private fun SectionRow(section: SettingsSection, onSection: (SettingsSection) -> Unit) {
+private fun SectionRow(section: SettingsSection, onSection: (SettingsSection) -> Unit, summary: String? = null) {
     GroupRow(stringResource(section.title), modifier = Modifier.testTag(section.overviewTag),
-        subtitle = section.summary?.let { stringResource(it) }, showChevron = true, onClick = { onSection(section) })
+        subtitle = summary ?: section.summary?.let { stringResource(it) }, showChevron = true, onClick = { onSection(section) })
 }
 
 @Composable

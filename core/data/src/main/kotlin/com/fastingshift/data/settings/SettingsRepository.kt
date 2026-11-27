@@ -45,6 +45,16 @@ enum class AppAppearance {
     }
 }
 
+/** Editable first-run routing. Screening answers stay in the encrypted screening repository. */
+data class SetupDraft(
+    val step: String,
+    val intent: String,
+    val goal: Goal?,
+    val protocolId: String,
+    val start: String?,
+    val fromTour: Boolean,
+)
+
 data class AppSettings(
     val reminders: ReminderSettings = ReminderSettings(),
     /** Removes weight from every screen (SR-6). */
@@ -92,6 +102,7 @@ data class AppSettings(
     val weeklyRecapsViewed: Int = 0,
     val weeklyRecapsShared: Int = 0,
     val showPartnerShortcut: Boolean = true,
+    val setupDraft: SetupDraft? = null,
 )
 
 // SQLite generates positive IDs for regular routines. Reserving an explicit negative ID for new
@@ -143,6 +154,10 @@ class SettingsRepository(context: Context) {
             ongoingNotification = p[ONGOING] ?: false,
             defaultProtocolId = p[DEFAULT_PROTOCOL],
             onboardingComplete = p[ONBOARDED] ?: false,
+            setupDraft = p[DRAFT_STEP]?.let { step ->
+                SetupDraft(step, p[DRAFT_INTENT].orEmpty(), Goal.entries.firstOrNull { it.name == p[DRAFT_GOAL] },
+                    p[DRAFT_PROTOCOL].orEmpty(), p[DRAFT_START], p[DRAFT_TOUR] ?: false)
+            },
             goal = p[GOAL]?.let { runCatching { Goal.valueOf(it) }.getOrNull() },
             eatingWindowHours = p[EATING_WINDOW] ?: 8,
             healthConnectSync = p[HEALTH_CONNECT] ?: false,
@@ -184,7 +199,32 @@ class SettingsRepository(context: Context) {
     suspend fun setOngoingNotification(enabled: Boolean) = store.edit { it[ONGOING] = enabled }
     suspend fun setDefaultProtocol(id: String) = store.edit { it[DEFAULT_PROTOCOL] = id }
 
-    suspend fun setOnboardingComplete(done: Boolean) = store.edit { it[ONBOARDED] = done }
+    suspend fun setOnboardingComplete(done: Boolean) = store.edit {
+        it[ONBOARDED] = done
+        if (done) it.clearSetupDraft()
+    }
+
+    suspend fun saveSetupDraft(draft: SetupDraft?) = store.edit { prefs ->
+        if (prefs[ONBOARDED] == true || draft == null) {
+            prefs.clearSetupDraft()
+        } else {
+            prefs[DRAFT_STEP] = draft.step
+            prefs[DRAFT_INTENT] = draft.intent
+            prefs[DRAFT_PROTOCOL] = draft.protocolId
+            prefs[DRAFT_TOUR] = draft.fromTour
+            draft.goal?.let { prefs[DRAFT_GOAL] = it.name } ?: prefs.remove(DRAFT_GOAL)
+            draft.start?.let { prefs[DRAFT_START] = it } ?: prefs.remove(DRAFT_START)
+        }
+    }
+
+    private fun MutablePreferences.clearSetupDraft() {
+        remove(DRAFT_STEP)
+        remove(DRAFT_INTENT)
+        remove(DRAFT_GOAL)
+        remove(DRAFT_PROTOCOL)
+        remove(DRAFT_START)
+        remove(DRAFT_TOUR)
+    }
     suspend fun setGoal(goal: Goal) = store.edit { it[GOAL] = goal.name }
     suspend fun setEatingWindowHours(hours: Int) = store.edit { it[EATING_WINDOW] = hours.coerceIn(1, 23) }
     suspend fun setHealthConnectSync(enabled: Boolean) = store.edit { it[HEALTH_CONNECT] = enabled }
@@ -361,6 +401,7 @@ class SettingsRepository(context: Context) {
     }
 
     suspend fun restore(r: SettingsRecord) = store.edit {
+        it.clearSetupDraft()
         it[ONBOARDED] = r.onboardingComplete
         // Backups made before the picker carried no preference for appearance.
         AppAppearance.fromRecord(r.appearance)?.let { mode -> it[APPEARANCE] = mode.name }
@@ -439,6 +480,12 @@ class SettingsRepository(context: Context) {
         val HIDE_WEIGHT = booleanPreferencesKey("hide_weight")
         val ONGOING = booleanPreferencesKey("ongoing_notification")
         val DEFAULT_PROTOCOL = stringPreferencesKey("default_protocol")
+        val DRAFT_STEP = stringPreferencesKey("setup_draft_step")
+        val DRAFT_INTENT = stringPreferencesKey("setup_draft_intent")
+        val DRAFT_GOAL = stringPreferencesKey("setup_draft_goal")
+        val DRAFT_PROTOCOL = stringPreferencesKey("setup_draft_protocol")
+        val DRAFT_START = stringPreferencesKey("setup_draft_start")
+        val DRAFT_TOUR = booleanPreferencesKey("setup_draft_from_tour")
         val ONBOARDED = booleanPreferencesKey("onboarding_complete")
         val GOAL = stringPreferencesKey("goal")
         val EATING_WINDOW = intPreferencesKey("eating_window_hours")

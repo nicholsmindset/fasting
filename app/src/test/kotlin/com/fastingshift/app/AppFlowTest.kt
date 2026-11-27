@@ -10,6 +10,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
@@ -51,11 +52,13 @@ import javax.inject.Inject
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.annotation.Config
@@ -226,9 +229,10 @@ class AppFlowTest {
         }
     }
 
-    private fun reachFirstPlan() {
-        waitFor(s(R.string.onb_get_started))
-        click(s(R.string.onb_get_started))
+    private fun reachFirstPlan(startNow: Boolean = false) {
+        val intent = s(if (startNow) R.string.onb_intent_now else R.string.onb_get_started)
+        waitFor(intent)
+        click(intent)
         waitFor(s(R.string.onb_goal_title))
         click(s(R.string.goal_consistency))
         click(s(R.string.onb_next))
@@ -241,7 +245,7 @@ class AppFlowTest {
         click(s(R.string.onb_next))
         waitFor(s(R.string.onb_protocol_title))
         click(s(R.string.onb_next))
-        waitFor(s(R.string.first_plan_title))
+        waitFor(s(if (startNow) R.string.first_plan_now_title else R.string.first_plan_title))
     }
 
     private fun chooseStartTime(hour: Int, minute: Int) {
@@ -278,6 +282,9 @@ class AppFlowTest {
             val previewStart = compose.onNodeWithTag("first-plan-start").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
             val previewFinish = compose.onNodeWithTag("first-plan-finish").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
             captureFirstPlan("01-overnight-preview")
+            compose.activityRule.scenario.recreate()
+            waitFor(previewStart)
+            waitFor(previewFinish)
             click(s(R.string.first_plan_schedule))
             waitFor(s(R.string.first_plan_saved_title))
             click(s(R.string.onb_not_now))
@@ -318,7 +325,9 @@ class AppFlowTest {
     @Test fun firstPlanStartNowRunsTheChosenProtocolOnceWithoutSchedulingAReminder() {
         val original = runBlocking { settings.toRecord() }
         try {
-            reachFirstPlan()
+            reachFirstPlan(startNow = true)
+            assertNull(runBlocking { fasts.getActive() })
+            compose.onNodeWithText(s(R.string.first_plan_schedule)).assertDoesNotExist()
             click(s(R.string.first_plan_start))
             waitFor(s(R.string.timer_end))
             val fast = assertNotNull(runBlocking { fasts.getActive() })
@@ -357,6 +366,32 @@ class AppFlowTest {
         field(s(R.string.onb_weight), "70,5")
         click(s(R.string.onb_next))
         waitFor(s(R.string.onb_ok_title))
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [30], qualifiers = "ms-rMY-w320dp-h640dp-night-xxhdpi")
+    fun compactMalayTourKeepsItsHeadingAndSetupActionAtDoubleType() {
+        val originalScale = RuntimeEnvironment.getFontScale()
+        try {
+            RuntimeEnvironment.setFontScale(2f)
+            compose.activityRule.scenario.recreate()
+            waitFor(s(R.string.onb_open_tour))
+            assertEquals(2f, compose.activity.resources.configuration.fontScale)
+            assertEquals(320, compose.activity.resources.configuration.screenWidthDp)
+            click(s(R.string.onb_open_tour))
+            waitFor(s(R.string.onb_intro_heading))
+            val heading = compose.onNode(hasText(s(R.string.onb_intro_heading)) and
+                SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+            val action = compose.onNodeWithText(s(R.string.onb_skip))
+            val headingBounds = heading.assertIsDisplayed().getUnclippedBoundsInRoot()
+            val actionBounds = action.assertIsDisplayed().getUnclippedBoundsInRoot()
+            assertTrue(headingBounds.bottom <= actionBounds.top, "The heading and setup action should wrap onto separate rows")
+            action.performClick()
+            waitFor(s(R.string.onb_goal_title))
+        } finally {
+            RuntimeEnvironment.setFontScale(originalScale)
+        }
     }
 
     @Test fun blockedUserThenUpdatedAnswersThenStartAndEndAFast() {

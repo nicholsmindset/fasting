@@ -1,5 +1,8 @@
 package com.fastingshift.app
 
+import com.fastingshift.app.ui.firstweek.FirstFastPlanner
+import com.fastingshift.domain.schedule.FirstPlanOffer
+import androidx.lifecycle.SavedStateHandle
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.billing.BillingManager
@@ -55,6 +58,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34], application = HiltTestApplication::class)
 class TimerViewModelTest {
     @get:Rule val hilt = HiltAndroidRule(this)
+    @Inject lateinit var firstPlanner: FirstFastPlanner
     @Inject lateinit var fasts: FastRepository
     @Inject lateinit var screening: ScreeningRepository
     @Inject lateinit var settings: SettingsRepository
@@ -81,7 +85,8 @@ class TimerViewModelTest {
         }
     }
 
-    private fun vm(at: Clock = clock) = TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, at, schedules, freezes)
+    private fun vm(at: Clock = clock, savedState: SavedStateHandle = SavedStateHandle()) =
+        TimerViewModel(fasts, screening, settings, programs, billing, logs, health, service, at, schedules, freezes, savedState)
 
     /** viewModelScope runs on the main looper, which the test thread must keep turning. */
     private fun <T> await(read: () -> T?): T {
@@ -108,6 +113,45 @@ class TimerViewModelTest {
         val restored = await { runBlocking { fasts.getActive() } }
         assertEquals(fast.id, restored.id)
         assertNull(restored.endedAt)
+    }
+
+    @Test fun reopeningSavedSummaryRestoresTheSameRecordAndRejectsStaleUndo() {
+        val active = activeFast(hoursIn = 3)
+        val handle = SavedStateHandle()
+        val original = vm(savedState = handle)
+        original.end()
+        original.end()
+        val ended = await { original.events.value.ended }
+        val restored = vm(savedState = SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }))
+        assertEquals(active.id, await { restored.events.value.ended }.id)
+        // A record corrected elsewhere cannot be reopened by the old Undo button.
+        runBlocking { fasts.update(ended.copy(endedAt = ended.endedAt!!.minusSeconds(1))) }
+        restored.undoEnd(ended)
+        await { restored.events.value.undoFailed.takeIf { it } }
+        assertEquals(active.id, restored.events.value.ended?.id)
+        assertNull(runBlocking { fasts.getActive() })
+        assertEquals(1, runBlocking { fasts.getAll().size })
+    }
+
+    @Test fun missedFirstPlanSurvivesMidnightWithoutSchedulingAnotherReminder() {
+        val zone = ZoneId.systemDefault()
+        val yesterday = LocalDate.now(zone).minusDays(1)
+        val time = LocalTime.of(21, 30)
+        val start = yesterday.atTime(time).atZone(zone).toInstant()
+        val schedule = Schedule(protocolId = "window_16_8", days = setOf(yesterday.dayOfWeek), startTime = time)
+        try {
+            runBlocking {
+                schedules.saveFirstEvening(schedule, yesterday) { _, _ -> FirstPlanOffer.AVAILABLE }
+                firstPlanner.cleanUp()
+            }
+            val state = awaitState(vm()) { it.takeIf { state -> state.firstPlan?.start == start } }
+            assertNull(state.active)
+            assertNull(state.plannedStart)
+            assertNull(state.startReminder)
+            assertEquals("window_16_8", state.selected.id)
+        } finally {
+            runBlocking { schedules.cancelFirstEvening() }
+        }
     }
 
     @Test fun endingALongFastRoutesToRefeedingInsteadOfUndo() {

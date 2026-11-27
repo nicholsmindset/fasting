@@ -81,6 +81,7 @@ import java.time.Clock
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
+import com.fastingshift.app.ui.settings.ManagePlanRow
 import com.fastingshift.app.ui.settings.SchedulesViewModel
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -120,13 +121,17 @@ fun PaywallRoute(
 
         if (ent.isShiftPlus) {
             PrimaryButton(stringResource(R.string.shift_open_review), onClick = onOpenReview)
+            if (ent.plan != PlanType.LIFETIME && !ent.fromBookCode) ManagePlanRow()
         } else {
             SecondaryButton(stringResource(R.string.shift_example_review), onClick = onOpenReview)
         }
-        if (!GuidedPrograms.fastingShift21.isPublished) {
-            PlainButton(stringResource(R.string.program_read_sample), onClick = onOpenProgram)
-        } else {
-            GroupRow(stringResource(R.string.program_full_title), showChevron = true, onClick = onOpenProgram)
+        val program = GuidedPrograms.fastingShift21
+        when {
+            program.isPublished && ent.isShiftPlus ->
+                GroupRow(stringResource(R.string.program_full_title), showChevron = true, onClick = onOpenProgram)
+            program.freePreview != null ->
+                PlainButton(stringResource(R.string.program_read_day_one), onClick = onOpenProgram)
+            else -> PlainButton(stringResource(R.string.program_read_sample), onClick = onOpenProgram)
         }
 
         if (!ent.isShiftPlus) {
@@ -144,6 +149,9 @@ fun PaywallRoute(
                         store.offers.forEach { offer ->
                             PlanCard(offer, offer.id == selected.id, enabled = !busy) { chosenId = offer.id }
                         }
+                    }
+                    firstPaymentAfterTrial(selected)?.let { firstPrice ->
+                        Text(stringResource(R.string.shift_first_payment, firstPrice), style = MaterialTheme.typography.bodyMedium)
                     }
                     PrimaryButton(
                         stringResource(if (vm.action == StoreAction.PURCHASE) R.string.shift_opening_play else R.string.shift_continue_play),
@@ -171,7 +179,7 @@ fun PaywallRoute(
 @Composable
 private fun PlanCard(offer: PlanOffer, selected: Boolean, enabled: Boolean, onSelect: () -> Unit) {
     val label = stringResource(
-        when (offer.plan) {
+        if (offer.installments != null) R.string.shift_installment_plan else when (offer.plan) {
             PlanType.MONTHLY -> R.string.plan_monthly
             PlanType.ANNUAL -> R.string.plan_annual
             PlanType.LIFETIME -> R.string.plan_lifetime
@@ -246,12 +254,14 @@ data class ProgramState(
 
 @Composable
 fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel = hiltViewModel()) {
-    if (!GuidedPrograms.fastingShift21.isPublished) {
+    val program = GuidedPrograms.fastingShift21
+    if (!program.isPublished) {
         SecondaryScaffold(title = stringResource(R.string.program_preview_title), onBack = onBack) {
-            AppCard {
-                Text(stringResource(R.string.program_sample_title), style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(R.string.program_sample_body), style = MaterialTheme.typography.bodyLarge)
-                Text(stringResource(R.string.program_sample_prompt), style = MaterialTheme.typography.bodyLarge)
+            val firstDay = program.freePreview
+            if (firstDay != null) {
+                ProgramReadingCard(firstDay)
+            } else {
+                FreeReflection()
             }
             Text(stringResource(R.string.program_in_preparation), style = MaterialTheme.typography.bodyMedium)
         }
@@ -263,6 +273,7 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
         if (st == null) {
             LoadingBox()
         } else if (!st.available) {
+            program.freePreview?.let { ProgramReadingCard(it) }
             AppCard { Text(stringResource(R.string.program_locked), style = MaterialTheme.typography.bodyLarge) }
             PrimaryButton(stringResource(R.string.plan_see_plus), onClick = onUpgrade)
         } else if (!st.started) {
@@ -284,22 +295,44 @@ fun ProgramRoute(onBack: () -> Unit, onUpgrade: () -> Unit, vm: ProgramViewModel
                 st.finished -> AppCard { Text(stringResource(R.string.program_finished), style = MaterialTheme.typography.bodyLarge) }
                 st.today == null -> AppCard { Text(stringResource(R.string.program_come_back), style = MaterialTheme.typography.bodyLarge) }
                 else -> st.today?.let { day ->
-                    AppCard {
-                        Text(stringResource(R.string.program_day, day.day, day.title), style = MaterialTheme.typography.titleLarge)
-                        Text(day.lesson, style = MaterialTheme.typography.bodyLarge)
-                        day.targetHours?.let { target ->
-                            Text(
-                                pluralStringResource(R.plurals.program_target, target, target),
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
-                        day.chapter?.let { Text(stringResource(R.string.program_chapter, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    }
+                    ProgramReadingCard(day)
                     PrimaryButton(stringResource(R.string.program_complete), onClick = { vm.complete(day.day) }, haptic = true)
                 }
             }
             PlainButton(stringResource(R.string.program_stop), onClick = vm::stop, modifier = Modifier.align(Alignment.CenterHorizontally))
         }
+    }
+}
+
+@Composable
+private fun FreeReflection() {
+    AppCard {
+        Text(stringResource(R.string.program_excerpt), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.program_excerpt_credit), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    AppCard {
+        Text(stringResource(R.string.program_sample_title), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.program_sample_body), style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.program_sample_prompt), style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun ProgramReadingCard(day: ProgramDay) {
+    val reading = day.reading(LocalConfiguration.current.locales[0].language) ?: return
+    AppCard {
+        Text(stringResource(R.string.program_day, day.day, reading.title), style = MaterialTheme.typography.titleLarge)
+        Text(reading.lesson, style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.program_action_label), style = MaterialTheme.typography.titleSmall)
+        Text(reading.action, style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.program_reflection_label), style = MaterialTheme.typography.titleSmall)
+        Text(reading.reflection, style = MaterialTheme.typography.bodyLarge)
+        day.targetHours?.let { target ->
+            Text(pluralStringResource(R.plurals.program_target, target, target), style = MaterialTheme.typography.labelMedium)
+        }
+        Text(stringResource(R.string.program_chapter, reading.source), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

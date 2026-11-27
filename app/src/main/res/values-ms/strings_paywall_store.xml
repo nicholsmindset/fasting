@@ -28,4 +28,7 @@
     <string name="shift_commitment">Bilangan bayaran dalam komitmen awal: %1$d</string>
     <string name="shift_renewal_commitment">Bilangan bayaran bagi setiap komitmen pembaharuan: %1$d</string>
     <string name="shift_already_owned">Pembelian ini sudah ada di Google Play. Pilih Pulihkan pembelian untuk menyemak akses.</string>
+    <string name="shift_first_payment">Bayaran pertama anda selepas percubaan percuma ialah %1$s.</string>
+    <string name="shift_installment_plan">Ansuran bulanan</string>
+    <string name="shift_installment_interval">%1$s setiap %2$s. Pembatalan berkuat kuasa pada akhir tempoh komitmen semasa.</string>
 </resources>

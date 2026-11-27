@@ -18,6 +18,9 @@ import com.revenuecat.purchases.PurchasesException
 import com.revenuecat.purchases.PurchasesTransactionException
 import com.revenuecat.purchases.awaitCustomerInfo
 import com.revenuecat.purchases.awaitGetProducts
+import com.revenuecat.purchases.models.Period
+import com.revenuecat.purchases.models.PricingPhase
+import com.revenuecat.purchases.models.RecurrenceMode
 import com.revenuecat.purchases.models.StoreProduct
 import com.fastingshift.app.di.ApplicationScope
 import java.util.concurrent.ConcurrentHashMap
@@ -53,8 +56,50 @@ class PlanOffer private constructor(val plan: PlanType, internal val pkg: Packag
                 }
                 else -> null
             } ?: return null
-            return PlanOffer(plan, pkg)
+            val price = pkg.product.price
+            if (price.formatted.isBlank() || price.currencyCode.isBlank() || price.amountMicros <= 0L) return null
+            val offer = PlanOffer(plan, pkg)
+            if (plan == PlanType.LIFETIME) return offer
+            if (!hasCompleteSchedule(offer.phases, price.currencyCode)) return null
+            val base = offer.phases.last()
+            val installments = offer.installments
+            if (installments != null && (base.recurrenceMode != RecurrenceMode.INFINITE_RECURRING ||
+                    installments.renewalCommitmentPaymentsCount < 0)) return null
+            return offer.takeIf { matchesBillingInterval(plan, base.billingPeriod, installments?.commitmentPaymentsCount) }
         }
+    }
+}
+
+/** Classify the regular charge independently of any trial or introductory phases. */
+internal fun matchesBillingInterval(plan: PlanType, period: Period, installmentPayments: Int?): Boolean {
+    val monthly = period.unit == Period.Unit.MONTH && period.value == 1
+    if (installmentPayments != null) {
+        // Play installment plans charge monthly, even for an annual commitment.
+        return monthly && installmentPayments > 0 &&
+            (plan == PlanType.MONTHLY || (plan == PlanType.ANNUAL && installmentPayments == 12))
+    }
+    return when (plan) {
+        PlanType.MONTHLY -> monthly
+        PlanType.ANNUAL -> (period.unit == Period.Unit.YEAR && period.value == 1) ||
+            (period.unit == Period.Unit.MONTH && period.value == 12)
+        else -> false
+    }
+}
+
+/** A shopper must be able to read every charge before entering Play checkout. */
+internal fun hasCompleteSchedule(phases: List<PricingPhase>, currency: String): Boolean {
+    val base = phases.lastOrNull() ?: return false
+    if (base.price.amountMicros <= 0L ||
+        base.recurrenceMode !in setOf(RecurrenceMode.INFINITE_RECURRING, RecurrenceMode.NON_RECURRING)
+    ) return false
+    return phases.withIndex().all { (index, phase) ->
+        val price = phase.price
+        phase.billingPeriod.unit != Period.Unit.UNKNOWN && phase.billingPeriod.value > 0 &&
+            price.currencyCode == currency && price.amountMicros >= 0L &&
+            (price.amountMicros == 0L || price.formatted.isNotBlank()) &&
+            (price.amountMicros != 0L || index == 0) &&
+            (index == phases.lastIndex || (phase.recurrenceMode == RecurrenceMode.FINITE_RECURRING &&
+                (phase.billingCycleCount ?: 0) > 0))
     }
 }
 
@@ -73,7 +118,7 @@ interface PaywallStore {
     val entitlement: StateFlow<Entitlement>
     val loadedEntitlement: StateFlow<Entitlement?>
     val isConfigured: Boolean
-    suspend fun refresh(): Boolean
+    suspend fun refresh(fetchPolicy: CacheFetchPolicy = CacheFetchPolicy.default()): Boolean
     suspend fun offers(): List<PlanOffer>
     suspend fun purchase(activity: Activity, offer: PlanOffer): PurchaseOutcome
     suspend fun restore(): RestoreOutcome
@@ -113,10 +158,10 @@ class BillingManager @Inject constructor(
         }
     }
 
-    override suspend fun refresh(): Boolean {
+    override suspend fun refresh(fetchPolicy: CacheFetchPolicy): Boolean {
         if (!isConfigured) return false
         return try {
-            publish(Purchases.sharedInstance.awaitCustomerInfo())
+            publish(Purchases.sharedInstance.awaitCustomerInfo(fetchPolicy))
             true
         } catch (_: PurchasesException) {
             false

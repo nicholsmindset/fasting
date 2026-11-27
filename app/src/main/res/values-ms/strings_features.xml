@@ -97,7 +97,7 @@
 
     <!-- Timer additions -->
     <string name="timer_edit">Edit masa</string>
-    <string name="timer_check_in">Buat semakan</string>
+    <string name="timer_check_in">Semakan keselamatan</string>
     <string name="timer_custom">Tempoh tersuai</string>
     <string name="timer_program_target">Sasaran program hari ini: %1$dh</string>
     <string name="timeline_title">Apa yang mungkin berlaku</string>
@@ -146,9 +146,9 @@
     <string name="el_magnesium">Magnesium</string>
 
     <!-- Onboarding -->
-    <string name="onb_welcome_title">Selamat datang ke Fasting Shift</string>
-    <string name="onb_welcome_body">Pemasa puasa tanpa pendaftaran. Sejarah puasa anda disimpan pada telefon ini.</string>
-    <string name="onb_get_started">Mulakan</string>
+    <string name="onb_welcome_title">Apa yang anda ingin lakukan hari ini?</string>
+    <string name="onb_welcome_body">Pilih pilihan yang sesuai dengan rutin anda hari ini. Akaun tidak diperlukan.</string>
+    <string name="onb_get_started">Rancang untuk kemudian</string>
     <string name="onb_next">Seterusnya</string>
     <string name="onb_continue">Teruskan</string>
     <string name="onb_not_now">Bukan sekarang</string>
@@ -190,7 +190,7 @@
     <string name="onb_protocol_body">Anda boleh mengubahnya bila-bila masa. 16:8 ialah titik permulaan yang biasa.</string>
     <string name="onb_notif_title">Mahu peringatan apabila puasa anda tamat?</string>
     <string name="onb_notif_body">Dapatkan peringatan untuk puasa dan semakan anda. Anda boleh mengaktifkannya kemudian di bahagian Peringatan dalam Tetapan.</string>
-    <string name="onb_notif_allow">Benarkan pemberitahuan</string>
+    <string name="onb_notif_allow">Ingatkan saya apabila puasa bermula</string>
     <string name="onb_offer_title">Shift+ adalah pilihan</string>
     <string name="onb_offer_free_note">Pemasa, widget, semua protokol, sejarah, eksport dan semua ciri keselamatan adalah percuma selama-lamanya.</string>
     <string name="onb_offer_free">Teruskan secara percuma</string>

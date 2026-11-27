@@ -4,7 +4,7 @@
     <string name="settings_safety_reports">Keselamatan dan laporan</string>
     <string name="settings_reminders_summary">Masa dan penghantaran peringatan mula dan tamat</string>
     <string name="settings_fasting_summary">Tempoh makan, sasaran air, Ramadan dan sunah</string>
-    <string name="settings_privacy_summary">Perlindungan data, Health Connect dan sandaran</string>
+    <string name="settings_privacy_summary">Pilihan privasi, pemindahan sejarah dan sandaran</string>
     <string name="settings_safety_summary">Saringan, panduan berbuka dan laporan doktor</string>
     <string name="settings_fast_timing">Waktu puasa</string>
     <string name="settings_delivery">Penghantaran pemberitahuan</string>
@@ -19,4 +19,14 @@
     <string name="settings_alerts_enabled">%1$d aktif</string>
     <string name="settings_expanded">Dikembangkan</string>
     <string name="settings_collapsed">Dikecilkan</string>
+    <string name="settings_connections">Sambungan kesihatan</string>
+    <string name="settings_connections_summary">Penyegerakan Health Connect dan kebenaran untuk ringkasan</string>
+    <string name="settings_connections_provider">Health Connect</string>
+    <string name="settings_health_unavailable">Health Connect tidak tersedia pada peranti ini.</string>
+    <string name="settings_health_steps">Kiraan langkah adalah pilihan. Benarkan akses baca daripada ringkasan mingguan, secara berasingan daripada penyegerakan berat dan air. Untuk menarik balik akses, buka kebenaran apl dalam Health Connect.</string>
+    <string name="settings_health_store_error">Google Play tidak dapat dibuka. Cari Health Connect di Google Play.</string>
+    <string name="settings_timing_summary">Peringatan mula: %1$s · Peringatan tamat: %2$s</string>
+    <string name="settings_toggle_on">Hidup</string>
+    <string name="settings_health_permissions">Urus kebenaran Health Connect</string>
+    <string name="settings_health_settings_error">Buka Health Connect daripada tetapan Android untuk menyemak kebenaran.</string>
 </resources>

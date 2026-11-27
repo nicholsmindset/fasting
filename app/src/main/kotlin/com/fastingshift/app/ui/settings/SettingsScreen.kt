@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.health.connect.client.HealthConnectClient
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -222,7 +223,6 @@ internal fun SettingsRoute(
             },
         )
     }
-    val hcLauncher = rememberLauncherForActivityResult(vm.health.permissionContract()) { vm.onHealthPermissions(it) }
 
     msg?.let { m ->
         LaunchedEffect(m) {
@@ -244,6 +244,9 @@ internal fun SettingsRoute(
                         onOpenWeek = onOpenSchedules,
                         onAppearance = { sheet = SettingsSheet.APPEARANCE },
                         onSection = onOpenSection,
+                        timingSummary = stringResource(R.string.settings_timing_summary,
+                            stringResource(if (s.reminders.fastStartEnabled) R.string.settings_toggle_on else R.string.off),
+                            stringResource(if (s.reminders.fastEndEnabled) R.string.settings_toggle_on else R.string.off)),
                     )
                 }
                 if (sheet == null) SettingsBanner(vm.billing)
@@ -290,6 +293,7 @@ internal fun SettingsRoute(
 
                     SunnahSettingsGroup(s, vm, onOpenMuslimHub)
                 }
+                SettingsSection.CONNECTIONS -> HealthConnectionGroup(vm, s.healthConnectSync)
                 SettingsSection.PRIVACY -> {
                     InsetGroup {
                         GroupRow(stringResource(R.string.trust_row), showChevron = true, onClick = onOpenTrust)
@@ -301,23 +305,6 @@ internal fun SettingsRoute(
                             s.annualRecapsShared, s.annualRecapsViewed, s.weeklyRecapsShared, s.weeklyRecapsViewed))
                         GroupDivider()
                         SwitchGroupRow(stringResource(R.string.settings_hide_weight), s.hideWeight, { v -> vm.set { setHideWeight(v) } })
-                        if (vm.health.isAvailable()) {
-                            GroupDivider()
-                            SwitchGroupRow(
-                                stringResource(R.string.settings_health_connect),
-                                s.healthConnectSync,
-                                { on -> if (on) hcLauncher.launch(vm.health.permissions) else vm.set { setHealthConnectSync(false) } },
-                                subtitle = stringResource(R.string.settings_hc_note),
-                            )
-                        } else if (vm.health.needsProviderUpdate()) {
-                            // Health Connect is installed but too old to use: offer the Play Store update.
-                            GroupDivider()
-                            GroupRow(
-                                stringResource(R.string.settings_hc_update),
-                                showChevron = true,
-                                onClick = { runCatching { context.startActivity(vm.health.providerUpdateIntent()) } },
-                            )
-                        }
                         GroupDivider()
                         AdPrivacyChoices { vm.message.value = R.string.ad_privacy_unavailable }
                         GroupRow(stringResource(R.string.settings_privacy_policy), showChevron = true, onClick = {
@@ -399,6 +386,45 @@ internal fun SettingsRoute(
             onDismiss = { sheet = null },
         )
         null -> Unit
+    }
+}
+
+@Composable
+private fun HealthConnectionGroup(vm: SettingsViewModel, sync: Boolean) {
+    val context = LocalContext.current
+    var refresh by remember { mutableStateOf(0) }
+    var available by remember { mutableStateOf(vm.health.isAvailable()) }
+    var updateRequired by remember { mutableStateOf(vm.health.needsProviderUpdate()) }
+    var permissions by remember { mutableStateOf<Boolean?>(null) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh++ }
+    LaunchedEffect(refresh) {
+        available = vm.health.isAvailable()
+        updateRequired = vm.health.needsProviderUpdate()
+        permissions = available && vm.health.hasAllPermissions()
+    }
+    val launcher = rememberLauncherForActivityResult(vm.health.permissionContract()) {
+        permissions = it.containsAll(vm.health.permissions)
+        vm.onHealthPermissions(it)
+    }
+    InsetGroup(header = stringResource(R.string.settings_connections_provider),
+        footer = if (available) stringResource(R.string.settings_health_steps) else null) {
+        when {
+            available -> {
+                SwitchGroupRow(stringResource(R.string.settings_health_connect), sync && permissions != false,
+                    { enable -> if (enable) launcher.launch(vm.health.permissions) else vm.set { setHealthConnectSync(false) } },
+                    subtitle = stringResource(R.string.settings_hc_note))
+                GroupDivider()
+                GroupRow(stringResource(R.string.settings_health_permissions), showChevron = true, onClick = {
+                    runCatching { context.startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
+                        .onFailure { vm.message.value = R.string.settings_health_settings_error }
+                })
+            }
+            updateRequired -> GroupRow(stringResource(R.string.settings_hc_update), showChevron = true, onClick = {
+                runCatching { context.startActivity(vm.health.providerUpdateIntent()) }
+                    .onFailure { vm.message.value = R.string.settings_health_store_error }
+            })
+            else -> GroupRow(stringResource(R.string.settings_health_unavailable))
+        }
     }
 }
 

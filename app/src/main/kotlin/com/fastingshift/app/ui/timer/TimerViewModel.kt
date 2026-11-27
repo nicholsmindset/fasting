@@ -1,5 +1,6 @@
 package com.fastingshift.app.ui.timer
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fastingshift.app.alarm.eligibleSchedules
@@ -51,6 +52,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,6 +100,7 @@ data class TimerUiState(
     val earlierPlannedStartToday: Instant? = null,
     val showFirstPlan: Boolean = false,
     val firstPlan: FirstPlanWindow? = null,
+    val onlyFastId: Long? = null,
     val startRemindersEnabled: Boolean = true,
 ) {
     val selectedTargetEnd: Instant get() = (startAt ?: now).plus(Duration.ofHours(selected.fastHours.toLong()))
@@ -119,6 +122,7 @@ data class TimerEvents(
     val blocked: BlockReason? = null,
     /** A fast just ended from this screen: offer Undo. */
     val ended: Fast? = null,
+    val undoFailed: Boolean = false,
     val refeeding: RefeedingNav? = null,
     val invalidStart: Boolean = false,
     val message: Int? = null,
@@ -137,10 +141,12 @@ class TimerViewModel @Inject constructor(
     private val clock: Clock,
     schedules: ScheduleRepository,
     freezes: StreakFreezeRepository,
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
 
     private val selected = MutableStateFlow<Protocol?>(null)
     private val startAt = MutableStateFlow<Instant?>(null)
+    private var ending: Job? = null
     private val _events = MutableStateFlow(TimerEvents())
     val events: StateFlow<TimerEvents> = _events
 
@@ -218,7 +224,7 @@ class TimerViewModel @Inject constructor(
         } else d.schedules
         val eligible = eligibleSchedules(applicable, s.maxHours?.let { Duration.ofHours(it.toLong()) })
         val plan = appSettings.planHistory
-        val firstPlan = firstEvening?.takeIf { all.isEmpty() && !it.second.isBefore(todayDate) }?.let { (id, date) ->
+        val firstPlan = firstEvening?.takeIf { all.isEmpty() }?.let { (id, date) ->
             val occurrence = ScheduleCalculator.startsOn(eligible, date, zone, plan.breakWeeks, plan.dayOverrides, firstEvening)
                 .firstOrNull { it.first.id == id }
             occurrence?.let { (schedule, start) -> Presets.byId(schedule.protocolId)?.let { FirstPlanWindow(start, it) } }
@@ -256,6 +262,7 @@ class TimerViewModel @Inject constructor(
             plannedStart = plannedStart, startReminder = candidate.takeIf { appSettings.reminders.fastStartEnabled },
             earlierPlannedStartToday = earlierPlannedStartToday,
             firstPlan = firstPlan,
+            onlyFastId = all.singleOrNull()?.id,
             selected = selected.value ?: firstPlan?.protocol ?: s.selected,
             showFirstPlan = firstPlan != null || (plannedStart == null &&
                 FirstWeekRules.showFirstFastCard(all.isNotEmpty(), s.gate, s.clinicianAcknowledged, s.selected)),
@@ -264,6 +271,16 @@ class TimerViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
+        savedState.get<Long>(SAVED_SUMMARY_ID)?.let { id ->
+            viewModelScope.launch {
+                val latest = fasts.getAll().maxByOrNull { it.startAt }
+                if (savedState.get<Long>(SAVED_SUMMARY_ID) == id) {
+                    if (latest != null && latest.id == id && !latest.isActive) {
+                        _events.update { it.copy(ended = latest) }
+                    } else consumeEnded()
+                }
+            }
+        }
         // A long fast ended elsewhere (widget, notification): show its refeeding guidance once.
         viewModelScope.launch {
             settings.settings.map { it.pendingRefeedingFastId }.distinctUntilChanged().filterNotNull().collect { id ->
@@ -309,19 +326,23 @@ class TimerViewModel @Inject constructor(
     }
 
     fun end() {
-        viewModelScope.launch {
+        if (ending?.isActive == true) return
+        ending = viewModelScope.launch {
             val result = service.endActive() ?: return@launch
             val tier = result.refeeding
-            _events.update {
-                if (tier != null) it.copy(refeeding = RefeedingNav(tier, result.fast.id)) else it.copy(ended = result.fast)
+            if (tier != null) {
+                _events.update { it.copy(refeeding = RefeedingNav(tier, result.fast.id)) }
+            } else {
+                savedState[SAVED_SUMMARY_ID] = result.fast.id
+                _events.update { it.copy(ended = result.fast, undoFailed = false) }
             }
         }
     }
 
     fun undoEnd(fast: Fast) {
-        _events.update { it.copy(ended = null) }
         viewModelScope.launch {
-            if (!service.undoEnd(fast)) _events.update { it.copy(message = R.string.timer_undo_failed) }
+            if (service.undoEnd(fast)) consumeEnded()
+            else _events.update { it.copy(undoFailed = true) }
         }
     }
 
@@ -345,7 +366,11 @@ class TimerViewModel @Inject constructor(
         _events.update { it.copy(message = R.string.quick_electrolyte_added) }
     }
 
-    fun consumeEnded() = _events.update { it.copy(ended = null) }
+    fun consumeEnded() {
+        savedState.remove<Long>(SAVED_SUMMARY_ID)
+        _events.update { it.copy(ended = null, undoFailed = false) }
+    }
+    private companion object { const val SAVED_SUMMARY_ID = "timer.saved_summary_id" }
     fun consumeRefeeding() = _events.update { it.copy(refeeding = null) }
     fun consumeMessage() = _events.update { it.copy(message = null) }
     fun dismissDialogs() = _events.update { it.copy(confirm = null, blocked = null, invalidStart = false) }
