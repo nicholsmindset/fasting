@@ -21,6 +21,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -208,6 +209,7 @@ class AppFlowTest {
             waitFor(s(R.string.tab_history))
             click(s(R.string.tab_history))
             val insights = s(R.string.history_insights)
+            compose.waitUntil(15_000) { compose.onAllNodesWithTag("history-list").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithTag("history-list").performScrollToNode(hasText(insights))
             click(insights)
             val reviewLabel = if (BuildConfig.INTERNAL_REVIEW_INSIGHTS) R.string.review_period else R.string.review_example_label
@@ -231,9 +233,10 @@ class AppFlowTest {
             compose.onNodeWithTag("settings_open_plan").performScrollTo().performClick()
             waitFor(s(R.string.plan_see_plus))
             click(s(R.string.plan_see_plus))
-            waitFor(s(R.string.shift_example_review))
-            click(s(R.string.shift_example_review))
-            waitFor(s(R.string.review_example_label))
+            val reviewAction = s(if (BuildConfig.INTERNAL_REVIEW_INSIGHTS) R.string.shift_open_review else R.string.shift_example_review)
+            waitFor(reviewAction)
+            click(reviewAction)
+            waitFor(s(if (BuildConfig.INTERNAL_REVIEW_INSIGHTS) R.string.review_period else R.string.review_example_label))
             compose.onNodeWithContentDescription(s(R.string.navigate_up)).performClick()
             waitFor(s(R.string.program_read_sample))
             click(s(R.string.program_read_sample))

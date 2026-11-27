@@ -98,6 +98,39 @@ class PartnerScreen:
             time.sleep(0.15)
         raise AssertionError(f"{self.package} did not enable {tag}")
 
+    def join_week(self):
+        # After the keyboard closes, the bottom edge of Join can enter the
+        # accessibility tree before a physical tap can reach it.
+        button = self.locate("partner_join")
+        _, height = self.device.window_size()
+        previous = None
+        before_scroll = None
+        deadline = time.monotonic() + 12
+        while time.monotonic() < deadline:
+            info = button.info if button.exists else {}
+            bounds = info.get("visibleBounds")
+            if bounds:
+                middle = (bounds["top"] + bounds["bottom"]) // 2
+                if middle > height * 0.82 and bounds != before_scroll:
+                    before_scroll = bounds
+                    self.device.swipe_ext("up", scale=0.35)
+                    previous = None
+                    continue
+                if (info.get("enabled") and bounds == previous and 0 < middle < height * 0.95
+                        and bounds["bottom"] - bounds["top"] >= 24):
+                    self.device.click((bounds["left"] + bounds["right"]) // 2, middle)
+                    break
+            previous = bounds
+            time.sleep(0.2)
+        else:
+            raise AssertionError("Join did not settle inside the guest's visible form")
+        try:
+            self.locate("partner_leave")
+        except AssertionError as error:
+            # Only the count is printed. Never log an invite or device credential.
+            guests = fixture_query("SELECT count(*) FROM fasting_partners.members WHERE seat='guest'")
+            raise AssertionError(f"Guest did not reach the joined week after one tap; stored guests: {guests}") from error
+
     def edit(self, tag, text=None):
         self.tap(tag)
         field = self.device(packageName=self.package, className="android.widget.EditText", focused=True)
@@ -280,8 +313,7 @@ def invite(host, guest, observer, supporter):
         raise AssertionError("Invitation preview did not identify the host")
     guest.edit("partner_alias", "Jamie")
     guest.tap("partner_supporter" if supporter else "partner_participant")
-    guest.tap("partner_join")
-    guest.locate("partner_leave")
+    guest.join_week()
 
     # Ordinary invitation preview by an unpaired install after redemption.
     observer.tap("partner_preview")
