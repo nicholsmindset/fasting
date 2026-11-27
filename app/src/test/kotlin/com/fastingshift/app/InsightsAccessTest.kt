@@ -16,13 +16,36 @@ import kotlin.test.assertNull
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
 
 class InsightsAccessTest {
+    @Test fun installedVariantGivesItsExpectedAccessToAFreeTester() = runBlocking {
+        val internalReviewBuild = BuildConfig.BUILD_TYPE == "playInternalReview"
+        assertEquals(internalReviewBuild, BuildConfig.INTERNAL_REVIEW_INSIGHTS)
+        if (internalReviewBuild) {
+            assertEquals("", BuildConfig.REVENUECAT_API_KEY)
+            assertEquals(false, BuildConfig.ADS_ENABLED)
+        }
+        val result = withTimeout(10_000) {
+            insightStates(
+                entitlements = flowOf(Entitlement.FREE),
+                settings = flowOf(AppSettings(hideWeight = true)),
+                fasts = { flowOf(emptyList()) },
+                weights = { error("Hidden weight should never be queried") },
+                clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+                internalReview = BuildConfig.INTERNAL_REVIEW_INSIGHTS,
+            ).first()
+        }
+        assertEquals(internalReviewBuild, result is InsightsState.Personal)
+        assertEquals(!internalReviewBuild, result is InsightsState.Example)
+    }
+
     @Test fun freePreviewNeverSubscribesToPersonalRecordsAndHideWeightSkipsTheWeightQuery() = runBlocking {
         withTimeout(10_000) {
             val access = MutableStateFlow(Entitlement.FREE)

@@ -42,6 +42,7 @@ android {
         val revenueCatKey = (project.findProperty("revenuecat.apiKey") as String?).orEmpty()
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatKey\"")
         buildConfigField("boolean", "USE_PILOT_INVITES", "false")
+        buildConfigField("boolean", "INTERNAL_REVIEW_INSIGHTS", "false")
         buildConfigField("String", "PARTNER_ENDPOINT", "\"$partnerEndpoint\"")
         manifestPlaceholders["admobAppId"] = testAdsAppId
         buildConfigField("String", "SETTINGS_BANNER_ID", "\"$testBannerId\"")
@@ -77,6 +78,14 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        // Same Play package as release, with personal Insights open to internal testers.
+        create("playInternalReview") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+            buildConfigField("boolean", "INTERNAL_REVIEW_INSIGHTS", "true")
+            buildConfigField("String", "REVENUECAT_API_KEY", "\"\"")
+            buildConfigField("boolean", "ADS_ENABLED", "false")
         }
         // Installable test build: release optimisations, signed with the debug key, separate
         // app id and name so it can sit next to the Play build. Never upload this to Play.

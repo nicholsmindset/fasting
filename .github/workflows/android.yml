@@ -41,6 +41,16 @@ jobs:
           JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
         run: ./gradlew :core:data:testDebugUnitTest :app:testDebugUnitTest
 
+      - name: Verify access in the free Play internal review build
+        if: github.event_name == 'pull_request'
+        env:
+          JAVA_TOOL_OPTIONS: -Drobolectric.dependency.repo.url=https://maven-central.storage-download.googleapis.com/maven2
+        run: |
+          ./gradlew :app:testPlayInternalReviewUnitTest \
+            --tests '*InsightsAccessTest' \
+            --tests '*AppFlowTest.historyOpensTheReviewAvailableToThisBuildWithoutAPurchase' \
+            --tests '*AppFlowTest.freeReaderCanOpenReflectionEvenWithAnOldEnrollment'
+
       - name: Preserve failed recap share diagnostics
         if: failure() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
