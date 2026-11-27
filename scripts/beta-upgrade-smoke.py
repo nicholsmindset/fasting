@@ -171,7 +171,7 @@ class Screen:
             time.sleep(0.25)
         raise AssertionError(f"Onboarding did not reach {destination}")
 
-    def onboard(self, destination, allow_notifications):
+    def reach_protocol(self):
         self.click("onb_get_started")
         # The baseline first opened a mandatory tour. On newer APKs the same
         # primary action goes straight to Goal; the tour is a separate choice.
@@ -187,6 +187,9 @@ class Screen:
             fields[index].set_text(value)
         self.advance_onboarding("onb_screen_title", "onb_ok_title")
         self.advance_onboarding("onb_ok_title", "onb_protocol_title")
+
+    def onboard(self, destination, allow_notifications):
+        self.reach_protocol()
         if "first_plan_title" in self.strings:
             self.advance_onboarding("onb_protocol_title", "first_plan_title")
             self.click("first_plan_leave_open", scroll=True)
@@ -205,10 +208,13 @@ class Screen:
         self.onboard("tab_timer", allow_notifications=True)
         self.click("timer_start", scroll=True)
         self.click("timer_end", scroll=True)
-        self.find("summary_title_early")
-        self.click("save", scroll=True)
+        self.close_saved_fast()
         self.click("timer_start", scroll=True)
         self.find("timer_end", scroll=True)
+
+    def close_saved_fast(self):
+        self.find("summary_title_early")
+        self.click("today_back" if "today_back" in self.strings else "save", scroll=True)
 
     def settings_overview(self):
         return self.device(resourceId="settings_overview", packageName=PACKAGE)
@@ -717,8 +723,7 @@ class Screen:
                 raise AssertionError(f"Restoring the backup changed the {key} setting")
         self.device(resourceId="tab_timer", packageName=PACKAGE).click(timeout=15)
         self.click("timer_end", scroll=True)
-        self.find("summary_title_early")
-        self.click("save", scroll=True)
+        self.close_saved_fast()
         self.find("timer_start", scroll=True)
         self.device(resourceId="tab_history", packageName=PACKAGE).click(timeout=15)
         self.find_node(self.device(resourceId="history-list", packageName=PACKAGE), "History")

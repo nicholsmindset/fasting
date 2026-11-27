@@ -82,6 +82,10 @@ import com.fastingshift.app.ui.design.GroupDivider
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
 import com.fastingshift.app.ui.design.NicholsMark
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import com.fastingshift.app.ui.firstweek.FirstWeekRules
+import com.fastingshift.app.ui.firstweek.FirstWindowTimes
 import com.fastingshift.app.ui.firstweek.FirstPlanTimeFields
 import com.fastingshift.app.ui.safety.ChecklistDialog
 import com.fastingshift.app.ui.settings.WelcomeHistoryImport
@@ -104,6 +108,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun OnboardingRoute(onFinished: () -> Unit, vm: OnboardingViewModel = hiltViewModel()) {
     val st by vm.state.collectAsStateWithLifecycle()
+    val ready by vm.ready.collectAsStateWithLifecycle()
+    if (!ready) return
     val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.completeNotifications() }
     if (st.step == Step.COMPLETE) {
         LaunchedEffect(vm) { vm.finish(onFinished) }
@@ -128,8 +134,13 @@ fun OnboardingRoute(onFinished: () -> Unit, vm: OnboardingViewModel = hiltViewMo
                 modifier = Modifier.weight(1f),
             ) { step ->
                 when (step) {
-                    Step.WELCOME -> Welcome(onStart = vm::openGoal, onTour = vm::openTour)
-                    Step.INTRO -> Intro(onSkip = vm::openGoal, onDone = vm::openGoal)
+                    Step.WELCOME -> Welcome(
+                        onStart = { vm.openGoal(FirstIntent.START_NOW) }, onPlan = { vm.openGoal() }, onTour = vm::openTour,
+                    )
+                    Step.INTRO -> Intro(
+                        example = FirstWeekRules.nextEvening(vm.now(), ZoneId.systemDefault()),
+                        onSetup = { vm.openGoal() },
+                    )
                     Step.GOAL -> GoalStep(st, vm)
                     Step.SCREENING -> ScreeningForm(st, vm)
                     Step.RESULT -> Result(st, vm, onFinished)
@@ -223,28 +234,29 @@ private fun CenteredHero(icon: ImageVector, title: Int, body: Int?, container: a
 }
 
 @Composable
-private fun Welcome(onStart: () -> Unit, onTour: () -> Unit) {
-    StepPage(actions = {
-        PrimaryButton(stringResource(R.string.onb_get_started), onClick = onStart, haptic = true)
-        PlainButton(stringResource(R.string.onb_open_tour), onClick = onTour, modifier = Modifier.fillMaxWidth())
-    }) {
-        Column(
-            Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Box {
-                WelcomeArt()
-                NicholsMark(Modifier.align(Alignment.TopStart).padding(12.dp).size(36.dp), compact = true)
-            }
-            Text(stringResource(R.string.onb_welcome_title), style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
-            Text(stringResource(R.string.onb_welcome_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+private fun Welcome(onStart: () -> Unit, onPlan: () -> Unit, onTour: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        StepTitle(R.string.onb_welcome_title, R.string.onb_welcome_body)
+        InsetGroup {
+            GroupRow(stringResource(R.string.onb_intent_now), subtitle = stringResource(R.string.onb_intent_now_detail),
+                showChevron = true, onClick = onStart)
+            GroupDivider()
+            GroupRow(stringResource(R.string.onb_get_started), subtitle = stringResource(R.string.onb_intent_later_detail),
+                showChevron = true, onClick = onPlan)
+            GroupDivider()
+            GroupRow(stringResource(R.string.onb_open_tour), subtitle = stringResource(R.string.onb_intent_explore_detail),
+                showChevron = true, onClick = onTour)
         }
         WelcomeHistoryImport()
-        Text(
-            stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
-        )
+        Box {
+            WelcomeArt()
+            NicholsMark(Modifier.align(Alignment.TopStart).padding(12.dp).size(36.dp), compact = true)
+        }
+        Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -258,7 +270,7 @@ private val introPages = listOf(
 
 /** "How Fasting Shift works": three swipeable pages with dots, Next and Skip. */
 @Composable
-private fun Intro(onSkip: () -> Unit, onDone: () -> Unit) {
+private fun Intro(example: ZonedDateTime, onSetup: () -> Unit) {
     val pager = rememberPagerState { introPages.size }
     val scope = rememberCoroutineScope()
     val haptics = rememberHaptics()
@@ -269,7 +281,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit) {
                 stringResource(R.string.onb_intro_heading), style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).semantics { heading() },
             )
-            PlainButton(stringResource(R.string.onb_skip), onClick = onSkip)
+            if (!last) PlainButton(stringResource(R.string.onb_skip), onClick = onSetup)
         }
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { i ->
             val page = introPages[i]
@@ -278,18 +290,25 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
             ) {
-                HeroIcon(page.icon, size = 112.dp)
+                if (i != 0) HeroIcon(page.icon, size = 112.dp)
                 Text(stringResource(page.title), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                 Text(stringResource(page.body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                if (i == 0) {
+                    InsetGroup(header = stringResource(R.string.onb_sample_window)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FirstWindowTimes(example, Presets.W12_12)
+                        }
+                    }
+                }
             }
         }
         PageDots(pager.currentPage, introPages.size, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 16.dp))
         Box(Modifier.padding(start = Spacing.screen, end = Spacing.screen, bottom = 16.dp)) {
             PrimaryButton(
-                stringResource(if (last) R.string.onb_continue else R.string.onb_next),
+                stringResource(if (last) R.string.onb_skip else R.string.onb_next),
                 onClick = {
                     if (last) {
-                        onDone()
+                        onSetup()
                     } else {
                         haptics.tick()
                         scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
@@ -460,24 +479,36 @@ private fun FirstPlanStep(st: OnboardingState, vm: OnboardingViewModel) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.screen, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        StepTitle(R.string.first_plan_title, R.string.first_plan_body)
-        FirstPlanTimeFields(now = now, protocol = st.selected, start = st.firstStart, onPick = vm::pickFirstStart)
+        val immediate = st.intent == FirstIntent.START_NOW
+        val expired = st.firstStart?.let { it.toInstant() <= now || it.zone.rules != ZoneId.systemDefault().rules } == true
+        if (immediate) {
+            StepTitle(R.string.first_plan_now_title, R.string.first_plan_now_body)
+            FirstWindowTimes(now.atZone(ZoneId.systemDefault()), st.selected)
+        } else {
+            StepTitle(R.string.first_plan_title, R.string.first_plan_body)
+            FirstPlanTimeFields(now = now, protocol = st.selected, start = st.firstStart, onPick = vm::pickFirstStart)
+            if (expired) Text(stringResource(R.string.first_plan_expired), style = MaterialTheme.typography.bodyMedium)
+        }
         st.planError?.let { message ->
             Text(
                 stringResource(message), color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        PrimaryButton(
-            stringResource(R.string.first_plan_schedule),
-            onClick = {
-                val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                vm.saveFirstPlan(offerNotifications = needsPermission)
-            },
-            enabled = !st.busy && st.firstStart != null,
-        )
-        SecondaryButton(stringResource(R.string.first_plan_start), onClick = { vm.startFirstFast() }, enabled = !st.busy)
+        if (immediate) {
+            PrimaryButton(stringResource(R.string.first_plan_start), onClick = { vm.startFirstFast() }, enabled = !st.busy)
+        } else {
+            PrimaryButton(
+                stringResource(R.string.first_plan_schedule),
+                onClick = {
+                    val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    vm.saveFirstPlan(offerNotifications = needsPermission)
+                },
+                enabled = !st.busy && st.firstStart != null && !expired,
+            )
+            if (expired) SecondaryButton(stringResource(R.string.onb_intent_now), onClick = vm::reviewStartNow, enabled = !st.busy)
+        }
         PlainButton(stringResource(R.string.first_plan_leave_open), onClick = vm::leaveFirstPlanOpen, modifier = Modifier.fillMaxWidth())
     }
     st.checklist?.let { requirements ->

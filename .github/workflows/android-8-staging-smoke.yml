@@ -4,6 +4,8 @@ on:
     paths:
       - 'app/src/main/kotlin/com/fastingshift/app/alarm/**'
       - 'app/src/main/kotlin/com/fastingshift/app/ui/timer/**'
+      - 'app/src/main/kotlin/com/fastingshift/app/ui/onboarding/**'
+      - 'app/src/main/kotlin/com/fastingshift/app/ui/firstweek/**'
       - 'core/domain/src/main/kotlin/com/fastingshift/domain/timer/**'
       - 'core/domain/src/main/kotlin/com/fastingshift/domain/reminders/**'
       - 'scripts/beta-upgrade-smoke.py'

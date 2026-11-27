@@ -52,7 +52,7 @@ class PaywallViewModel internal constructor(private val billing: PaywallStore) :
             storefront = try {
                 // An active subscriber must not be offered the same subscription while we are
                 // still waiting for their first entitlement check.
-                if (!billing.refresh() && billing.loadedEntitlement.value == null) {
+                if (!billing.refresh() || billing.loadedEntitlement.value == null) {
                     Storefront.Failed
                 } else {
                     val offers = billing.offers()

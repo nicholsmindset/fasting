@@ -7,10 +7,12 @@ import com.fastingshift.app.ui.firstweek.EveningOffer
 import com.fastingshift.app.ui.firstweek.FastSummaryViewModel
 import com.fastingshift.app.ui.firstweek.FirstFastPlanner
 import com.fastingshift.app.ui.firstweek.FirstWeekRules
+import com.fastingshift.app.ui.onboarding.FirstIntent
 import com.fastingshift.app.ui.onboarding.OnboardingViewModel
 import com.fastingshift.app.ui.onboarding.recommendedProtocol
 import com.fastingshift.app.ui.onboarding.Step
 import com.fastingshift.app.ui.onboarding.stepProgress
+import com.fastingshift.data.settings.SetupDraft
 import com.fastingshift.data.repo.LogRepository
 import com.fastingshift.data.repo.ScheduleRepository
 import com.fastingshift.domain.coaching.CoachingTip
@@ -60,6 +62,7 @@ class FirstWeekTest {
     @Inject lateinit var fasts: FastRepository
     @Inject lateinit var service: FastService
     @Inject lateinit var logs: LogRepository
+    @Inject lateinit var checkins: com.fastingshift.data.repo.SymptomCheckinRepository
     @Inject lateinit var schedules: ScheduleRepository
     @Inject lateinit var settings: com.fastingshift.data.settings.SettingsRepository
     @Inject lateinit var planner: FirstFastPlanner
@@ -191,6 +194,74 @@ class FirstWeekTest {
         assertEquals(Step.WELCOME, restored.state.value.step)
     }
 
+    @Test fun exploringIsReadOnlyAndReturningToSetupKeepsTheScreeningGate() {
+        val handle = SavedStateHandle(mapOf("step" to Step.WELCOME.name))
+        val vm = OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts)
+        vm.openTour()
+        vm.startFirstFast()
+        vm.saveFirstPlan(offerNotifications = true)
+        vm.submitScreening()
+        vm.finish { error("A preview cannot finish onboarding") }
+        assertEquals(Step.INTRO, vm.state.value.step)
+        assertEquals(FirstIntent.EXPLORE, vm.state.value.intent)
+        assertNull(runBlocking { screening.getLatest() })
+        assertNull(runBlocking { fasts.getActive() })
+        assertNull(planner.planned())
+        assertFalse(runBlocking { settings.current().onboardingComplete })
+        vm.back()
+        vm.openGoal(FirstIntent.START_NOW)
+        vm.setGoal(Goal.CONSISTENCY)
+        vm.continueFromGoal()
+        vm.startFirstFast()
+        assertEquals(Step.SCREENING, vm.state.value.step)
+        shadowOf(Looper.getMainLooper()).idle()
+        val retained = SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) })
+        val restored = OnboardingViewModel(screening, settings, clock, retained, planner, service, fasts)
+        assertEquals(FirstIntent.START_NOW, restored.state.value.intent)
+        assertEquals(Step.SCREENING, restored.state.value.step)
+    }
+
+    @Test fun aColdLaunchRestoresTheDatedDraftWithoutStartingOrSchedulingIt() {
+        val time = FirstWeekRules.nextStartAt(clock.instant(), LocalTime.of(21, 30), ZoneId.systemDefault())
+        runBlocking {
+            settings.setOnboardingComplete(false)
+            recordScreening(GateResult.OK)
+            settings.saveSetupDraft(SetupDraft(Step.FIRST_PLAN.name, FirstIntent.PLAN_LATER.name,
+                Goal.CONSISTENCY, Presets.W14_10.id, time.toString(), false))
+        }
+        val vm = OnboardingViewModel(screening, settings, clock, SavedStateHandle(), planner, service, fasts)
+        await { vm.ready.value.takeIf { it } }
+        assertEquals(Step.FIRST_PLAN, vm.state.value.step)
+        assertEquals(time, vm.state.value.firstStart)
+        assertEquals(Presets.W14_10, vm.state.value.selected)
+        vm.startFirstFast()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertNull(runBlocking { fasts.getActive() })
+        assertNull(planner.planned())
+        val edited = time.plusMinutes(10)
+        vm.pickFirstStart(edited)
+        await { runBlocking { settings.current().setupDraft?.start }.takeIf { it == edited.toString() } }
+        runBlocking { settings.setOnboardingComplete(true) }
+        assertNull(runBlocking { settings.current().setupDraft })
+    }
+
+    @Test fun aColdLaunchWithABlockedScreeningNeverRestoresAnActionableWindow() {
+        runBlocking {
+            settings.setOnboardingComplete(false)
+            val answers = ScreeningAnswers(16, false, false, false, emptySet(), 170.0, 70.0)
+            screening.save(ScreeningRecord(clock.instant(), answers, GateResult.BLOCK, false))
+            settings.saveSetupDraft(SetupDraft(Step.FIRST_PLAN.name, FirstIntent.START_NOW.name,
+                Goal.CONSISTENCY, Presets.W14_10.id, null, false))
+        }
+        val vm = OnboardingViewModel(screening, settings, clock, SavedStateHandle(), planner, service, fasts)
+        await { vm.ready.value.takeIf { it } }
+        assertEquals(Step.RESULT, vm.state.value.step)
+        assertEquals(GateResult.BLOCK, vm.state.value.outcome?.result)
+        vm.startFirstFast()
+        assertNull(runBlocking { fasts.getActive() })
+        assertNull(planner.planned())
+    }
+
     @Test fun restoredPaidOfferFinishesSetupAndMissingAnswersReturnToScreening() {
         fun restored(step: String, weight: String = "70"): OnboardingViewModel {
             val handle = SavedStateHandle(mapOf("step" to step, "age" to "40", "height" to "175", "weight" to weight))
@@ -209,7 +280,7 @@ class FirstWeekTest {
         val saved = runBlocking {
             fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8").end(Instant.now()))
         }
-        val vm = FastSummaryViewModel(logs, service, clock)
+        val vm = FastSummaryViewModel(logs, checkins, service, clock)
         vm.bind(saved)
         vm.setMood(4)
         vm.setNote("  Felt calm  ")
@@ -222,7 +293,7 @@ class FirstWeekTest {
     }
 
     @Test fun tappingTheSameMoodClearsIt() {
-        val vm = FastSummaryViewModel(logs, service, clock)
+        val vm = FastSummaryViewModel(logs, checkins, service, clock)
         vm.setMood(2)
         vm.setMood(2)
         assertNull(vm.mood.value)

@@ -3,15 +3,18 @@ package com.fastingshift.app
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.res.Configuration
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.billing.PaywallStore
 import com.fastingshift.app.billing.PlanOffer
 import com.fastingshift.app.billing.PurchaseOutcome
 import com.fastingshift.app.billing.RestoreOutcome
+import com.fastingshift.app.billing.hasCompleteSchedule
 import com.fastingshift.app.billing.transactionOutcome
 import com.fastingshift.app.ui.plus.PaywallViewModel
 import com.fastingshift.app.ui.plus.Storefront
+import com.fastingshift.app.ui.plus.firstPaymentAfterTrial
 import com.fastingshift.app.ui.plus.offerTerms
 import com.fastingshift.app.ui.plus.phaseTerms
 import com.fastingshift.domain.billing.Entitlement
@@ -112,6 +115,13 @@ class PaywallStoreTest {
         vm.reload()
         runCurrent()
         assertTrue(vm.storefront is Storefront.Ready)
+        store.canRefresh = false
+        vm.reload()
+        runCurrent()
+        assertEquals(Storefront.Failed, vm.storefront)
+        vm.purchase(Activity(), store.offers.single())
+        runCurrent()
+        assertEquals(0, store.purchaseRequests)
     }
 
     @Test fun oneTransactionAtATimeAndCancellationIsQuiet() = runTest(dispatcher) {
@@ -158,7 +168,9 @@ class PaywallStoreTest {
     }
 
     @Test fun playOffersKeepTrialIntroRenewalAndNonRenewingTermsDistinct() {
-        val lines = offerTerms(annual(), Locale.US, res)
+        val offer = annual()
+        assertEquals("S$2.00", firstPaymentAfterTrial(offer))
+        val lines = offerTerms(offer, Locale.US, res)
         assertEquals(3, lines.size)
         assertTrue(lines[0].contains("1 week"))
         assertTrue(lines[1].contains("S$2.00") && lines[1].contains("3 months"))
@@ -167,13 +179,43 @@ class PaywallStoreTest {
         assertTrue(prepaid.contains("Does not renew"))
     }
 
+    @Test fun allReadingLanguagesCarryAttributionAndLocalFirstChargeTerms() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val offer = annual()
+        val firstPayment = requireNotNull(firstPaymentAfterTrial(offer))
+        val disclosures = listOf("en", "ms", "id").map { tag ->
+            val config = Configuration(context.resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) }
+            val resources = context.createConfigurationContext(config).resources
+            assertTrue(resources.getString(R.string.program_excerpt_credit).contains("Robert L. Nichols"))
+            assertTrue(resources.getString(R.string.program_excerpt_credit).contains("Keeping a personal record"))
+            assertTrue(resources.getString(R.string.program_excerpt).contains("A useful record"))
+            resources.getString(R.string.shift_first_payment, firstPayment).also { assertTrue(it.contains("S$2.00")) }
+        }
+        assertEquals(3, disclosures.distinct().size)
+    }
+
     @Test fun lifetimeHasOneStoreFormattedPaymentAndNoRenewal() {
         val product = TestStoreProduct(
             id = "fixture_lifetime", name = "Lifetime", title = "Lifetime", description = "",
             price = Price("S$120.00", 120_000_000, "SGD"), period = null, freeTrialPricingPhase = null,
         )
         val offer = requireNotNull(PlanOffer.from(Package("one-time", PackageType.LIFETIME, product, PresentedOfferingContext("test"))))
+        assertNull(firstPaymentAfterTrial(offer))
         assertEquals(listOf(res.getString(R.string.shift_price_once, product.price.formatted)), offerTerms(offer, Locale.US, res))
+    }
+
+    @Test fun missingTermsCannotCreateAPurchaseOffer() {
+        val base = phase("P1Y", "S$50.00", 50_000_000, RecurrenceMode.INFINITE_RECURRING)
+        val trial = phase("P1W", "Free", 0, RecurrenceMode.FINITE_RECURRING, 1)
+        assertTrue(hasCompleteSchedule(listOf(trial, base), "SGD"))
+        assertFalse(hasCompleteSchedule(emptyList(), "SGD"))
+        assertFalse(hasCompleteSchedule(listOf(trial), "SGD"))
+        assertFalse(hasCompleteSchedule(listOf(base), "USD"))
+        assertFalse(hasCompleteSchedule(listOf(phase("P1Y", "", 50_000_000, RecurrenceMode.INFINITE_RECURRING)), "SGD"))
+        assertFalse(hasCompleteSchedule(listOf(phase("P1W", "Free", 0, RecurrenceMode.FINITE_RECURRING, 0), base), "SGD"))
+        val product = TestStoreProduct(id = "blank-price", name = "Lifetime", title = "Lifetime", description = "",
+            price = Price("", 30_000_000, "SGD"), period = null, freeTrialPricingPhase = null)
+        assertNull(PlanOffer.from(Package("no-price", PackageType.LIFETIME, product, PresentedOfferingContext("test"))))
     }
 
     @Test fun mixedCatalogExcludesSubscriptionsLabeledLifetimeAndOneTimeProductsLabeledRecurring() {

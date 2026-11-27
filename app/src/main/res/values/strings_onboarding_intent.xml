@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onb_intent_now">Start now</string>
+    <string name="onb_intent_now_detail">Check your options, then choose when to start the timer.</string>
+    <string name="onb_intent_later_detail">Pick a start time and see when your window ends.</string>
+    <string name="onb_intent_explore_detail">Preview a fasting window without starting a timer.</string>
+    <string name="onb_sample_window">Example · 12-hour window</string>
+    <string name="first_plan_now_title">Ready to start your fast?</string>
+    <string name="first_plan_now_body">Here is your window if you start now. You can end your fast whenever you need to.</string>
+    <string name="first_plan_expired">This window needs a new time. Edit it, or review a fast starting now.</string>
+</resources>

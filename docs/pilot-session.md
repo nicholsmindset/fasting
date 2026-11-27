@@ -2,6 +2,8 @@
 
 Use the [task scorecard](pilot-tasks.csv) for observed tasks. Use the [offer and follow-up scorecard](pilot-follow-up.csv) for the price question and, with separate opt-in, the two-week pilot. Both files have five blank participant slots. Keep the templates in Git and completed copies in the research team's private workspace. Record anonymous IDs and product observations. Keep names, contact details, screenshots of personal screens, receipts, screening answers, fasting logs, and health readings out of the scorecards.
 
+For onboarding, Today, partner privacy and the day-seven follow-up, use the [first-week pilot](first-week-pilot.md).
+
 For the separate 20-pair Partner Week pilot, use the [two-week protocol and pair scorecard](partner-week-pilot.md).
 
 ## Set up one demo before the first session

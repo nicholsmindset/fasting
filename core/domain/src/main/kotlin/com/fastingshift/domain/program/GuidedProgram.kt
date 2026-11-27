@@ -4,24 +4,45 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-data class ProgramDay(
-    val day: Int,
+data class ProgramReading(
     val title: String,
     val lesson: String,
+    val action: String,
+    val reflection: String,
+    val source: String,
+) {
+    internal val isComplete get() = listOf(title, lesson, action, reflection, source).all { it.isNotBlank() }
+}
+
+data class ProgramDay(
+    val day: Int,
+    val readings: Map<String, ProgramReading>,
     val targetHours: Int? = null,
-    val chapter: String? = null,
-)
+) {
+    fun reading(language: String): ProgramReading? = readings[when (language) {
+        "ms" -> "ms"
+        "id", "in" -> "id"
+        else -> "en"
+    }]
+
+    internal val isComplete get() = listOf("en", "ms", "id").all { readings[it]?.isComplete == true }
+}
 
 data class Program(
     val id: String,
     val days: List<ProgramDay>,
     val expectedDays: Int,
     val approvedForRelease: Boolean = false,
+    val firstDayApprovedForPreview: Boolean = false,
 ) {
     val isPublished: Boolean get() = approvedForRelease && expectedDays > 0 &&
         days.size == expectedDays && days.withIndex().all { (index, item) ->
-            item.day == index + 1 && item.title.isNotBlank() && item.lesson.isNotBlank()
+            item.day == index + 1 && item.isComplete
         }
+
+    val freePreview: ProgramDay? get() = days.firstOrNull()?.takeIf {
+        (firstDayApprovedForPreview || isPublished) && it.day == 1 && it.isComplete
+    }
 }
 
 object GuidedPrograms {

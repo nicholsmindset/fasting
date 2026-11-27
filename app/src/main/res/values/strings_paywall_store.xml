@@ -28,4 +28,5 @@
     <string name="shift_commitment">Initial payment commitment: %1$d</string>
     <string name="shift_renewal_commitment">Payments per renewal commitment: %1$d</string>
     <string name="shift_already_owned">Google Play already has this purchase. Restore purchases to check access.</string>
+    <string name="shift_first_payment">Your first payment after the free trial is %1$s.</string>
 </resources>

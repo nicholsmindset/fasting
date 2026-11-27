@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,10 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -67,6 +70,7 @@ import com.fastingshift.app.ui.components.SecondaryScaffold
 import com.fastingshift.app.ui.design.AppCard
 import com.fastingshift.app.ui.design.GroupRow
 import com.fastingshift.app.ui.design.InsetGroup
+import com.fastingshift.app.ui.design.PlainButton
 import com.fastingshift.app.ui.design.PrimaryButton
 import com.fastingshift.app.ui.design.SecondaryButton
 import com.fastingshift.app.ui.design.SwitchGroupRow
@@ -80,6 +84,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+@Composable
+internal fun PartnerReflectionInvite(onOpen: () -> Unit, vm: PartnerWeekViewModel = hiltViewModel()) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    if (state.adultAllowed == true && state.participantAllowed == true && state.showTimerShortcut &&
+        state.week == null && !state.leaving) {
+        PlainButton(stringResource(R.string.partner_reflection_invite), onOpen, Modifier.testTag("partner_reflection_invite"))
+    }
+}
 
 @Composable
 internal fun PartnerTimerEntry(onOpen: () -> Unit, vm: PartnerWeekViewModel = hiltViewModel()) {
@@ -282,8 +295,8 @@ private fun Heading(title: String) {
 }
 
 @Composable
-private fun Notice(text: String) {
-    Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun Notice(text: String, modifier: Modifier = Modifier) {
+    Text(text, modifier, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
@@ -430,33 +443,21 @@ internal fun WeekProgressContent(
             other.role == "supporter" -> Notice(stringResource(R.string.partner_supported_by, other.alias))
         }
     }
-    AppCard {
-        members.forEachIndexed { index, member ->
-            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            val self = member === week.self
-            MarkRow(member, if (self) stringResource(R.string.partner_you, member.alias) else member.alias,
-                isSelf = self)
-        }
+    val status = when {
+        state.pendingDays.isNotEmpty() -> R.string.partner_queued
+        state.offline -> R.string.partner_offline
+        else -> null
     }
-    if (state.pendingDays.isNotEmpty()) Notice(stringResource(R.string.partner_queued))
-    else if (state.offline) Notice(stringResource(R.string.partner_offline))
+    status?.let { Notice(stringResource(it), Modifier.testTag("partner_sync_status").semantics { liveRegion = LiveRegionMode.Polite }) }
     if (week.lastCheer != null && other != null) {
         Text(stringResource(R.string.partner_encouragement_from, other.alias, stringResource(reactionLabel(week.lastCheer))),
             Modifier.testTag("partner_received").semantics { liveRegion = LiveRegionMode.Polite },
             style = MaterialTheme.typography.titleMedium)
     }
 
-    // Optimistic marks count on this phone. The shared keepsake waits for both records to sync.
-    if (other != null && members.isNotEmpty() && state.pendingDays.isEmpty() && members.all { it.days.distinct().size >= 3 }) {
-        PartnerKeepsake(week.id, week.startDate, start, end)
-    }
-    if (finished) {
-        RenewalActions(week, state, onRenew, onPause)
-        return
-    }
     val participating = !supporter && state.participantAllowed == true
     val full = week.self.days.distinct().size >= 3
-    if (participating) {
+    if (!finished && participating) {
         val checked = week.today in week.self.days
         val label = when {
             full -> R.string.partner_all_marks
@@ -467,7 +468,24 @@ internal fun WeekProgressContent(
             enabled = week.canCheckIn && !state.busy)
         if (!checked && !full) Notice(stringResource(R.string.partner_checkin_hint))
     }
-    if (other != null) Encouragement(week, !state.busy, primary = !participating, onSend = onCheer)
+    if (!finished && other != null && !participating) Encouragement(week, !state.busy, primary = true, onSend = onCheer)
+    AppCard {
+        members.forEachIndexed { index, member ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            val self = member === week.self
+            MarkRow(member, if (self) stringResource(R.string.partner_you, member.alias) else member.alias,
+                isSelf = self, weekStart = if (self) week.startDate else null)
+        }
+    }
+    // Optimistic marks count on this phone. The shared keepsake waits for both records to sync.
+    if (other != null && members.isNotEmpty() && state.pendingDays.isEmpty() && members.all { it.days.distinct().size >= 3 }) {
+        PartnerKeepsake(week.id, week.startDate, start, end)
+    }
+    if (finished) {
+        RenewalActions(week, state, onRenew, onPause)
+        return
+    }
+    if (other != null && participating) Encouragement(week, !state.busy, primary = false, onSend = onCheer)
     if (participating && !full) {
         planning()
         reminder()
@@ -596,18 +614,39 @@ private fun Encouragement(week: PartnerWeek, enabled: Boolean, primary: Boolean,
 }
 
 @Composable
-private fun MarkRow(member: PartnerMember, name: String, isSelf: Boolean) {
+private fun MarkRow(member: PartnerMember, name: String, isSelf: Boolean, weekStart: String?) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth().testTag(if (isSelf) "partner_self_marks" else "partner_other_marks").semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(name, style = MaterialTheme.typography.titleMedium)
         val count = member.days.distinct().size.coerceIn(0, 3)
-        MarkDots(count)
+        val start = weekStart?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        if (start != null) {
+            BoxWithConstraints(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
+                if (maxWidth >= 245.dp && LocalDensity.current.fontScale <= 1.3f) {
+                    val locale = LocalConfiguration.current.locales[0]
+                    val weekday = DateTimeFormatter.ofPattern("EEEEE", locale)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        repeat(7) { offset ->
+                            val day = start.plusDays(offset.toLong())
+                            val checked = day.toString() in member.days
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(day.format(weekday), style = MaterialTheme.typography.labelSmall)
+                                val chip = Modifier.size(28.dp).border(1.dp, if (checked) colors.primary else colors.outline, CircleShape)
+                                Box(if (checked) chip.background(colors.primary, CircleShape) else chip, contentAlignment = Alignment.Center) {
+                                    Text(day.dayOfMonth.toString(), color = if (checked) colors.onPrimary else colors.onSurface,
+                                        style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         Text(stringResource(R.string.partner_count, count), style = MaterialTheme.typography.bodyMedium,
             color = colors.onSurfaceVariant)
-        if (!isSelf) localDate(member.days.maxOrNull())?.let { day ->
-            Text(stringResource(R.string.partner_last_checkin, member.alias, day), style = MaterialTheme.typography.bodyMedium)
-        }
+        val dates = member.days.distinct().sorted().mapNotNull { localDate(it) }
+        if (dates.isNotEmpty()) Notice(stringResource(R.string.partner_checked_dates, dates.joinToString(", ")))
     }
 }
 

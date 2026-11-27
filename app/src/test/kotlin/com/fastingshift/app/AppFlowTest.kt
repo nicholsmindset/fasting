@@ -226,9 +226,10 @@ class AppFlowTest {
         }
     }
 
-    private fun reachFirstPlan() {
-        waitFor(s(R.string.onb_get_started))
-        click(s(R.string.onb_get_started))
+    private fun reachFirstPlan(startNow: Boolean = false) {
+        val intent = s(if (startNow) R.string.onb_intent_now else R.string.onb_get_started)
+        waitFor(intent)
+        click(intent)
         waitFor(s(R.string.onb_goal_title))
         click(s(R.string.goal_consistency))
         click(s(R.string.onb_next))
@@ -241,7 +242,7 @@ class AppFlowTest {
         click(s(R.string.onb_next))
         waitFor(s(R.string.onb_protocol_title))
         click(s(R.string.onb_next))
-        waitFor(s(R.string.first_plan_title))
+        waitFor(s(if (startNow) R.string.first_plan_now_title else R.string.first_plan_title))
     }
 
     private fun chooseStartTime(hour: Int, minute: Int) {
@@ -278,6 +279,9 @@ class AppFlowTest {
             val previewStart = compose.onNodeWithTag("first-plan-start").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
             val previewFinish = compose.onNodeWithTag("first-plan-finish").fetchSemanticsNode().config[SemanticsProperties.Text].single().text
             captureFirstPlan("01-overnight-preview")
+            compose.activityRule.scenario.recreate()
+            waitFor(previewStart)
+            waitFor(previewFinish)
             click(s(R.string.first_plan_schedule))
             waitFor(s(R.string.first_plan_saved_title))
             click(s(R.string.onb_not_now))
@@ -318,7 +322,9 @@ class AppFlowTest {
     @Test fun firstPlanStartNowRunsTheChosenProtocolOnceWithoutSchedulingAReminder() {
         val original = runBlocking { settings.toRecord() }
         try {
-            reachFirstPlan()
+            reachFirstPlan(startNow = true)
+            assertNull(runBlocking { fasts.getActive() })
+            compose.onNodeWithText(s(R.string.first_plan_schedule)).assertDoesNotExist()
             click(s(R.string.first_plan_start))
             waitFor(s(R.string.timer_end))
             val fast = assertNotNull(runBlocking { fasts.getActive() })

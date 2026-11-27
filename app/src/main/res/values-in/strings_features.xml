@@ -142,9 +142,9 @@
     <string name="el_magnesium">Magnesium</string>
 
     <!-- Onboarding -->
-    <string name="onb_welcome_title">Selamat datang di Fasting Shift</string>
-    <string name="onb_welcome_body">Timer puasa tanpa pendaftaran. Riwayat puasa Anda tersimpan di ponsel ini.</string>
-    <string name="onb_get_started">Mulai</string>
+    <string name="onb_welcome_title">Apa yang ingin Anda lakukan hari ini?</string>
+    <string name="onb_welcome_body">Pilih yang sesuai dengan kegiatan Anda hari ini. Tidak perlu akun.</string>
+    <string name="onb_get_started">Rencanakan untuk nanti</string>
     <string name="onb_next">Berikutnya</string>
     <string name="onb_continue">Lanjutkan</string>
     <string name="onb_not_now">Nanti saja</string>
@@ -186,7 +186,7 @@
     <string name="onb_protocol_body">Anda dapat mengubahnya kapan saja. 16:8 adalah titik awal yang umum.</string>
     <string name="onb_notif_title">Ingin diingatkan saat puasa berakhir?</string>
     <string name="onb_notif_body">Dapatkan pengingat untuk puasa dan pemeriksaan Anda. Anda bisa mengaktifkannya nanti melalui Pengaturan, di bagian Pengingat.</string>
-    <string name="onb_notif_allow">Izinkan notifikasi</string>
+    <string name="onb_notif_allow">Ingatkan saya saat puasa dimulai</string>
     <string name="onb_offer_title">Shift+ bersifat opsional</string>
     <string name="onb_offer_free_note">Timer, widget, semua protokol, riwayat, ekspor, dan semua fitur keselamatan gratis selamanya.</string>
     <string name="onb_offer_free">Lanjut gratis</string>

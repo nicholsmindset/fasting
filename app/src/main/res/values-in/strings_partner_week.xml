@@ -6,7 +6,7 @@
     <string name="partner_start">Mulai pekan bersama teman</string>
     <string name="partner_intro">Undang satu orang. Beri kabar pada tiga hari pilihan Anda pekan ini, meski rencana Anda berubah. Teman Anda bisa ikut memberi kabar atau sekadar menyemangati.</string>
     <string name="partner_alias">Nama yang akan dilihat teman Anda</string>
-    <string name="partner_privacy">Teman Anda dapat melihat nama pilihan Anda, peran, hari saat Anda memberi kabar, pesan yang dipilih, dan apakah Anda mengajak mereka untuk satu minggu lagi. Hari yang Anda rencanakan, timer puasa, catatan kesehatan, dan alasan Anda memberi kabar tetap tersimpan di ponsel ini.</string>
+    <string name="partner_privacy">Pasangan Anda dapat melihat nama pilihan, peran, tanggal check-in, pesan siap pakai, dan permintaan untuk pekan berikutnya. Rencana, durasi puasa, jumlah langkah, catatan kesehatan, dan alasan Anda check-in bersifat pribadi.</string>
     <string name="partner_support_only">Anda bisa menerima undangan untuk menyemangati teman. Anda tidak perlu berpuasa.</string>
     <string name="partner_create">Buat undangan</string>
     <string name="partner_open_invite">Buka undangan</string>
@@ -21,9 +21,9 @@
     <string name="partner_invited">%1$s mengundang Anda</string>
     <string name="partner_join_intro">Pekan ini berlangsung selama tujuh hari sejak Anda bergabung. Pilih cara Anda ingin berpartisipasi.</string>
     <string name="partner_participate">Saya juga ingin memberi kabar</string>
-    <string name="partner_participate_hint">Pilih tiga hari untuk memberi kabar.</string>
+    <string name="partner_participate_hint">Check-in pada tiga hari pilihan Anda. Hari istirahat dan perubahan rencana juga dihitung.</string>
     <string name="partner_support">Semangati teman</string>
-    <string name="partner_support_hint">Kirim semangat kapan saja. Anda tidak perlu berpuasa atau memberi kabar.</string>
+    <string name="partner_support_hint">Kirim satu pesan siap pakai setiap hari. Anda bisa memberi semangat tanpa berpuasa atau melakukan check-in.</string>
     <string name="partner_join">Gabung ke pekan bersama teman</string>
     <string name="partner_pending_title">Menunggu teman Anda</string>
     <string name="partner_waiting">Kirim undangan pribadi ini kepada satu orang. Orang pertama yang menerima undangan akan menjadi teman Anda untuk pekan ini.</string>
@@ -35,7 +35,7 @@
     <string name="partner_refresh">Muat ulang</string>
     <string name="partner_leave">Keluar dari pekan bersama teman</string>
     <string name="partner_leave_question">Keluar dari pekan bersama teman ini?</string>
-    <string name="partner_leave_note">Pekan ini akan berakhir untuk Anda berdua. Riwayat puasa pribadi Anda tetap tersimpan di ponsel ini.</string>
+    <string name="partner_leave_note">Jika Anda keluar, pekan bersama, check-in, dan pesan dihapus untuk Anda berdua. Riwayat puasa pribadi Anda tetap ada di ponsel ini.</string>
     <string name="partner_cancel_invite">Batalkan undangan</string>
     <string name="partner_cancel_question">Batalkan undangan ini?</string>
     <string name="partner_cancel_note">Setelah dibatalkan, siapa pun yang memiliki tautan ini tidak dapat menggunakannya untuk bergabung.</string>
@@ -69,4 +69,6 @@
     <string name="partner_last_checkin">%1$s memberi kabar pada %2$s.</string>
     <string name="partner_your_count">Anda sudah memberi kabar %1$d dari 3 kali</string>
     <string name="partner_adult_only">Pekan bersama teman tersedia untuk orang dewasa berusia 18 tahun ke atas.</string>
+    <string name="partner_reflection_invite">Undang seseorang untuk pekan bersama</string>
+    <string name="partner_checked_dates">Check-in pada %1$s</string>
 </resources>

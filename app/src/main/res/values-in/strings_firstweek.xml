@@ -2,14 +2,14 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">Langkah %1$d dari %2$d</string>
-    <string name="onb_open_tour">Cara kerja aplikasi</string>
-    <string name="onb_skip">Lewati</string>
+    <string name="onb_open_tour">Jelajahi dulu</string>
+    <string name="onb_skip">Siapkan rencana saya</string>
     <string name="onb_back">Kembali</string>
 
     <!-- Intro pages -->
     <string name="onb_intro_heading">Cara kerja Fasting Shift</string>
-    <string name="onb_intro_timer_title">Sekali ketuk, puasa tak pernah hilang</string>
-    <string name="onb_intro_timer_body">Mulai dan akhiri dengan sekali ketuk. Puasa Anda tersimpan sejak dimulai, jadi tetap aman meski ponsel dimulai ulang, baterai habis, atau zona waktu berubah.</string>
+    <string name="onb_intro_timer_title">Lihat jadwal puasa Anda</string>
+    <string name="onb_intro_timer_body">Contoh ini dimulai pada malam hari dan berakhir keesokan paginya. Timer hanya berjalan saat Anda memilih untuk memulainya.</string>
     <string name="onb_intro_safety_title">Keselamatan sudah terpasang</string>
     <string name="onb_intro_safety_body">Beberapa pertanyaan jujur menentukan puasa mana yang kami tawarkan. Puasa yang lebih panjang disertai daftar periksa, cek kondisi, dan panduan lembut untuk mengakhirinya.</string>
     <string name="onb_intro_privacy_title">Catatan puasa Anda</string>

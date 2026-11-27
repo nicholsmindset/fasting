@@ -4,7 +4,7 @@
     <string name="settings_safety_reports">Keselamatan dan laporan</string>
     <string name="settings_reminders_summary">Waktu dan pengiriman pengingat mulai dan selesai</string>
     <string name="settings_fasting_summary">Jendela makan, target air, Ramadan dan sunah</string>
-    <string name="settings_privacy_summary">Perlindungan data, Health Connect, dan cadangan</string>
+    <string name="settings_privacy_summary">Pilihan privasi, transfer riwayat, dan cadangan</string>
     <string name="settings_safety_summary">Skrining, panduan berbuka, dan laporan dokter</string>
     <string name="settings_fast_timing">Waktu puasa</string>
     <string name="settings_delivery">Pengiriman notifikasi</string>
@@ -19,4 +19,14 @@
     <string name="settings_alerts_enabled">%1$d aktif</string>
     <string name="settings_expanded">Diperluas</string>
     <string name="settings_collapsed">Diciutkan</string>
+    <string name="settings_connections">Koneksi kesehatan</string>
+    <string name="settings_connections_summary">Sinkronisasi Health Connect dan izin untuk rangkuman</string>
+    <string name="settings_connections_provider">Health Connect</string>
+    <string name="settings_health_unavailable">Health Connect tidak tersedia di perangkat ini.</string>
+    <string name="settings_health_steps">Jumlah langkah bersifat opsional. Anda dapat memberikan izin baca dari rangkuman mingguan, terpisah dari sinkronisasi berat dan air. Untuk mencabut akses, buka izin aplikasi di Health Connect.</string>
+    <string name="settings_health_store_error">Google Play tidak dapat dibuka. Cari Health Connect di Google Play.</string>
+    <string name="settings_timing_summary">Pengingat mulai: %1$s · Pengingat selesai: %2$s</string>
+    <string name="settings_toggle_on">Aktif</string>
+    <string name="settings_health_permissions">Kelola izin Health Connect</string>
+    <string name="settings_health_settings_error">Buka Health Connect dari setelan Android untuk memeriksa izin.</string>
 </resources>

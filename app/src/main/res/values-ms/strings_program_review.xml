@@ -14,4 +14,9 @@
     <string name="program_trial_duration">Percubaan percuma · %1$s</string>
     <string name="program_trial_action">Mulakan percubaan percuma</string>
     <string name="program_purchase_terms">Google Play memaparkan harga dan syarat percubaan sebelum pembelian. Langganan diperbaharui secara automatik sehingga dibatalkan di Google Play. Pelan seumur hidup hanya memerlukan satu bayaran.</string>
+    <string name="program_excerpt">“A useful record makes space for the detail you care about.”</string>
+    <string name="program_excerpt_credit">Petikan asal dalam bahasa Inggeris. Robert L. Nichols, The Fasting Shift, “Keeping a personal record”, hlm. 7</string>
+    <string name="program_read_day_one">Baca Hari 1 secara percuma</string>
+    <string name="program_action_label">Cuba hari ini</string>
+    <string name="program_reflection_label">Renungan</string>
 </resources>

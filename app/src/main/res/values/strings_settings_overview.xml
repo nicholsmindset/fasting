@@ -4,7 +4,7 @@
     <string name="settings_safety_reports">Safety and reports</string>
     <string name="settings_reminders_summary">Start and end alerts, timing and delivery</string>
     <string name="settings_fasting_summary">Eating window, water goal, Ramadan and Sunnah</string>
-    <string name="settings_privacy_summary">Data protection, Health Connect and backups</string>
+    <string name="settings_privacy_summary">Privacy choices, history transfers and backups</string>
     <string name="settings_safety_summary">Screening, refeeding and doctor reports</string>
     <string name="settings_fast_timing">Fast timing</string>
     <string name="settings_delivery">Notification delivery</string>
@@ -19,4 +19,14 @@
     <string name="settings_alerts_enabled">%1$d on</string>
     <string name="settings_expanded">Expanded</string>
     <string name="settings_collapsed">Collapsed</string>
+    <string name="settings_connections">Health connections</string>
+    <string name="settings_connections_summary">Health Connect sync and recap permissions</string>
+    <string name="settings_connections_provider">Health Connect</string>
+    <string name="settings_health_unavailable">Health Connect is unavailable on this device.</string>
+    <string name="settings_health_steps">Steps are optional. You can allow read access from your weekly recap, independently of weight and water sync. To revoke access, open app permissions in Health Connect.</string>
+    <string name="settings_health_store_error">Google Play could not open. Search for Health Connect in Google Play.</string>
+    <string name="settings_timing_summary">Start alert: %1$s · End alert: %2$s</string>
+    <string name="settings_toggle_on">On</string>
+    <string name="settings_health_permissions">Manage Health Connect permissions</string>
+    <string name="settings_health_settings_error">Open Health Connect from Android settings to review permissions.</string>
 </resources>

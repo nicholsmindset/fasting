@@ -3,14 +3,14 @@
 <resources>
     <!-- Onboarding chrome -->
     <string name="onb_step_of">Step %1$d of %2$d</string>
-    <string name="onb_open_tour">How it works</string>
-    <string name="onb_skip">Skip</string>
+    <string name="onb_open_tour">Just exploring</string>
+    <string name="onb_skip">Set up my plan</string>
     <string name="onb_back">Back</string>
 
     <!-- Intro pages -->
     <string name="onb_intro_heading">How Fasting Shift works</string>
-    <string name="onb_intro_timer_title">One tap, and it never loses a fast</string>
-    <string name="onb_intro_timer_body">Start and end with a single tap. Your fast is saved the moment it starts, so it survives restarts, flat batteries and time-zone changes.</string>
+    <string name="onb_intro_timer_title">A look at your fasting window</string>
+    <string name="onb_intro_timer_body">This example starts in the evening and ends the next morning. Your timer only runs when you choose to start it.</string>
     <string name="onb_intro_safety_title">Safety built in</string>
     <string name="onb_intro_safety_body">A few honest questions decide which fasts we offer. Longer fasts come with a checklist, check-ins and gentle guidance for breaking them.</string>
     <string name="onb_intro_privacy_title">Your fasting records</string>

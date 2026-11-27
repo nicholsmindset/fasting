@@ -18,6 +18,9 @@ import com.revenuecat.purchases.PurchasesException
 import com.revenuecat.purchases.PurchasesTransactionException
 import com.revenuecat.purchases.awaitCustomerInfo
 import com.revenuecat.purchases.awaitGetProducts
+import com.revenuecat.purchases.models.Period
+import com.revenuecat.purchases.models.PricingPhase
+import com.revenuecat.purchases.models.RecurrenceMode
 import com.revenuecat.purchases.models.StoreProduct
 import com.fastingshift.app.di.ApplicationScope
 import java.util.concurrent.ConcurrentHashMap
@@ -53,8 +56,29 @@ class PlanOffer private constructor(val plan: PlanType, internal val pkg: Packag
                 }
                 else -> null
             } ?: return null
-            return PlanOffer(plan, pkg)
+            val price = pkg.product.price
+            if (price.formatted.isBlank() || price.currencyCode.isBlank() || price.amountMicros <= 0L) return null
+            val offer = PlanOffer(plan, pkg)
+            if (plan != PlanType.LIFETIME && !hasCompleteSchedule(offer.phases, price.currencyCode)) return null
+            return offer
         }
+    }
+}
+
+/** A shopper must be able to read every charge before entering Play checkout. */
+internal fun hasCompleteSchedule(phases: List<PricingPhase>, currency: String): Boolean {
+    val base = phases.lastOrNull() ?: return false
+    if (base.price.amountMicros <= 0L ||
+        base.recurrenceMode !in setOf(RecurrenceMode.INFINITE_RECURRING, RecurrenceMode.NON_RECURRING)
+    ) return false
+    return phases.withIndex().all { (index, phase) ->
+        val price = phase.price
+        phase.billingPeriod.unit != Period.Unit.UNKNOWN && phase.billingPeriod.value > 0 &&
+            price.currencyCode == currency && price.amountMicros >= 0L &&
+            (price.amountMicros == 0L || price.formatted.isNotBlank()) &&
+            (price.amountMicros != 0L || index == 0) &&
+            (index == phases.lastIndex || (phase.recurrenceMode == RecurrenceMode.FINITE_RECURRING &&
+                (phase.billingCycleCount ?: 0) > 0))
     }
 }
 

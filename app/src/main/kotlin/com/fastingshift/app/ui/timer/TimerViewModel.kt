@@ -218,7 +218,7 @@ class TimerViewModel @Inject constructor(
         } else d.schedules
         val eligible = eligibleSchedules(applicable, s.maxHours?.let { Duration.ofHours(it.toLong()) })
         val plan = appSettings.planHistory
-        val firstPlan = firstEvening?.takeIf { all.isEmpty() && !it.second.isBefore(todayDate) }?.let { (id, date) ->
+        val firstPlan = firstEvening?.takeIf { all.isEmpty() }?.let { (id, date) ->
             val occurrence = ScheduleCalculator.startsOn(eligible, date, zone, plan.breakWeeks, plan.dayOverrides, firstEvening)
                 .firstOrNull { it.first.id == id }
             occurrence?.let { (schedule, start) -> Presets.byId(schedule.protocolId)?.let { FirstPlanWindow(start, it) } }

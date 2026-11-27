@@ -127,11 +127,10 @@ class FirstFastPlanner @Inject constructor(
 
     suspend fun cancel() = schedules.cancelFirstEvening()
 
-    /** Removes the one-off schedule once a fast exists or its evening is over. */
-    suspend fun cleanUp(zone: ZoneId = ZoneId.systemDefault()) {
+    /** A missed start remains editable until the first fast starts or its owner cancels it. */
+    suspend fun cleanUp() {
         val plan = planned() ?: return
-        val today = clock.instant().atZone(zone).toLocalDate()
-        if (fasts.getAll().isNotEmpty() || plan.date.isBefore(today)) {
+        if (fasts.getAll().isNotEmpty()) {
             schedules.cancelFirstEvening(expected = plan.scheduleId to plan.date)
         }
     }

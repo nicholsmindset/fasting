@@ -18,7 +18,6 @@ internal fun offerTerms(offer: PlanOffer, locale: Locale, resources: Resources):
         add(resources.getString(R.string.shift_price_once, offer.price))
         return@buildList
     }
-    if (offer.phases.isEmpty()) add(resources.getString(R.string.shift_price_confirm, offer.price))
     offer.phases.forEach { add(phaseTerms(it, locale, resources)) }
     offer.installments?.let { installments ->
         add(resources.getString(R.string.shift_commitment, installments.commitmentPaymentsCount))
@@ -26,6 +25,11 @@ internal fun offerTerms(offer: PlanOffer, locale: Locale, resources: Resources):
             add(resources.getString(R.string.shift_renewal_commitment, installments.renewalCommitmentPaymentsCount))
         }
     }
+}
+
+internal fun firstPaymentAfterTrial(offer: PlanOffer): String? {
+    if (offer.phases.firstOrNull()?.price?.amountMicros != 0L) return null
+    return offer.phases.firstOrNull { it.price.amountMicros > 0L }?.price?.formatted
 }
 
 internal fun phaseTerms(phase: PricingPhase, locale: Locale, resources: Resources): String {
