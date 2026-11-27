@@ -33,12 +33,14 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class FirstIntent { START_NOW, PLAN_LATER, EXPLORE }
 
@@ -145,7 +147,9 @@ class OnboardingViewModel @Inject constructor(
                 if (st.rerun || st.step == Step.WELCOME) null else SetupDraft(
                     st.step.name, st.intent.name, st.goal, st.selected.id, st.firstStart?.toString(), st.goalFromTour,
                 )
-            }.distinctUntilChanged().collect { settings.saveSetupDraft(it) }
+            }.distinctUntilChanged().collect { draft ->
+                withContext(Dispatchers.IO) { settings.saveSetupDraft(draft) }
+            }
         }
     }
 

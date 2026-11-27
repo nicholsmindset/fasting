@@ -2,6 +2,7 @@ package com.fastingshift.app
 
 import android.os.Looper
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fastingshift.app.ui.firstweek.EveningOffer
 import com.fastingshift.app.ui.firstweek.FastSummaryViewModel
@@ -45,7 +46,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -69,7 +72,17 @@ class FirstWeekTest {
     @Inject lateinit var clock: Clock
     @Inject lateinit var screening: ScreeningRepository
 
+    private val onboardingModels = mutableListOf<OnboardingViewModel>()
+
+    private fun onboarding(handle: SavedStateHandle = SavedStateHandle()): OnboardingViewModel =
+        OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts).also { onboardingModels.add(it) }
+
     @Before fun setUp() = hilt.inject()
+
+    @After fun clearOnboardingModels() {
+        onboardingModels.forEach { it.viewModelScope.cancel() }
+        shadowOf(Looper.getMainLooper()).idle()
+    }
 
     private fun <T> await(read: () -> T?): T {
         repeat(200) {
@@ -170,7 +183,7 @@ class FirstWeekTest {
 
     @Test fun optionalTourAndDirectSetupKeepTheirOwnBackPathAndGoal() {
         val handle = SavedStateHandle(mapOf("step" to Step.WELCOME.name))
-        val vm = OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts)
+        val vm = onboarding(handle)
         vm.openGoal()
         assertEquals(Step.GOAL, vm.state.value.step)
         vm.continueFromGoal()
@@ -181,7 +194,7 @@ class FirstWeekTest {
         vm.back()
         assertEquals(Goal.CONSISTENCY, vm.state.value.goal)
         shadowOf(Looper.getMainLooper()).idle()
-        val restored = OnboardingViewModel(screening, settings, clock, SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }), planner, service, fasts)
+        val restored = onboarding(SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }))
         restored.back()
         assertEquals(Step.WELCOME, restored.state.value.step)
         restored.openTour()
@@ -195,8 +208,9 @@ class FirstWeekTest {
     }
 
     @Test fun exploringIsReadOnlyAndReturningToSetupKeepsTheScreeningGate() {
+        runBlocking { settings.setOnboardingComplete(false) }
         val handle = SavedStateHandle(mapOf("step" to Step.WELCOME.name))
-        val vm = OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts)
+        val vm = onboarding(handle)
         vm.openTour()
         vm.startFirstFast()
         vm.saveFirstPlan(offerNotifications = true)
@@ -216,7 +230,7 @@ class FirstWeekTest {
         assertEquals(Step.SCREENING, vm.state.value.step)
         shadowOf(Looper.getMainLooper()).idle()
         val retained = SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) })
-        val restored = OnboardingViewModel(screening, settings, clock, retained, planner, service, fasts)
+        val restored = onboarding(retained)
         assertEquals(FirstIntent.START_NOW, restored.state.value.intent)
         assertEquals(Step.SCREENING, restored.state.value.step)
     }
@@ -229,7 +243,7 @@ class FirstWeekTest {
             settings.saveSetupDraft(SetupDraft(Step.FIRST_PLAN.name, FirstIntent.PLAN_LATER.name,
                 Goal.CONSISTENCY, Presets.W14_10.id, time.toString(), false))
         }
-        val vm = OnboardingViewModel(screening, settings, clock, SavedStateHandle(), planner, service, fasts)
+        val vm = onboarding()
         await { vm.ready.value.takeIf { it } }
         assertEquals(Step.FIRST_PLAN, vm.state.value.step)
         assertEquals(time, vm.state.value.firstStart)
@@ -241,8 +255,12 @@ class FirstWeekTest {
         val edited = time.plusMinutes(10)
         vm.pickFirstStart(edited)
         await { runBlocking { settings.current().setupDraft?.start }.takeIf { it == edited.toString() } }
-        runBlocking { settings.setOnboardingComplete(true) }
-        assertNull(runBlocking { settings.current().setupDraft })
+        try {
+            runBlocking { settings.setOnboardingComplete(true) }
+            assertNull(runBlocking { settings.current().setupDraft })
+        } finally {
+            runBlocking { settings.setOnboardingComplete(false) }
+        }
     }
 
     @Test fun aColdLaunchWithABlockedScreeningNeverRestoresAnActionableWindow() {
@@ -253,7 +271,7 @@ class FirstWeekTest {
             settings.saveSetupDraft(SetupDraft(Step.FIRST_PLAN.name, FirstIntent.START_NOW.name,
                 Goal.CONSISTENCY, Presets.W14_10.id, null, false))
         }
-        val vm = OnboardingViewModel(screening, settings, clock, SavedStateHandle(), planner, service, fasts)
+        val vm = onboarding()
         await { vm.ready.value.takeIf { it } }
         assertEquals(Step.RESULT, vm.state.value.step)
         assertEquals(GateResult.BLOCK, vm.state.value.outcome?.result)
@@ -265,7 +283,7 @@ class FirstWeekTest {
     @Test fun restoredPaidOfferFinishesSetupAndMissingAnswersReturnToScreening() {
         fun restored(step: String, weight: String = "70"): OnboardingViewModel {
             val handle = SavedStateHandle(mapOf("step" to step, "age" to "40", "height" to "175", "weight" to weight))
-            return OnboardingViewModel(screening, settings, clock, handle, planner, service, fasts)
+            return onboarding(handle)
         }
         assertEquals(Step.COMPLETE, restored("OFFER").state.value.step)
         assertEquals(Step.SCREENING, restored("OFFER", weight = "").state.value.step)
