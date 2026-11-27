@@ -49,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.fastingshift.app.BuildConfig
 import com.fastingshift.app.R
 import com.fastingshift.app.ui.components.hoursMinutes
 import com.fastingshift.app.billing.BillingManager
@@ -119,9 +120,9 @@ fun PaywallRoute(
             Text(stringResource(R.string.shift_review_description), style = MaterialTheme.typography.bodyLarge)
         }
 
-        if (ent.isShiftPlus) {
+        if (BuildConfig.INTERNAL_REVIEW_INSIGHTS || ent.isShiftPlus) {
             PrimaryButton(stringResource(R.string.shift_open_review), onClick = onOpenReview)
-            if (ent.plan != PlanType.LIFETIME && !ent.fromBookCode) ManagePlanRow()
+            if (ent.isShiftPlus && ent.plan != PlanType.LIFETIME && !ent.fromBookCode) ManagePlanRow()
         } else {
             SecondaryButton(stringResource(R.string.shift_example_review), onClick = onOpenReview)
         }
@@ -358,6 +359,7 @@ internal fun insightStates(
     fasts: () -> Flow<List<Fast>>,
     weights: () -> Flow<List<WeightLog>>,
     clock: Clock,
+    internalReview: Boolean = false,
 ): Flow<InsightsState> {
     val ticks = flow {
         while (true) {
@@ -365,8 +367,8 @@ internal fun insightStates(
             delay(60_000)
         }
     }
-    return entitlements.map { Feature.INSIGHTS.isAvailable(it) }.distinctUntilChanged().flatMapLatest { paid ->
-        if (!paid) flowOf(InsightsState.Example)
+    return entitlements.map { internalReview || Feature.INSIGHTS.isAvailable(it) }.distinctUntilChanged().flatMapLatest { hasAccess ->
+        if (!hasAccess) flowOf(InsightsState.Example)
         else settings.flatMapLatest { preferences ->
             val weightLogs = if (preferences.hideWeight) flowOf(emptyList()) else weights()
             combine(fasts(), weightLogs, ticks) { records, weight, now ->
@@ -392,8 +394,10 @@ class InsightsViewModel @Inject constructor(
     billing: BillingManager,
     clock: Clock,
 ) : ViewModel() {
-    internal val state = insightStates(billing.entitlement, settings.settings, fasts::observeAll, logs::observeWeights, clock)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000, replayExpirationMillis = 0), null)
+    internal val state = insightStates(
+        billing.entitlement, settings.settings, fasts::observeAll, logs::observeWeights, clock,
+        internalReview = BuildConfig.INTERNAL_REVIEW_INSIGHTS,
+    ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000, replayExpirationMillis = 0), null)
 }
 
 @Composable

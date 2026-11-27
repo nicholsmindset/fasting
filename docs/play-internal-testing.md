@@ -2,6 +2,12 @@
 
 Use **Actions → Publish to Play internal testing** for Android package `com.fastingshift.app`. It signs the release bundle with the registered upload key and sends it to the phone app’s internal track. Google calls this track `qa` in the Publishing API. The staging and sideload beta packages have separate identities.
 
+## First internal build with Insights
+
+Build the first reviewer bundle with `./gradlew :app:bundlePlayInternalReview`. The output is `app/build/outputs/bundle/playInternalReview/app-playInternalReview.aab` for the same Play package and upload key as the production app. This variant opens personal Insights from History and Shift+ for every tester, respects hidden weight and Health Connect permissions, and disables purchases and ads. The program keeps its editorial publication checks. Reviewers can use an eligible fictional adult profile and open History → Insights without any account or purchase.
+
+Keep this artifact on the internal track. For closed testing or production, build `:app:bundleRelease` with a higher unused version code. A Play track promotion copies the same binary, including its internal access settings.
+
 ## One-time setup
 
 1. Create or select Fasting Shift in Play Console, enable Play App Signing and register the upload certificate. Complete the first app upload in Play Console before using the Publishing API. To build it locally, use the release signing settings in the [Android README](../README.md#uploading-to-play-internal-testing). In **Testing → Internal testing → Testers**, select the tester list and copy its opt-in link. Complete any setup or review Play requests for this app.

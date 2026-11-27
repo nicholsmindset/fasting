@@ -24,6 +24,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
@@ -197,6 +198,25 @@ class AppFlowTest {
             compose.onNodeWithText(s(R.string.settings_start_alert)).assertExists()
         } finally {
             runBlocking { settings.setOnboardingComplete(false) }
+        }
+    }
+
+    @Test fun historyOpensTheReviewAvailableToThisBuildWithoutAPurchase() {
+        val wasOnboarded = runBlocking { settings.current().onboardingComplete }
+        runBlocking { settings.setOnboardingComplete(true) }
+        try {
+            waitFor(s(R.string.tab_history))
+            click(s(R.string.tab_history))
+            val insights = s(R.string.history_insights)
+            compose.onNodeWithTag("history-list").performScrollToNode(hasText(insights))
+            click(insights)
+            val reviewLabel = if (BuildConfig.INTERNAL_REVIEW_INSIGHTS) R.string.review_period else R.string.review_example_label
+            waitFor(s(reviewLabel))
+            if (BuildConfig.INTERNAL_REVIEW_INSIGHTS) {
+                compose.onNodeWithText(s(R.string.insights_locked)).assertDoesNotExist()
+            }
+        } finally {
+            runBlocking { settings.setOnboardingComplete(wasOnboarded) }
         }
     }
 

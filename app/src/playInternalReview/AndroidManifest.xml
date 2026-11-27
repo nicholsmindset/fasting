@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <!-- This internal build never serves ads or initializes the ad SDK. -->
+        <provider android:name="com.google.android.gms.ads.MobileAdsInitProvider" tools:node="remove" />
+    </application>
+</manifest>
