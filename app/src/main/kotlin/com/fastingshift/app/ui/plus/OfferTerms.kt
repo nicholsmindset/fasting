@@ -18,7 +18,9 @@ internal fun offerTerms(offer: PlanOffer, locale: Locale, resources: Resources):
         add(resources.getString(R.string.shift_price_once, offer.price))
         return@buildList
     }
-    offer.phases.forEach { add(phaseTerms(it, locale, resources)) }
+    offer.phases.forEach { phase ->
+        add(phaseTerms(phase, locale, resources, installments = offer.installments != null))
+    }
     offer.installments?.let { installments ->
         add(resources.getString(R.string.shift_commitment, installments.commitmentPaymentsCount))
         if (installments.renewalCommitmentPaymentsCount > 0) {
@@ -32,7 +34,7 @@ internal fun firstPaymentAfterTrial(offer: PlanOffer): String? {
     return offer.phases.firstOrNull { it.price.amountMicros > 0L }?.price?.formatted
 }
 
-internal fun phaseTerms(phase: PricingPhase, locale: Locale, resources: Resources): String {
+internal fun phaseTerms(phase: PricingPhase, locale: Locale, resources: Resources, installments: Boolean = false): String {
     val billingPeriod = phase.billingPeriod
     val measureUnit = when (billingPeriod.unit) {
         Period.Unit.DAY -> MeasureUnit.DAY
@@ -52,7 +54,7 @@ internal fun phaseTerms(phase: PricingPhase, locale: Locale, resources: Resource
         phase.recurrenceMode == RecurrenceMode.FINITE_RECURRING ->
             resources.getString(R.string.shift_price_period, price, duration(1))
         phase.recurrenceMode == RecurrenceMode.INFINITE_RECURRING ->
-            resources.getString(R.string.shift_recurring, price, duration(1))
+            resources.getString(if (installments) R.string.shift_installment_interval else R.string.shift_recurring, price, duration(1))
         phase.recurrenceMode == RecurrenceMode.NON_RECURRING ->
             resources.getString(R.string.shift_prepaid, price, duration(1))
         else -> resources.getString(R.string.shift_price_confirm, price)

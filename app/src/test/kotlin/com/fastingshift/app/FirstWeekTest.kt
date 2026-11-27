@@ -292,6 +292,29 @@ class FirstWeekTest {
         assertEquals("Felt calm", stored.note)
     }
 
+    @Test fun unavailableRecordKeepsTheUnsavedReflectionForRetry() {
+        val end = clock.instant()
+        val start = end.minus(Duration.ofHours(2))
+        val saved = runBlocking {
+            fasts.insert(Fast(startAt = start, targetEndAt = start.plus(Duration.ofHours(16)), protocolId = "window_16_8").end(end))
+        }
+        val vm = FastSummaryViewModel(logs, checkins, service, clock)
+        vm.bind(saved)
+        vm.setNote("Keep this note")
+        vm.setMood(3)
+        runBlocking { fasts.update(saved.copy(endedAt = null, status = com.fastingshift.domain.model.FastStatus.ACTIVE)) }
+        var closed = false
+        vm.save { closed = true }
+        await { vm.saveFailed.value.takeIf { it } }
+        assertFalse(closed)
+        assertEquals("Keep this note", vm.note.value)
+        assertEquals(3, vm.mood.value)
+        runBlocking { fasts.update(saved) }
+        vm.save { closed = true }
+        await { closed.takeIf { it } }
+        assertEquals("Keep this note", runBlocking { fasts.getById(saved.id)?.note })
+    }
+
     @Test fun tappingTheSameMoodClearsIt() {
         val vm = FastSummaryViewModel(logs, checkins, service, clock)
         vm.setMood(2)

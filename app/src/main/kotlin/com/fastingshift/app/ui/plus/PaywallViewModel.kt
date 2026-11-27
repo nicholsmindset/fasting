@@ -13,6 +13,7 @@ import com.fastingshift.app.billing.BillingManager
 import com.fastingshift.app.billing.PlanOffer
 import com.fastingshift.app.billing.PurchaseOutcome
 import com.fastingshift.app.billing.RestoreOutcome
+import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.PurchasesException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -52,8 +53,10 @@ class PaywallViewModel internal constructor(private val billing: PaywallStore) :
             storefront = try {
                 // An active subscriber must not be offered the same subscription while we are
                 // still waiting for their first entitlement check.
-                if (!billing.refresh() || billing.loadedEntitlement.value == null) {
+                if (!billing.refresh(CacheFetchPolicy.FETCH_CURRENT) || billing.loadedEntitlement.value == null) {
                     Storefront.Failed
+                } else if (billing.loadedEntitlement.value?.isShiftPlus == true) {
+                    Storefront.Empty
                 } else {
                     val offers = billing.offers()
                     if (offers.isEmpty()) Storefront.Empty else Storefront.Ready(offers)

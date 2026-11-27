@@ -100,6 +100,7 @@ data class TimerUiState(
     val earlierPlannedStartToday: Instant? = null,
     val showFirstPlan: Boolean = false,
     val firstPlan: FirstPlanWindow? = null,
+    val onlyFastId: Long? = null,
     val startRemindersEnabled: Boolean = true,
 ) {
     val selectedTargetEnd: Instant get() = (startAt ?: now).plus(Duration.ofHours(selected.fastHours.toLong()))
@@ -261,6 +262,7 @@ class TimerViewModel @Inject constructor(
             plannedStart = plannedStart, startReminder = candidate.takeIf { appSettings.reminders.fastStartEnabled },
             earlierPlannedStartToday = earlierPlannedStartToday,
             firstPlan = firstPlan,
+            onlyFastId = all.singleOrNull()?.id,
             selected = selected.value ?: firstPlan?.protocol ?: s.selected,
             showFirstPlan = firstPlan != null || (plannedStart == null &&
                 FirstWeekRules.showFirstFastCard(all.isNotEmpty(), s.gate, s.clinicianAcknowledged, s.selected)),

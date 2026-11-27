@@ -158,7 +158,9 @@ fun TimerRoute(
             undoFailed = events.undoFailed,
             onDismiss = viewModel::consumeEnded,
             onEdit = { viewModel.consumeEnded(); onEditFast(ended.id) },
-            onOpenPartner = onOpenPartner?.let { open -> { viewModel.consumeEnded(); open() } },
+            onOpenPartner = onOpenPartner?.takeIf { loaded?.onlyFastId == ended.id }?.let { open ->
+                { viewModel.consumeEnded(); open() }
+            },
         )
     }
     events.message?.let { msg ->
@@ -294,7 +296,7 @@ private fun TimerHeader(state: TimerUiState) {
     }
     val title = when {
         state.active != null -> stringResource(R.string.daily_header_fasting)
-        state.maxHours == null || state.firstPlan != null -> stringResource(R.string.daily_today_title)
+        state.maxHours == null || state.firstPlan != null || state.plannedStart != null -> stringResource(R.string.daily_today_title)
         state.eatingWindow != null -> stringResource(R.string.eating_title)
         else -> stringResource(R.string.timer_idle_title)
     }
@@ -365,6 +367,8 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
             onStartNow = actions.onStart.takeIf { startFromPlan && selectedEnabled },
         )
     }
+    val hasWeeklyWindow = savedPlan == null && (state.plannedStart != null || state.earlierPlannedStartToday != null)
+    if (hasWeeklyWindow) WeekStartPreview(state, actions.onOpenWeek, alertsAvailable, actions.onOpenReminders)
     state.eatingWindow?.let { EatingWindowReadout(it, state.now) }
     SelectedFast(state.selected, onChoose = { choosing = true })
     if (selectedEnabled && !startFromPlan) {
@@ -381,9 +385,7 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
     if (state.showFirstPlan && savedPlan == null) {
         FirstFastCard(state.now, state.selected, null, state.startRemindersEnabled && alertsAvailable, actions.onOpenReminders)
     }
-    actions.onOpenPartner?.let { PartnerTimerEntry(it) }
-    revival()
-    if (state.maxHours != null && (!state.showFirstPlan ||
+    if (!hasWeeklyWindow && state.maxHours != null && (!state.showFirstPlan ||
             (state.plannedStart != null && state.plannedStart != state.firstPlan?.start))) {
         WeekStartPreview(state, actions.onOpenWeek, alertsAvailable, actions.onOpenReminders)
     } else if (state.showFirstPlan) {
@@ -393,6 +395,8 @@ private fun NotFasting(state: TimerUiState, actions: TimerActions, revival: @Com
     state.programTargetHours?.let {
         SecondaryButton(stringResource(R.string.timer_program_target, it), onClick = actions.onOpenProgram)
     }
+    actions.onOpenPartner?.let { PartnerTimerEntry(it) }
+    revival()
     if (choosing) ProtocolPicker(state, actions) { choosing = false }
     TodayCard(state.today, actions.onWater)
     QuickAddRow(!state.hideWeight, state.weightUnit, actions.onWeight, actions.onElectrolyte)

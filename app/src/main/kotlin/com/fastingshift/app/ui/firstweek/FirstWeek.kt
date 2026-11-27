@@ -53,6 +53,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -278,7 +280,8 @@ fun FastSummarySheet(
                     GroupRow(stringResource(R.string.timer_edit), showChevron = true, onClick = { finish(it) })
                 }
             }
-            if (undoFailed) Text(stringResource(R.string.timer_undo_failed), color = MaterialTheme.colorScheme.error)
+            if (undoFailed) Text(stringResource(R.string.timer_undo_failed), color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             if (ui.fastId == fast.id && ui.canUndo && !undoFailed) {
                 PlainButton(stringResource(R.string.summary_undo), onClick = onUndo)
             }
@@ -311,7 +314,8 @@ fun FastSummarySheet(
                 }
             }
             if (saveFailed) {
-                Text(stringResource(R.string.today_reflection_failed), color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.today_reflection_failed), color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 PlainButton(stringResource(R.string.today_discard), onClick = onDismiss)
             }
             if (edited) PrimaryButton(stringResource(R.string.save), onClick = { finish(onDismiss) }, haptic = true)

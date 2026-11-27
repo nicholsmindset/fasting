@@ -179,7 +179,7 @@ fun PaywallRoute(
 @Composable
 private fun PlanCard(offer: PlanOffer, selected: Boolean, enabled: Boolean, onSelect: () -> Unit) {
     val label = stringResource(
-        when (offer.plan) {
+        if (offer.installments != null) R.string.shift_installment_plan else when (offer.plan) {
             PlanType.MONTHLY -> R.string.plan_monthly
             PlanType.ANNUAL -> R.string.plan_annual
             PlanType.LIFETIME -> R.string.plan_lifetime

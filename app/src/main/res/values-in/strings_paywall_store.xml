@@ -29,4 +29,6 @@
     <string name="shift_renewal_commitment">Jumlah pembayaran tiap komitmen perpanjangan: %1$d</string>
     <string name="shift_already_owned">Pembelian ini sudah ada di Google Play. Pilih Pulihkan pembelian untuk memeriksa akses.</string>
     <string name="shift_first_payment">Pembayaran pertama Anda setelah uji coba gratis adalah %1$s.</string>
+    <string name="shift_installment_plan">Cicilan bulanan</string>
+    <string name="shift_installment_interval">%1$s setiap %2$s. Pembatalan berlaku pada akhir masa komitmen saat ini.</string>
 </resources>

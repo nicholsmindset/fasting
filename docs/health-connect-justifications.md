@@ -1,6 +1,6 @@
 # Health Connect permission justifications (draft for Play review)
 
-Health Connect is optional and off by default. Weight and hydration permissions are requested when the user turns on **Settings → Privacy and data → Sync with Health Connect**. The others are requested in context, only when the user uses the feature that needs them: glucose from the Log screen's "Glucose & ketones" section (with sync on), read-only steps from **History → This week → Connect step count**, and sleep and resting heart rate from **Shift+ → Insights → Body signals**.
+Health Connect is optional and off by default. Weight and hydration permissions are requested when the user turns on **Settings → Health connections → Sync with Health Connect**. The others are requested in context, only when the user uses the feature that needs them: glucose from the Log screen's "Glucose & ketones" section (with sync on), read-only steps from **History → This week → Connect step count**, and sleep and resting heart rate from **Shift+ → Insights → Body signals**.
 
 | Permission | User-facing reason |
 | --- | --- |

@@ -59,9 +59,30 @@ class PlanOffer private constructor(val plan: PlanType, internal val pkg: Packag
             val price = pkg.product.price
             if (price.formatted.isBlank() || price.currencyCode.isBlank() || price.amountMicros <= 0L) return null
             val offer = PlanOffer(plan, pkg)
-            if (plan != PlanType.LIFETIME && !hasCompleteSchedule(offer.phases, price.currencyCode)) return null
-            return offer
+            if (plan == PlanType.LIFETIME) return offer
+            if (!hasCompleteSchedule(offer.phases, price.currencyCode)) return null
+            val base = offer.phases.last()
+            val installments = offer.installments
+            if (installments != null && (base.recurrenceMode != RecurrenceMode.INFINITE_RECURRING ||
+                    installments.renewalCommitmentPaymentsCount < 0)) return null
+            return offer.takeIf { matchesBillingInterval(plan, base.billingPeriod, installments?.commitmentPaymentsCount) }
         }
+    }
+}
+
+/** Classify the regular charge independently of any trial or introductory phases. */
+internal fun matchesBillingInterval(plan: PlanType, period: Period, installmentPayments: Int?): Boolean {
+    val monthly = period.unit == Period.Unit.MONTH && period.value == 1
+    if (installmentPayments != null) {
+        // Play installment plans charge monthly, even for an annual commitment.
+        return monthly && installmentPayments > 0 &&
+            (plan == PlanType.MONTHLY || (plan == PlanType.ANNUAL && installmentPayments == 12))
+    }
+    return when (plan) {
+        PlanType.MONTHLY -> monthly
+        PlanType.ANNUAL -> (period.unit == Period.Unit.YEAR && period.value == 1) ||
+            (period.unit == Period.Unit.MONTH && period.value == 12)
+        else -> false
     }
 }
 
@@ -97,7 +118,7 @@ interface PaywallStore {
     val entitlement: StateFlow<Entitlement>
     val loadedEntitlement: StateFlow<Entitlement?>
     val isConfigured: Boolean
-    suspend fun refresh(): Boolean
+    suspend fun refresh(fetchPolicy: CacheFetchPolicy = CacheFetchPolicy.default()): Boolean
     suspend fun offers(): List<PlanOffer>
     suspend fun purchase(activity: Activity, offer: PlanOffer): PurchaseOutcome
     suspend fun restore(): RestoreOutcome
@@ -137,10 +158,10 @@ class BillingManager @Inject constructor(
         }
     }
 
-    override suspend fun refresh(): Boolean {
+    override suspend fun refresh(fetchPolicy: CacheFetchPolicy): Boolean {
         if (!isConfigured) return false
         return try {
-            publish(Purchases.sharedInstance.awaitCustomerInfo())
+            publish(Purchases.sharedInstance.awaitCustomerInfo(fetchPolicy))
             true
         } catch (_: PurchasesException) {
             false
